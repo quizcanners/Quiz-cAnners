@@ -1,0 +1,590 @@
+﻿using QuizCanners.Utils;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
+// ReSharper disable InconsistentNaming
+#pragma warning disable IDE1006 // Naming Styles
+#pragma warning disable IDE0011 // Add braces
+#pragma warning disable IDE0008 // Use explicit type
+
+namespace QuizCanners.Inspect
+{
+    public static partial class pegi
+    {
+        public const int defaultButtonSize = 26;
+
+        public static class EditorViewPegi
+        {
+            public static void RefocusIfLocked(Object current, Object target)
+            {
+#if UNITY_EDITOR
+                var tracker = UnityEditor.ActiveEditorTracker.sharedTracker;
+                if (current != target && target && tracker.isLocked)
+                {
+                    tracker.isLocked = false;
+                    QcUnity.FocusOn(target);
+                    tracker.isLocked = true;
+                }
+#endif
+            }
+
+            public static void Lock_UnlockClick(Object obj)
+            {
+#if UNITY_EDITOR
+                if (!PaintingGameViewUI)
+                {
+                    var tracker = UnityEditor.ActiveEditorTracker.sharedTracker;
+                    if (tracker.isLocked == false &&
+                        icon.Unlock.ClickUnFocus("Lock Inspector Window"))
+                    {
+                        QcUnity.FocusOn(PegiEditorOnly.serObj.targetObject);
+                        tracker.isLocked = true;
+                    }
+
+                    if (tracker.isLocked && icon.Lock.ClickUnFocus("Unlock Inspector Window"))
+                    {
+                        tracker.isLocked = false;
+                        QcUnity.FocusOn(obj);
+                    }
+                }
+#endif
+            }
+        }
+
+        public static ChangesToken ClickLink(this TextLabel label, string link)
+        {
+            label.FallbackHint = ()=> "Go To: {0}".F(link);
+
+            if (label.ClickText(12))
+            {
+                Application.OpenURL(link);
+                return true;
+            }
+
+            return false;
+        }
+
+        public static class ConfirmationDialogue
+        {
+            private static string _tag;
+            private static object _targetObject;
+            private static string _details;
+
+            public static string ConfirmationText
+            {
+                get
+                {
+                    return _details.IsNullOrEmpty() ? Msg.AreYouSure.GetText() : _details;
+                }
+            }
+
+            public static void Request(string tag, object forObject = null, string details = "")
+            {
+                _tag = tag;
+                _targetObject = forObject;
+                _details = details;
+            }
+
+            public static void Close()
+            {
+                _tag = null;
+                _targetObject = null;
+            }
+
+            public static bool IsRequestedFor(string tag) => tag.Equals(_tag);//(!_confirmTag.IsNullOrEmpty() && _confirmTag.Equals(tag));
+
+            public static bool IsRequestedFor(string confirmationTag, object obj) =>
+                confirmationTag.Equals(_tag) && ((_targetObject != null && _targetObject.Equals(obj)) ||
+                                                        (obj == null && _targetObject == null));
+        }
+        
+        private static ChangesToken ConfirmClick()
+        {
+
+            nl();
+
+            if (BgColorReplaced)
+                SetBgColor(_previousBgColors[0]);
+
+            if (icon.Close.Click(Msg.No.GetText(), 30))
+                ConfirmationDialogue.Close();
+
+            ConfirmationDialogue.ConfirmationText.PegiLabel().writeHint(false);
+
+            if (icon.Done.Click(Msg.Yes.GetText(), 30))
+            {
+                ConfirmationDialogue.Close();
+                return true;
+            }
+
+            if (BgColorReplaced)
+                SetPreviousBgColor();
+
+            nl();
+
+
+            return false;
+        }
+
+        public static ChangesToken ClickConfirm(this TextLabel label, string confirmationTag)
+        {
+            if (ConfirmationDialogue.IsRequestedFor(confirmationTag))
+                return ConfirmClick();
+
+            if (label.ClickUnFocus())
+                ConfirmationDialogue.Request(confirmationTag, label.toolTip);
+
+            return false;
+        }
+
+        public static ChangesToken ClickConfirm(this icon icon, string confirmationTag, string toolTip = "", int width = defaultButtonSize)
+        {
+            if (ConfirmationDialogue.IsRequestedFor(confirmationTag))
+                return ConfirmClick();
+
+            if (icon.ClickUnFocus(toolTip, width))
+                ConfirmationDialogue.Request(confirmationTag, details: toolTip.IsNullOrEmpty() ? icon.GetTranslations().text : toolTip);
+
+            return false;
+        }
+
+        public static ChangesToken ClickConfirm(this icon icon, string confirmationTag, object obj, string toolTip = "", int width = defaultButtonSize)
+        {
+
+            if (ConfirmationDialogue.IsRequestedFor(confirmationTag, obj))
+                return ConfirmClick();
+
+            if (icon.ClickUnFocus(toolTip, width))
+                ConfirmationDialogue.Request(confirmationTag, obj, toolTip.IsNullOrEmpty() ? icon.GetTranslations().text : toolTip);
+
+            return false;
+        }
+
+        public static ChangesToken UnfocusOnChange(this ChangesToken token) 
+        {
+            if (token)
+                UnFocus();
+            return token;
+
+        }
+
+        public static ChangesToken UnfocusOnChange(this ChangesToken token, LatestInteractionEvent evnt)
+        {
+            if (token)
+                UnFocus();
+            return token.FeedChanges_Internal(evnt);
+        }
+
+        public static ChangesToken ClickUnFocus(this TextLabel text)
+        {
+            var cntnt = TextAndTip(text);
+
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.Click(cntnt).UnfocusOnChange(LatestInteractionEvent.Click);
+#endif
+            checkLine();
+            return new ChangesToken(GUILayout.Button(cntnt, GuiMaxWidthOptionFrom(text.label))).UnfocusOnChange(LatestInteractionEvent.Click);
+        }
+
+        public static ChangesToken ClickText(this TextLabel label, int fontSize)
+        {
+            var textAndTip = TextAndTip(label);
+
+            var style = PEGI_Styles.ScalableBlueText(fontSize);
+
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.Click(textAndTip, style.Current);
+#endif
+            checkLine();
+            var isClicked = new ChangesToken(GUILayout.Button(textAndTip, style.Current, GuiMaxWidthOptionFrom(textAndTip, style: style)));
+
+            return isClicked.FeedChanges_Internal(LatestInteractionEvent.Click);
+
+           // return textAndTip.ClickText(PEGI_Styles.ScalableBlueText(fontSize));
+        }
+
+        public static ChangesToken ClickLabelConfirm(this TextLabel label, string confirmationTag)
+        {
+            if (ConfirmationDialogue.IsRequestedFor(confirmationTag))
+                return ConfirmClick();
+
+            label.FallbackHint = ()=> "Click " + label;
+
+
+            if (label.ClickLabel())
+                ConfirmationDialogue.Request(confirmationTag);
+
+            return false;
+        }
+        
+        public static ChangesToken ClickLabel(this TextLabel label)
+        {
+            if (label.GotToolTip == false)
+                label.toolTip = "Click " + label;
+
+            using (SetBgColorDisposable(Color.clear))
+            {
+                GUIStyle st = label.GotStyle ? label.style.Current : PEGI_Styles.ClickableText.Current;
+
+                var textAndTip = TextAndTip(label);
+
+#if UNITY_EDITOR
+                if (!PaintingGameViewUI)
+                {
+                    var changes = (label.GotWidth ? PegiEditorOnly.Click(textAndTip, label.width, st) : PegiEditorOnly.Click(textAndTip, st)).UnfocusOnChange();
+                    RestoreBGColor();
+                    return changes;
+                }
+#endif
+
+                checkLine();
+
+                return new ChangesToken(label.GotWidth ?
+                    GUILayout.Button(textAndTip, st, GUILayout.MaxWidth(label.width)) :
+                    GUILayout.Button(textAndTip, st, GuiMaxWidthOptionFrom(label.label, st))
+                    ).UnfocusOnChange(LatestInteractionEvent.Click);
+            }
+        }
+
+        private static ChangesToken ClickImage(this GUIContent content, int width, GUIStyle style)
+        {
+
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.ClickImage(content, width, style);
+#endif
+            checkLine();
+
+            return new ChangesToken(GUILayout.Button(content, GUILayout.MaxWidth(width + 5), GUILayout.MaxHeight(width))).FeedChanges_Internal(LatestInteractionEvent.Click);
+        }
+
+
+        public static ChangesToken Click(System.Action action)
+        {
+            string name = "{0}()".F(action.Method.Name);
+
+            if (name.PegiLabel().Click())
+            {
+                action.Invoke();
+                return true;
+            }
+
+            return false;
+        }
+
+
+        public static ChangesToken Click(this TextLabel text, System.Action onClick)
+        {
+            text.FallbackHint = () => onClick.Method.Name;
+
+            if (text.Click()) 
+            {
+                onClick?.Invoke();
+                return true;
+            }
+            return false;
+        }
+
+        public static ChangesToken Click(this TextLabel text)
+        {
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.Click(text);
+#endif
+            checkLine();
+            return new ChangesToken(GUILayout.Button(text.label, GuiMaxWidthOptionFrom(text.label))).FeedChanges_Internal(LatestInteractionEvent.Click);
+        }
+
+      
+
+      
+
+        public static ChangesToken Click(this Texture img, int size = defaultButtonSize)
+        {
+
+            if (!img) img = icon.Empty.GetIcon();
+
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.Click(img, size);
+#endif
+
+            checkLine();
+            return new ChangesToken(GUILayout.Button(img, GUILayout.MaxWidth(size + 5), GUILayout.MaxHeight(size))).FeedChanges_Internal(LatestInteractionEvent.Click);
+
+        }
+
+        public static ChangesToken Click(this Texture img, string toolTip, int size = defaultButtonSize)
+        {
+
+            if (!img)
+                img = icon.Empty.GetIcon();
+            
+            var cnt = ImageAndTip(img, toolTip);
+
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.ClickImage(cnt, size);
+#endif
+
+            checkLine();
+            return new ChangesToken(GUILayout.Button(cnt, GUILayout.MaxWidth(size + 5), GUILayout.MaxHeight(size))).FeedChanges_Internal(LatestInteractionEvent.Click);
+        }
+
+        public static ChangesToken Click(this Texture img, string toolTip, int width, int height)
+        {
+            if (!img) img = icon.Empty.GetIcon();
+
+            var cnt = ImageAndTip(img, toolTip);
+
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.ClickImage(cnt, width, height);
+#endif
+            checkLine();
+            return new ChangesToken(GUILayout.Button(cnt, GUILayout.MaxWidth(width), GUILayout.MaxHeight(height))).FeedChanges_Internal(LatestInteractionEvent.Click);
+        }
+
+        public static ChangesToken Click(this icon icon, System.Action onClick, string toolTip)
+        {
+            if (icon.Click(toolTip: toolTip))
+            {
+                onClick?.Invoke();
+
+                return true;
+            }
+            return false;
+        }
+
+        public static ChangesToken Click(this icon icon, System.Action onClick)
+        {
+            if (icon.Click(toolTip: onClick.Method.Name)) 
+            {
+                onClick?.Invoke();
+
+                return true;
+            }
+            return false;
+        }
+
+        public static ChangesToken Click(this icon icon)
+        {
+            var tex = icon.GetIcon();
+
+            if (!tex || tex == Texture2D.whiteTexture)
+                return icon.GetText().Click();
+            
+            return Click(tex, icon.GetText().label);
+        }
+/*
+        public static bool Click(this icon icon, ref bool changed)
+        {
+            var tex = icon.GetIcon();
+
+            if (!tex || tex == Texture2D.whiteTexture)
+                return icon.GetText().Click().changes(ref changed);
+
+            return Click(tex, icon.GetText()).changes(ref changed);
+        }*/
+
+        public static ChangesToken ClickUnFocus(this icon icon)
+        {
+            var tex = icon.GetIcon();
+
+            if (!tex || tex == Texture2D.whiteTexture)
+                return icon.GetText().ClickUnFocus();
+
+            return Click(tex, icon.GetText().label).UnfocusOnChange();
+        }
+
+        public static ChangesToken ClickUnFocus(this icon icon, int size)
+        {
+            var tex = icon.GetIcon();
+
+            if (!tex || tex == Texture2D.whiteTexture)
+                return icon.GetText().ClickUnFocus();
+
+            return Click(tex, icon.GetText().label, size).UnfocusOnChange();
+        }
+
+        public static ChangesToken ClickUnFocus(this icon icon, string toolTip, int size = defaultButtonSize)
+        {
+            if (toolTip == null)
+                toolTip = icon.GetText().label;
+
+            var tex = icon.GetIcon();
+
+            if (!tex || tex == Texture2D.whiteTexture)
+            {
+                var label = icon.GetText();
+                label.toolTip = toolTip;
+                return label.ClickUnFocus();
+            }
+
+            return Click(tex, toolTip, size).UnfocusOnChange();
+        }
+
+        public static ChangesToken ClickUnFocus(this icon icon, string toolTip, int width, int height)
+        {
+            var tex = icon.GetIcon();
+
+            if (!tex || tex == Texture2D.whiteTexture)
+            {
+                var label = icon.GetText();
+                label.toolTip = toolTip;
+                return label.ClickUnFocus();
+            }
+            return Click(tex, toolTip, width, height).UnfocusOnChange();
+        }
+
+        public static ChangesToken Click(this icon icon, int size)
+        {
+            var tex = icon.GetIcon();
+
+            if (!tex || tex == Texture2D.whiteTexture)
+                return icon.GetText().ClickUnFocus();
+
+            return Click(tex, size);
+        }
+
+        public static ChangesToken Click(this icon icon, string toolTip, ref bool changed, int size = defaultButtonSize)
+        {
+            var tex = icon.GetIcon();
+
+            if (!tex || tex == Texture2D.whiteTexture)
+            {
+                return icon.GetText(toolTip).ClickUnFocus().changes_Internal(ref changed);
+            }
+
+            return Click(tex, toolTip, size).changes_Internal(ref changed);
+        }
+
+        public static ChangesToken Click(this icon icon, string toolTip, int size = defaultButtonSize)
+        {
+            var tex = icon.GetIcon();
+
+            if (!tex || tex == Texture2D.whiteTexture) 
+                return icon.GetText(toolTip).ClickUnFocus();
+
+            return Click(tex, toolTip, size);
+        }
+
+        public static ChangesToken Click(this Color col)
+        {
+            var tok = icon.Empty.GUIColor(col).BgColor(Color.clear).Click();
+
+            RestoreGUIColor();
+            RestoreBGColor();
+
+            return tok;
+        }
+
+        public static ChangesToken ClickHighlight(this Sprite sp, int width = defaultButtonSize)
+        {
+#if UNITY_EDITOR
+
+            var spr = (sp && sp.texture) ? sp.texture : icon.Empty.GetIcon();
+            if (spr && spr.Click(Msg.HighlightElement.GetText(), width).IgnoreChanges(LatestInteractionEvent.Click))
+            {
+                UnityEditor.EditorGUIUtility.PingObject(sp);
+                return true;
+            }
+#endif
+            return false;
+        }
+
+        public static ChangesToken ClickHighlight(this Texture tex, int width = defaultButtonSize)
+        {
+#if UNITY_EDITOR
+            if (tex && tex.Click(Msg.HighlightElement.GetText(), width).IgnoreChanges())
+            {
+                UnityEditor.EditorGUIUtility.PingObject(tex);
+                return true;
+            }
+#endif
+
+            return false;
+        }
+
+        public static ChangesToken ClickHighlight(this Object obj, int width = defaultButtonSize) =>
+           obj.ClickHighlight(icon.Ping.GetIcon(), width).IgnoreChanges();
+
+        public static ChangesToken ClickHighlight(this Object obj, Texture tex, int width = defaultButtonSize)
+        {
+#if UNITY_EDITOR
+            if (obj && tex.Click(Msg.HighlightElement.GetText()).IgnoreChanges())
+            {
+                UnityEditor.EditorGUIUtility.PingObject(obj);
+                return true;
+            }
+#endif
+
+            return false;
+        }
+
+        public static ChangesToken ClickHighlight(this Object obj, string hint, int width = defaultButtonSize)
+        {
+#if UNITY_EDITOR
+            if (obj && icon.Ping.Click(hint).IgnoreChanges(LatestInteractionEvent.Click))
+            {
+                UnityEditor.EditorGUIUtility.PingObject(obj);
+                return true;
+            }
+#endif
+
+            return false;
+        }
+
+        public static StateToken isAttentionWrite (this INeedAttention attention, bool canBeNull = false) 
+        {
+            string warningMsg;
+
+            if (attention.IsNullOrDestroyed_Obj())
+            {
+                if (canBeNull)
+                    return false;
+
+                warningMsg = "Object is null";
+            }
+            else
+                warningMsg = attention.NeedAttention();
+
+            if (warningMsg != null)
+            {
+                if (icon.Warning.Click("Copy to Clipboard"))
+                    SetCopyPasteBuffer(warningMsg);
+
+                warningMsg.PegiLabel(PEGI_Styles.WarningText).write();
+                return true;
+            }
+
+            return false;
+        }
+
+        public static ChangesToken Click_Enter_Attention(this INeedAttention attention, icon icon = icon.Enter, string hint = "", bool canBeNull = true)
+        {
+            if (attention.IsNullOrDestroyed_Obj())
+            {
+                if (!canBeNull)
+                    return icon.Warning.ClickUnFocus("Object is null; {0}".F(hint));
+            }
+            else
+            {
+
+                var msg = attention.NeedAttention();
+                if (msg != null)
+                {
+                    icon.Warning.draw(msg);
+                    return icon.Enter.ClickUnFocus(hint);
+                }
+            }
+
+            if (hint.IsNullOrEmpty())
+                hint = icon.GetText().label;
+
+            return icon.ClickUnFocus(hint);
+        }
+    }
+}

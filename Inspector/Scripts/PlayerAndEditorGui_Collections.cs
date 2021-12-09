@@ -1,0 +1,1676 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using QuizCanners.Utils;
+using UnityEngine;
+using Object = UnityEngine.Object;
+using QuizCanners.Migration;
+
+// ReSharper disable InconsistentNaming
+#pragma warning disable IDE1006 // Naming Styles
+#pragma warning disable IDE0019 // Use pattern matching
+#pragma warning disable IDE0018 // Inline variable declaration
+#pragma warning disable IDE0011 // Add braces
+#pragma warning disable IDE0008 // Use explicit type
+
+namespace QuizCanners.Inspect
+{
+    public static partial class pegi
+    {
+        private const string NEW_ELEMENT = "new_element";
+
+
+        #region Collection MGMT Functions 
+
+        public static int InspectedIndex => collectionInspector.Index;
+
+        internal static readonly CollectionInspector collectionInspector = new CollectionInspector();
+
+        internal static ChangesToken InspectValueInArray<T>(ref T[] array, int index, ref int inspected, CollectionInspectorMeta listMeta = null)
+        {
+            T el = array[index];
+
+            var changed = InspectValueInCollection(ref el, index, ref inspected, listMeta);
+
+            if (changed)
+                array[index] = el;
+
+            return changed;
+        }
+
+        internal static ChangesToken InspectValueInList<T>(T el, List<T> list, int index, ref int inspected,
+            CollectionInspectorMeta listMeta = null)
+        {
+
+            var changed = InspectValueInCollection(ref el, index, ref inspected, listMeta);
+
+            if (changed && typeof(T).IsValueType)
+                list[index] = el;
+
+            return changed;
+
+        }
+
+        internal static ChangesToken InspectValueInHashSet<T>(T el, HashSet<T> list, int index, ref int inspected,
+            CollectionInspectorMeta listMeta = null)
+        {
+
+            var tmp = el;
+            var changed = InspectValueInCollection(ref tmp, index, ref inspected, listMeta);
+
+            if (changed && typeof(T).IsValueType)
+            {
+                list.Remove(el);
+                list.Add(tmp);
+            }
+
+            return changed;
+
+        }
+
+        public static ChangesToken InspectValueInCollection<T>(ref T el, int index, ref int inspected, CollectionInspectorMeta listMeta = null)
+        {
+
+            var changed = ChangeTrackStart();
+
+            var isPrevious = (listMeta != null && listMeta.previouslyInspectedElement == index);
+
+            if (isPrevious)
+                SetBgColor(PreviousInspectedColor);
+
+            if (el.IsNullOrDestroyed_Obj())
+            {
+                var ed = listMeta?[index];
+                if (ed == null)
+                {
+                    if (typeof(Object).IsAssignableFrom(typeof(T)))
+                    {
+                        var tmp = el as Object;
+                        if (edit(ref tmp, typeof(T), 200))//edit(ref tmp))
+                            el = (T)(object)tmp;
+                    }
+                    else
+                    {
+                        "{0}: NULL {1}".F(index, typeof(T).ToPegiStringType()).PegiLabel(150).write();
+                    }
+                }
+                else
+                {
+                    object obj = el;
+
+                    if (ed.PEGI_inList<T>(ref obj))
+                    {
+                        el = (T)obj;
+                        isPrevious = true;
+                    }
+                }
+            }
+            else
+            {
+                var pl = el as IPEGI_ListInspect;
+
+                if (pl != null)
+                {
+                    try
+                    {
+                        pl.InspectInList(ref inspected, index);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        write(ex);
+                    }
+
+                    if (changed && (typeof(T).IsValueType))
+                        el = (T)pl;
+
+                    if (changed || inspected == index)
+                        isPrevious = true;
+
+                }
+                else
+                {
+                    var uo = el as Object;
+
+                    var pg = el as IPEGI;
+
+                    var need = el as INeedAttention;
+                    var warningText = need?.NeedAttention();
+
+                    if (warningText != null)
+                        SetBgColor(AttentionColor);
+
+                    var clickHighlightHandled = false;
+
+                    bool isShown = false;
+
+                    if (el is Object)
+                    {
+                        isShown = true;
+
+                        if (edit(ref uo, typeof(T), 200))
+                            el = (T)(object)uo;
+                    }
+
+                    var named = el as IGotName;
+                    if (named != null)
+                    {
+                        var n = named.NameForInspector;
+
+                        if (el is Object)
+                        {
+                            if (editDelayed(ref n))
+                            {
+                                named.NameForInspector = n;
+
+                                isPrevious = true;
+                            }
+                        }
+                        else
+                        {
+                            if (editDelayed(ref n))
+                            {
+                                named.NameForInspector = n;
+                                if (typeof(T).IsValueType)
+                                    el = (T)named;
+
+                                isPrevious = true;
+                            }
+                        }
+
+                        var sb = new System.Text.StringBuilder();
+
+                        var iind = el as IGotIndex;
+                        if (iind != null)
+                            sb.Append(iind.IndexForInspector.ToString() + ": ");
+
+                        var count = el as IGotCount;
+                        if (count != null)
+                            sb.Append("[x{0}] ".F(count.GetCount()));
+                        
+                        var label = sb.ToString();
+
+                        if (label.Length > 0)
+                            label.PegiLabel(70).write();
+                    }
+                    else
+                    {
+                        if (!uo && pg == null && listMeta == null)
+                        {
+                            if (!isShown && el.GetNameForInspector().PegiLabel(toolTip: Msg.InspectElement.GetText(), RemainingLength(otherElements: defaultButtonSize * 2 + 10)).ClickLabel())
+                            {
+                                inspected = index;
+                                isPrevious = true;
+                            }
+                        }
+                        else
+                        {
+
+                            if (uo)
+                            {
+                                Texture tex = uo as Texture;
+
+                                if (tex)
+                                {
+                                    if (uo.ClickHighlight(tex))
+                                        isPrevious = true;
+
+                                    clickHighlightHandled = true;
+                                }
+                            }
+                            else if (el.GetNameForInspector().PegiLabel("Inspect", RemainingLength(defaultButtonSize * 2 + 10)).ClickLabel())
+                            {
+                                inspected = index;
+                                isPrevious = true;
+                            }
+                        }
+
+                    }
+
+                    if ((warningText == null &&
+                            icon.Enter.ClickUnFocus(Msg.InspectElement)) ||
+                        (warningText != null && icon.Warning.ClickUnFocus(warningText)))
+                    {
+                        inspected = index;
+                        isPrevious = true;
+                    }
+
+                    if (!clickHighlightHandled && uo.ClickHighlight())
+                        isPrevious = true;
+
+                    if (listMeta != null && listMeta[CollectionInspectParams.showCopyPasteOptions])
+                        CopyPaste.InspectOptionsFor(ref el);
+                }
+            }
+            
+
+            RestoreBGColor();
+
+            if (listMeta != null)
+            {
+                if (listMeta.inspectedElement != -1)
+                    listMeta.previouslyInspectedElement = listMeta.inspectedElement;
+                else if (isPrevious)
+                    listMeta.previouslyInspectedElement = index;
+
+            }
+            else if (isPrevious)
+                collectionInspector.previouslyEntered = el;
+
+            return changed;
+        }
+
+        #endregion
+        
+        #region LISTS
+
+        #region List of Unity Objects
+
+        public static ChangesToken edit_List_UObj<T>(this TextLabel label, List<T> list, ref int inspected) where T : Object
+        {
+            using (collectionInspector.Write_Search_ListLabel(label, ref inspected, list))
+            {
+                return edit_or_select_List_UObj(list, ref inspected);
+            }
+        }
+
+        public static ChangesToken edit_List_UObj<T>(this TextLabel label, List<T> list) where T : Object
+        {
+            using (collectionInspector.Write_Search_ListLabel(label, list))
+            {
+                return list.edit_List_UObj();
+            }
+        }
+
+        public static ChangesToken edit_List_UObj<T>(this List<T> list) where T : Object
+        {
+            var edited = -1;
+            return edit_or_select_List_UObj(list, ref edited);
+        }
+
+        public static ChangesToken edit_List_UObj<T>(List<T> list, System.Func<T, T> lambda) where T : Object
+        {
+            var changed = ChangeTrackStart();
+
+            if (collectionInspector.CollectionIsNull(list))
+                return changed;
+
+            collectionInspector.Edit_List_Order(list);
+
+            if (list != collectionInspector.reordering)
+            {
+                collectionInspector.ListAddEmptyClick(list);
+
+                foreach (var el in collectionInspector.InspectionIndexes(list))
+                {
+                    int i = collectionInspector.Index;
+                    var ch = GUI.changed;
+
+                    var tmpEl = lambda(el);
+                    nl();
+                    if (ch || !GUI.changed) 
+                        continue;
+
+                    changed.Changed = true;
+                    list[i] = tmpEl;
+                }
+            }
+            nl();
+            return changed;
+        }
+
+        public static ChangesToken edit_or_select_List_UObj<T>(List<T> list, ref int inspected, pegi.CollectionInspectorMeta listMeta = null) where T : Object
+        {
+            var changed = ChangeTrackStart();
+
+            if (collectionInspector.CollectionIsNull(list))
+                return ChangesToken.False;
+
+            var before = inspected;
+            if (list.ClampIndexToCount(ref inspected, -1))
+                changed.Changed |= (inspected != before);
+
+            if (inspected == -1)
+            {
+
+                collectionInspector.Edit_List_Order(list, listMeta);
+
+                if (list != collectionInspector.reordering)
+                {
+                    collectionInspector.ListAddEmptyClick(list, listMeta);
+
+                    foreach (var el in collectionInspector.InspectionIndexes(list, listMeta))
+                    {
+                        var i = collectionInspector.Index;
+
+                        if (!el)
+                        {
+                            var elTmp = el;
+
+                            if (edit(ref elTmp))
+                                list[i] = elTmp;
+                        }
+                        else
+                            collectionInspector.InspectClassInList(list, i, ref inspected, listMeta);
+
+                        nl();
+                    }
+
+                    CopyPaste.InspectOptions<T>(listMeta);
+
+                }
+                else
+                    collectionInspector.List_DragAndDropOptions(list, listMeta);
+
+            }
+            else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
+
+            nl();
+            return changed;
+
+        }
+
+        #endregion
+
+        #region List
+
+        public static ChangesToken edit_List_Enum<T>(this TextLabel label, List<T> list, T defaultValue = default(T)) 
+        {
+            label.style = Styles.ListLabel;
+            label.nl();
+            return list.edit_List_Enum(defaultValue: defaultValue);
+        }
+
+        public static ChangesToken edit_List_Enum<T>(this List<T> list, T defaultValue = default(T))
+        {
+            var changed = ChangeTrackStart();
+            int toDelete = -1;
+            for (int i = 0; i < list.Count; i++)
+            {
+                var d = list[i];
+
+                icon.Delete.Click(() => toDelete = i);
+
+                if (editEnum(ref d))
+                    list[i] = d;
+
+                nl();
+            }
+
+            if (toDelete != -1)
+                list.RemoveAt(toDelete);
+
+            if ("Add {0}".F(typeof(T).ToPegiStringType()).PegiLabel().Click())
+            {
+                list.Add(list.Count == 0 ? defaultValue : list.Last());
+            }
+
+            return changed;
+        }
+
+        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, ref int inspected)
+        {
+            using (collectionInspector.Write_Search_ListLabel(label, ref inspected, list))
+            {
+                return edit_List(list, ref inspected);
+            }
+        }
+
+        public static ChangesToken edit_List<T>(List<T> list, ref int inspected) => edit_List(list, ref inspected, out _);
+        
+        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list)
+        {
+            using (collectionInspector.Write_Search_ListLabel(label, list))
+            {
+                return edit_List(list);
+            }
+        }
+
+        public static ChangesToken edit_List<T>(List<T> list)
+        {
+            var edited = -1;
+            return edit_List(list, ref edited);
+        }
+
+        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, out T added)
+        {
+            using (collectionInspector.Write_Search_ListLabel(label, list))
+            {
+                return edit_List(list, out added);
+            }
+        }
+
+        public static ChangesToken edit_List<T>(List<T> list, out T added)
+        {
+            var edited = -1;
+            return edit_List(list, ref edited, out added);
+        }
+
+        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, ref int inspected, out T added)
+        {
+            using (collectionInspector.Write_Search_ListLabel(label, ref inspected, list))
+            {
+                return edit_List(list, ref inspected, out added);
+            }
+        }
+
+        public static ChangesToken edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list)
+        {
+            var changed = ChangeTrackStart();
+            using (collectionInspector.Write_Search_ListLabel(listMeta, list)) 
+            {
+                if (listMeta == null)
+                {
+                    "List MEta is Null".PegiLabel().writeWarning(); nl();
+                }
+                else
+                    edit_List(list, ref listMeta.inspectedElement, out _, listMeta);
+            }
+            collectionInspector.End();
+            return changed;
+        }
+
+        public static ChangesToken edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list, out T added)
+        {
+            using (collectionInspector.Write_Search_ListLabel(listMeta, list))
+            {
+                return edit_List(list, ref listMeta.inspectedElement, out added, listMeta);
+            }
+        }
+
+        public static ChangesToken edit_List<T>(List<T> list, ref int inspected, out T added, CollectionInspectorMeta listMeta = null)
+        {
+            var changes = ChangeTrackStart();
+
+            added = default;
+
+            if (list == null)
+            {
+                "List of {0} is null".F(typeof(T).ToPegiStringType()).PegiLabel().write();
+
+                    return changes;
+            }
+
+            if (inspected >= list.Count)
+            {
+                inspected = -1;
+                changes.Changed = true;
+            }
+
+            if (inspected == -1)
+            {
+
+                collectionInspector.Edit_List_Order(list, listMeta);
+
+                if (list != collectionInspector.reordering)
+                {
+
+                    collectionInspector.TryShowListAddNewOption(list, ref added, listMeta);
+
+                    foreach (var el in collectionInspector.InspectionIndexes(list, listMeta))
+                    {
+                        int i = collectionInspector.Index;
+
+                        if (el.IsNullOrDestroyed_Obj())
+                        {
+                            if (!Utils.IsMonoType(list, i))
+                            {
+                                write(typeof(T).IsSubclassOf(typeof(Object))
+                                    ? "use edit_List_UObj"
+                                    : "is NUll");
+                            }
+                        }
+                        else
+                        {
+                            InspectValueInList(el, list, i, ref inspected, listMeta);
+                        }
+
+                        nl();
+                    }
+
+                    collectionInspector.TryShowListCreateNewOptions(list, ref added, listMeta);
+
+                    CopyPaste.InspectOptions<T>(listMeta);
+                }
+            }
+            else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
+
+            nl();
+            return changes;
+        }
+
+        #region Tagged Types
+
+        public static ChangesToken edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list, TaggedTypes.DerrivedList types, out T added)
+        {
+            using (collectionInspector.Write_Search_ListLabel(listMeta, list))
+            {
+                return edit_List(list, ref listMeta.inspectedElement, types, out added, listMeta);
+            }
+        }
+
+        public static ChangesToken edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list, TaggedTypes.DerrivedList types)
+        {
+            using (collectionInspector.Write_Search_ListLabel(listMeta, list))
+            {
+                return edit_List(list, ref listMeta.inspectedElement, types, out _, listMeta);
+            }
+        }
+
+        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, ref int inspected, TaggedTypes.DerrivedList types, out T added)
+        {
+            using (collectionInspector.Write_Search_ListLabel(label, ref inspected, list))
+            {
+                return edit_List(list, ref inspected, types, out added);
+            }
+        }
+
+        private static ChangesToken edit_List<T>(List<T> list, ref int inspected, TaggedTypes.DerrivedList types, out T added, CollectionInspectorMeta listMeta = null)
+        {
+            var changes = ChangeTrackStart();
+
+            added = default;
+
+            if (list == null)
+            {
+                "List of {0} is null".F(typeof(T)).PegiLabel().write();
+
+                 return changes;
+            }
+
+            if (inspected >= list.Count)
+            {
+                inspected = -1;
+                changes.Changed = true;
+            }
+
+            if (inspected == -1)
+            {
+                collectionInspector.Edit_List_Order(list, listMeta);
+
+                if (list != collectionInspector.reordering)
+                {
+                    foreach (var el in collectionInspector.InspectionIndexes(list, listMeta))
+                    {
+                        int i = collectionInspector.Index;
+
+                        if (el == null)
+                        {
+                            if (!Utils.IsMonoType(list, i))
+                            {
+                                write(typeof(T).IsSubclassOf(typeof(Object))
+                                    ? "use edit_List_UObj"
+                                    : "is NUll");
+                            }
+                        }
+                        else
+                        {
+                            InspectValueInList(el, list, i, ref inspected, listMeta);
+                        }
+                        nl();
+                    }
+
+                    collectionInspector.TryShowListCreateNewOptions(list, ref added, types, listMeta).nl();
+
+                    CopyPaste.InspectOptions<T>(listMeta);
+                }
+            }
+            else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
+
+            nl();
+            return changes;
+        }
+
+        #endregion
+
+        #endregion
+
+        #region List by Lambda 
+
+        #region SpecialLambdas
+
+        private static IList listElementsRoles;
+
+        private static Color lambda_Color(Color val)
+        {
+            edit(ref val);
+            return val;
+        }
+
+        private static Color32 lambda_Color(Color32 val)
+        {
+            edit(ref val);
+            return val;
+        }
+
+        private static int lambda_int(int val)
+        {
+            edit(ref val);
+            return val;
+        }
+
+        private static string lambda_string_role(string val)
+        {
+            var role = listElementsRoles.TryGetObj(collectionInspector.Index);
+            if (role != null)
+                role.GetNameForInspector().PegiLabel(90).edit(ref val);
+            else edit(ref val);
+
+            return val;
+        }
+
+        public static string lambda_string(string val)
+        {
+            edit(ref val);
+            return val;
+        }
+
+        public static ChangesToken edit_List(this TextLabel label, List<int> list) =>
+            label.edit_List(list, lambda_int);
+
+        public static ChangesToken edit_List(this TextLabel label, List<Color> list) =>
+            label.edit_List(list, lambda_Color);
+
+        public static ChangesToken edit_List(this TextLabel label, List<Color32> list) =>
+            label.edit_List(list, lambda_Color);
+
+        public static ChangesToken edit_List(this TextLabel label, List<string> list) =>
+            label.edit_List(list, lambda_string);
+        #endregion
+
+        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, System.Func<T, T> lambda) 
+        {
+            using (collectionInspector.Write_Search_ListLabel(label, list))
+            {
+                return edit_List(list, lambda, out _);
+            }
+        }
+
+        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, System.Func<T, T> lambda, out T added) 
+        {
+            using (collectionInspector.Write_Search_ListLabel(label, list))
+            {
+                return edit_List(list, lambda, out added);
+            }
+        }
+
+        public static ChangesToken edit_List<T>(List<T> list, System.Func<T, T> lambda, out T added)
+        {
+            var changed = ChangeTrackStart();
+
+            added = default;
+
+            if (collectionInspector.CollectionIsNull(list))
+                return changed;
+
+            collectionInspector.Edit_List_Order(list);
+
+            if (list != collectionInspector.reordering)
+            {
+                collectionInspector.TryShowListAddNewOption(list, ref added);
+
+                foreach (var el in collectionInspector.InspectionIndexes(list))
+                {
+                    int i = collectionInspector.Index;
+
+                    var ch = GUI.changed;
+                    var tmpEl = lambda(el);
+                    if (!ch && GUI.changed)
+                    {
+                        list[i] = tmpEl;
+                    }
+                    nl();
+                }
+            }
+            nl();
+            return changed;
+        }
+
+        public static ChangesToken edit_List(this TextLabel name, List<string> list, System.Func<string, string> lambda)
+        {
+            using (collectionInspector.Write_Search_ListLabel(name, list))
+            {
+                return edit_List(list, lambda);
+            }
+        }
+
+        public static ChangesToken edit_List(List<string> list, System.Func<string, string> lambda)
+        {
+            var changed = ChangeTrackStart();
+
+            if (collectionInspector.CollectionIsNull(list))
+                return ChangesToken.False;
+
+            collectionInspector.Edit_List_Order(list);
+
+            if (list != collectionInspector.reordering)
+            {
+                if (icon.Add.ClickUnFocus())
+                {
+                    list.Add("");
+                    collectionInspector.SkrollToBottom();
+                }
+
+                foreach (var el in collectionInspector.InspectionIndexes(list))
+                {
+                    int i = collectionInspector.Index;
+
+                    var ch = GUI.changed;
+                    var tmpEl = lambda(el);
+                    nl();
+                    if (ch || !GUI.changed) continue;
+
+                    changed.Changed = true;
+                    list[i] = tmpEl;
+                }
+
+            }
+
+            nl();
+            return changed;
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Hash Set
+
+        public static ChangesToken edit_HashSet<T>(HashSet<T> list, ref int inspected, out T added, CollectionInspectorMeta listMeta = null)
+        {
+            var changes = ChangeTrackStart();
+
+            added = default;
+
+            if (list == null)
+            {
+                "List of {0} is null".F(typeof(T).ToPegiStringType()).PegiLabel().write();
+
+                return changes;
+            }
+
+            if (inspected >= list.Count)
+            {
+                inspected = -1;
+                changes.Changed = true;
+            }
+
+            if (inspected == -1)
+            {
+
+                //collectionInspector.Edit_List_Order(list, listMeta);
+
+               //if (list != collectionInspector.reordering)
+                //{
+
+                   // collectionInspector.TryShowListAddNewOption(list, ref added, listMeta);
+
+                    foreach (var el in collectionInspector.InspectionIndexes(list, listMeta))
+                    {
+                        int i = collectionInspector.Index;
+
+                        if (el.IsNullOrDestroyed_Obj())
+                        {
+                            
+                            //if (!collectionInspector.IsMonoType(list, i))
+                            //{
+                                write(typeof(T).IsSubclassOf(typeof(Object))
+                                    ? "need to create edit_HashSetFor_UObj"
+                                    : "is NUll");
+                            //}
+                        }
+                        else
+                        {
+                            InspectValueInHashSet(el, list, i, ref inspected, listMeta);
+                        }
+
+                        nl();
+                    }
+
+                    //collectionInspector.TryShowListCreateNewOptions(list, ref added, listMeta);
+
+                    CopyPaste.InspectOptions<T>(listMeta);
+              //  }
+            }
+           // else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
+
+            nl();
+            return changes;
+        }
+
+
+        #endregion
+
+        #region Dictionary Generic
+        internal interface iCollectionInspector<T>
+        {
+            void Set(T val);
+        }
+
+        internal class KeyValuePairInspector<T,G> : iCollectionInspector<KeyValuePair<T,G>>, IGotReadOnlyName, ISearchable, INeedAttention
+        {
+            private KeyValuePair<T, G> _pair;
+
+            public void Set(KeyValuePair<T, G> pair)
+            {
+                _pair = pair;
+            }
+          
+            public string GetReadOnlyName()
+            {
+                return _pair.Value == null ? _pair.Key.GetNameForInspector() : _pair.Value.GetNameForInspector();
+            }
+
+            public string NeedAttention()
+            {
+
+                string msg;// = null;
+
+                if (NeedsAttention(_pair.Value, out msg))
+                    "{0} at {1}".F(msg, _pair.Key.GetNameForInspector());
+
+                return msg;
+               
+            }
+
+            public IEnumerator<object> SearchKeywordsEnumerator()
+            {
+                yield return _pair.Value;
+                yield return _pair.Key;
+            }
+        }
+
+        private static void WriteNullDictionary_Internal<T>() => "NULL {0} Dictionary".PegiLabel().write();
+        
+
+        private static int _tmpKeyInt;
+        private static readonly Dictionary<System.Type, string> dictionaryNamesForAddNewElement = new Dictionary<System.Type, string>();
+        public static ChangesToken addDictionaryPairOptions<TValue>(Dictionary<int, TValue> dic) 
+        {
+            var changed = ChangeTrackStart();
+            if (dic == null)
+            {
+                WriteNullDictionary_Internal<TValue>();
+                return changed;
+            }
+
+            "Key".PegiLabel(60).edit(ref _tmpKeyInt);
+
+            if (dic.ContainsKey(_tmpKeyInt))
+            {
+                if (icon.Refresh.Click("Find Free index"))
+                {
+                    while (dic.ContainsKey(_tmpKeyInt))
+                        _tmpKeyInt++;
+                }
+                "Key {0} already exists".F(_tmpKeyInt).PegiLabel().writeWarning();
+            }
+            else
+            {
+                if (icon.Add.Click("Add new Value"))
+                {
+                    dic.Add(_tmpKeyInt, System.Activator.CreateInstance<TValue>());
+                    while (dic.ContainsKey(_tmpKeyInt))
+                        _tmpKeyInt++;
+                }
+            }
+
+            nl();
+
+            return changed;
+
+        }
+
+        public static ChangesToken addDictionaryPairOptions<TValue>(Dictionary<string, TValue> dic, string defaultElementName) 
+        {
+            string newElementName;
+            if (!dictionaryNamesForAddNewElement.TryGetValue(typeof(TValue), out newElementName))
+                newElementName = defaultElementName;
+
+            var changed = ChangeTrackStart();
+            if (dic == null)
+            {
+                WriteNullDictionary_Internal<TValue>();
+                return changed;
+            }
+
+            if ("Key".PegiLabel(60).edit(ref newElementName).IgnoreChanges())
+                dictionaryNamesForAddNewElement[typeof(TValue)] = newElementName;
+
+            var suggestedName = "{0} {1}".F(defaultElementName.Length > 0 ? defaultElementName : NEW_ELEMENT, dic.Count);
+
+            if (!suggestedName.Equals(newElementName) && icon.Refresh.Click())
+                newElementName = suggestedName;
+
+            if (dic.ContainsKey(newElementName))
+            {
+                nl();
+                "Key {0} already exists".F(newElementName).PegiLabel().writeWarning();
+            }
+            else
+            {
+                if (icon.Add.Click("Add new Value"))
+                {
+
+                    TValue value = default(TValue);
+
+                    var t = typeof(TValue);
+
+                    if (t.IsValueType || (typeof(Object).IsAssignableFrom(t) == false && t.GetConstructor(System.Type.EmptyTypes) != null))
+                        value = System.Activator.CreateInstance<TValue>();
+                    
+                    dic.Add(newElementName, value);
+                    var name = value as IGotName;
+                    if (name != null)
+                        name.NameForInspector = newElementName;
+
+                    newElementName = defaultElementName + " " + dic.Count;
+                }
+
+            }
+
+            nl();
+
+            if (changed)
+                dictionaryNamesForAddNewElement[typeof(TValue)] = newElementName;
+
+            return changed;
+        }
+
+        public static ChangesToken edit_Dictionary<TKey, TValue>(Dictionary<TKey, TValue> dic, bool showKey = true)
+        {
+            int inspected = -1;
+            using (collectionInspector.Write_Search_DictionaryLabel(dic.ToString().PegiLabel(), ref inspected, dic))
+            {
+                return edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
+            }
+        }
+
+        public static ChangesToken edit_Dictionary<TKey, TValue>(Dictionary<TKey, TValue> dic, ref int inspected, bool showKey = true)
+        {
+            using (collectionInspector.Write_Search_DictionaryLabel(QcSharp.AddSpacesInsteadOfCapitals(dic.ToString().SimplifyTypeName()).PegiLabel(), ref inspected, dic))
+            {
+                return edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
+            }
+        }
+
+        public static ChangesToken edit_Dictionary<TKey, TValue>(this TextLabel label, Dictionary<TKey, TValue> dic, bool showKey = true)
+        {
+            int inspected = -1;
+            using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
+            {
+                return edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
+            }
+        }
+
+        public static ChangesToken edit_Dictionary<TKey, TValue>(this TextLabel label, Dictionary<TKey, TValue> dic, ref int inspected, bool showKey = true)
+        {
+            using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
+            {
+                return edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
+            }
+        }
+
+        public static ChangesToken edit_Dictionary<TKey, TValue>(this TextLabel label, Dictionary<TKey, TValue> dic, System.Func<TValue, TValue> lambda, bool showKey = false)
+        {
+            int inspected = -1;
+            using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
+            {
+                return edit_Dictionary_Internal(dic, lambda, showKey: showKey);
+            }
+        }
+
+        public static ChangesToken edit_Dictionary<G, T>(this CollectionInspectorMeta listMeta, Dictionary<G, T> dic)
+        {
+            using (collectionInspector.Write_Search_DictionaryLabel(listMeta, dic))
+            {
+                return edit_Dictionary_Internal(dic, ref listMeta.inspectedElement, showKey: listMeta[CollectionInspectParams.showDictionaryKey], listMeta: listMeta);
+            }
+        }
+
+        public static ChangesToken edit_Dictionary<TKey, TValue>(this CollectionInspectorMeta listMeta, Dictionary<TKey, TValue> dic, System.Func<TValue, TValue> lambda)
+        {
+            using (collectionInspector.Write_Search_DictionaryLabel(listMeta, dic))
+            {
+                return edit_Dictionary_Internal(dic, lambda, listMeta: listMeta);
+            }
+        }
+
+        public static ChangesToken edit_Dictionary(this CollectionInspectorMeta listMeta, Dictionary<string, string> dic)
+        {
+            using (collectionInspector.Write_Search_DictionaryLabel(listMeta, dic))
+            {
+                return edit_Dictionary_Internal(dic, lambda_string, listMeta: listMeta);
+            }
+        }
+        
+        public static ChangesToken edit_Dictionary(this TextLabel label, Dictionary<string, string> dic)
+        {
+            int inspected = -1;
+            using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
+            {
+                return edit_Dictionary_Internal(dic, lambda_string);
+            }
+        }
+
+        public static ChangesToken edit_Dictionary(this TextLabel label, Dictionary<int, string> dic, List<string> roles)
+        {
+            int inspected = -1;
+            using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
+            {
+                listElementsRoles = roles;
+                var changes = edit_Dictionary_Internal(dic, lambda_string_role, false);
+                listElementsRoles = null;
+                return changes;
+            }
+        }
+
+        internal static ChangesToken edit_Dictionary_Internal<TKey, TValue>(Dictionary<TKey, TValue> dic, System.Func<TValue, TValue> lambda, bool showKey = true, CollectionInspectorMeta listMeta = null)
+        {
+
+            if (dic == null)
+            {
+                WriteNullDictionary_Internal<TValue>();
+                return ChangesToken.False;
+            }
+
+            nl();
+
+            if (listMeta != null)
+                showKey = listMeta[CollectionInspectParams.showDictionaryKey];
+
+            var changed = ChangeTrackStart();
+
+            if (listMeta != null && listMeta.IsInspectingElement)
+            {
+
+                if (icon.Exit.Click("Exit " + listMeta.Label))
+                    listMeta.IsInspectingElement = false;
+
+                if (listMeta.IsInspectingElement && (dic.Count > listMeta.inspectedElement))
+                {
+                    var el = dic.GetElementAt(listMeta.inspectedElement);
+
+                    var val = el.Value;
+
+                    var ch = GUI.changed;
+
+                    Try_Nested_Inspect(val);
+
+                    if (new ChangesToken(!ch && GUI.changed))
+                        dic[el.Key] = val;
+                }
+            }
+            else
+            {
+                foreach (var item in collectionInspector.InspectionIndexes(dic, listMeta, new KeyValuePairInspector<TKey, TValue>()))
+                {
+                    var itemKey = item.Key;
+                    
+                    if ((listMeta != null && listMeta[CollectionInspectParams.allowDeleting]) && icon.Delete.Click(25).UnfocusOnChange())
+                        dic.Remove(itemKey);
+                    else
+                    {
+                        if (showKey)
+                            itemKey.GetNameForInspector().PegiLabel(50).write_ForCopy();
+
+                        var el = item.Value;
+                        var ch = GUI.changed;
+                        el = lambda(el);
+
+                        if (new ChangesToken(!ch && GUI.changed))
+                        {
+                            dic[itemKey] = el;
+                            break;
+                        }
+
+                        if (listMeta != null && icon.Enter.Click("Enter " + el))
+                            listMeta.inspectedElement = collectionInspector.Index;
+                    }
+                    nl();
+                }
+            }
+            return changed;
+        }
+
+        internal static ChangesToken edit_Dictionary_Internal<TKey, TValue>(Dictionary<TKey, TValue> dic, ref int inspected, bool showKey, CollectionInspectorMeta listMeta = null)
+        {
+            var changed = ChangeTrackStart();
+
+            nl();
+
+            if (dic == null)
+            {
+                WriteNullDictionary_Internal<TValue>();
+                return ChangesToken.False;
+            }
+
+            inspected = Mathf.Clamp(inspected, -1, dic.Count - 1);
+
+            if (inspected == -1)
+            {
+                string keyToReplace = null;
+                string keyToReplaceWith = null;
+
+                if (listMeta != null)
+                    showKey = listMeta[CollectionInspectParams.showDictionaryKey];
+
+                KeyValuePair<TKey, TValue> modifiedElement = new KeyValuePair<TKey, TValue>();
+                bool modified = false;
+
+                foreach (var item in collectionInspector.InspectionIndexes(dic, listMeta, new KeyValuePairInspector<TKey, TValue>()))
+                {
+                    var itemKey = item.Key;
+
+                    if ((listMeta == null || listMeta[CollectionInspectParams.allowDeleting]) 
+                        && icon.Delete.ClickConfirm(confirmationTag: "DelDicEl"+collectionInspector.Index))
+                    {
+                        dic.Remove(itemKey);
+                        return ChangesToken.True;
+                    }
+                    else
+                    {
+                        if (showKey)
+                        {
+                            bool keyHandled = false;
+
+                            var strKey = itemKey as string;
+
+                            if (strKey!= null)
+                            {
+                                IGotName iGotName = item.IsNullOrDestroyed_Obj() ? null : item.Value as IGotName;
+
+                                try
+                                {
+                                    if (iGotName != null)
+                                    {
+                                        keyHandled = true;
+
+                                        var theName = iGotName.NameForInspector;
+
+                                        if (theName.IsNullOrEmpty())
+                                        {
+                                            "NULL NAME".PegiLabel(60).write();
+                                        }
+                                        else if (!theName.Equals(strKey))
+                                        {
+                                            var strDic = dic as Dictionary<string, TValue>;
+
+                                            if (strDic.ContainsKey(theName))
+                                                "Name exists as Key".PegiLabel(90).write();
+                                            else
+                                            {
+                                                if ("Key<-".PegiLabel("Override Key with Name").ClickUnFocus())
+                                                {
+                                                    keyToReplace = strKey;
+                                                    keyToReplaceWith = theName;
+                                                }
+
+                                                if ("->Name".PegiLabel("Override Name with Key").ClickUnFocus())
+                                                    iGotName.NameForInspector = strKey;
+                                            }
+                                        }
+                                    }
+                                } catch (System.Exception ex) 
+                                {
+                                    if (icon.Warning.Click(toolTip: "Log Exception"))
+                                        Debug.LogException(ex);
+
+                                }
+                                string tmp = strKey;
+
+                                if (!keyHandled && editDelayed(ref tmp)) 
+                                {
+                                    keyToReplace = strKey;
+                                    keyToReplaceWith = tmp;
+                                }
+
+                                keyHandled = true;
+                            }
+
+                            if (!keyHandled)
+                            {
+                                itemKey.GetNameForInspector().PegiLabel(50).write_ForCopy();
+                            }
+                        }
+
+                        var el = item.Value;
+
+                        if (InspectValueInCollection(ref el, collectionInspector.Index, ref inspected, listMeta))// && typeof(TValue).IsValueType)
+                        {
+                            modifiedElement = new KeyValuePair<TKey, TValue>(item.Key, el);
+                            modified = true;
+                        }
+
+
+                    }
+                    nl();
+                }
+
+                if (modified) 
+                    dic[modifiedElement.Key] = modifiedElement.Value;
+                
+                if (keyToReplace != null)
+                {
+                    var strDic = dic as Dictionary<string, TValue>;
+                    var tmpVal = strDic[keyToReplace];
+                    strDic.Remove(keyToReplace);
+                    strDic.Add(keyToReplaceWith, tmpVal);
+                }
+
+                if ((listMeta == null || listMeta[CollectionInspectParams.showAddButton]) && typeof(TKey).Equals(typeof(string)))
+                {
+                    nl();
+                    var stringDick = dic as Dictionary<string, TValue>;
+
+                    string defaultName = (listMeta == null ? ("New " + QcSharp.AddSpacesToSentence(typeof(TValue).ToPegiStringType())) : listMeta.ElementName);
+
+                    addDictionaryPairOptions(stringDick, defaultElementName: defaultName);
+                }
+
+            }
+            else
+                collectionInspector.ExitOrDrawPEGI(dic, ref inspected);
+
+            nl();
+            return changed;
+        }
+        
+        #endregion
+
+        #region Arrays
+
+        public static ChangesToken edit_Array<T>(this TextLabel label, ref T[] array)
+        {
+            int inspected = -1;
+            using (collectionInspector.Write_Search_ListLabel(label, array))
+            {
+                return edit_Array(ref array, ref inspected);
+            }
+        }
+
+        public static ChangesToken edit_Array<T>(this TextLabel label, ref T[] array, ref int inspected)
+        {
+            using (collectionInspector.Write_Search_ListLabel(label, ref inspected, array))
+            {
+                return edit_Array(ref array, ref inspected);
+            }
+        }
+
+        public static ChangesToken edit_Array<T>(ref T[] array, ref int inspected)
+        {
+            edit_Array(ref array, ref inspected, out var changes);
+            return  changes;
+        }
+
+        public static T edit_Array<T>(ref T[] array, ref int inspected, out ChangesToken changed, CollectionInspectorMeta metaDatas = null)
+        {
+            nl();
+
+            changed = ChangesToken.False;
+
+            var added = default(T);
+
+            if (array == null)
+            {
+                if (Msg.Init.F(Msg.Array).PegiLabel().ClickUnFocus().nl())
+                    array = new T[0];
+            }
+            else
+            {
+
+                changed |= collectionInspector.ExitOrDrawPEGI(array, ref inspected);
+
+                if (inspected != -1) return added;
+
+                if (!typeof(T).IsNew())
+                {
+                    if (icon.Add.ClickUnFocus(Msg.AddEmptyCollectionElement))
+                    {
+                        array = array.ExpandBy(1);
+                        collectionInspector.SkrollToBottom();
+                    }
+                }
+                else if (icon.Create.ClickUnFocus(Msg.AddNewCollectionElement))
+                    QcSharp.AddAndInit(ref array, 1);
+
+                changed |= collectionInspector.Edit_Array_Order(ref array, metaDatas).nl();
+
+                if (array == collectionInspector._editingArrayOrder) return added;
+
+                for (var i = 0; i < array.Length; i++)
+                {
+                    changed |= InspectValueInArray(ref array, i, ref inspected, metaDatas).nl();
+                }
+            }
+
+            collectionInspector.End();
+
+            return added;
+        }
+
+        #endregion
+        
+        #region Searching
+
+        public static bool SearchMatch_ObjectList(IEnumerable list, string searchText) => list.Cast<object>().Any(e => Try_SearchMatch_Obj(e, searchText));
+
+        public static bool Try_SearchMatch_Obj(object obj, string searchText) => SearchMatch_Obj_Internal(obj, new[] { searchText });
+
+        private static bool SearchMatch_Obj_Internal(this object obj, string[] text, int[] indexes = null)
+        {
+            if (obj.IsNullOrDestroyed_Obj())
+                return false;
+
+            var matched = new bool[text.Length];
+
+            var go = QcUnity.TryGetGameObjectFromObj(obj);
+
+            if (go)
+            {
+                return 
+                SearchMatching_Internal.MatchGameObjectToStrings(go, text, ref matched) ||
+                (!indexes.IsNullOrEmpty() && SearchMatching_Internal.Internal_GotIndex(go.GetComponent<IGotIndex>(), indexes));
+            }
+            else
+            {
+                if (SearchMatching_Internal.MatchObjectToStrings(obj, text, ref matched))
+                    return true;
+
+                if (!indexes.IsNullOrEmpty() && SearchMatching_Internal.Internal_GotIndex(go.GetComponent<IGotIndex>(), indexes))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static class SearchMatching_Internal 
+        {
+            public static bool Match(object obj, string[] text, ref bool[] matched)
+            {
+                var go = QcUnity.TryGetGameObjectFromObj(obj);
+                if (go)
+                {
+                    return MatchGameObjectToStrings(go, text, ref matched);
+                } else 
+                {
+                    return MatchObjectToStrings(obj, text, ref matched);
+                }
+            }
+
+
+            public static bool MatchGameObjectToStrings(GameObject go, string[] text, ref bool[] matched)
+            {
+                if (go)
+                {
+                    return
+                    Internal_ByGotName(go.GetComponent<IGotName>(), text, ref matched) ||
+                    Internal_ReadOnlyName(go.GetComponent<IGotReadOnlyName>(), text, ref matched) ||
+                    Internal_String(go.name, text, ref matched) ||
+                    Internal_ByISearchable(go.GetComponent<ISearchable>(), text, ref matched) ||
+                    Internal_ByAttention(go.GetComponent<INeedAttention>(), text, ref matched);
+                }
+              
+                return false;
+            }
+
+            public static bool MatchObjectToStrings(object obj, string[] text, ref bool[] matched)
+            {
+               
+                if (Internal_ByGotName(QcUnity.TryGetInterfaceFrom<IGotName>(obj), text, ref matched))
+                    return true;
+
+                if (Internal_ReadOnlyName(QcUnity.TryGetInterfaceFrom<IGotReadOnlyName>(obj), text, ref matched))
+                    return true;
+
+                if (Internal_ByISearchable(QcUnity.TryGetInterfaceFrom<ISearchable>(obj), text, ref matched))
+                    return true;
+
+                if (Internal_ByAttention(QcUnity.TryGetInterfaceFrom<INeedAttention>(obj), text, ref matched))
+                    return true;
+
+                if (Internal_String(obj.ToString(), text, ref matched))
+                    return true;
+                
+                return false;
+            }
+
+
+            private static bool Internal_ByAttention(INeedAttention needAttention, string[] text, ref bool[] matched)
+                => Internal_String(needAttention?.NeedAttention(), text, ref matched);
+
+            private static bool Internal_ByGotName(IGotName gotName, string[] text, ref bool[] matched)
+                => Internal_String(gotName?.NameForInspector, text, ref matched);
+
+            private static bool Internal_ReadOnlyName(IGotReadOnlyName gotDisplayName, string[] text, ref bool[] matched) =>
+                 Internal_String(gotDisplayName?.GetReadOnlyName(), text, ref matched);
+
+            public static bool Internal_GotIndex(IGotIndex gotIndex, int[] indexes) => gotIndex != null && indexes.Any(t => gotIndex.IndexForInspector == t);
+
+
+            public static bool Internal_String(string label, string[] text, ref bool[] matched)
+            {
+
+                if (label.IsNullOrEmpty())
+                    return false;
+
+                var fullMatch = true;
+
+                for (var i = 0; i < text.Length; i++)
+                    if (!matched[i])
+                    {
+                        if (!text[i].IsSubstringOf(label))
+                            fullMatch = false;
+                        else
+                            matched[i] = true;
+                    }
+
+                return fullMatch;
+
+            }
+
+      
+
+            public static bool Internal_ByISearchable(ISearchable searchable, string[] text, ref bool[] matched)
+            {
+                if (searchable == null) return false;
+
+                var fullMatch = true;
+
+                List<string> tmpStrings = new List<string>();
+
+                List<IEnumerator<object>> enumerators = new List<IEnumerator<object>>()
+                {
+                    searchable.SearchKeywordsEnumerator()
+                };
+
+                for (var i = 0; i < text.Length; i++)
+                    if (!matched[i])
+                    {
+                        var val = text[i];
+
+                        foreach (var s in tmpStrings)
+                        {
+                            if (val.IsSubstringOf(s)) 
+                            {
+                                matched[i] = true;
+                                break;
+                            }
+                        }
+
+                        while (enumerators.Count > 0 && !matched[i]) 
+                        {
+                            var cur = enumerators[enumerators.Count - 1];
+                            bool loopingEnumerator = true;
+
+                            while (loopingEnumerator && !matched[i])
+                            {
+                                var el = cur.Current;
+
+                                if (!cur.MoveNext())
+                                {
+                                    enumerators.RemoveAt(enumerators.Count - 1);
+                                    loopingEnumerator = false;
+                                }
+
+                                if (el == null)
+                                    continue;
+
+                                if (el is string) 
+                                {
+                                    var str = el as string;
+                                    tmpStrings.Add(str);
+
+                                    if (val.IsSubstringOf(str))
+                                    {
+                                        matched[i] = true;
+                                        break;
+                                    }
+
+                                } else if (el is ISearchable) 
+                                {
+                                    enumerators.Add((el as ISearchable).SearchKeywordsEnumerator());
+                                    loopingEnumerator = false;
+                                } else 
+                                    Match(el, text, ref matched);
+                            }
+                        }
+
+                        if (!matched[i])
+                            fullMatch = false;
+                    }
+
+                return fullMatch;
+            }
+
+        }
+
+
+
+        private static readonly SearchData defaultSearchData = new SearchData();
+
+        private static readonly char[] splitCharacters = { ' ', '.' };
+
+        internal class SearchData 
+        {
+            private const string SEARCH_FIELD_FOCUS_NAME = "_pegiSearchField";
+
+
+            public static bool UnityFocusNameWillWork; // Focus name bug on first focus
+            public IEnumerable FilteredList;
+            public string SearchedText;
+            public int UncheckedElement;
+            public int InspectionIndexStart;
+            public bool FilterByNeedAttention;
+
+            private string[] _searchBys;
+            private readonly List<int> _filteredListElements = new List<int>();
+            private int _fileredForCount = -1;
+            private int _focusOnSearchBarIn;
+       
+
+            public List<int> GetFilteredList(int count)
+            {
+                if (_fileredForCount != count)
+                {
+                    OnCountChange(count);
+                }
+
+                return _filteredListElements;
+            }
+
+            public void CloseSearch()
+            {
+                FilteredList = null;
+                UnFocus();
+            }
+
+            public void ToggleSearch(IEnumerable collection, TextLabel label) => ToggleSearch(collection, label.label);
+
+            public void ToggleSearch(IEnumerable collection, string label = "")
+            {
+
+                if (collection == null)
+                    return;
+
+                var active = ReferenceEquals(collection, FilteredList);
+
+                var changed = ChangeTrackStart();
+
+                if (active && icon.FoldedOut.ClickUnFocus("{0} {1} {2}".F(icon.Hide.GetText(), icon.Search.GetText(), collection), 27) || KeyCode.UpArrow.IsDown())
+                    active = false;
+
+                if (!active && !ReferenceEquals(collection, collectionInspector.reordering) &&
+                    (icon.Search
+                        .Click("{0} {1}".F(icon.Search.GetText(), label.IsNullOrEmpty() ? collection.ToString() : label), 27)))
+                {
+                    active = true;
+                    _focusOnSearchBarIn = 2;
+                    FocusedName = SEARCH_FIELD_FOCUS_NAME;
+                }
+
+                if (active)
+                {
+                    icon.Warning.draw(toolTip: "Filter by warnings");
+                    if (toggleIcon(ref FilterByNeedAttention))
+                        Refresh();
+                }
+
+                if (changed)
+                {
+                    FilteredList = active ? collection : null;
+                }
+
+            }
+
+            public void SearchString(IEnumerable list, out bool searching, out string[] searchBy)
+            {
+                searching = false;
+
+                if (ReferenceEquals(list, FilteredList))
+                {
+
+                    nl();
+
+                    icon.Search.draw();
+
+                    NameNextForFocus(SEARCH_FIELD_FOCUS_NAME);
+
+                    if (edit(ref SearchedText) | icon.Refresh.Click("Search again", 20).nl())
+                    {
+                        UnityFocusNameWillWork = true;
+                        Refresh();
+                        _searchBys = SearchedText.Split(splitCharacters, System.StringSplitOptions.RemoveEmptyEntries);
+                    }
+
+                    if (_focusOnSearchBarIn > 0)
+                    {
+                        _focusOnSearchBarIn--;
+                        if (_focusOnSearchBarIn == 0)
+                        {
+                            FocusedName = SEARCH_FIELD_FOCUS_NAME;
+                            RepaintEditor();
+                        }
+                    }
+
+                    searching = FilterByNeedAttention || !_searchBys.IsNullOrEmpty();
+                }
+
+                searchBy = _searchBys;
+            }
+
+            private void OnCountChange(int newCount = -1)
+            {
+                _fileredForCount = newCount;
+                _filteredListElements.Clear();
+                UncheckedElement = 0;
+                InspectionIndexStart = Mathf.Max(0, Mathf.Min(InspectionIndexStart, newCount - 1));
+            }
+        
+            public void Refresh()=> OnCountChange();
+
+        }
+
+        #endregion
+        
+    }
+}
