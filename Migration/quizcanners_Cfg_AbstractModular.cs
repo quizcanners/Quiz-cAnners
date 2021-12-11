@@ -93,7 +93,7 @@ namespace QuizCanners.Migration
                 if (_types == null)
                 {
                     _types = new List<Type>();
-                    allTypes = CoreType.GetAllChildTypes();
+                    allTypes = CoreType.FindAllChildTypes();
                 }
                 else
                 {
@@ -165,7 +165,7 @@ namespace QuizCanners.Migration
                 var changed = pegi.ChangeTrackStart();
 
                 var ind = type != null ? Types.IndexOf(type) : -1;
-                if (pegi.select(ref ind, DisplayNames))
+                if (pegi.Select(ref ind, DisplayNames))
                     type = _types[ind];
 
                 return changed;
@@ -334,7 +334,7 @@ namespace QuizCanners.Migration
 
         public void Inspect()
         {
-            modulesMeta.edit_List(modules).nl();
+            modulesMeta.Edit_List(modules).Nl();
 
         }
 

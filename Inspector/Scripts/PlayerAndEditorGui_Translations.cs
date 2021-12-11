@@ -221,16 +221,16 @@ namespace QuizCanners.Inspect {
         public static string F(this Msg msg, Msg other) =>
             msg.GetText() + " " + other.GetText();
         public static void DocumentationClick(this Msg msg) => msg.Get().DocumentationClick();
-        public static void Nl(this Msg m) { m.GetText().PegiLabel().nl(); }
-        public static void Nl(this Msg m, int width) { m.GetText().PegiLabel(width: width).nl(); }
-        public static void Nl(this Msg m, string tip, int width) { m.GetText().PegiLabel(tip, width).nl(); }
-        public static void Write(this Msg m) { m.GetText().PegiLabel().write(); }
-        public static void Write(this Msg m, int width) { m.GetText().PegiLabel(width).write(); }
-        public static void Write(this Msg m, string tip, int width) { m.GetText().PegiLabel(tip, width).write(); }
-        public static pegi.ChangesToken Click(this icon icon, Msg text) => icon.ClickUnFocus(text.GetText());
+        public static void Nl(this Msg m) { m.GetText().PegiLabel().Nl(); }
+        public static void Nl(this Msg m, int width) { m.GetText().PegiLabel(width: width).Nl(); }
+        public static void Nl(this Msg m, string tip, int width) { m.GetText().PegiLabel(tip, width).Nl(); }
+        public static void Write(this Msg m) { m.GetText().PegiLabel().Write(); }
+        public static void Write(this Msg m, int width) { m.GetText().PegiLabel(width).Write(); }
+        public static void Write(this Msg m, string tip, int width) { m.GetText().PegiLabel(tip, width).Write(); }
+        public static pegi.ChangesToken Click(this Icon icon, Msg text) => icon.ClickUnFocus(text.GetText());
       //  public static bool Click(this icon icon, Msg text, ref bool changed) => icon.ClickUnFocus(text.GetText()).changes(ref changed);
-        public static pegi.ChangesToken ClickUnFocus(this icon icon, Msg text, int size = pegi.defaultButtonSize) => icon.GetIcon().Click(text.GetText(), size).UnfocusOnChange();
-        public static pegi.ChangesToken ClickUnFocus(this icon icon, Msg text, int width, int height) => icon.GetIcon().Click(text.GetText(), width, height).UnfocusOnChange();
+        public static pegi.ChangesToken ClickUnFocus(this Icon icon, Msg text, int size = pegi.defaultButtonSize) => icon.GetIcon().Click(text.GetText(), size).UnfocusOnChange();
+        public static pegi.ChangesToken ClickUnFocus(this Icon icon, Msg text, int width, int height) => icon.GetIcon().Click(text.GetText(), width, height).UnfocusOnChange();
 
         #endregion
 

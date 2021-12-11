@@ -18,32 +18,32 @@ namespace QuizCanners.Inspect
     public static partial class pegi
     {
 
-        public static ChangesToken edit_Property<T>(this TextLabel label, Expression<System.Func<T>> memberExpression, Object obj, int fieldWidth = -1, bool includeChildren = true)
+        public static ChangesToken Edit_Property<T>(this TextLabel label, Expression<System.Func<T>> memberExpression, Object obj, int fieldWidth = -1, bool includeChildren = true)
         {
             
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit_Property(TextAndTip(label), memberExpression, obj, fieldWidth, includeChildren);
+                return PegiEditorOnly.Edit_Property(TextAndTip(label), memberExpression, obj, fieldWidth, includeChildren);
 
 #endif
             return ChangesToken.False;
         }
 
-        public static ChangesToken edit_Property<T>(Expression<Func<T>> memberExpression, Object obj, int fieldWidth = -1, bool includeChildren = true)
+        public static ChangesToken Edit_Property<T>(Expression<Func<T>> memberExpression, Object obj, int fieldWidth = -1, bool includeChildren = true)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit_Property(null, memberExpression, obj, fieldWidth, includeChildren);
+                return PegiEditorOnly.Edit_Property(null, memberExpression, obj, fieldWidth, includeChildren);
 
 #endif
             return ChangesToken.False;
         }
 
-        private static ChangesToken edit_Property<T>(Expression<Func<T>> memberExpression, int width, Object obj, bool includeChildren)
+        private static ChangesToken Edit_Property<T>(Expression<Func<T>> memberExpression, int width, Object obj, bool includeChildren)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit_Property(null, memberExpression, obj, width, includeChildren);
+                return PegiEditorOnly.Edit_Property(null, memberExpression, obj, width, includeChildren);
 
 #endif
             return ChangesToken.False;
@@ -52,11 +52,11 @@ namespace QuizCanners.Inspect
 
         // Nested Members
 
-        public static ChangesToken edit_Property<T>(this TextLabel label, Expression<Func<T>> memberExpression1, string path, Object obj, int fieldWidth = -1, bool includeChildren = true)
+        public static ChangesToken Edit_Property<T>(this TextLabel label, Expression<Func<T>> memberExpression1, string path, Object obj, int fieldWidth = -1, bool includeChildren = true)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit_Property(TextAndTip(label),
+                return PegiEditorOnly.Edit_Property(TextAndTip(label),
                     new List<string> { path },
                     memberExpression1,
                     obj, fieldWidth,
@@ -68,11 +68,11 @@ namespace QuizCanners.Inspect
 
      
 
-        public static ChangesToken edit_Property<T>( Expression<Func<T>> memberExpression1, string path, Object obj, int width = -1, bool includeChildren = false)
+        public static ChangesToken Edit_Property<T>( Expression<Func<T>> memberExpression1, string path, Object obj, int width = -1, bool includeChildren = false)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit_Property(UnityEngine.GUIContent.none,
+                return PegiEditorOnly.Edit_Property(UnityEngine.GUIContent.none,
                     new List<string> { path },
                     memberExpression1, 
                     obj, width,

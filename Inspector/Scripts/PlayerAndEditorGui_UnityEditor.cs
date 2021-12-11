@@ -26,16 +26,12 @@ namespace QuizCanners.Inspect
     internal static partial class PegiEditorOnly {
 
 
-        public static Styles.Background.BackgroundStyle nextBgStyle;
-        public static Object inspectedUnityObject;
-        public static object inspectedTarget;
-        public static StateToken isFoldedOutOrEntered;
-        public static bool globChanged; // Some times user can change temporary fields, like delayed Edits
-     
-        private static int _elementIndex;
-        private static int _selectedFold = -1;
-
-        internal static bool IsNextFoldedOut => _selectedFold == _elementIndex - 1;
+        internal static Styles.Background.BackgroundStyle nextBgStyle;
+        internal static Object inspectedUnityObject;
+        internal static object inspectedTarget;
+        internal static StateToken isFoldedOutOrEntered;
+      
+        internal static bool IsNextFoldedOut => selectedFold == _elementIndex - 1;
 
         public static void ResetInspectionTarget(object target)
         {
@@ -50,14 +46,14 @@ namespace QuizCanners.Inspect
             set => isFoldedOutOrEntered = new StateToken(value);
         }
 
-        internal static void start()
+        internal static void StartObject()
         {
             _elementIndex = 0;
             _horizontalStarted = false;
             globChanged = false;
         }
 
-        internal static void end(Object obj)
+        internal static void EndObject(Object obj)
         {
             if (globChanged)
             {
@@ -71,18 +67,15 @@ namespace QuizCanners.Inspect
                 EditorUtility.SetDirty(obj);
 #endif
             }
-            nl();
+            Nl();
         }
-
 
 #if UNITY_EDITOR
 
-        
-      
-        public static SerializedObject serObj;
+        public static SerializedObject SerObj;
         private static Editor _editor;
         private static PEGI_Inspector_Material _materialEditor;
-        public static Object drawDefaultInspector;
+        public static Object DrawDefaultInspector;
 
         private static Rect GetRect(int height = 50)
         {
@@ -112,13 +105,13 @@ namespace QuizCanners.Inspect
 
             bool paintedPegi = false;
 
-            if (pgi != null && !QcUnity.IsPrefab(go))
+            if (pgi != null)
             {
-                start();
-                serObj = so;
+                StartObject();
+                SerObj = so;
                 if (!FullWindow.ShowingPopup())
                 {
-                    pegi.toggleDefaultInspector(o);
+                    Toggle_DefaultInspector(o);
 
                     var change = ChangeTrackStart();
 
@@ -133,7 +126,7 @@ namespace QuizCanners.Inspect
                         PrefabUtility.RecordPrefabInstancePropertyModifications(o);
                 }
 
-                nl();
+                Nl();
                 paintedPegi = true;
             }
 
@@ -166,11 +159,11 @@ namespace QuizCanners.Inspect
 
             if (!scrObj)
             {
-                start();
+                StartObject();
 
-                "Target is not Scriptable Object. Check your PEGI_Inspector_OS.".PegiLabel().writeWarning();
+                "Target is not Scriptable Object. Check your PEGI_Inspector_OS.".PegiLabel().WriteWarning();
                 
-                end(editor.target);
+                EndObject(editor.target);
 
                 editor.DrawDefaultInspector();
 
@@ -185,14 +178,14 @@ namespace QuizCanners.Inspect
             {
                 if (!FullWindow.ShowingPopup())
                 {
-                    start();
-                    serObj = so;
-                    pegi.toggleDefaultInspector(scrObj);
+                    StartObject();
+                    SerObj = so;
+                    Toggle_DefaultInspector(scrObj);
                     pgi.Inspect();
 
                     Nested_Inspect_Attention_MessageOnly(pgi);
 
-                    end(scrObj);
+                    EndObject(scrObj);
                 }
                 
                 return;
@@ -214,16 +207,16 @@ namespace QuizCanners.Inspect
 
             var mat = editor.unityMaterialEditor.target as Material;
 
-            start();
+            StartObject();
 
             var changed = !FullWindow.ShowingPopup() && editor.Inspect(mat);
 
-            end(mat);
+            EndObject(mat);
 
             return new ChangesToken(globChanged || changed);
         }
         
-        public static bool toggleDefaultInspector(Object target)
+        public static bool ToggleDefaultInspector(Object target)
         {
             var changed = false;
 
@@ -233,11 +226,11 @@ namespace QuizCanners.Inspect
 
             if (target is Material)
             {
-                pegi.toggle(ref PEGI_Inspector_Material.drawDefaultInspector, icon.Exit, icon.Debug,
+                pegi.Toggle(ref PEGI_Inspector_Material.drawDefaultInspector, Icon.Exit, Icon.Debug,
                     "Toggle Between regular and PEGI Material inspector", PEGI_Inspector_Material.drawDefaultInspector ? ICON_SIZE_FOR_DEFAULT : ICON_SIZE_FOR_CUSTOM);
 
                 if (PEGI_Inspector_Material.drawDefaultInspector &&
-                    BACK_TO_CUSTOM.PegiLabel(style: Styles.ExitLabel).ClickLabel().nl())
+                    BACK_TO_CUSTOM.PegiLabel(style: Styles.ExitLabel).ClickLabel().Nl())
                     PEGI_Inspector_Material.drawDefaultInspector = false;
             }
             else
@@ -245,14 +238,14 @@ namespace QuizCanners.Inspect
 
                 if (target == inspectedUnityObject)
                 {
-                    bool isDefault = target == drawDefaultInspector;
+                    bool isDefault = target == DrawDefaultInspector;
 
-                    if (pegi.toggle(ref isDefault, icon.Exit, icon.Debug,
+                    if (pegi.Toggle(ref isDefault, Icon.Exit, Icon.Debug,
                         "Toggle Between regular and PEGI inspector", isDefault ? ICON_SIZE_FOR_DEFAULT : ICON_SIZE_FOR_CUSTOM))
-                        drawDefaultInspector = isDefault ? target : null;
+                        DrawDefaultInspector = isDefault ? target : null;
 
-                    if (isDefault && BACK_TO_CUSTOM.PegiLabel(style: Styles.ExitLabel).ClickLabel().nl())
-                        drawDefaultInspector = null;
+                    if (isDefault && BACK_TO_CUSTOM.PegiLabel(style: Styles.ExitLabel).ClickLabel().Nl())
+                        DrawDefaultInspector = null;
                 }
                 else
                 {
@@ -271,13 +264,17 @@ namespace QuizCanners.Inspect
             return obj;
         }
 
-        private static ChangesToken FeedChanges_Internal(this bool result) { globChanged |= result; return new ChangesToken(result); }
+        private static ChangesToken FeedChanges_Internal(this bool result) 
+        { 
+            globChanged |= result;
+            return new ChangesToken(result); 
+        }
 
         private static ChangesToken FeedChanged() { globChanged = true; return ChangesToken.True; }
 
         private static void _START() 
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             EditorGUI.BeginChangeCheck(); 
         }
 
@@ -288,7 +285,7 @@ namespace QuizCanners.Inspect
             return new ChangesToken(val);
         }
 
-        internal static void checkLine_Editor()
+        internal static void CheckLine_Editor()
         {
             if (_horizontalStarted) 
                 return;
@@ -302,7 +299,7 @@ namespace QuizCanners.Inspect
 
         }
 
-        internal static void newLine_Editor()
+        internal static void NewLine_Editor()
         {
             if (!_horizontalStarted) 
                 return;
@@ -315,14 +312,14 @@ namespace QuizCanners.Inspect
         
         public static void UnIndent(int amount = 1) => EditorGUI.indentLevel = Mathf.Max(0, EditorGUI.indentLevel - amount);
         
-        private static readonly GUIContent textAndToolTip = new GUIContent();
+        private static readonly GUIContent _textAndToolTip = new GUIContent();
 
         //TextLabel
         private static GUIContent TextAndTip(TextLabel text)
         {
-            textAndToolTip.text = text.label;
-            textAndToolTip.tooltip = text.toolTip;
-            return textAndToolTip;
+            _textAndToolTip.text = text.label;
+            _textAndToolTip.tooltip = text.toolTip;
+            return _textAndToolTip;
         }
         #region Foldout
 
@@ -338,23 +335,23 @@ namespace QuizCanners.Inspect
             return  new StateToken(foldedOut);
         }
 
-        public static StateToken foldout(TextLabel txt)
+        public static StateToken Foldout(TextLabel txt)
         {
-            foldout(txt, ref _selectedFold, _elementIndex);
+            Foldout(txt, ref selectedFold, _elementIndex);
 
             _elementIndex++;
 
             return isFoldedOutOrEntered;
         }
 
-        public static StateToken foldout(TextLabel txt, ref bool state)
+        public static StateToken Foldout(TextLabel txt, ref bool state)
         {
             isFoldedOutOrEntered = StylizedFoldOut(state, txt);
             state = isFoldedOutOrEntered;
             return isFoldedOutOrEntered;
         }
 
-        public static StateToken foldout(TextLabel txt, ref int selected, int current)
+        public static StateToken Foldout(TextLabel txt, ref int selected, int current)
         {
 
             isFoldedOutOrEntered = new pegi.StateToken(selected == current);
@@ -373,20 +370,20 @@ namespace QuizCanners.Inspect
 
         #region Select
 
-        public static ChangesToken selectFlags(ref int no, string[] from, int width) {
+        public static ChangesToken SelectFlags(ref int no, string[] from, int width) {
             _START();
             no = EditorGUILayout.MaskField(no, from, GUILayout.MaxWidth(width));
             return _END();
         }
 
-        public static ChangesToken selectFlags(ref int no, string[] from)
+        public static ChangesToken SelectFlags(ref int no, string[] from)
         {
             _START();
             no = EditorGUILayout.MaskField(no, from);
             return _END();
         }
 
-        public static ChangesToken select<T>(ref int no, List<T> lst, int width)
+        public static ChangesToken Select<T>(ref int no, List<T> lst, int width)
         {
 
             var listNames = new List<string>();
@@ -405,7 +402,7 @@ namespace QuizCanners.Inspect
 
             }
 
-            if (select(ref current, listNames.ToArray(), width))
+            if (Select(ref current, listNames.ToArray(), width))
             {
                 no = listIndexes[current];
                 return ChangesToken.True;
@@ -415,7 +412,7 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken select<T>(ref int no, CountlessCfg<T> tree) where T : Migration.ICfg, new()
+        public static ChangesToken Select<T>(ref int no, CountlessCfg<T> tree) where T : Migration.ICfg, new()
         {
             List<int> indexes;
             var objs = tree.GetAllObjs(out indexes);
@@ -429,7 +426,7 @@ namespace QuizCanners.Inspect
                 filtered.Add("{0}: {1}".F(i, objs[i].GetNameForInspector()));
             }
 
-            if (select(ref current, filtered.ToArray()))
+            if (Select(ref current, filtered.ToArray()))
             {
                 no = indexes[current];
                 return ChangesToken.True;
@@ -437,7 +434,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken select<T>(ref int no, Countless<T> tree)
+        public static ChangesToken Select<T>(ref int no, Countless<T> tree)
         {
             List<int> indexes;
             var objs = tree.GetAllObjs(out indexes);
@@ -451,7 +448,7 @@ namespace QuizCanners.Inspect
                 filtered.Add(objs[i].GetNameForInspector());
             }
 
-            if (select(ref current, filtered.ToArray()))
+            if (Select(ref current, filtered.ToArray()))
             {
                 no = indexes[current];
                 return ChangesToken.True;
@@ -459,22 +456,41 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken select(ref int no, string[] from, int width)
+        private static void FixDuplicates(ref string[] from) 
+        {
+            var set = new HashSet<string>();
+
+            for (int i = 0; i < from.Length; i++)
+            {
+                var el = from[i];
+                if (set.Contains(el))
+                {
+                    el = "{0} ({1})".F(el, i);
+                    from[i] = el;
+                }
+
+                set.Add(el);
+            }
+        }
+
+        public static ChangesToken Select(ref int no, string[] from, int width)
         {
             _START();
-            no = EditorGUILayout.Popup(no, from, GUILayout.MaxWidth(width));
+            FixDuplicates(ref from);
+             no = EditorGUILayout.Popup(no, from, GUILayout.MaxWidth(width));
             return _END();
 
         }
 
-        public static ChangesToken select(ref int no, string[] from)
+        public static ChangesToken Select(ref int no, string[] from)
         {
             _START();
+            FixDuplicates(ref from);
             no = EditorGUILayout.Popup(no, from);
             return _END();
         }
 
-        public static ChangesToken select(ref int no, Dictionary<int, string> from)
+        public static ChangesToken Select(ref int no, Dictionary<int, string> from)
         {
             var options = new string[from.Count];
 
@@ -497,7 +513,7 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken select(ref int no, Dictionary<int, string> from, int width)
+        public static ChangesToken Select(ref int no, Dictionary<int, string> from, int width)
         {
             var options = new string[from.Count];
 
@@ -521,7 +537,7 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken select(ref int index, Texture[] tex)
+        public static ChangesToken Select(ref int index, Texture[] tex)
         {
             if (tex.Length == 0) return ChangesToken.False;
 
@@ -548,7 +564,7 @@ namespace QuizCanners.Inspect
             return new ChangesToken(before != index);
         }
 
-        private static ChangesToken select_Type(ref Type current, IReadOnlyList<Type> others, Rect rect)
+        private static ChangesToken Select_Type(ref Type current, IReadOnlyList<Type> others, Rect rect)
         {
 
             var names = new string[others.Count];
@@ -573,7 +589,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.True;
         }
 
-        private static ChangesToken select(ref Component current, IReadOnlyList<Component> others, Rect rect)
+        private static ChangesToken Select(ref Component current, IReadOnlyList<Component> others, Rect rect)
         {
 
             var names = new string[others.Count];
@@ -604,16 +620,16 @@ namespace QuizCanners.Inspect
 
         public static void Space()
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             EditorGUILayout.Separator();
-            nl();
+            Nl();
         }
 
         #region Edit
 
         #region Values
 
-        public static ChangesToken edit_Scene(ref string path)
+        public static ChangesToken Edit_Scene(ref string path)
         {
             _START();
 
@@ -628,7 +644,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken edit_Scene(ref string path, int width)
+        public static ChangesToken Edit_Scene(ref string path, int width)
         {
             _START();
 
@@ -643,28 +659,28 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken editTag(ref string tag)
+        public static ChangesToken EditTag(ref string tag)
         {
             _START();
             tag = EditorGUILayout.TagField(tag);
             return _END();
         }
 
-        public static ChangesToken editLayerMask(ref int val)
+        public static ChangesToken EditLayerMask(ref int val)
         {
             _START();
             val = EditorGUILayout.LayerField(val);
             return _END();
         }
 
-        public static ChangesToken edit(ref string text)
+        public static ChangesToken Edit(ref string text)
         {
             _START();
             text = EditorGUILayout.TextField(text);
             return _END();
         }
 
-        public static ChangesToken edit(TextLabel label, ref string text)
+      /*  public static ChangesToken edit(TextLabel label, ref string text)
         {
             _START();
             if (label.TryGetLabel(out var txt))
@@ -673,51 +689,61 @@ namespace QuizCanners.Inspect
                 text = EditorGUILayout.TextField(text);
 
              return _END();
-        }
+        }*/
 
-        public static ChangesToken edit(ref string text, int width)
+        public static ChangesToken Edit(ref string text, int width)
         {
             _START();
             text = EditorGUILayout.TextField(text, GUILayout.MaxWidth(width));
             return _END();
         }
 
-        public static ChangesToken editBig(ref string text, int height = 100)
+        public static ChangesToken EditBig(ref string text, int height = 100)
         {
             _START();
             text = EditorGUILayout.TextArea(text, GUILayout.MaxHeight(height));
             return _END();
         }
         
-        public static ChangesToken edit<T>(ref T field, bool allowSceneObjects = true) where T : Object
+        public static ChangesToken Edit<T>(ref T field, bool allowSceneObjects = true) where T : Object
         {
             _START();
             field = (T)EditorGUILayout.ObjectField(field, typeof(T), allowSceneObjects);
             return _END();
         }
 
-        public static ChangesToken edit(ref Object field, Type type, bool allowSceneObjects = true)
+        public static ChangesToken Edit(ref Object field, Type type, bool allowSceneObjects = true)
         {
             _START();
             field = EditorGUILayout.ObjectField(field, type, allowSceneObjects);
             return _END();
         }
 
-        public static ChangesToken edit<T>(ref T field, Type type, int width, bool allowSceneObjects = true) where T : Object
+        public static ChangesToken Edit<T>(ref T field, Type type, int width, bool allowSceneObjects = true) where T : Object
         {
             _START();
             field = (T)EditorGUILayout.ObjectField(field, type, allowSceneObjects, GUILayout.MaxWidth(width));
             return _END();
         }
 
-        public static ChangesToken edit<T>(ref T field, int width, bool allowSceneObjects = true) where T : Object
+        public static ChangesToken Edit<T>(ref T field, int width, bool allowSceneObjects = true) where T : Object
         {
             _START();
             field = (T)EditorGUILayout.ObjectField(field, typeof(T), allowSceneObjects, GUILayout.MaxWidth(width));
             return _END();
         }
 
-        public static ChangesToken edit(TextLabel label, ref float val)
+        public static ChangesToken Edit(TextLabel label, ref AnimationCurve curve)
+        {
+            _START();
+            if (label.TryGetLabel(out var txt))
+                curve = EditorGUILayout.CurveField(txt, curve);
+            else
+                curve = EditorGUILayout.CurveField(curve);
+            return _END();
+        }
+
+        public static ChangesToken Edit(TextLabel label, ref float val)
         {
             _START();
             if (label.TryGetLabel(out var txt))
@@ -727,56 +753,56 @@ namespace QuizCanners.Inspect
             return _END();
         }
 
-        public static ChangesToken edit(ref float val)
+        public static ChangesToken Edit(ref float val)
         {
             _START();
             val = EditorGUILayout.FloatField(val);
             return _END();
         }
 
-        public static ChangesToken edit(ref float val, int width)
+        public static ChangesToken Edit(ref float val, int width)
         {
             _START();
             val = EditorGUILayout.FloatField(val, GUILayout.MaxWidth(width));
             return _END();
         }
 
-        public static ChangesToken edit(ref double val, int width)
+        public static ChangesToken Edit(ref double val, int width)
         {
             _START();
             val = EditorGUILayout.DoubleField(val, GUILayout.MaxWidth(width));
             return _END();
         }
 
-        public static ChangesToken edit(ref double val)
+        public static ChangesToken Edit(ref double val)
         {
             _START();
             val = EditorGUILayout.DoubleField(val);
             return _END();
         }
         
-        public static ChangesToken edit(ref int val, int minInclusive, int maxInclusive)
+        public static ChangesToken Edit(ref int val, int minInclusive, int maxInclusive)
         {
             _START();
             val = EditorGUILayout.IntSlider(val, minInclusive, maxInclusive); 
             return _END();
         }
 
-        public static ChangesToken edit(ref uint val, uint min, uint max)
+        public static ChangesToken Edit(ref uint val, uint min, uint max)
         {
             _START();
             val = (uint)EditorGUILayout.IntSlider((int)val, (int)min, (int)max); 
             return _END();
         }
 
-        public static ChangesToken edit(ref float val, float min, float max)
+        public static ChangesToken Edit(ref float val, float min, float max)
         {
             _START();
             val = EditorGUILayout.Slider(val, min, max);
             return _END();
         }
 
-        public static ChangesToken edit(ref double val, double min, double max)
+        public static ChangesToken Edit(ref double val, double min, double max)
         {
             _START();
 
@@ -808,7 +834,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken edit(ref Color col)
+        public static ChangesToken Edit(ref Color col)
         {
 
             _START();
@@ -817,7 +843,7 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken edit(TextLabel label, ref Vector3 vec)
+        public static ChangesToken Edit(TextLabel label, ref Vector3 vec)
         {
 
             _START();
@@ -827,7 +853,7 @@ namespace QuizCanners.Inspect
 
         }
         
-        public static ChangesToken edit(ref Color col, int width)
+        public static ChangesToken Edit(ref Color col, int width)
         {
 
             _START();
@@ -846,10 +872,10 @@ namespace QuizCanners.Inspect
         }
         */
      
-        public static ChangesToken edit(ref Dictionary<int, string> dic, int atKey)
+        public static ChangesToken Edit(ref Dictionary<int, string> dic, int atKey)
         {
             var before = dic[atKey];
-            if (editDelayed(ref before))
+            if (EditDelayed(ref before))
             {
                 dic[atKey] = before;
                 return FeedChanged();
@@ -857,42 +883,42 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken edit(ref int val)
+        public static ChangesToken Edit(ref int val)
         {
             _START();
             val = EditorGUILayout.IntField(val);
             return _END();
         }
 
-        public static ChangesToken edit(ref uint val)
+        public static ChangesToken Edit(ref uint val)
         {
             _START();
             val = (uint)EditorGUILayout.IntField((int)val);
             return _END();
         }
 
-        public static ChangesToken edit(ref long val)
+        public static ChangesToken Edit(ref long val)
         {
             _START();
             val = EditorGUILayout.LongField(val);
             return _END();
         }
 
-        public static ChangesToken edit(ref int val, int width)
+        public static ChangesToken Edit(ref int val, int width)
         {
             _START();
             val = EditorGUILayout.IntField(val, GUILayout.MaxWidth(width));
             return _END();
         }
 
-        public static ChangesToken edit(ref long val, int width)
+        public static ChangesToken Edit(ref long val, int width)
         {
             _START();
             val = EditorGUILayout.LongField(val, GUILayout.MaxWidth(width));
             return _END();
         }
 
-        public static ChangesToken edit(ref uint val, int width)
+        public static ChangesToken Edit(ref uint val, int width)
         {
             _START();
             val = (uint)EditorGUILayout.IntField((int)val, GUILayout.MaxWidth(width));
@@ -907,7 +933,7 @@ namespace QuizCanners.Inspect
             return EndCheckLine();
         }
         */
-        public static ChangesToken edit(TextLabel label, ref Vector4 val)
+        public static ChangesToken Edit(TextLabel label, ref Vector4 val)
         {
             _START();
             label.TryGetLabel(out var txt);
@@ -916,28 +942,28 @@ namespace QuizCanners.Inspect
             return _END();
         }
 
-        public static ChangesToken edit(TextLabel label, ref Vector2 val)
+        public static ChangesToken Edit(TextLabel label, ref Vector2 val)
         {
             _START();
             val = EditorGUILayout.Vector2Field(label.label, val);
             return _END();
         }
 
-        public static ChangesToken edit(TextLabel label, ref Vector2Int val)
+        public static ChangesToken Edit(TextLabel label, ref Vector2Int val)
         {
             _START();
             val = EditorGUILayout.Vector2IntField(label.label, val);
             return _END();
         }
 
-        public static ChangesToken edit(ref Vector4 val) => "X".PegiLabel(15).edit(ref val.x).nl() | "Y".PegiLabel(15).edit(ref val.y).nl() | "Z".PegiLabel(15).edit(ref val.z).nl() | "W".PegiLabel(15).edit(ref val.w).nl();
+        public static ChangesToken Edit(ref Vector4 val) => "X".PegiLabel(15).Edit(ref val.x).Nl() | "Y".PegiLabel(15).Edit(ref val.y).Nl() | "Z".PegiLabel(15).Edit(ref val.z).Nl() | "W".PegiLabel(15).Edit(ref val.w).Nl();
         #endregion
 
         #region Delayed
 
         // private static string _editedText;
         // private static string _editedHash = "";
-        public static ChangesToken editDelayed(ref string text)
+        public static ChangesToken EditDelayed(ref string text)
         {
 
             _START();
@@ -965,7 +991,7 @@ namespace QuizCanners.Inspect
               return false;//(String.Compare(before, text) != 0);*/
         }
 
-        public static ChangesToken editDelayed(ref string text, int width)
+        public static ChangesToken EditDelayed(ref string text, int width)
         {
             _START();
             text = EditorGUILayout.DelayedTextField(text, GUILayout.MaxWidth(width));
@@ -983,7 +1009,7 @@ namespace QuizCanners.Inspect
 
         // static int editedIntegerIndex;
         // static int editedInteger;
-        public static ChangesToken editDelayed(ref int val, int width)
+        public static ChangesToken EditDelayed(ref int val, int width)
         {
 
             _START();
@@ -1019,7 +1045,7 @@ namespace QuizCanners.Inspect
         //private static int _editedFloatIndex;
         //private static float _editedFloat;
 
-        public static ChangesToken editDelayed(ref float val)
+        public static ChangesToken EditDelayed(ref float val)
         {
 
             _START();
@@ -1027,7 +1053,7 @@ namespace QuizCanners.Inspect
             return _END();
         }
 
-        public static ChangesToken editDelayed(ref float val, int width)
+        public static ChangesToken EditDelayed(ref float val, int width)
         {
 
             _START();
@@ -1056,7 +1082,7 @@ namespace QuizCanners.Inspect
              return false;*/
         }
 
-        public static ChangesToken editDelayed(ref double val)
+        public static ChangesToken EditDelayed(ref double val)
         {
 
             _START();
@@ -1064,7 +1090,7 @@ namespace QuizCanners.Inspect
             return _END();
         }
 
-        public static ChangesToken editDelayed(ref double val, int width)
+        public static ChangesToken EditDelayed(ref double val, int width)
         {
 
             _START();
@@ -1079,13 +1105,13 @@ namespace QuizCanners.Inspect
 
         #region Property
 
-        public static ChangesToken edit_Property<T>(GUIContent content, List<string> memberPath, Expression<Func<T>> memberExpression, Object obj, int width, bool includeChildren)
+        public static ChangesToken Edit_Property<T>(GUIContent content, List<string> memberPath, Expression<Func<T>> memberExpression, Object obj, int width, bool includeChildren)
         {
-            SerializedObject serializedObject = (!obj ? serObj : GetSerObj(obj));
+            SerializedObject serializedObject = (!obj ? SerObj : GetSerObj(obj));
 
             if (serializedObject == null)
             {
-                "No SerObj".PegiLabel(90).write();
+                "No SerObj".PegiLabel(90).Write();
                 return ChangesToken.False;
             }
 
@@ -1106,9 +1132,9 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken edit_Property<T>(GUIContent content, Expression<Func<T>> memberExpression, Object obj, int width, bool includeChildren)
+        public static ChangesToken Edit_Property<T>(GUIContent content, Expression<Func<T>> memberExpression, Object obj, int width, bool includeChildren)
         {
-            var serializedObject = (!obj ? serObj : GetSerObj(obj));
+            var serializedObject = (!obj ? SerObj : GetSerObj(obj));
 
             SerializedProperty property = GetProperty(serializedObject, memberExpression);
 
@@ -1121,7 +1147,7 @@ namespace QuizCanners.Inspect
         {
             if (serializedObject == null)
             {
-                "No SerObj".PegiLabel(90).write();
+                "No SerObj".PegiLabel(90).Write();
                 return null;
             }
 
@@ -1133,7 +1159,7 @@ namespace QuizCanners.Inspect
             var property = serializedObject.FindProperty(name);
 
             if (property == null)
-                "{0} not found".F(name).PegiLabel().write();
+                "{0} not found".F(name).PegiLabel().Write();
 
             return property;
         }
@@ -1142,7 +1168,7 @@ namespace QuizCanners.Inspect
         {
             if (serializedProperty == null)
             {
-                "No SerProp".PegiLabel(90).write();
+                "No SerProp".PegiLabel(90).Write();
                 return null;
             }
 
@@ -1159,7 +1185,7 @@ namespace QuizCanners.Inspect
             var property = serializedProperty.FindPropertyRelative(name); 
 
             if (property == null)
-                "{0} not found".F(name).PegiLabel(90).write();
+                "{0} not found".F(name).PegiLabel(90).Write();
 
             return property;
         }
@@ -1204,7 +1230,7 @@ namespace QuizCanners.Inspect
             {
                 case System.Reflection.MemberTypes.Field: name = member.Name; break;
                 case System.Reflection.MemberTypes.Property: name = "m_{0}{1}".F(char.ToUpper(member.Name[0]), member.Name.Substring(1)); break;
-                default: "Not Impl {0}".F(member.MemberType.ToString().SimplifyTypeName()).PegiLabel(90).write(); return null;
+                default: "Not Impl {0}".F(member.MemberType.ToString().SimplifyTypeName()).PegiLabel(90).Write(); return null;
             }
 
             return name;
@@ -1240,14 +1266,14 @@ namespace QuizCanners.Inspect
 
         #region Toggle
        
-        public static ChangesToken toggle(ref bool val)
+        public static ChangesToken Toggle(ref bool val)
         {
             _START();
             val = EditorGUILayout.Toggle(val, GUILayout.MaxWidth(40));
             return _END();
         }
 
-        public static ChangesToken toggle(ref bool val, GUIContent cnt)
+        public static ChangesToken Toggle(ref bool val, GUIContent cnt)
         {
             _START();
             val = EditorGUILayout.Toggle(cnt, val);
@@ -1259,25 +1285,25 @@ namespace QuizCanners.Inspect
         #region Click
         public static ChangesToken Click(TextLabel label)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             return GUILayout.Button(label.label).FeedChanges_Internal();
         }
 
         public static ChangesToken Click(GUIContent content)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             return GUILayout.Button(content).FeedChanges_Internal();
         }
 
         public static ChangesToken Click(GUIContent content, GUIStyle style)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             return GUILayout.Button(content, style).FeedChanges_Internal();
         }
 
         public static ChangesToken Click(GUIContent content, int width, GUIStyle style)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             return GUILayout.Button(content, style, GUILayout.MaxWidth(width)).FeedChanges_Internal();
         }
 
@@ -1286,7 +1312,7 @@ namespace QuizCanners.Inspect
             if (style == null)
                 style = Styles.ImageButton.Current;
 
-            checkLine_Editor();
+            CheckLine_Editor();
             return GUILayout.Button(image, style, GUILayout.MaxHeight(width), GUILayout.MaxWidth(width + 10)).FeedChanges_Internal();
         }
 
@@ -1297,7 +1323,7 @@ namespace QuizCanners.Inspect
             if (style == null)
                 style = Styles.ImageButton.Current;
 
-            checkLine_Editor();
+            CheckLine_Editor();
 
             return GUILayout.Button(cnt, style, GUILayout.MaxWidth(width + 10), GUILayout.MaxHeight(height)).FeedChanges_Internal();
         }
@@ -1317,15 +1343,15 @@ namespace QuizCanners.Inspect
             return imageAndTip;
         }
 
-        public static void write<T>(T field) where T : Object
+        public static void Write<T>(T field) where T : Object
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             EditorGUILayout.ObjectField(field, typeof(T), false);
         }
 
-        public static void write(TextLabel text)
+        public static void Write(TextLabel text)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             if (text.GotWidth)
             {
                 EditorGUILayout.LabelField(text.label, EditorStyles.miniLabel, GUILayout.MaxWidth(text.width));
@@ -1336,19 +1362,19 @@ namespace QuizCanners.Inspect
         }
 
         public static void ProgressBar(TextLabel text, float value) {
-            checkLine_Editor();
+            CheckLine_Editor();
             EditorGUI.ProgressBar(GetRect(height: 25), Mathf.Clamp01(value), text.label);
         }
 
-        public static void write(GUIContent cnt)
+        public static void Write(GUIContent cnt)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             EditorGUILayout.LabelField(cnt, Styles.ClippingText.Current);
         }
 
-        public static void draw(Texture tex, string tip, int width, int height)
+        public static void Draw(Texture tex, string tip, int width, int height)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             var cnt = ImageAndTip(tex, tip);
             GUI.enabled = false;
             using (SetBgColorDisposable(Color.clear))
@@ -1358,49 +1384,58 @@ namespace QuizCanners.Inspect
             GUI.enabled = true;
         }
 
-        public static void draw(Texture tex, int width, bool alphaBlend)
+        public static void Draw(Texture tex, int width, bool alphaBlend)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             var rect = EditorGUILayout.GetControlRect(GUILayout.MaxWidth(width), GUILayout.MaxHeight(width));
             GUI.DrawTexture(rect, tex, ScaleMode.ScaleToFit, alphaBlend: alphaBlend);
         }
 
-        public static void write(GUIContent cnt, int width)
+        public static void Write(GUIContent cnt, int width)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             EditorGUILayout.LabelField(cnt, Styles.ClippingText.Current, GUILayout.MaxWidth(width));
         }
 
-        public static void write_ForCopy(TextLabel text)
+        public static void Write_ForCopy(TextLabel text)
         {
-            checkLine_Editor();
-            EditorGUILayout.SelectableLabel(text.label, Styles.ClippingText.Current);
+            CheckLine_Editor();
+
+            var style = text.GotStyle ? text.style.Current : Styles.ClippingText.Current;
+
+            if (text.GotWidth)
+            {
+                EditorGUILayout.SelectableLabel(text.label, style, GUILayout.MaxWidth(text.width));
+            } else 
+            {
+                EditorGUILayout.SelectableLabel(text.label, style);
+            }
         }
 
-        public static void write(GUIContent cnt, int width, GUIStyle style)
+        public static void Write(GUIContent cnt, int width, GUIStyle style)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             EditorGUILayout.LabelField(cnt, style, GUILayout.MaxWidth(width));
         }
 
-        public static void write(GUIContent cnt, GUIStyle style)
+        public static void Write(GUIContent cnt, GUIStyle style)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             EditorGUILayout.LabelField(cnt, style);
         }
 
-        public static void writeHint(TextLabel text, MessageType type)
+        public static void WriteHint(TextLabel text, MessageType type)
         {
-            checkLine_Editor();
+            CheckLine_Editor();
             EditorGUILayout.HelpBox(text.label, type);
         }
         #endregion
 
-        private static bool searchInChildren;
+        private static bool _searchInChildren;
 
         public static IEnumerable<T> DropAreaGUI<T>() where T : Object
         {
-            nl();
+            Nl();
 
             var evt = Event.current;
             var drop_area = GUILayoutUtility.GetRect(0.0f, 50.0f, GUILayout.ExpandWidth(true));
@@ -1410,7 +1445,7 @@ namespace QuizCanners.Inspect
             if (isComponent) 
             {
                 GUILayout.Box("Drag & Drop area for Game Object with {0} is above".F(collectionInspector.GetCurrentListLabel<T>(null)));
-                "Search in children".PegiLabel(120).toggle(ref searchInChildren).nl();
+                "Search in children".PegiLabel(120).Toggle(ref _searchInChildren).Nl();
             }
             else
                 GUILayout.Box("Drag & Drop area for {0} is above".F(collectionInspector.GetCurrentListLabel<T>(null)));
@@ -1436,7 +1471,7 @@ namespace QuizCanners.Inspect
                                 var go = o as GameObject;
 
                                 if (!go) continue;
-                                foreach (var c in (searchInChildren
+                                foreach (var c in (_searchInChildren
                                     ? go.GetComponentsInChildren(typeof(T))
                                     : go.GetComponents(typeof(T)))) {
 
@@ -1451,17 +1486,17 @@ namespace QuizCanners.Inspect
 
         #region Reordable List
 
-        private static readonly Dictionary<System.Collections.IList, ReorderableList> ReorderableLists = new Dictionary<System.Collections.IList, ReorderableList>();
+        private static readonly Dictionary<System.Collections.IList, ReorderableList> _reorderableLists = new Dictionary<System.Collections.IList, ReorderableList>();
 
         private static ReorderableList GetReordable<T>(this List<T> list, CollectionInspectorMeta metaDatas)
         {
             ReorderableList rl;
-            ReorderableLists.TryGetValue(list, out rl);
+            _reorderableLists.TryGetValue(list, out rl);
 
             if (rl != null) return rl;
 
             rl = new ReorderableList(list, typeof(T), metaDatas == null || metaDatas[CollectionInspectParams.allowReordering], true, false, false);//metaDatas == null || metaDatas.allowDelete);
-            ReorderableLists.Add(list, rl);
+            _reorderableLists.Add(list, rl);
 
             rl.drawHeaderCallback += DrawHeader;
             rl.drawElementCallback += DrawElement;
@@ -1489,7 +1524,7 @@ namespace QuizCanners.Inspect
                 collectionInspector.selectedEls[ind] = val; //SetSelected(ind, val);
         }
 
-        public static bool reorder_List<T>(List<T> l, CollectionInspectorMeta metas)
+        public static bool Reorder_List<T>(List<T> l, CollectionInspectorMeta metas)
         {
             _listMetaData = metas;
 
@@ -1513,7 +1548,7 @@ namespace QuizCanners.Inspect
                 _currentReorderedType = type;
                 _currentReorderedList = l;
                 if (metas == null)
-                   pegi.collectionInspector.selectedEls.Clear();
+                    collectionInspector.selectedEls.Clear();
 
             }
 
@@ -1541,12 +1576,12 @@ namespace QuizCanners.Inspect
             if (el != null)
             {
 
-                var ty = el.GetType();
+                Type ty = el.GetType();
 
                 bool exactType = ty == _currentReorderedType;
 
-                textAndToolTip.text = "{0} {1}".F(exactType ? "" : (ty.ToPegiStringType() + ":" ), el.GetNameForInspector());
-                textAndToolTip.tooltip = el.ToString();
+                _textAndToolTip.text = "{0} {1}".F(el.GetNameForInspector(), exactType ? "" : " {0} ".F(ty.ToPegiStringType()));
+                _textAndToolTip.tooltip = el.ToString();
 
                 var uo = el as Object;
                 if (uo)
@@ -1555,22 +1590,28 @@ namespace QuizCanners.Inspect
                     var go = cmp ? cmp.gameObject : uo as GameObject;
 
                     if (!go)
-                        EditorGUI.ObjectField(rect, textAndToolTip, uo, _currentReorderedType, true);
+                        EditorGUI.ObjectField(rect, _textAndToolTip, uo, _currentReorderedType, true);
                     else
                     {
                         var mbs = go.GetComponents<Component>();
 
                         if (mbs.Length > 1)
                         {
-                            rect.width = 100;
-                            EditorGUI.LabelField(rect, textAndToolTip);
-                            rect.x += 100;
+                            rect.width = Screen.width*0.5f;
 
-                            if (select(ref cmp, mbs, rect))
+                            rect.y -= 2;
+                            EditorGUI.LabelField(rect, _textAndToolTip);
+                            rect.y += 2;
+
+                            rect.x += Screen.width * 0.5f;
+
+                            rect.width = Math.Max(rect.width - 80, 10);
+
+                            if (Select(ref cmp, mbs, rect))
                                 _currentReorderedList[index] = cmp;
                         }
                         else
-                            EditorGUI.ObjectField(rect, textAndToolTip, uo, _currentReorderedType, true);
+                            EditorGUI.ObjectField(rect, _textAndToolTip, uo, _currentReorderedType, true);
                     }
                 }
                 else
@@ -1578,18 +1619,18 @@ namespace QuizCanners.Inspect
                     if (_currentReorderedListTypes != null)
                     {
 
-                        textAndToolTip.text = el.GetNameForInspector();
+                        _textAndToolTip.text = el.GetNameForInspector();
 
                         rect.width = 100;
-                        EditorGUI.LabelField(rect, textAndToolTip);
+                        EditorGUI.LabelField(rect, _textAndToolTip);
                         rect.x += 100;
                         rect.width = 100;
 
-                        if (select_Type(ref ty, _currentReorderedListTypes, rect))
+                        if (Select_Type(ref ty, _currentReorderedListTypes, rect))
                             Migration.TaggedTypesExtensions.TryChangeObjectType(_currentReorderedList, index, ty);
                     }
                     else
-                        EditorGUI.LabelField(rect, textAndToolTip);
+                        EditorGUI.LabelField(rect, _textAndToolTip);
                 }
             }
             else

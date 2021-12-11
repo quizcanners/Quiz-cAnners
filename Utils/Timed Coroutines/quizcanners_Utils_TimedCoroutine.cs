@@ -426,11 +426,11 @@ namespace QuizCanners.Utils
         public void InspectInList(ref int edited, int ind)
         {
 
-            if (icon.Enter.Click())
+            if (Icon.Enter.Click())
                 edited = ind;
 
             if (Exited)
-                (DoneFully ? icon.Done : icon.Empty).draw();
+                (DoneFully ? Icon.Done : Icon.Empty).Draw();
 
             "{4}: {5} {2} {3} [{0}y {1}f]".F(
                 _yields, // 0
@@ -440,19 +440,19 @@ namespace QuizCanners.Utils
                 NameForInspector, // 4
                 _state // 5
                 ) // 4
-                .PegiLabel(_state).write();
+                .PegiLabel(_state).Write();
                 
         }
 
         public void Inspect()
         {
-            if (!Exited && !_stopAndCancel && "Stop & Cancel".PegiLabel().Click().nl())
+            if (!Exited && !_stopAndCancel && "Stop & Cancel".PegiLabel().Click().Nl())
                 _stopAndCancel = true;
 
-            if (!Exited && "Yield".PegiLabel().Click().nl())
+            if (!Exited && "Yield".PegiLabel().Click().Nl())
                 MoveNext();
 
-            _state.PegiLabel().writeBig();
+            _state.PegiLabel().WriteBig();
 
         }
         #endregion

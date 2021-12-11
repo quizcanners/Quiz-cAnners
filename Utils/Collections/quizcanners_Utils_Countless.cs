@@ -6,14 +6,14 @@ using QuizCanners.Inspect;
 using QuizCanners.Migration;
 using UnityEngine;
 
-namespace QuizCanners.Utils {
-
+namespace QuizCanners.Utils 
+{
 
 #pragma warning disable IDE0034 // Simplify 'default' expression
 #pragma warning disable IDE0018 // Inline variable declaration
 
-    
-    public abstract class CountlessBase : IPEGI, IGotCount {
+    public abstract class CountlessBase : IPEGI, IGotCount 
+    {
         private static VariableBranch[] _branchPool = new VariableBranch[32];
         private static VariableBranch[] _fruitPool = new VariableBranch[32];
         private static int _brPoolMax;
@@ -24,7 +24,7 @@ namespace QuizCanners.Utils {
         protected void DiscardFruit(VariableBranch b, int no)
         {
             if ((_frPoolMax + 1) >= _fruitPool.Length)
-                _fruitPool = _fruitPool.ExpandBy(32);
+                QcSharp.ExpandBy(ref _fruitPool, 32);
 
             _fruitPool[_frPoolMax] = b.br[no];
             var vb = _fruitPool[_frPoolMax];
@@ -38,7 +38,7 @@ namespace QuizCanners.Utils {
         protected static void DiscardBranch(VariableBranch b, int no)
         {
             if ((_brPoolMax + 1) >= _branchPool.Length)
-                _branchPool = _branchPool.ExpandBy(32);
+                QcSharp.ExpandBy(ref _branchPool, 32);
             
             _branchPool[_brPoolMax] = b.br[no];
             VariableBranch vb = _branchPool[_brPoolMax];
@@ -67,7 +67,7 @@ namespace QuizCanners.Utils {
         private void DiscardCascade(VariableBranch b, int dep)
         {
             if ((_brPoolMax + 1) >= _branchPool.Length)
-                _branchPool = _branchPool.ExpandBy(32);
+                QcSharp.ExpandBy(ref _branchPool, 32);
             
             if (dep > 0) {
                 for (var i = 0; i < BranchSize; i++)
@@ -152,11 +152,11 @@ namespace QuizCanners.Utils {
         
         public virtual void Inspect()
         {
-            if ("Clear".PegiLabel().Click().nl())
+            if ("Clear".PegiLabel().Click().Nl())
                 Clear();
-            ("Depth: " + depth).PegiLabel().nl();
-            ("First free: " + firstFree).PegiLabel().nl();
-            "Count: {0}".F(count).PegiLabel().nl();
+            ("Depth: " + depth).PegiLabel().Nl();
+            ("First free: " + firstFree).PegiLabel().Nl();
+            "Count: {0}".F(count).PegiLabel().Nl();
         }
         #endregion
 
@@ -934,19 +934,19 @@ namespace QuizCanners.Utils {
                     var ind = indxs[i];
                     var el = allElements[i];
 
-                    ind.ToString().PegiLabel(60).write();
+                    ind.ToString().PegiLabel(60).Write();
 
-                    if (icon.Delete.Click())
+                    if (Icon.Delete.Click())
                         this[ind] = default;
-                    else if (pegi.InspectValueInCollection(ref el, ind, ref _edited).nl() && typeof(T).IsValueType)
+                    else if (pegi.InspectValueInCollection(ref el, ind, ref _edited).Nl() && typeof(T).IsValueType)
                         this[ind] = el;
                 }
 
 
                 if (objs.Length > 0)
                 {
-                    "Test: ".PegiLabel().edit(ref _testIndex);
-                    if (icon.Add.Click().nl())
+                    "Test: ".PegiLabel().Edit(ref _testIndex);
+                    if (Icon.Add.Click().Nl())
                     {
                         this[_testIndex] = objs[0];
                     }
@@ -954,12 +954,12 @@ namespace QuizCanners.Utils {
             }
             else
             {
-                if (icon.List.Click("Back to elements window"))
+                if (Icon.List.Click("Back to elements window"))
                     _edited = -1;
                 else
                 {
                     object el = this[_edited];
-                    if (pegi.Nested_Inspect(ref el).nl())
+                    if (pegi.Nested_Inspect(ref el).Nl())
                         this[_edited] = (T)el;
                 }
             }

@@ -152,23 +152,23 @@ namespace QuizCanners.Utils
         private string _selectedTag = "_";
         public void Inspect()
         {
-            GetReadOnlyName().PegiLabel().edit_Dictionary(this, ref _inspected).nl();
+            GetReadOnlyName().PegiLabel().Edit_Dictionary(this, ref _inspected).Nl();
 
             if (_inspected == -1) 
             {
-                "Tag".PegiLabel().select(ref _selectedTag, Cfg.DisplayNames).nl();
+                "Tag".PegiLabel().Select(ref _selectedTag, Cfg.DisplayNames).Nl();
 
                 var type = Cfg.TaggedTypes.TryGet(_selectedTag);
 
                 if (type != null)
                 {
                     if (ContainsKey(_selectedTag))
-                        "Type {0} is already in the Dictionary".F(type).PegiLabel().writeHint();
+                        "Type {0} is already in the Dictionary".F(type).PegiLabel().WriteHint();
                     else if ("Create {0}".F(type.ToPegiStringType()).PegiLabel().Click())
                         this[_selectedTag] = (T)Activator.CreateInstance(type);
                 }
 
-                pegi.nl();
+                pegi.Nl();
             }
         }
 

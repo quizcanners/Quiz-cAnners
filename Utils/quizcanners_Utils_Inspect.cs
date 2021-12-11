@@ -5,7 +5,6 @@ using QuizCanners.Inspect;
 using UnityEngine;
 
 using Profiler = UnityEngine.Profiling.Profiler;
-using Object = UnityEngine.Object;
 using QuizCanners.Inspect.Examples;
 
 #if UNITY_EDITOR
@@ -21,77 +20,7 @@ namespace QuizCanners.Utils
         public const string QUIZ_cANNERS = "Quiz c'Anners";
 
         #region Various Managers Classes
-        /*
-        public class PerformanceTimer : IPEGI_ListInspect, IGotReadOnlyName
-        {
-            private readonly string _name;
-            private float _timer;
-            private double _yieldsCounter;
-            private double _maxYieldsPerInterval;
-            private double _minYieldsPerInterval = float.PositiveInfinity;
-            private double _averageYieldsPerInterval;
-            private double _totalIntervalsProcessed;
-            private readonly float _intervalInSeconds;
-
-            public void Update(float add = 0)
-            {
-                _timer += Time.deltaTime;
-                if (Math.Abs(add) > float.Epsilon)
-                    AddYield(add);
-
-                if (_timer <= _intervalInSeconds) return;
-                
-                _timer -= _intervalInSeconds;
-
-                _maxYieldsPerInterval = Mathf.Max((float)_yieldsCounter, (float)_maxYieldsPerInterval);
-                _minYieldsPerInterval = Mathf.Min((float)_yieldsCounter, (float)_minYieldsPerInterval);
-
-                _totalIntervalsProcessed += 1;
-
-                var portion = 1d / _totalIntervalsProcessed;
-                _averageYieldsPerInterval = _averageYieldsPerInterval * (1d - portion) + _yieldsCounter * portion;
-
-                _yieldsCounter = 0;
-
-            }
-
-            public void AddYield(float result = 1) => _yieldsCounter += result;
-
-            public void ResetStats()
-            {
-                _timer = 0;
-                _yieldsCounter = 0;
-                _maxYieldsPerInterval = 0;
-                _minYieldsPerInterval = float.PositiveInfinity;
-                _averageYieldsPerInterval = 0;
-                _totalIntervalsProcessed = 0;
-            }
-
-            #region Inspector
-
-            public string GetNameForInspector() => "Avg {0}: {1}/{2}sec [{3} - {4}] ({5}) ".F(_name,
-                ((float)_averageYieldsPerInterval).ToString("0.00"),
-                (Math.Abs(_intervalInSeconds - 1d) > float.Epsilon) ? _intervalInSeconds.ToString("0") : "", (int)_minYieldsPerInterval,
-                (int)_maxYieldsPerInterval, (int)_totalIntervalsProcessed);
-
-            public void InspectInList(ref int edited, int ind)
-            {
-                if (icon.Refresh.Click("Reset Stats"))
-                    ResetStats();
-                
-                GetNameForInspector().write();
-            }
-
-            #endregion
-
-            public PerformanceTimer(string name = "Speed", float interval = 1f)
-            {
-                _name = name;
-                _intervalInSeconds = interval;
-            }
-        }
-        */
-
+    
         [Serializable]
         public class ScreenShootTaker : IPEGI
         {
@@ -101,37 +30,37 @@ namespace QuizCanners.Utils
 
             public void Inspect()
             {
-                pegi.nl();
+                pegi.Nl();
 
-                "Camera ".PegiLabel().selectInScene(ref cameraToTakeScreenShotFrom);
+                "Camera ".PegiLabel().SelectInScene(ref cameraToTakeScreenShotFrom);
 
-                pegi.nl();
+                pegi.Nl();
 
-                "Transparent Background".PegiLabel().toggleIcon(ref AlphaBackground);
+                "Transparent Background".PegiLabel().ToggleIcon(ref AlphaBackground);
 
                 if (!AlphaBackground && cameraToTakeScreenShotFrom)
                 {
                     if (cameraToTakeScreenShotFrom.clearFlags == CameraClearFlags.Color &&
                         cameraToTakeScreenShotFrom.clearFlags == CameraClearFlags.SolidColor) {
                         var col = cameraToTakeScreenShotFrom.backgroundColor;
-                        if (pegi.edit(ref col))
+                        if (pegi.Edit(ref col))
                             cameraToTakeScreenShotFrom.backgroundColor = col;
                     }
                 }
 
-                pegi.nl();
+                pegi.Nl();
 
-                "Img Name".PegiLabel(90).edit(ref screenShotName);
+                "Img Name".PegiLabel(90).Edit(ref screenShotName);
                 var path = System.IO.Path.Combine(QcFile.OutsideOfAssetsFolder, folderName);
-                if (icon.Folder.Click("Open Screen Shots Folder : {0}".F(path)))
+                if (Icon.Folder.Click("Open Screen Shots Folder : {0}".F(path)))
                     QcFile.Explorer.OpenPath(path);
 
-                pegi.nl();
+                pegi.Nl();
 
-                "Up Scale".PegiLabel("Resolution of the texture will be multiplied by a given value", 60).write().edit( ref UpScale);
+                "Up Scale".PegiLabel("Resolution of the texture will be multiplied by a given value", 60).Write().Edit( ref UpScale);
 
                 if (UpScale <= 0)
-                    "Scale value needs to be positive".PegiLabel().writeWarning();
+                    "Scale value needs to be positive".PegiLabel().WriteWarning();
                 else
                 if (cameraToTakeScreenShotFrom)
                 {
@@ -141,7 +70,7 @@ namespace QuizCanners.Utils
                         if ("Take Very large ScreenShot".PegiLabel("This will try to take a very large screen shot. Are we sure?").ClickConfirm("tbss"))
                             RenderToTextureManually();
                     }
-                    else if (icon.ScreenGrab.Click("Render Screenshoot from camera").nl())
+                    else if (Icon.ScreenGrab.Click("Render Screenshoot from camera").Nl())
                         RenderToTextureManually();
                 }
 
@@ -149,9 +78,9 @@ namespace QuizCanners.Utils
                                                               "You probably also want Transparent Background turned on. Or not, depending on your situation. " +
                                                               "Who am I to tell you what to do, I'm just a hint.");
 
-                pegi.nl();
+                pegi.Nl();
 
-                if ("Other Options".PegiLabel().isFoldout(ref _showAdditionalOptions).nl())
+                if ("Other Options".PegiLabel().IsFoldout(ref _showAdditionalOptions).Nl())
                 {
 
                     if (!grab)
@@ -162,23 +91,23 @@ namespace QuizCanners.Utils
                     else
                         ("To grab screen-shot from Post-Render, OnPostRender() of this class should be called from OnPostRender() of the script attached to a camera." +
                          " Refer to Unity documentation to learn more about OnPostRender() call").PegiLabel()
-                            .writeHint();
+                            .WriteHint();
 
 
-                    pegi.nl();
+                    pegi.Nl();
 
                     if ("ScreenCapture.CaptureScreenshot".PegiLabel().Click())
                         CaptureScreenShot();
 
 
-                    if (icon.Folder.Click())
+                    if (Icon.Folder.Click())
                         QcFile.Explorer.OpenPath(QcFile.OutsideOfAssetsFolder);
 
                     pegi.FullWindow.DocumentationClickOpen("Game View Needs to be open for this to work");
 
                 }
 
-                pegi.nl();
+                pegi.Nl();
 
             }
 
@@ -313,105 +242,8 @@ namespace QuizCanners.Utils
 
         }
 
-        [Serializable]
-        public class MaterialInstancer {
-            [SerializeField] public List<UnityEngine.UI.Graphic> materialUsers = new List<UnityEngine.UI.Graphic>();
-            [NonSerialized] private Material labelMaterialInstance;
+      
 
-            public Material MaterialInstance
-            {
-                get
-                {
-                    if (labelMaterialInstance)
-                        return labelMaterialInstance;
-
-                    if (materialUsers.Count == 0)
-                        return null;
-
-                    var first = materialUsers[0];
-
-                    if (!first)
-                        return null;
-
-                    if (!Application.isPlaying)
-                        return first.material;
-
-                    labelMaterialInstance = Object.Instantiate(first.material);
-
-                    foreach (var u in materialUsers)
-                        if (u)
-                            u.material = labelMaterialInstance;
-
-                    return labelMaterialInstance;
-                }
-            }
-
-            public MaterialInstancer(UnityEngine.UI.Graphic graphic)
-            {
-                materialUsers.Add(graphic);
-            }
-        }
-
-        [Serializable]
-        public class MeshMaterialPlaytimeInstancer
-        {
-
-            [SerializeField] public bool instantiateInEditor;
-            [SerializeField] public List<MeshRenderer> materialUsers = new List<MeshRenderer>();
-            [NonSerialized] private Material materialInstance;
-
-            public Material GetMaterialInstance(MeshRenderer rendy)
-            {
-                if (materialInstance)
-                    return materialInstance;
-
-                materialUsers.Clear();
-                materialUsers.Add(rendy);
-
-                return MaterialInstance;
-            }
-
-            public Material MaterialInstance
-            {
-                get
-                {
-                    if (materialInstance)
-                        return materialInstance;
-
-                    if (materialUsers.Count == 0)
-                        return null;
-
-                    var first = materialUsers[0];
-
-                    if (!first)
-                        return null;
-
-                    if (!Application.isPlaying && !instantiateInEditor)
-                        return first.sharedMaterial;
-
-                    materialInstance = Object.Instantiate(first.sharedMaterial);
-
-                    materialInstance.name = "Instanced material of {0}".F(first.name);
-
-                    foreach (var u in materialUsers)
-                        if (u)
-                            u.sharedMaterial = materialInstance;
-
-                    return materialInstance;
-                }
-            }
-
-            public MeshMaterialPlaytimeInstancer()
-            {
-
-            }
-
-            public MeshMaterialPlaytimeInstancer(bool instantiateInEditor)
-            {
-                this.instantiateInEditor = instantiateInEditor;
-            }
-        }
-        
         [Serializable]
         public struct DynamicRangeFloat : ICfgCustom, IPEGI
         {
@@ -459,33 +291,33 @@ namespace QuizCanners.Utils
                 if ("><".PegiLabel().Click())
                     UpdateRange(0.3f);
 
-                pegi.edit(ref _value, dynamicMin, dynamicMax);
+                pegi.Edit(ref _value, dynamicMin, dynamicMax);
                 //    Value = _value;
 
                 if ("<>".PegiLabel().Click())
                     UpdateRange(3f);
              
 
-                if (!_showRange && icon.Edit.ClickUnFocus("Edit Range", 20))
+                if (!_showRange && Icon.Edit.ClickUnFocus("Edit Range", 20))
                     _showRange = true;
 
                 if (_showRange)
                 {
                   
 
-                    if (icon.FoldedOut.ClickUnFocus("Hide Range"))
+                    if (Icon.FoldedOut.ClickUnFocus("Hide Range"))
                         _showRange = false;
 
-                    pegi.nl();
+                    pegi.Nl();
 
-                    "[{0} : {1}] - {2}".F(dynamicMin, dynamicMax, "Focused Range").PegiLabel().nl();
+                    "[{0} : {1}] - {2}".F(dynamicMin, dynamicMax, "Focused Range").PegiLabel().Nl();
 
-                    "Range: [".PegiLabel(60).write();
+                    "Range: [".PegiLabel(60).Write();
 
                     var before = min;
 
 
-                    if (pegi.editDelayed(ref min, 40))
+                    if (pegi.EditDelayed(ref min, 40))
                     {
                         rangeChanged = true;
 
@@ -493,32 +325,32 @@ namespace QuizCanners.Utils
                             max = min + (max - before);
                     }
 
-                    "-".PegiLabel(10).write();
+                    "-".PegiLabel(10).Write();
 
-                    if (pegi.editDelayed(ref max, 40))
+                    if (pegi.EditDelayed(ref max, 40))
                     {
                         rangeChanged = true;
                         min = Mathf.Min(min, max);
                     }
 
-                    "]".PegiLabel(10).write();
+                    "]".PegiLabel(10).Write();
 
                     pegi.FullWindow.DocumentationClickOpen("Use >< to shrink range around current value for more precision. And <> to expand range.", "About <> & ><");
 
-                    if (icon.Refresh.Click())
+                    if (Icon.Refresh.Click())
                     {
                         dynamicMin = min;
                         dynamicMax = max;
 
                     }
 
-                    pegi.nl();
+                    pegi.Nl();
 
-                    "Tap Enter to apply Range change in the field (will Clamp current value)".PegiLabel().writeHint();
+                    "Tap Enter to apply Range change in the field (will Clamp current value)".PegiLabel().WriteHint();
 
 
 
-                    pegi.nl();
+                    pegi.Nl();
 
                     if (rangeChanged)
                     {
@@ -589,36 +421,26 @@ namespace QuizCanners.Utils
 
         #region Inspect Debug Options 
 
-        private static readonly pegi.EnterExitContext _enteredIndex = new pegi.EnterExitContext();
-        private static readonly pegi.EnterExitContext _enteredData = new pegi.EnterExitContext();
-
+        private static readonly pegi.EnterExitContext _enteredIndex = new pegi.EnterExitContext(playerPrefId: "inspEnt");
+        private static readonly pegi.EnterExitContext _enteredData = new pegi.EnterExitContext(playerPrefId: "inspEntDta");
+   
         public static void InspectAllUtils()
         {
-            pegi.nl();
+            pegi.Nl();
 
             using (_enteredIndex.StartContext())
             {
-                if ("Data".PegiLabel().isEntered().nl())
+                "Singletons".PegiLabel().IsEntered().Nl().If_Entered(Singleton.Collector.Inspect);
+
+                "PEGI Documentation".PegiLabel().IsEntered(showLabelIfTrue: false).Nl_ifNotEntered().If_Entered(PlayerAndEditorGui_Documentation.Inspect);
+
+                if ("Data".PegiLabel().IsEntered().Nl())
                 {
                     using (_enteredData.StartContext())
                     {
-                        if (_enteredData.IsAnyEntered == false)
+                        if ("Cache".PegiLabel().IsEntered().Nl())
                         {
-                            if ("Player Data Folder".PegiLabel().Click().nl())
-                            {
-                                QcFile.Explorer.OpenPersistentFolder();
-                                pegi.SetCopyPasteBuffer(Application.persistentDataPath, sendNotificationIn3Dview: true);
-                            }
-
-                            if (Application.isEditor && "Editor Data Folder".PegiLabel().Click().nl())
-                                QcFile.Explorer.OpenPath(
-                                    "C:/Users/{0}/AppData/Local/Unity/Editor/Editor.log".F(Environment.UserName));
-                        }
-
-                        if ("Cache".PegiLabel().isEntered().nl())
-                        {
-
-                            if ("Caching.ClearCache() [{0}]".F(Caching.cacheCount).PegiLabel().ClickConfirm("clCach").nl())
+                            if ("Caching.ClearCache() [{0}]".F(Caching.cacheCount).PegiLabel().ClickConfirm("clCach").Nl())
                             {
                                 if (Caching.ClearCache())
                                     pegi.GameView.ShowNotification("Bundles were cleared");
@@ -630,127 +452,137 @@ namespace QuizCanners.Utils
 
                             Caching.GetAllCachePaths(lst);
 
-                            "Caches".PegiLabel().edit_List(lst, path =>
+                            "Caches".PegiLabel().Edit_List(lst, path =>
                             {
                                 var c = Caching.GetCacheByPath(path);
 
-                                if (icon.Delete.Click())
+                                if (Icon.Delete.Click())
                                 {
-
                                     if (Caching.RemoveCache(c))
                                         pegi.GameView.ShowNotification("Bundle was cleared");
                                     else
                                         pegi.GameView.ShowNotification("ERROR: Bundle is being used");
                                 }
 
-                                if (icon.Folder.Click())
-                                    QcFile.Explorer.OpenPath(path);
+                                Icon.Folder.Click(()=> QcFile.Explorer.OpenPath(path));
 
-                                if (icon.Copy.Click())
-                                    pegi.SetCopyPasteBuffer(path);
+                                Icon.Copy.Click(() => pegi.SetCopyPasteBuffer(path));
 
-                                path.PegiLabel().write();
+                                path.PegiLabel().Write();
 
                                 return path;
                             });
                         }
+
+                        "Reflection".PegiLabel().IsEntered().Nl().If_Entered(QcSharp.Reflector.Inspect).Nl();
+
+                        if (_enteredData.IsAnyEntered == false)
+                        {
+                            if ("Player Data Folder".PegiLabel().Click().Nl())
+                            {
+                                QcFile.Explorer.OpenPersistentFolder();
+                                pegi.SetCopyPasteBuffer(Application.persistentDataPath, sendNotificationIn3Dview: true);
+                            }
+
+                            if (Application.isEditor && "Editor Data Folder".PegiLabel().Click().Nl())
+                                QcFile.Explorer.OpenPath(
+                                    "C:/Users/{0}/AppData/Local/Unity/Editor/Editor.log".F(Environment.UserName));
+
+                            "Mono Heap Size Long {0}".F(Profiler.GetMonoHeapSizeLong().ToMegabytes()).PegiLabel().Nl();
+
+                            "Mono Used Size Long {0}".F(Profiler.GetMonoUsedSizeLong().ToMegabytes()).PegiLabel().Nl();
+
+                            "Temp Allocated Size {0}".F(ToMegabytes(Profiler.GetTempAllocatorSize())).PegiLabel().Nl();
+
+                            "Total Allocated Memmory Long {0}".F(Profiler.GetTotalAllocatedMemoryLong().ToMegabytes()).PegiLabel().Nl();
+
+                            "Total Unused Reserved Memmory Long {0}".F(Profiler.GetTotalUnusedReservedMemoryLong().ToMegabytes()).PegiLabel().Nl();
+
+                            if ("Unload Unused Assets".PegiLabel().Click().Nl())
+                            {
+                                Resources.UnloadUnusedAssets();
+                            }
+                        }
+
                     }
                 }
 
-                if ("Logs".PegiLabel().isEntered().nl())
-                    QcLog.LogHandler.Nested_Inspect();
+                "Logs".PegiLabel().IsEntered().Nl().If_Entered(() => QcLog.LogHandler.Nested_Inspect());
 
-                if ("Profiler".PegiLabel().isEntered().nl())
+                "Profiler".PegiLabel().Enter_Inspect(QcDebug.TimeProfiler.Instance).Nl();
+    
+                if ("Time & Audio".PegiLabel().IsEntered().Nl())
                 {
-                    QcDebug.timerGlobal.Nested_Inspect();
+                    var maxDt = Time.maximumDeltaTime;
+                    "Time.maximumDeltaTime".PegiLabel().EditDelayed(ref maxDt).Nl().OnChanged(()=> Time.maximumDeltaTime = maxDt);
 
-                    "Mono Heap Size Long {0}".F(Profiler.GetMonoHeapSizeLong().ToMegabytes()).PegiLabel().nl();
+                    "Time.time: {0}".F(QcSharp.SecondsToReadableString(Time.time)).PegiLabel().Nl();
 
-                    "Mono Used Size Long {0}".F(Profiler.GetMonoUsedSizeLong().ToMegabytes()).PegiLabel().nl();
+                    "AudioSettings.dspTime: {0}".F(QcSharp.SecondsToReadableString(AudioSettings.dspTime)).PegiLabel().Nl();
 
-                    "Temp Allocated Size {0}".F(ToMegabytes(Profiler.GetTempAllocatorSize())).PegiLabel().nl();
+                    "Use it to schedule Audio Clips: audioSource.PlayScheduled(AudioSettings.dspTime + 0.5);".PegiLabel().WriteHint();
 
-                    "Total Allocated Memmory Long {0}".F(Profiler.GetTotalAllocatedMemoryLong().ToMegabytes()).PegiLabel().nl();
+                    "Clip Duration: double duration = (double)AudioClip.samples / AudioClip.frequency;".PegiLabel().WriteHint();
 
-                    "Total Unused Reserved Memmory Long {0}".F(Profiler.GetTotalUnusedReservedMemoryLong().ToMegabytes()).PegiLabel().nl();
+                    "Time.unscaled time: {0}".F(QcSharp.SecondsToReadableString(Time.unscaledTime)).PegiLabel().Nl();
 
-                    if ("Unload Unused Assets".PegiLabel().Click().nl())
-                    {
-                        Resources.UnloadUnusedAssets();
-                    }
-                }
-
-                if ("Time & Audio".PegiLabel().isEntered().nl())
-                {
-                    "Time.time: {0}".F(QcSharp.SecondsToReadableString(Time.time)).PegiLabel().nl();
-
-                    "AudioSettings.dspTime: {0}".F(QcSharp.SecondsToReadableString(AudioSettings.dspTime)).PegiLabel().nl();
-
-                    "Use it to schedule Audio Clips: audioSource.PlayScheduled(AudioSettings.dspTime + 0.5);".PegiLabel().writeHint();
-
-                    "Clip Duration: double duration = (double)AudioClip.samples / AudioClip.frequency;".PegiLabel().writeHint();
-
-                    "Time.unscaled time: {0}".F(QcSharp.SecondsToReadableString(Time.unscaledTime)).PegiLabel().nl();
-
-                    "Time.frameCount: {0}".F(Time.frameCount).PegiLabel().nl();
+                    "Time.frameCount: {0}".F(Time.frameCount).PegiLabel().Nl();
 
                     var tScale = Time.timeScale;
-                    if ("Time.timescale".PegiLabel().edit(ref tScale, 0f, 4f))
+                    if ("Time.timescale".PegiLabel().Edit(ref tScale, 0f, 4f))
                         Time.timeScale = tScale;
 
-                    if (Mathf.Approximately(tScale, 1) == false && icon.Refresh.Click())
+                    if (Mathf.Approximately(tScale, 1) == false && Icon.Refresh.Click())
                         Time.timeScale = 1;
 
-                    pegi.nl();
+                    pegi.Nl();
 
-                    "Time.deltaTime: {0}".F(QcSharp.SecondsToReadableString(Time.deltaTime)).PegiLabel().nl();
+                    "Time.deltaTime: {0}".F(QcSharp.SecondsToReadableString(Time.deltaTime)).PegiLabel().Nl();
 
-                    "Time.realtimeSinceStartup {0}".F(QcSharp.SecondsToReadableString(Time.realtimeSinceStartup)).PegiLabel().nl();
+                    "Time.realtimeSinceStartup {0}".F(QcSharp.SecondsToReadableString(Time.realtimeSinceStartup)).PegiLabel().Nl();
 
                     var fr = Application.targetFrameRate;
-                    if ("Frame-Rate".PegiLabel().edit(ref fr).nl() && fr > 0)
+                    if ("Frame-Rate".PegiLabel().Edit(ref fr).Nl() && fr > 0)
                     {
                         Application.targetFrameRate = fr;
                     }
                 }
 
-                "Services".PegiLabel().isEntered().nl().If_Entered(Singleton.Collector.Inspect);
-
-                if ("Screen Shots".PegiLabel().isEntered().nl())
+                if ("Screen Shots".PegiLabel().IsEntered().Nl())
                     screenShots.Nested_Inspect();
 
-                if ("Texture Utils".PegiLabel().isEntered().nl())
+                if ("Texture Utils".PegiLabel().IsEntered().Nl())
                 {
-#if UNITY_EDITOR
-                    Sprite sa = null;
-
-                    "To extract a Texture from Sprite, Set Read/Write Enabled to True and make sure it's format is Uncompressed (RGBA32 should do it)".PegiLabel().writeHint();
-
-                    if ("Extract Sprite Atlas Texture".PegiLabel().edit(ref sa) && sa)
+                    if (Application.isEditor)
                     {
-                        string atlasName;
-                        Texture2D atlasTexture;
 
-                        Packer.GetAtlasDataForSprite(sa, out atlasName, out atlasTexture);
+                        Sprite sa = null;
+                        "To extract a Texture from Sprite, Set Read/Write Enabled to True and make sure it's format is Uncompressed (RGBA32 should do it)".PegiLabel().WriteHint();
 
-                        //var atlas = SpriteUtility.GetSpriteTexture(sa, getAtlasData: true);
-                        if (atlasTexture)
+                        if ("Extract Sprite Atlas Texture".PegiLabel().Edit(ref sa) && sa)
                         {
-                            atlasTexture.Reimport_IfNotReadale_Editor();
+#if UNITY_EDITOR
+                            string atlasName;
+                            Texture2D atlasTexture;
 
-                            string name = atlasName;//"From {0}".F(sa.name);
-                            QcUnity.SaveTextureAsAsset(atlasTexture, "Atlas Textures", ref name, saveAsNew: true);
+                            Packer.GetAtlasDataForSprite(sa, out atlasName, out atlasTexture);
+
+                            //var atlas = SpriteUtility.GetSpriteTexture(sa, getAtlasData: true);
+                            if (atlasTexture)
+                            {
+                                atlasTexture.Reimport_IfNotReadale_Editor();
+
+                                string name = atlasName;//"From {0}".F(sa.name);
+                                QcUnity.SaveTextureAsAsset(atlasTexture, "Atlas Textures", ref name, saveAsNew: true);
+                            }
+#endif
                         }
                     }
-#else
-                "Only in Editor".PegiL().writeWarning();
-#endif
-
+                    else
+                        "Only in Editor".PegiLabel().WriteWarning();
                 }
 
-                "PEGI Documentation".PegiLabel().isEntered().nl().If_Entered(PlayerAndEditorGui_Documentation.Inspect);
-
-                "Debug".PegiLabel().isEntered().nl().If_Entered(QcDebug.Inspect);
+                "Debug".PegiLabel().IsEntered().Nl().If_Entered(QcDebug.Inspect);
             }
         }
 

@@ -3,7 +3,9 @@ using QuizCanners.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 //using UnityEngine.Networking;
 
@@ -70,8 +72,8 @@ namespace QuizCanners.Migration
 
             public void InspectInList(ref int edited, int ind)
             {
-                "Name".PegiLabel(40).edit(ref pageName);
-                "#gid=".PegiLabel(40).edit(ref pageIndex);
+                "Name".PegiLabel(40).Edit(ref pageName);
+                "#gid=".PegiLabel(40).Edit(ref pageIndex);
             }
 
             public string GetReadOnlyName() => pageName;
@@ -170,76 +172,116 @@ namespace QuizCanners.Migration
 
         private void Read(UnityEngine.Networking.UnityWebRequest content)
         {
+            rows.Clear();
 
-            var lines = new System.IO.StringReader(content.downloadHandler.text);
-            using (lines)
+            var reader = new StringReader(content.downloadHandler.text);
+
+            using (reader)
             {
                 string line;
-                line = lines.ReadLine();
-                rows.Clear();
-                if (line != null)
+                line = reader.ReadLine();
+
+                var accumulatedCell = new StringBuilder();
+
+                if (!line.IsNullOrEmpty())
                 {
                     _columns = line.Split(',').Select(v => v.Trim()).ToList();
                     int rowIndex = 0;
-                    while ((line = lines.ReadLine()) != null)
+                    while ((line = reader.ReadLine()) != null)
                     {
                         var rawCells = new List<string>();
                         try
                         {
-                            bool good = true;
-                            string accumulatedCell = "";
-                            for (int i = 0; i < line.Length; i++)
+                            bool parcingALine = true;
+                            bool isAString = false;
+                          
+                            while (parcingALine)
                             {
-                                if (line[i] == ',' && good)
+                                parcingALine = false;
+
+                                for (int i = 0; i < line.Length; i++)
                                 {
-                                    rawCells.Add(accumulatedCell.Trim());
-                                    accumulatedCell = "";
+                                    var symbol = line[i];
+
+                                    if (!isAString)
+                                    {
+                                        if (symbol == ',')
+                                        {
+                                            rawCells.Add(accumulatedCell.ToString().Trim());
+                                            accumulatedCell.Clear();
+                                        }
+                                        else BracketsOrAppend();
+                                    }
+                                    else BracketsOrAppend();
+                                    
+                                    void BracketsOrAppend() 
+                                    {
+                                        if (symbol == '"')
+                                        {
+                                            if (line.Length > (i + 1) && line[i + 1] == '"')
+                                            {
+                                                accumulatedCell.Append('"');
+                                                i++;
+                                            }
+                                            else
+                                                isAString = !isAString;
+                                        }
+                                        else
+                                            accumulatedCell.Append(symbol);
+                                    }
                                 }
-                                else if (line.Length > (i + 1) && line[i] == '"' && line[i + 1] == '"')
+
+                                if (isAString && ((line = reader.ReadLine()) != null))
                                 {
-                                    accumulatedCell += '"';
-                                    i++;
-                                }
-                                else if (line[i] == '"')
-                                {
-                                    good = !good;
-                                }
-                                else
-                                    accumulatedCell += line[i];
+                                    parcingALine = true;
+                                    accumulatedCell.Append(pegi.EnvironmentNl);
+                                } 
                             }
 
-                            rawCells.Add(accumulatedCell);
+                            rawCells.Add(accumulatedCell.ToString());
+                            accumulatedCell.Clear();
                         }
                         catch (Exception ex)
                         {
                             Debug.LogError(ex.Message + ex.StackTrace + ", at row " + rowIndex);
                         }
 
-                        List<CfgData> cellsInRow = new List<CfgData>();
                         try
                         {
-                            int columnIndex = 0;
-                            foreach (string cell in rawCells)
-                            {
-                                if (columnIndex >= _columns.Count)
-                                    break;
-
-                                cellsInRow.Add(new CfgData(cell));
-                                columnIndex++;
-                            }
-
-                            rows.Add(new Row(cellsInRow));
+                            AddCells(rawCells);
                         }
                         catch (Exception e)
                         {
-                            Debug.LogError(e.Message + e.StackTrace + ", at row " + rowIndex);
+                            Debug.LogException(e);
+                            Debug.LogError("at row:" + rowIndex);
                         }
 
                         rowIndex++;
                     }
+                } else 
+                {
+                    Debug.LogError("To COlumn headers found. List is empty");
                 }
             }
         }
+
+        private void AddCells(List<string> rawCells)
+        {
+            List<CfgData> cellsInRow = new List<CfgData>();
+           
+            int columnIndex = 0;
+            foreach (string cell in rawCells)
+            {
+                if (columnIndex >= _columns.Count)
+                    break;
+
+                cellsInRow.Add(new CfgData(cell));
+                columnIndex++;
+            }
+
+            rows.Add(new Row(cellsInRow));
+        }
+
 
         internal class Row
         {
@@ -249,7 +291,6 @@ namespace QuizCanners.Migration
             {
                 data = list;
             }
-
         }
 
         #endregion
@@ -282,7 +323,7 @@ namespace QuizCanners.Migration
 
             if (url.IsNullOrEmpty())
             {
-                "url(.csv): ".PegiLabel(90).edit(ref url);
+                "url(.csv): ".PegiLabel(90).Edit(ref url);
 
                 if (pegi.CopyPasteBuffer.IsNullOrEmpty() == false && pegi.CopyPasteBuffer.Contains("spreadsheets") && "From Clipboard".PegiLabel().Click())
                     url = pegi.CopyPasteBuffer;
@@ -294,7 +335,7 @@ namespace QuizCanners.Migration
                     if (pages.Count == 0)
                     {
                         int tmp = 0;
-                        if ("gid=".PegiLabel(40).edit(ref tmp) | icon.Done.Click(toolTip: "The gid is 0"))
+                        if ("gid=".PegiLabel(40).Edit(ref tmp) | Icon.Done.Click(toolTip: "The gid is 0"))
                         {
                             pages.Add(new SheetPage() { pageIndex = tmp, pageName = "Unnamed" });
                         }
@@ -302,94 +343,106 @@ namespace QuizCanners.Migration
                     else
                     {
                         if (SelectedPage == null)
-                            "Sheet Page".PegiLabel(90).select_Index(ref _selectedPage, pages);
+                            "Sheet Page".PegiLabel(90).Select_Index(ref _selectedPage, pages);
                         else
                         {
                             
-                            "Name:".PegiLabel(30).edit(ref SelectedPage.pageName);
-                            "gid=".PegiLabel(25).edit(ref SelectedPage.pageIndex);
+                            "Name:".PegiLabel(30).Edit(ref SelectedPage.pageName);
+                            "gid=".PegiLabel(25).Edit(ref SelectedPage.pageIndex);
                         }
                     }
                 }
             }
         }
 
-        //private int _inspectedStuff = -1;
+        private pegi.EnterExitContext context = new pegi.EnterExitContext();
 
         public void Inspect()
         {
-            pegi.nl();
-
-            if (request == null)
+            using (context.StartContext())
             {
-                "Page:".PegiLabel(40).select_Index(ref _selectedPage, pages);
+                pegi.Nl();
 
-                if (pages.Count > _selectedPage && "Download".PegiLabel().Click().nl())
-                    StartDownload(pages[_selectedPage]);
-            }
-            else
-            {
-                if ("Clear Request".PegiLabel().Click())
+                if (!context.IsAnyEntered)
                 {
-                    request.Dispose();
-                    request = null;
+                    "Published CSV Url".PegiLabel(120).Edit(ref url);
+
+                    if (url.IsNullOrEmpty())
+                    {
+                        if (pegi.CopyPasteBuffer.IsNullOrEmpty() == false && pegi.CopyPasteBuffer.Contains("spreadsheets") && "From Clipboard".PegiLabel().Click())
+                            url = pegi.CopyPasteBuffer;
+                    }
+                    else if (Icon.Copy.Click())
+                        pegi.SetCopyPasteBuffer(url);
+
+                    pegi.FullWindow.DocumentationClickOpen(() =>
+                        "GoogleSheet->File->Publish To Web-> Publish... Copy link for .csv document");
+
+                    pegi.Nl();
+
+                    if (url.IsNullOrEmpty() == false)
+                    {
+                        InspectUrlEndingNeedsCleanup();
+                        pegi.Nl();
+                    }
+
+                    pegi.Nl();
+
+                    if (request == null)
+                    {
+                        "Page:".PegiLabel(40).Select_Index(ref _selectedPage, pages);
+
+                        if (pages.Count > _selectedPage && "Download".PegiLabel().Click().Nl())
+                            StartDownload(pages[_selectedPage]);
+                    }
+                    else
+                    {
+                        if ("Clear Request".PegiLabel().Click())
+                        {
+                            request.Dispose();
+                            request = null;
+                        }
+                        else
+                        if (request.isDone)
+                        {
+                            "Download finished".PegiLabel().Nl();
+                        }
+                        else
+                        {
+                            "Thread state: ".F(Mathf.FloorToInt(request.downloadProgress * 100).ToString()).PegiLabel().Nl();
+
+                            if ("Cancel Trhread".PegiLabel().Click().Nl())
+                                request.Dispose();
+                        }
+                    }
+                
+                    pegi.Nl();
                 }
-                else
-                if (request.isDone)
+
+                "Raw Data".PegiLabel().IsConditionally_Entered(canEnter: IsDownloaded).Nl().If_Entered(() =>
                 {
-                    "Download finished".PegiLabel().nl();
-                }
-                else
+                    request.downloadHandler.text.PegiLabel().Write_ForCopy_Big();
+                });
+
+                if ("Link".PegiLabel().IsEntered())
                 {
-                    "Thread state: ".F(Mathf.FloorToInt(request.downloadProgress * 100).ToString()).PegiLabel().nl();
+                    pegi.Nl();
+                    "Sheet Edit Link)".PegiLabel(100).Edit(ref editUrl);
 
-                    if ("Cancel Trhread".PegiLabel().Click().nl())
-                        request.Dispose();
+                    if ("Open".PegiLabel().Click())
+                        Application.OpenURL(editUrl);
 
+                    pegi.Nl();
                 }
-            }
-            
-            pegi.nl();
 
-         
-            "Published CSV Url".PegiLabel(120).edit(ref url);
-
-            if (url.IsNullOrEmpty())
-            {
-                if (pegi.CopyPasteBuffer.IsNullOrEmpty() == false && pegi.CopyPasteBuffer.Contains("spreadsheets") && "From Clipboard".PegiLabel().Click())
-                    url = pegi.CopyPasteBuffer;
-            }
-            else if (icon.Copy.Click())
-                pegi.SetCopyPasteBuffer(url);
-
-            pegi.FullWindow.DocumentationClickOpen(() =>
-                "GoogleSheet->File->Publish To Web-> Publish... Copy link for .csv document");
-
-            pegi.nl();
-
-            if (url.IsNullOrEmpty() == false)
-            {
-                InspectUrlEndingNeedsCleanup();
-                pegi.nl();
-            }
-
-            "Pages".PegiLabel().edit_List(pages).nl();
-
-            if ("Link".PegiLabel().isFoldout())
-            {
-                pegi.nl();
-                "Sheet Edit Link)".PegiLabel(100).edit(ref editUrl);
-
-                if ("Open".PegiLabel().Click())
+                if (context.IsAnyEntered == false && editUrl.IsNullOrEmpty() == false && "Open in Browser".PegiLabel().Click())
                     Application.OpenURL(editUrl);
 
-                pegi.nl();
-            } else if (editUrl.IsNullOrEmpty() == false && "Edit Googl Sheet".PegiLabel().Click()) 
-                Application.OpenURL(editUrl);
-            
+                pegi.Nl();
 
-            pegi.nl();
-            
+                "Pages".PegiLabel().Enter_List(pages).Nl();
+
+            }
 
         }
         #endregion

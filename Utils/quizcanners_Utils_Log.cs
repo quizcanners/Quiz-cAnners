@@ -1,7 +1,9 @@
 using QuizCanners.Inspect;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace QuizCanners.Utils
 {
@@ -35,12 +37,11 @@ namespace QuizCanners.Utils
 
         public static InspectableLogging LogHandler = new InspectableLogging();
 
-    
-
         public class InspectableLogging : IPEGI
         {
             private bool _subscribedToLogs;
             private bool _subscribedToQuit;
+            private int _maxLogs;
 
             public bool SavingLogs
             {
@@ -67,12 +68,18 @@ namespace QuizCanners.Utils
 
             private void HandleLog(string logString, string stackTrace, LogType type)
             {
-                if (logs.Count > 300)
+                if (logs.Count > _maxLogs)
                 {
-                    logs.RemoveRange(0, 150);
+                    int toClear = Mathf.FloorToInt(_maxLogs * 0.5f);
+                    logs.RemoveRange(toClear, toClear);
                 }
 
                 logs.Add(new LogData { Log = logString, Stack = stackTrace, type = type });
+            }
+
+            public InspectableLogging (int maxRecods = 300) 
+            {
+                _maxLogs = maxRecods;
             }
 
             #region Inspector
@@ -82,19 +89,19 @@ namespace QuizCanners.Utils
             public void Inspect()
             {
                 var sub = SavingLogs;
-                if ("Save Logs".PegiLabel().toggleIcon(ref sub).nl())
+                if ("Save Logs".PegiLabel().ToggleIcon(ref sub).Nl())
                     SavingLogs = sub;
 
-                if (!_logMeta.IsInspectingElement)
+                if (!_logMeta.IsAnyEntered)
                 {
                     if (logs.Count > 10)
                     {
-                        if ("Clear All But 5".PegiLabel().ClickConfirm(confirmationTag: "Del Logs").nl())
+                        if ("Clear All But 5".PegiLabel().ClickConfirm(confirmationTag: "Del Logs").Nl())
                             logs.RemoveRange(0, logs.Count - 5);
                     }
                     else
                     {
-                        if (SavingLogs && "Create Test Logs".PegiLabel().Click().nl())
+                        if (SavingLogs && "Create Test Logs".PegiLabel().Click().Nl())
                         {
                             Debug.Log("Debug Log");
                             Debug.LogWarning("Log Warning");
@@ -113,9 +120,9 @@ namespace QuizCanners.Utils
                 }
 
                 if (logs.Count == 0)
-                    "NO LOGS YET".PegiLabel().nl();
+                    "NO LOGS YET".PegiLabel().Nl();
                 else
-                    _logMeta.edit_List(logs);
+                    _logMeta.Edit_List(logs);
             }
 
             #endregion
@@ -129,9 +136,9 @@ namespace QuizCanners.Utils
 
             public void Inspect()
             {
-                "Log:".PegiLabel(50).write_ForCopy(Log, showCopyButton: true);
-                pegi.nl();
-                "Stack: ".PegiLabel().write_ForCopy_Big(Stack, showCopyButton: true);
+                "Log:".PegiLabel(50).Write_ForCopy(Log, showCopyButton: true);
+                pegi.Nl();
+                "Stack: ".PegiLabel().Write_ForCopy_Big(Stack, showCopyButton: true);
             }
 
             public string GetReadOnlyName() => Log;
@@ -154,9 +161,187 @@ namespace QuizCanners.Utils
                     edited = ind;
             }
 
-            public IEnumerator<object> SearchKeywordsEnumerator()
+            public IEnumerator SearchKeywordsEnumerator()
             {
                 yield return Log;
+            }
+        }
+
+        public class ChillLogger : IGotReadOnlyName
+        {
+            private bool _logged;
+            private readonly bool _logInBuild;
+            private double _lastLogged;
+            private int _calls;
+            private readonly string _name = "error";
+
+            public string GetReadOnlyName() => _name + (Disabled ? " Disabled" : " Enabled");
+
+            protected bool Disabled => QcDebug.IsRelease && !_logInBuild;
+            private static readonly Dictionary<string, int> loggedErrors = new Dictionary<string, int>();
+            private static readonly Dictionary<string, int> loggedWarnings = new Dictionary<string, int>();
+
+            public ChillLogger(string name, bool logInBuild = false)
+            {
+                _name = name;
+#if !UNITY_EDITOR
+                _logInBuild = logInBuild;
+#else
+                _logInBuild = logInBuild;
+#endif
+            }
+
+            public ChillLogger()
+            {
+
+            }
+
+            public void Log_Now(Exception ex, Object obj = null)
+            {
+                if (Disabled)
+                    return;
+
+                if (obj)
+                    Debug.LogException(ex, obj);
+                else
+                    Debug.LogException(ex);
+
+                _lastLogged = QcUnity.TimeSinceStartup();
+                _calls = 0;
+                _logged = true;
+            }
+
+            public void Log_Now(string msg, bool asError, Object obj = null)
+            {
+                if (Disabled)
+                    return;
+
+                if (!_name.IsNullOrEmpty())
+                    msg = "{0}: {1}".F(_name, msg); 
+
+                if (_calls > 0)
+                    msg += " [+ {0} calls]".F(_calls);
+
+                if (_lastLogged > 0)
+                    msg += " [{0} s. later]".F(QcUnity.TimeSinceStartup() - _lastLogged);
+                else
+                    msg += " [at {0}]".F(QcUnity.TimeSinceStartup());
+
+                if (asError)
+                    Debug.LogError(msg, obj);
+                else
+                    Debug.Log(msg, obj);
+
+                _lastLogged = QcUnity.TimeSinceStartup();
+                _calls = 0;
+                _logged = true;
+            }
+
+            public void Log(string msg = null, float seconds = 5, bool asError = true, Object target = null)
+            {
+                if (Disabled)
+                    return;
+
+                if (!_logged || (QcUnity.TimeSinceStartup() - _lastLogged > seconds))
+                    Log_Now(msg, asError, target);
+                else
+                    _calls++;
+            }
+
+            public void Log(Exception err = null, float seconds = 5, Object obj = null)
+            {
+                if (Disabled)
+                    return;
+
+                if (!_logged || (QcUnity.TimeSinceStartup() - _lastLogged > seconds))
+                    Log_Now(err, obj);
+                else
+                    _calls++;
+            }
+
+            public void Log_Every(int callCount, string msg = null, bool asError = true, Object obj = null)
+            {
+                if (Disabled)
+                    return;
+
+                if (!_logged || (_calls > callCount))
+                    Log_Now(msg, asError, obj);
+                else
+                    _calls++;
+            }
+
+            public static void LogErrorOnce(string msg, string key, Object target = null)
+            {
+                int count = loggedErrors.GetOrCreate(key);
+                loggedErrors[key]++;
+
+                if (count>0)
+                    return;
+
+                if (target)
+                    Debug.LogError(msg, target);
+                else
+                    Debug.LogError(msg);
+            }
+
+            public static void LogErrorOnce(Func<string> action, string key, Object target = null)
+            {
+                int count = loggedErrors.GetOrCreate(key);
+                loggedErrors[key]++;
+
+                if (count > 0)
+                    return;
+
+                if (target)
+                    Debug.LogError(action(), target);
+                else
+                    Debug.LogError(action());
+            }
+
+            public static void LogWarningOnce(string msg, string key, Object target = null)
+            {
+
+                int count = loggedWarnings.GetOrCreate(key);
+                loggedWarnings[key]++;
+
+                if (count > 0)
+                    return;
+
+                if (target)
+                    Debug.LogWarning(msg, target);
+                else
+                    Debug.LogWarning(msg);
+            }
+
+            public static void LogErrosExpOnly(Func<string> action, string key, Object target = null)
+            {
+                int count = loggedErrors.GetOrCreate(key);
+                loggedErrors[key]++;
+
+                if (count > 4 && !Mathf.IsPowerOfTwo(count))
+                    return;
+
+                string logText = (count > 0 ? "{0} times: ".F(count) : "") + action(); 
+
+                if (target)
+                    Debug.LogError(logText, target);
+                else
+                    Debug.LogError(logText);
+            }
+
+            public static void LogExceptionExpOnly(Exception ex, string key, Object target = null)
+            {
+                int count = loggedErrors.GetOrCreate(key);
+                loggedErrors[key]++;
+
+                if (count > 4 && !Mathf.IsPowerOfTwo(count))
+                    return;
+
+ 
+                if (target)
+                    Debug.LogException(ex, target);
+                else
+                    Debug.LogException(ex);
             }
         }
     }

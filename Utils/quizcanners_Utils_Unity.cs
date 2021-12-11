@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using QuizCanners.Inspect;
-using QuizCanners.Lerp;
 
 using Graphic = UnityEngine.UI.Graphic;
 using Object = UnityEngine.Object;
@@ -13,10 +11,12 @@ using  UnityEditor;
 #endif
 
 namespace QuizCanners.Utils {
-    
+
 #pragma warning disable IDE0019 // Use pattern matching
 
     public static class QcUnity {
+
+        public const string SO_CREATE_MENU = "Quiz Canners/";
 
         public static T Instantiate<T>(string name = null) where T : MonoBehaviour
         {
@@ -24,23 +24,23 @@ namespace QuizCanners.Utils {
             var go = new GameObject(name.IsNullOrEmpty() ? typeof(T).ToPegiStringType() : name);
             return go.AddComponent<T>();
         }
-        
+
         #region Lists
         public static void RemoveEmpty<T>(List<T> list) where T : Object {
 
-            for (var i = list.Count-1; i >=0 ; i--)
-                if (!list[i]) 
+            for (var i = list.Count - 1; i >= 0; i--)
+                if (!list[i])
                     list.RemoveAt(i);
-                
+
         }
-        
+
         #endregion
 
         #region Scriptable Objects
 
         private const string ScrObjExt = ".asset";
 
-        
+
         public static T CreateScriptableObjectInTheSameFolder<T>(ScriptableObject el, string name, bool refreshDatabase = true) where T : ScriptableObject
         {
 
@@ -53,7 +53,7 @@ namespace QuizCanners.Utils {
             if (path.IsNullOrEmpty()) return null;
 
             added = ScriptableObject.CreateInstance<T>();
-        
+
             var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path.Replace(Path.GetFileName(path), name + ScrObjExt));
 
             AssetDatabase.CreateAsset(added, assetPathAndName);
@@ -86,7 +86,7 @@ namespace QuizCanners.Utils {
 
             var oldName = Path.GetFileName(path);
 
-            if (oldName.IsNullOrEmpty()) 
+            if (oldName.IsNullOrEmpty())
                 return added;
 
             int len = oldName.Length;
@@ -150,12 +150,12 @@ namespace QuizCanners.Utils {
         }
 
         private static void SaveScriptableObjectAsAsset<T, TG>(T asset, string path, string name, List<TG> optionalList = null)
-            where T : TG where TG : ScriptableObject  {
+            where T : TG where TG : ScriptableObject {
 
-  
-            if (optionalList != null) 
+
+            if (optionalList != null)
                 optionalList.Add(asset);
-            
+
 #if UNITY_EDITOR
 
             if (!path.Contains("Assets"))
@@ -192,17 +192,17 @@ namespace QuizCanners.Utils {
 
         #region External Communications
 
-        public static void SendEmail(string to) => Application.OpenURL("mailto:"+to);
+        public static void SendEmail(string to) => Application.OpenURL("mailto:" + to);
 
         public static void SendEmail(string email, string subject, string body) =>
-            Application.OpenURL(string.Format("mailto:{0}?subject={1}&body={2}",email, subject.MyEscapeUrl(), body.MyEscapeUrl()));
+            Application.OpenURL(string.Format("mailto:{0}?subject={1}&body={2}", email, subject.MyEscapeUrl(), body.MyEscapeUrl()));
 
         private static string MyEscapeUrl(this string url) => System.Net.WebUtility.UrlEncode(url).Replace("+", "%20");
 
         public static void OpenBrowser(string address) => Application.OpenURL(address);
 
         #endregion
-        
+
         #region Timing
 
         public static double TimeSinceStartup() =>
@@ -212,36 +212,86 @@ namespace QuizCanners.Utils {
                 :
 #endif
                 Time.realtimeSinceStartup;
-        
+
         #endregion
 
-     /*   #region Raycasts
 
-        public static bool CastRay(this Vector3 origin, Vector3 target)
+        public static void RefreshLayoutHack(MonoBehaviour tf)
         {
-            var ray = origin - target;
-            return Physics.Raycast(new Ray(target, ray), ray.magnitude);
+            if (!tf)
+                Debug.LogError("Transform is null");
+            else if (!tf.gameObject.activeInHierarchy)
+                Debug.LogWarning("{0} is not active".F(tf.gameObject.name));
+            else
+                tf.StartCoroutine(RefreshLayoutHack(tf.gameObject));
         }
 
-        public static bool CastRay(this Vector3 origin, Vector3 target, float safeGap)
+        private static System.Collections.IEnumerator RefreshLayoutHack(GameObject refresh)
         {
-            var ray = target - origin;
-
-            var magnitude = ray.magnitude - safeGap;
-
-            return (!(magnitude <= 0)) && Physics.Raycast(new Ray(origin, ray), magnitude);
+            yield return null;
+            refresh.SetActive(false);
+            refresh.SetActive(true);
         }
 
-        public static bool CastRay(this Vector3 origin, Vector3 target, out RaycastHit hit)
+        #region Rendering
+
+        private static readonly Gate.Frame _cameraCullingCache = new Gate.Frame();
+
+        private static readonly Dictionary<Camera, Dictionary<Vector3, bool>> s_camsCulling = new Dictionary<Camera, Dictionary<Vector3, bool>>();
+
+        public static bool IsInCameraViewArea(this Camera cam, Vector3 worldPosition, float size = 1)
         {
-            var ray = target - origin;
-            return Physics.Raycast(new Ray(origin, ray), out hit);
+            if (_cameraCullingCache.TryEnter()) 
+            {
+                s_camsCulling.Clear();
+            }
+
+            var dic = s_camsCulling.GetOrCreate(cam);
+
+            if (dic.TryGetValue(worldPosition, out var resul))
+                return resul;
+
+            if (cam)
+            {
+                if (Vector3.Distance(cam.transform.position, worldPosition) < size) 
+                {
+                    dic[worldPosition] = true;
+                    return true;
+                }
+
+                var pos = cam.WorldToViewportPoint(worldPosition);
+
+                if (pos.x >= 0 && pos.x <= 1 && pos.y >= 0 && pos.y <= 1)
+                {
+                    dic[worldPosition] = true;
+                    return true;
+                }
+            } else 
+            {
+                QcLog.ChillLogger.LogErrorOnce(()=> "Camera is null", key: "NoCam");
+            }
+
+            dic[worldPosition] = false;
+            return false;
         }
 
-        #endregion*/
+        #endregion
+
+        #region Raycasts
+
+        public static Ray RaySegment(Vector3 from, Vector3 to, out float distance)
+        {
+            var vec = to - from;
+            distance = vec.magnitude;
+            return new Ray(from, direction: vec);
+        }
+
+
+
+        #endregion
 
         #region Color 
-        
+
         public static Color Alpha(this Color col, float alpha)
         {
             col.a = alpha;
@@ -258,6 +308,9 @@ namespace QuizCanners.Utils {
 
         #endregion
 
+        #region UI
+
+
         #region Rect Transform
 
         public static void SetAnchorsKeepPosition(this RectTransform rectTransform, Vector2 min, Vector2 max)
@@ -270,7 +323,6 @@ namespace QuizCanners.Utils {
 
             rectTransform.position = tempPos;
         }
-
 
         public static void SetPivotTryKeepPosition(this RectTransform rectTransform, float pivotX, float pivotY) =>
             rectTransform.SetPivotTryKeepPosition(new Vector2(pivotX, pivotY));
@@ -285,29 +337,60 @@ namespace QuizCanners.Utils {
             rectTransform.localPosition -= deltaPosition;
         }
 
-        public static Rect TryGetAtlasedAtlasedUvs(this Sprite sprite) {
+        public static Rect TryGetAtlasedAtlasedUvs(this Sprite sprite)
+        {
 
-                if (!Application.isPlaying || !sprite)
-                    return Rect.MinMaxRect(0, 0, 1, 1);
+            if (!Application.isPlaying || !sprite)
+                return Rect.MinMaxRect(0, 0, 1, 1);
 
-                var tex = sprite.texture;
-            
-                var rect = (sprite.packed && sprite.packingMode != SpritePackingMode.Tight) ? sprite.textureRect : sprite.rect;
+            var tex = sprite.texture;
 
-                var scaler = new Vector2(1f/tex.width, 1f/tex.height);
-            
-                rect.size *= scaler;
-                rect.position *= scaler;
+            var rect = (sprite.packed && sprite.packingMode != SpritePackingMode.Tight) ? sprite.textureRect : sprite.rect;
 
-                return rect;
+            var scaler = new Vector2(1f / tex.width, 1f / tex.height);
+
+            rect.size *= scaler;
+            rect.position *= scaler;
+
+            return rect;
         }
 
-        
-  
+        public static void SetVisibleAndInteractable(this CanvasGroup canvasGroup, bool value)
+        {
+            canvasGroup.alpha = value ? 1 : 0;
+            canvasGroup.interactable = value;
+            canvasGroup.blocksRaycasts = value;
+        }
+
+        public static void SetSizeDeltaX(this RectTransform rectTransform, float x)
+        {
+            var sd = rectTransform.sizeDelta;
+            sd.x = x;
+            rectTransform.sizeDelta = sd;
+        }
+
+        public static void SetSizeDeltaY(this RectTransform rectTransform, float y)
+        {
+            var sd = rectTransform.sizeDelta;
+            sd.y = y;
+            rectTransform.sizeDelta = sd;
+        }
+
+        public static void SetAnchoredPositionX(this RectTransform rectTransform, float x)
+        {
+            var sd = rectTransform.anchoredPosition;
+            sd.x = x;
+            rectTransform.anchoredPosition = sd;
+        }
+
+        public static void SetAnchoredPositionY(this RectTransform rectTransform, float y)
+        {
+            var sd = rectTransform.anchoredPosition;
+            sd.y = y;
+            rectTransform.anchoredPosition = sd;
+        }
 
         #endregion
-
-        #region Components & GameObjects
 
         public static void TrySet(this List<UnityEngine.UI.Image> list, Sprite to)
         {
@@ -320,7 +403,7 @@ namespace QuizCanners.Utils {
         public static List<T> CreateUiElement<T>(GameObject[] targets = null, Action<T> onCreate = null) where T : Component
         {
 
-            List <T> created = new List<T>();
+            List<T> created = new List<T>();
 
             bool createdForSelection = false;
 
@@ -351,25 +434,109 @@ namespace QuizCanners.Utils {
             return created;
         }
 
-        private static T CreateUiElement<T>(GameObject parent) where T: Component
+        private static T CreateUiElement<T>(GameObject parent) where T : Component
         {
             var rg = new GameObject(typeof(T).ToString().SimplifyTypeName()).AddComponent<T>();
             var go = rg.gameObject;
             var canvRend = go.GetComponent<CanvasRenderer>();
             if (!canvRend)
                 canvRend = go.AddComponent<CanvasRenderer>();
-                        
+
             canvRend.cullTransparentMesh = true;
 
-            #if UNITY_EDITOR
-                GameObjectUtility.SetParentAndAlign(go, parent);
-                Undo.RegisterCreatedObjectUndo(go, "Created " + go.name);
-                Selection.activeObject = go;
-            #endif
+#if UNITY_EDITOR
+            GameObjectUtility.SetParentAndAlign(go, parent);
+            Undo.RegisterCreatedObjectUndo(go, "Created " + go.name);
+            Selection.activeObject = go;
+#endif
 
             return rg;
         }
-        
+
+        public static bool TrySetAlpha_DisableGameObjectIfZero(this Graphic graphic, float alpha)
+        {
+            if (!graphic) 
+                return false;
+
+            var ret = graphic.TrySetAlpha(alpha);
+
+            graphic.gameObject.SetActive(alpha > 0.01f);
+
+            return ret;
+
+        }
+
+        public static bool TrySetAlpha(this Graphic graphic, float alpha)
+        {
+            if (!graphic) 
+                return false;
+
+            var col = graphic.color;
+
+            col.a = alpha;
+            graphic.color = col;
+            return true;
+
+        }
+
+        public static void TrySetAlpha_DisableGameObjectIfZero<T>(this List<T> graphics, float alpha) where T : Graphic
+        {
+            if (graphics.IsNullOrEmpty()) 
+                return;
+
+            foreach (var g in graphics)
+                g.TrySetAlpha_DisableGameObjectIfZero(alpha);
+        }
+
+        public static void TrySetAlpha<T>(this List<T> graphics, float alpha) where T : Graphic
+        {
+            if (graphics.IsNullOrEmpty()) 
+                return;
+
+            foreach (var g in graphics)
+                g.TrySetAlpha(alpha);
+        }
+
+        public static bool TrySetColor_RGB(this Graphic graphic, Color color)
+        {
+            if (!graphic) 
+                return false;
+
+            color.a = graphic.color.a;
+            graphic.color = color;
+            return true;
+        }
+
+        public static void TrySetColor_RGB<T>(this List<T> graphics, Color color) where T : Graphic
+        {
+            if (graphics.IsNullOrEmpty()) 
+                return;
+
+            foreach (var g in graphics)
+                g.TrySetColor_RGB(color);
+        }
+
+        public static bool TrySetColor_RGBA(this Graphic graphic, Color color)
+        {
+            if (!graphic) 
+                return false;
+            graphic.color = color;
+            return true;
+        }
+
+        public static void TrySetColor_RGBA<T>(this List<T> graphics, Color color) where T : Graphic
+        {
+            if (graphics.IsNullOrEmpty()) 
+                return;
+
+            foreach (var g in graphics)
+                g.TrySetColor_RGBA(color);
+        }
+
+        #endregion
+
+        #region Components & GameObjects
+
         public static void SetActive_List<T>(this List<T> list, bool to) where T : Component {
             if (!list.IsNullOrEmpty())
                 foreach (var e in list)
@@ -382,7 +549,7 @@ namespace QuizCanners.Utils {
                 foreach (var go in list)
                     if (go) go.SetActive(to);
         }
-        
+
         public static GameObject TryGetGameObjectFromObj(object obj)
         {
             var go = obj as GameObject;
@@ -422,46 +589,6 @@ namespace QuizCanners.Utils {
             return obj == null;
         }
 
-        public static bool TrySetAlpha_DisableGameObjectIfZero(this Graphic graphic, float alpha)
-        {
-            if (!graphic) return false;
-
-            var ret = graphic.TrySetAlpha(alpha);
-
-            graphic.gameObject.SetActive(alpha > 0.01f);
-
-            return ret;
-
-        }
-
-        public static bool TrySetAlpha(this Graphic graphic, float alpha)
-        {
-            if (!graphic) return false;
-
-            var col = graphic.color;
-            
-            col.a = alpha;
-            graphic.color = col;
-            return true;
-
-        }
-
-        public static void TrySetAlpha_DisableGameObjectIfZero<T>(this List<T> graphics, float alpha) where T : Graphic
-        {
-            if (graphics.IsNullOrEmpty()) return;
-
-            foreach (var g in graphics)
-                g.TrySetAlpha_DisableGameObjectIfZero(alpha);
-        }
-
-        public static void TrySetAlpha<T>(this List<T> graphics, float alpha) where T : Graphic
-        {
-            if (graphics.IsNullOrEmpty()) return;
-
-            foreach (var g in graphics)
-                g.TrySetAlpha(alpha);
-        }
-
         public static bool TrySetEnabled(this Behaviour component, bool value)
         {
             if (!component) return false;
@@ -479,39 +606,7 @@ namespace QuizCanners.Utils {
             foreach (var c in components)
                 c.TrySetEnabled(value);
         }
-        
-        public static bool TrySetColor_RGB(this Graphic graphic, Color color)
-        {
-            if (!graphic) return false;
 
-            color.a = graphic.color.a;
-            graphic.color = color;
-            return true;
-        }
-
-        public static void TrySetColor_RGB<T>(this List<T> graphics, Color color) where T : Graphic
-        {
-            if (graphics.IsNullOrEmpty()) return;
-
-            foreach (var g in graphics)
-                g.TrySetColor_RGB(color);
-        }
-
-        public static bool TrySetColor_RGBA(this Graphic graphic, Color color)
-        {
-            if (!graphic) return false;
-            graphic.color = color;
-            return true;
-        }
-
-        public static void TrySetColor_RGBA<T>(this List<T> graphics, Color color) where T : Graphic
-        {
-            if (graphics.IsNullOrEmpty()) return;
-
-            foreach (var g in graphics)
-                g.TrySetColor_RGBA(color);
-        }
-        
         public static bool IsUnityObject(this Type t) => typeof(Object).IsAssignableFrom(t);
 
         public static GameObject GetFocusedGameObject()
@@ -573,8 +668,8 @@ namespace QuizCanners.Utils {
 
         public static void Play(this AudioClip clip, Vector3 position, float volume = 1)
         {
-            
-          //  var rqst = new EditorAudioPlayRequest(clip);
+
+            //  var rqst = new EditorAudioPlayRequest(clip);
             /*
             if (!clip) return rqst;
 
@@ -610,11 +705,11 @@ namespace QuizCanners.Utils {
             }
 
 
-//#endif
+            //#endif
 
 
 
-           // return rqst;
+            // return rqst;
         }
 
 
@@ -742,36 +837,36 @@ namespace QuizCanners.Utils {
             stream.Write(bytes, 0, count);
         }
 
-       /* public class EditorAudioPlayRequest
-        {
+        /* public class EditorAudioPlayRequest
+         {
 
-            public AudioClip clip;
+             public AudioClip clip;
 
-            public void FromTimeOffset(float timeOff)
-            {
+             public void FromTimeOffset(float timeOff)
+             {
 
-                if (!clip)
-                    return;
+                 if (!clip)
+                     return;
 
-#if UNITY_EDITOR
-                if (!Application.isPlaying)
-                {
-                    if (setClipSamplePositionMethod == null)
-                        setClipSamplePositionMethod = AudioUtilClass.GetMethod("SetClipSamplePosition",
-                            BindingFlags.Static | BindingFlags.Public);
+ #if UNITY_EDITOR
+                 if (!Application.isPlaying)
+                 {
+                     if (setClipSamplePositionMethod == null)
+                         setClipSamplePositionMethod = AudioUtilClass.GetMethod("SetClipSamplePosition",
+                             BindingFlags.Static | BindingFlags.Public);
 
-                    int pos = (int)(clip.samples * Mathf.Clamp01(timeOff / clip.length));
+                     int pos = (int)(clip.samples * Mathf.Clamp01(timeOff / clip.length));
 
-                    setClipSamplePositionMethod.Invoke(null, new object[] { clip, pos });
-                }
-#endif
-            }
+                     setClipSamplePositionMethod.Invoke(null, new object[] { clip, pos });
+                 }
+ #endif
+             }
 
-            public EditorAudioPlayRequest(AudioClip clip)
-            {
-                this.clip = clip;
-            }
-        }*/
+             public EditorAudioPlayRequest(AudioClip clip)
+             {
+                 this.clip = clip;
+             }
+         }*/
 
         public static float GetLoudestPointInSeconds(this AudioClip clip)
             => clip.GetFirstLoudPointInSeconds(1);
@@ -820,13 +915,13 @@ namespace QuizCanners.Utils {
                 return s;
 
             //if (start < 2) 
-                return s.Substring(start + len + 1);
+            return s.Substring(start + len + 1);
 
             //return s.Substring(start+len + 1);
         }
 
         public static bool Contains(this LayerMask layermask, int layer) => layermask == (layermask | (1 << layer));
-        
+
         public static bool GetPlatformDirective(string define)
         {
 
@@ -900,15 +995,13 @@ namespace QuizCanners.Utils {
         public static void SetToDirty(this Object obj)
         {
 #if UNITY_EDITOR
-            if (!obj) 
+            if (!obj)
                 return;
 
             EditorUtility.SetDirty(obj);
-            
-    #if UNITY_2018_3_OR_NEWER
+
             if (PrefabUtility.IsPartOfAnyPrefab(obj))
                 PrefabUtility.RecordPrefabInstancePropertyModifications(obj);
-    #endif
 #endif
         }
 
@@ -959,7 +1052,7 @@ namespace QuizCanners.Utils {
 
 #if UNITY_EDITOR
             var path = AssetDatabase.GetAssetPath(obj);
-       
+
             if (path.IsNullOrEmpty())
             {
                 obj = Object.Instantiate(obj);
@@ -992,14 +1085,14 @@ namespace QuizCanners.Utils {
 
             string searchBy = "{0} t:{1}".F(name, typeof(T).ToPegiStringType());
 
-            var guids = path.IsNullOrEmpty() ? AssetDatabase.FindAssets(searchBy) :  AssetDatabase.FindAssets(searchBy, new[] { path });
+            var guids = path.IsNullOrEmpty() ? AssetDatabase.FindAssets(searchBy) : AssetDatabase.FindAssets(searchBy, new[] { path });
 
             foreach (var guid in guids) {
                 var tmp = AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid));
                 if (tmp)
                     assets.Add(tmp);
             }
-            
+
 #endif
 
             return assets;
@@ -1008,26 +1101,45 @@ namespace QuizCanners.Utils {
 
         public static List<T> FindAssetsByType<T>() where T : Object
         {
-#if UNITY_EDITOR
-            List<T> assets = new List<T>();
-
-            foreach (var guid in AssetDatabase.FindAssets(string.Format("t:{0}", typeof(T).ToPegiStringType()))) { 
-                T asset = AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid));
-                if (asset)
-                    assets.Add(asset);
+            if (Application.isEditor == false)
+            {
+                return new List<T>(Resources.FindObjectsOfTypeAll(typeof(T)) as T[]);
             }
 
-            return assets;
-#else
-            return new List<T>(Resources.FindObjectsOfTypeAll(typeof(T)) as T[]);
+            List<T> assets = new List<T>();
+#if UNITY_EDITOR
+
+            if (typeof(Component).IsAssignableFrom(typeof(T)))
+            {
+                foreach (var guid in AssetDatabase.FindAssets("t:prefab"))
+                {
+                    T asset = AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid));
+                    if (asset)
+                    {
+                        assets.Add(asset);
+                    }
+                }
+            }
+            else
+            {
+                string typeName = "t:{0}".F(typeof(T).Name);
+
+                foreach (var guid in AssetDatabase.FindAssets(typeName))
+                {
+                    T asset = AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid));
+                    if (asset)
+                        assets.Add(asset);
+                }
+            }
 #endif
+            return assets;
         }
 
-        public static bool FocusOnAsset<T>() where T: Object
+        public static bool FocusOnAsset<T>() where T : Object
         {
 #if UNITY_EDITOR
 
-            var ass = AssetDatabase.FindAssets("t:"+typeof(T));
+            var ass = AssetDatabase.FindAssets("t:" + typeof(T));
             if (ass.Length > 0) {
 
                 var all = new Object[ass.Length];
@@ -1051,25 +1163,20 @@ namespace QuizCanners.Utils {
         }
 
         public static Object GetPrefab(Object obj) =>
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
             PrefabUtility.GetCorrespondingObjectFromSource(obj);
-        #else
+#else
              null;
-        #endif
+#endif
 
         public static void UpdatePrefab(GameObject gameObject)
         {
 #if UNITY_EDITOR
+            var pf = IsPartOfAPrefab(gameObject) ? gameObject : PrefabUtility.GetPrefabInstanceHandle(gameObject);
 
-#if UNITY_2018_3_OR_NEWER
-            var pf = IsPrefab(gameObject) ? gameObject : PrefabUtility.GetPrefabInstanceHandle(gameObject);
-#else
-            var pf = PrefabUtility.GetPrefabObject(gameObject);
-#endif
             if (pf)
             {
-                // SavePrefabAsset, SaveAsPrefabAsset, SaveAsPrefabAssetAndConnect'
-#if UNITY_2018_3_OR_NEWER
+
                 if (!pf)
                     Debug.LogError("Handle is null");
                 else
@@ -1082,11 +1189,6 @@ namespace QuizCanners.Utils {
                     else
                         PrefabUtility.SaveAsPrefabAssetAndConnect(gameObject, path, InteractionMode.AutomatedAction);
                 }
-#else
-                PrefabUtility.ReplacePrefab(gameObject, GetPrefab(gameObject), ReplacePrefabOptions.ConnectToPrefab);
-                   //(gameObject.name + " prefab Updated").showNotificationIn3D_Views();
-#endif
-
             }
             else
             {
@@ -1097,7 +1199,25 @@ namespace QuizCanners.Utils {
 #endif
         }
 
-        public static bool IsPrefab(GameObject go) => go.scene.name == null;
+        public static bool IsPartOfAPrefab(GameObject go)
+        {
+#if UNITY_EDITOR
+
+            if (!go)
+                return false;
+
+            while (go.transform.parent)
+                go = go.transform.parent.gameObject;
+
+            //return PrefabUtility.GetPrefabParent(go) != null && PrefabUtility.GetPrefabObject(go) != null;
+
+            if (PrefabUtility.IsPartOfAnyPrefab(go)  || (UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() != null)
+                )
+                return true;
+            else
+#endif
+                return false;
+        }
 
         public static string SetUniqueObjectName(Object obj, string folderName, string extension)
         {
@@ -1331,27 +1451,6 @@ namespace QuizCanners.Utils {
 
         #region Texture MGMT
 
-        public static void BlitGL(Texture source, RenderTexture destination, Material mat)
-        {
-            RenderTexture.active = destination;
-            mat.mainTexture = source;//("_MainTex", source);
-            GL.PushMatrix();
-            GL.LoadOrtho();
-            GL.invertCulling = true;
-            mat.SetPass(0);
-            GL.Begin(GL.QUADS);
-            GL.MultiTexCoord2(0, 0.0f, 0.0f);
-            GL.Vertex3(0.0f, 0.0f, 0.0f);
-            GL.MultiTexCoord2(0, 1.0f, 0.0f);
-            GL.Vertex3(1.0f, 0.0f, 0.0f);
-            GL.MultiTexCoord2(0, 1.0f, 1.0f);
-            GL.Vertex3(1.0f, 1.0f, 1.0f);
-            GL.MultiTexCoord2(0, 0.0f, 1.0f);
-            GL.Vertex3(0.0f, 1.0f, 0.0f);
-            GL.End();
-            GL.invertCulling = false;
-            GL.PopMatrix();
-        }
 
 
         public static Color[] GetPixels(this Texture2D tex, int width, int height)
@@ -2068,162 +2167,53 @@ namespace QuizCanners.Utils {
 
         #endregion
 
-        #region Logging
+        #region Layer Masks
 
-        public class ChillLogger : IGotReadOnlyName
+        public static bool GetLayerMaskForSceneView(int layerIndex, bool value)
         {
-            private bool _logged;
-            private readonly bool _disabled;
-            private double _lastLogged;
-            private int _calls;
-            private readonly string message = "error";
-
-            public string GetReadOnlyName() => message + (_disabled ? " Disabled" : " Enabled");
-
-            public ChillLogger(string msg, bool logInBuild = false)
-            {
-                message = msg;
-#if !UNITY_EDITOR
-            _disabled = (!logInBuild);
+#if UNITY_EDITOR
+            var flag = 1 << layerIndex;
+            return (Tools.visibleLayers & flag)>0;
 #else
-                _disabled = false;
+            return false;
 #endif
-            }
-
-            public ChillLogger()
-            {
-
-            }
-
-            public void Log_Now(Exception ex, Object obj = null)
-            {
-                if (obj)
-                    Debug.LogException(ex, obj);
-                else
-                    Debug.LogException(ex);
-
-                _lastLogged = TimeSinceStartup();
-                _calls = 0;
-                _logged = true;
-            }
-
-            public void Log_Now(string msg, bool asError, Object obj = null)
-            {
-                if (msg == null)
-                    msg = message;
-
-                if (_calls > 0)
-                    msg += " [+ {0} calls]".F(_calls);
-
-                if (_lastLogged > 0)
-                    msg += " [{0} s. later]".F(QcUnity.TimeSinceStartup() - _lastLogged);
-                else
-                    msg += " [at {0}]".F(QcUnity.TimeSinceStartup());
-
-                if (asError)
-                    Debug.LogError(msg, obj);
-                else
-                    Debug.Log(msg, obj);
-
-                _lastLogged = TimeSinceStartup();
-                _calls = 0;
-                _logged = true;
-            }
-
-            public void Log_Once(string msg = null, bool asError = true, Object obj = null)
-            {
-
-                if (!_logged)
-                    Log_Now(msg, asError, obj);
-                else
-                    _calls++;
-            }
-
-            public void Log( string msg = null, float seconds = 5, bool asError = true, Object target = null)
-            {
-                if (!_logged || (TimeSinceStartup() - _lastLogged > seconds))
-                    Log_Now(msg, asError, target);
-                else
-                    _calls++;
-            }
-
-            public void Log(Exception err = null, float seconds = 5, Object obj = null)
-            {
-                if (!_logged || (TimeSinceStartup() - _lastLogged > seconds))
-                    Log_Now(err, obj);
-                else
-                    _calls++;
-            }
-
-            public void Log_Every(int callCount, string msg = null, bool asError = true, Object obj = null)
-            {
-                if (!_logged || (_calls > callCount))
-                    Log_Now(msg, asError, obj);
-                else
-                    _calls++;
-            }
-
-            private static readonly List<string> loggedErrors = new List<string>();
-            public static void LogErrorOnce(string msg, string key, Object target = null)
-            {
-                if (loggedErrors.Contains(key))
-                    return;
-
-                loggedErrors.Add(key);
-
-                if (target)
-                    Debug.LogError(msg, target);
-                else
-                    Debug.LogError(msg);
-            }
-
-            public static void LogErrorOnce(Func<string> action, string key, Object target = null)
-            {
-                if (loggedErrors.Contains(key))
-                    return;
-
-                loggedErrors.Add(key);
-
-                if (target)
-                    Debug.LogError(action(), target);
-                else
-                    Debug.LogError(action());
-            }
-
-            private static readonly List<string> loggedWarnings = new List<string>();
-            public static void LogWarningOnce( string msg, string key, Object target = null)
-            {
-                if (loggedWarnings.Contains(key))
-                    return;
-
-                loggedWarnings.Add(key);
-
-                if (target)
-                    Debug.LogWarning(msg, target);
-                else
-                    Debug.LogWarning(msg);
-            }
 
         }
 
-        #endregion
+        public static void SetLayerMaskForSceneView(int layerIndex, bool value)
+        {
+#if UNITY_EDITOR
+            var flag = 1 << layerIndex;
+            var vis = Tools.visibleLayers & flag;
+            if (vis > 0 != value)
+            {
+                if (value)
+                    Tools.visibleLayers |= flag;
+                else 
+                    Tools.visibleLayers &= ~flag;
+            }
+#endif
+        }
 
-        #region Layer Masks
+        public static void SetMaskRemoveOthers(this Camera cam, int layerIndex)
+        {
+            cam.cullingMask = 1 << layerIndex;
+        }
 
-        public static void SetMask(this Camera cam, int layer, bool value) 
+        public static void SetMask(this Camera cam, int layerIndex, bool value) 
         {
             if (value) 
             {
-                cam.cullingMask |= 1 << layer; 
+                cam.cullingMask |= 1 << layerIndex; 
             } else 
             {
-                cam.cullingMask &= ~(1 << layer);
+                cam.cullingMask &= ~(1 << layerIndex);
             }
         }
 
-        public static bool GetMask(this Camera cam, int layer)
+        public static bool GetMask(this Camera cam, int layerIndex)
         {
-              return  (cam.cullingMask & (1 << layer))!= 0;
+              return  (cam.cullingMask & (1 << layerIndex))!= 0;
       
         }
 

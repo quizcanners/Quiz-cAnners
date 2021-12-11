@@ -20,7 +20,7 @@ namespace QuizCanners.Inspect
                 if (!(typeof(MonoBehaviour)).IsAssignableFrom(typeof(T))) return false;
 
                 GameObject mb = null;
-                if (edit(ref mb))
+                if (Edit(ref mb))
                 {
                     list[i] = mb.GetComponent<T>();
                     if (list[i] == null) GameView.ShowNotification(typeof(T) + " Component not found");
@@ -49,7 +49,7 @@ namespace QuizCanners.Inspect
 
                 length += (int)(count * fontSize * 0.5f);
 
-                return length;
+                return Mathf.Max(30, length);
             }
         }
 

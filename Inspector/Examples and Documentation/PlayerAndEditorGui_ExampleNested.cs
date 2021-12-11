@@ -1,5 +1,4 @@
-﻿//using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace QuizCanners.Inspect.Examples
 {
@@ -21,30 +20,30 @@ namespace QuizCanners.Inspect.Examples
 
             using (_context.StartContext())
             {
-                if ("Light".PegiLabel().isEntered().nl())
+                if ("Light".PegiLabel().IsEntered().Nl())
                 {
-                    "Sun".PegiLabel(toolTip: "Color of sunlight", width: 50).write();
+                    "Sun".PegiLabel(toolTip: "Color of sunlight", width: 50).Write();
 
-                    pegi.edit(ref SunColor);
+                    pegi.Edit(ref SunColor);
 
                     if (!isDay)
                         "Set Day".PegiLabel().Click().OnChanged(() => isDay = true);
 
-                    pegi.nl();
+                    pegi.Nl();
 
-                    "Moon".PegiLabel(toolTip: "Color of the Moon", width: 50).edit(ref MoonColor);
+                    "Moon".PegiLabel(toolTip: "Color of the Moon", width: 50).Edit(ref MoonColor);
 
                     if (isDay)
                         "Set Night".PegiLabel().Click().OnChanged(() => isDay = false);
                        
-                    pegi.nl();
+                    pegi.Nl();
 
-                    nameof(lightSource).PegiLabel().edit(ref lightSource).nl();
+                    nameof(lightSource).PegiLabel().Edit(ref lightSource).Nl();
 
                     if (lightSource)
                     {
                         var myLight = lightSource.color;
-                        nameof(myLight).PegiLabel().edit(ref myLight).nl().OnChanged(() => lightSource.color = myLight);
+                        nameof(myLight).PegiLabel().Edit(ref myLight).Nl().OnChanged(() => lightSource.color = myLight);
                     }
 
                     if (changed && lightSource)
@@ -52,10 +51,10 @@ namespace QuizCanners.Inspect.Examples
                         lightSource.color = isDay ? SunColor : MoonColor;
                     }
 
-                    "FOG".PegiLabel(style: pegi.Styles.ListLabel).nl();
+                    "FOG".PegiLabel(style: pegi.Styles.ListLabel).Nl();
 
                     var fogColor = RenderSettings.fogColor;
-                    nameof(fogColor).PegiLabel().edit(ref fogColor).nl().OnChanged(()=> RenderSettings.fogColor = fogColor);
+                    nameof(fogColor).PegiLabel().Edit(ref fogColor).Nl().OnChanged(()=> RenderSettings.fogColor = fogColor);
                 }
             }
         }

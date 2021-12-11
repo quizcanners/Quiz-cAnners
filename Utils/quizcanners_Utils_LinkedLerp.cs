@@ -128,42 +128,42 @@ namespace QuizCanners.Lerp
             {
                
                 if (Application.isPlaying)
-                    (Enabled ? icon.Active : icon.InActive).draw(Enabled ? "Lerp Possible" : "Lerp Not Possible");
+                    (Enabled ? Icon.Active : Icon.InActive).Draw(Enabled ? "Lerp Possible" : "Lerp Not Possible");
 
                 switch (lerpMode)
                 {
                     case LerpSpeedMode.SpeedThreshold:
-                        (Name_Internal + " Thld").PegiLabel(200).edit(ref SpeedLimit);
+                        (Name_Internal + " Thld").PegiLabel(200).Edit(ref SpeedLimit);
                         break;
                     case LerpSpeedMode.UnlinkedSpeed:
-                        (Name_Internal + " Speed").PegiLabel(200).edit(ref SpeedLimit);
+                        (Name_Internal + " Speed").PegiLabel(200).Edit(ref SpeedLimit);
                         break;
                     default:
-                        (Name_Internal + " Mode").PegiLabel(200).editEnum(ref lerpMode);
+                        (Name_Internal + " Mode").PegiLabel(200).Edit_Enum(ref lerpMode);
                         break;
                 }
                 
-                if (icon.Enter.Click())
+                if (Icon.Enter.Click())
                     edited = ind;
             }
 
             public virtual void Inspect()
             {
 
-                GetReadOnlyName().PegiLabel().write_ForCopy().nl();
+                GetReadOnlyName().PegiLabel().Write_ForCopy().Nl();
 
-                "Lerp Speed Mode ".PegiLabel(110).editEnum(ref lerpMode).nl();
+                "Lerp Speed Mode ".PegiLabel(110).Edit_Enum(ref lerpMode).Nl();
 
                 if (Application.isPlaying)
-                    (Enabled ? icon.Active : icon.InActive).nl(Enabled ? "Lerp Possible" : "Lerp Not Possible");
+                    (Enabled ? Icon.Active : Icon.InActive).Nl(Enabled ? "Lerp Possible" : "Lerp Not Possible");
 
                 switch (lerpMode)
                 {
                     case LerpSpeedMode.SpeedThreshold:
-                        ("Max Speed").PegiLabel(90).edit(ref SpeedLimit);
+                        ("Max Speed").PegiLabel(90).Edit(ref SpeedLimit);
                         break;
                     case LerpSpeedMode.UnlinkedSpeed:
-                        ("Speed").PegiLabel(90).edit(ref SpeedLimit);
+                        ("Speed").PegiLabel(90).Edit(ref SpeedLimit);
                         break;
                         //default:
                         //("Mode").editEnum(ref lerpMode).changes(ref changed);
@@ -254,12 +254,12 @@ namespace QuizCanners.Lerp
 
             public override void Inspect()
             {
-                pegi.nl();
+                pegi.Nl();
 
                 var changed = pegi.ChangeTrackStart();
 
                 base.Inspect();
-                pegi.nl();
+                pegi.Nl();
 
                 if (changed)
                 {
@@ -267,7 +267,7 @@ namespace QuizCanners.Lerp
                 }
 
                 if (lerpMode != LerpSpeedMode.LerpDisabled)
-                    "Target".PegiLabel().edit(ref targetValue).nl();
+                    "Target".PegiLabel().Edit(ref targetValue).Nl();
             }
 
             #endregion
@@ -342,18 +342,18 @@ namespace QuizCanners.Lerp
 
             public override void Inspect()
             {
-                pegi.nl();
+                pegi.Nl();
 
                 var changed = pegi.ChangeTrackStart();
 
                 base.Inspect();
-                pegi.nl();
+                pegi.Nl();
 
                 if (changed)
                     targetValue = CurrentValue;
 
                 if (lerpMode != LerpSpeedMode.LerpDisabled)
-                    "Target".PegiLabel().edit(ref targetValue).nl();
+                    "Target".PegiLabel().Edit(ref targetValue).Nl();
             }
 
             #endregion
@@ -410,7 +410,7 @@ namespace QuizCanners.Lerp
                 base.Inspect();
 
                 if (Application.isPlaying)
-                    "{0} => {1}".F(CurrentValue, TargetValue).PegiLabel().nl();
+                    "{0} => {1}".F(CurrentValue, TargetValue).PegiLabel().Nl();
 
             }
 
@@ -579,9 +579,9 @@ namespace QuizCanners.Lerp
 
                 var tex = Current;
           
-                "On Start:".PegiLabel(60).editEnum(ref _onStart).nl();
+                "On Start:".PegiLabel(60).Edit_Enum(ref _onStart).Nl();
 
-                if ("Texture[{0}]".F(_targetTextures.Count).PegiLabel(90).edit(ref tex).nl())
+                if ("Texture[{0}]".F(_targetTextures.Count).PegiLabel(90).Edit(ref tex).Nl())
                     TargetTexture = tex;
             }
 
@@ -700,6 +700,8 @@ namespace QuizCanners.Lerp
 
             protected Material Material => rendy ? rendy.MaterialWhatever() : material;
 
+            public abstract ShaderProperty.IndexGeneric<T> Property { get; }
+
             protected override string Name_Internal
             {
                 get
@@ -805,7 +807,7 @@ namespace QuizCanners.Lerp
             {
                 base.Inspect();
 
-                pegi.edit(ref targetValue).nl();
+                pegi.Edit(ref targetValue).Nl();
             }
 
             #endregion
@@ -847,11 +849,11 @@ namespace QuizCanners.Lerp
             public override void InspectInList(ref int edited, int ind)
             {
                 if (minMax)
-                    _name.PegiLabel().edit(ref targetValue, min, max);
+                    _name.PegiLabel().Edit(ref targetValue, min, max);
                 else
-                    _name.PegiLabel().ApproxWidth().edit(ref targetValue);
+                    _name.PegiLabel().ApproxWidth().Edit(ref targetValue);
                 
-                if (icon.Enter.Click())
+                if (Icon.Enter.Click())
                     edited = ind;
             }
 
@@ -986,6 +988,12 @@ namespace QuizCanners.Lerp
                 _name = name;
             }
 
+            public Vector3Value(string name, float maxSpeed)
+            {
+                _name = name;
+                this.SpeedLimit = maxSpeed;
+            }
+
             protected override bool LerpInternal(float linkedPortion)
             {
                 if (CurrentValue != targetValue || !defaultSet)
@@ -1017,18 +1025,18 @@ namespace QuizCanners.Lerp
 
             public override void Inspect()
             {
-                pegi.nl();
+                pegi.Nl();
 
                 var changed = pegi.ChangeTrackStart();
 
                 base.Inspect();
-                pegi.nl();
+                pegi.Nl();
 
                 if (changed)
                     targetValue = CurrentValue;
 
                 if (lerpMode != LerpSpeedMode.LerpDisabled)
-                    "Target".PegiLabel().edit(ref targetValue).nl();
+                    "Target".PegiLabel().Edit(ref targetValue).Nl();
             }
 
             #endregion
@@ -1105,9 +1113,9 @@ namespace QuizCanners.Lerp
 
             public override void InspectInList(ref int edited, int ind)
             {
-                Name_Internal.PegiLabel().ApproxWidth().edit(ref targetValue);
+                Name_Internal.PegiLabel().ApproxWidth().Edit(ref targetValue);
                 
-                if (icon.Enter.Click())
+                if (Icon.Enter.Click())
                     edited = ind;
             }
 
@@ -1329,6 +1337,8 @@ namespace QuizCanners.Lerp
             private readonly ShaderProperty.IndexGeneric<float>//ShaderProperty.FloatValue 
                 _property;
 
+            public override ShaderProperty.IndexGeneric<float> Property => _property;
+
             protected override string Name_Internal =>
                 _property != null ? _property.GetReadOnlyName() : "Material Float";
 
@@ -1394,9 +1404,9 @@ namespace QuizCanners.Lerp
             {
                 base.Inspect();
 
-                "Target".PegiLabel(70).edit(ref targetValue).nl();
+                "Target".PegiLabel(70).Edit(ref targetValue).Nl();
 
-                if ("Value".PegiLabel(60).edit(ref _property.latestValue).nl())
+                if ("Value".PegiLabel(60).Edit(ref _property.latestValue).Nl())
                     Set();
             }
 
@@ -1430,6 +1440,7 @@ namespace QuizCanners.Lerp
         {
             private readonly ShaderProperty.IndexGeneric<Color> _property;
 
+            public override ShaderProperty.IndexGeneric<Color> Property => _property;
             protected override string Name_Internal => _property != null ? _property.GetReadOnlyName() : "Material Float";
 
             public override Color TargetValue { get; set; }
@@ -1509,6 +1520,7 @@ namespace QuizCanners.Lerp
         {
             private readonly ShaderProperty.IndexGeneric<Vector4> _property;
 
+            public override ShaderProperty.IndexGeneric<Vector4> Property => _property;
             protected override string Name_Internal => _property != null ? _property.GetReadOnlyName() : "Material Float4";
 
             public override Vector4 TargetValue
@@ -1713,7 +1725,7 @@ namespace QuizCanners.Lerp
             {
                 base.Inspect();
 
-                "Set zero On Start".PegiLabel().toggleIcon(ref setZeroOnStart).nl();
+                "Set zero On Start".PegiLabel().ToggleIcon(ref setZeroOnStart).Nl();
             }
 
             #endregion
@@ -1796,21 +1808,21 @@ namespace QuizCanners.Lerp
 
         public void Inspect()
         {
-            "Slowest:".PegiLabel().write_ForCopy(dominantParameter).nl();
-            "Updates: {0}".F(_resets).PegiLabel().nl();
+            "Slowest:".PegiLabel().Write_ForCopy(dominantParameter).Nl();
+            "Updates: {0}".F(_resets).PegiLabel().Nl();
         }
 
         public void InspectInList(ref int edited, int ind)
         {
-            "Lerp DP: {0} [{1}]".F(dominantParameter, _resets).PegiLabel().write();
+            "Lerp DP: {0} [{1}]".F(dominantParameter, _resets).PegiLabel().Write();
 
-            if (icon.Refresh.Click("Reset stats"))
+            if (Icon.Refresh.Click("Reset stats"))
             {
                 dominantParameter = "None";
                 _resets = 0;
             }
 
-            if (icon.Enter.Click())
+            if (Icon.Enter.Click())
                 edited = ind;
         }
 

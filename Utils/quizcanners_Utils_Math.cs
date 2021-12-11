@@ -19,9 +19,13 @@ namespace QuizCanners.Utils
             float t = Mathf.Clamp01((x - edge0) / (edge1 - edge0));
             return t * t * (3f - 2f * t);
         }
-        
-        public static IDisposable RandomBySeedDisposable(int seed) =>
-            QcSharp.SetTemporaryValueDisposable(seed, val => UnityEngine.Random.InitState(val), () => (int)DateTime.Now.Ticks);
+
+        public static IDisposable RandomBySeedDisposable(int seed)
+        {
+            var state = UnityEngine.Random.state;
+            UnityEngine.Random.InitState(seed);
+            return QcSharp.DisposableAction(() => UnityEngine.Random.state = state );
+        }
 
         #region Double
 
@@ -85,6 +89,98 @@ namespace QuizCanners.Utils
         {
             value.Clamp(new Vector2Int(from, from), new Vector2Int(to, to));
         }
+        public static float BezierCurveLength(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, int pointCount = 30) 
+        {
+            //The default 30 
+            float length = 0.0f;
+            Vector3 lastPoint = BezierPoint(0.0f / (float)pointCount, p0, p1, p2, p3);
+            for (int i = 1; i <= pointCount; i++)
+            {
+                Vector3 point = BezierPoint((float)i / (float)pointCount, p0, p1, p2, p3);
+                length += Vector3.Distance(point, lastPoint);
+                lastPoint = point;
+            }
+            return length;
+        }
+
+        public static List<Vector3> BezierCurvePoints(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, out float length, int pointCount = 30)
+        {
+            var rawPoints = new List<Vector3>();
+
+            length = 0.0f;
+            Vector3 lastPoint = BezierPoint(0, p0, p1, p2, p3);
+
+            rawPoints.Add(p0);
+            for (int i = 1; i <= pointCount; i++)
+            {
+                var point = BezierPoint((float)i / (float)pointCount, p0, p1, p2, p3);
+                length += Vector3.Distance(point, lastPoint);
+                lastPoint = point;
+                rawPoints.Add(point);
+            }
+
+            rawPoints.Add(p3);
+
+            var adjustedPoints = new List<Vector3>();
+
+            adjustedPoints.Add(p0);
+            float segmentLength = length / (pointCount-1); // Because X points translates into X-1 segments
+            float forNextAdjustedSegment = segmentLength;
+            int rawIndex = 1;
+            bool rawSegmentValid = false;
+            float rawSegmentLength = 0;
+            Vector3 rawPointA = Vector3.zero;
+            Vector3 rawPointB = Vector3.zero;
+
+            while (adjustedPoints.Count < pointCount-1) 
+            {
+                if (!rawSegmentValid)
+                {
+                    rawPointA = rawPoints[rawIndex - 1];
+                    rawPointB = rawPoints[rawIndex];
+                    rawSegmentLength = Vector3.Distance(rawPointA, rawPointB);
+                }
+
+                if (rawSegmentLength >= forNextAdjustedSegment)
+                {
+                    adjustedPoints.Add(Vector3.Lerp(rawPointA, rawPointB, forNextAdjustedSegment / rawSegmentLength));
+                    forNextAdjustedSegment += segmentLength;
+                } else 
+                {
+                    forNextAdjustedSegment -= rawSegmentLength;
+                    rawSegmentValid = false;
+                    rawIndex++;
+                    if (rawIndex >= rawPoints.Count) 
+                    {
+                        Debug.LogError("Outside of Raw Indexes. Breaking");
+                        break;
+                    }
+                }
+                
+            }
+
+            adjustedPoints.Add(p3);
+
+            return adjustedPoints;
+        }
+
+
+        public static Vector3 BezierPoint(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
+        {
+            float u = 1 - t;
+            float tt = t * t;
+            float uu = u * u;
+            float uuu = uu * u;
+            float ttt = tt * t;
+
+            Vector3 p = uuu * p0;
+            p += 3 * uu * t * p1;
+            p += 3 * u * tt * p2;
+            p += ttt * p3;
+
+            return p;
+        }
+
         public static Vector3 BezierCurve(float portion, Vector3 from, Vector3 mid, Vector3 to)
         {
             Vector3 m1 = Vector3.LerpUnclamped(from, mid, portion);
@@ -106,6 +202,29 @@ namespace QuizCanners.Utils
 
             return (longest > (c * c + side * side));
 
+        }
+
+        public static float DistanceFromPointToALine (Vector3 point, Vector3 startp, Vector3 endp) 
+        {
+            var a = Vector3.Distance(startp, endp);
+            var b = Vector3.Distance(startp, point);
+            var c = Vector3.Distance(endp, point);
+            var s = (a + b + c) / 2;
+            return 2 * Mathf.Sqrt(s * (s - a) * (s - b) * (s - c)) / a;
+        }
+
+        public static Vector3 GetClosestPointOnALine(Vector3 lineA, Vector3 lineB, Vector3 point) 
+        {
+            Vector3 a_to_p = point - lineA;
+            Vector3 a_to_b = lineB - lineA;
+
+            float atb2 = Vector3.Scale(a_to_b, a_to_b).magnitude; 
+            
+            var atp_dot_atb = Vector3.Dot(a_to_p, a_to_b);
+
+            float t = atp_dot_atb / atb2; // new Vector3(atp_dot_atb.x/ atb2.x, atp_dot_atb.y / atb2.y, atp_dot_atb.z / atb2.z) ;
+
+            return Vector3.Lerp(lineA, lineB, t);//lineA + Vector3.Scale( a_to_b; 
         }
 
         public static bool IsPointOnLine(float a, float b, float line, float percision)
@@ -197,22 +316,6 @@ namespace QuizCanners.Utils
 
         #region Transformations
 
-        public static Vector3 XYZ(this Vector4 vec) => new Vector3(vec.x, vec.y, vec.z);
-        
-        public static Vector2 YX(this Vector2 vec) => new Vector2(vec.y, vec.x);
-
-        public static Vector2 X(this Vector2 vec, float x) => new Vector2(x, vec.y);
-
-        public static Vector2 Y(this Vector2 vec, float y) => new Vector2(vec.x, y);
-
-        public static Vector2 ZW(this Vector4 vec) => new Vector2(vec.z, vec.w);
-
-        public static Vector2 XY(this Vector4 vec) => new Vector2(vec.x, vec.y);
-
-        public static Vector2 XW(this Vector4 vec) => new Vector2(vec.x, vec.w);
-
-        public static Vector2 ZY(this Vector4 vec) => new Vector2(vec.z, vec.y);
-
         public static Vector2 Clamp01(this Vector2 v2)
         {
             v2.x = Mathf.Clamp01(v2.x);
@@ -288,7 +391,11 @@ namespace QuizCanners.Utils
             return v;
         }
 
-        public static Vector4 ToVector4(this Color col) => new Vector4(col.r, col.g, col.b, col.a);
+        public static Vector2 YX(this Vector2 vec) => new Vector2(vec.y, vec.x);
+
+        public static Vector2 X(this Vector2 vec, float x) => new Vector2(x, vec.y);
+
+        public static Vector2 Y(this Vector2 vec, float y) => new Vector2(vec.x, y);
 
         public static Vector2 XY(this Vector3 vec) => new Vector2(vec.x, vec.y);
 
@@ -296,23 +403,39 @@ namespace QuizCanners.Utils
 
         public static Vector2 XZ(this Vector3 vec) => new Vector2(vec.x, vec.z);
 
-        public static Vector4 ToVector4(this Vector2 v2, float z = 0, float w = 0) => new Vector4(v2.x, v2.y, z, w);
+        public static Vector3 Z(this Vector3 vec, float z) => new Vector3(vec.x, vec.y, z);
 
-        public static Vector2 ToVector2(this Vector3 v3) => new Vector2(v3.x, v3.y);
+        public static Vector3 Y(this Vector3 vec, float y) => new Vector3(vec.x, y ,vec.z);
 
-        public static Vector4 ToVector4(this Vector3 v3, float w = 0) => new Vector4(v3.x, v3.y, v3.z, w);
+        public static Vector3 XYZ(this Vector4 vec) => new Vector3(vec.x, vec.y, vec.z);
 
-        public static Vector3 ToVector3(this Vector2 v2, float z = 0) => new Vector3(v2.x, v2.y, z);
+        public static Vector2 ZW(this Vector4 vec) => new Vector2(vec.z, vec.w);
+
+        public static Vector2 XY(this Vector4 vec) => new Vector2(vec.x, vec.y);
+
+        public static Vector2 XW(this Vector4 vec) => new Vector2(vec.x, vec.w);
+
+        public static Vector2 ZY(this Vector4 vec) => new Vector2(vec.z, vec.y);
+
+        public static Vector3 ToVector3(this Vector2 v2xy, float z = 0) => new Vector3(v2xy.x, v2xy.y, z);
+
+        public static Vector3 ToVector3XZ(this Vector2 v2xz, float y = 0) => new Vector3(v2xz.x, y, v2xz.y);
+
+        public static Vector4 ToVector4(this Vector2 v2xy, float z = 0, float w = 0) => new Vector4(v2xy.x, v2xy.y, z, w);
 
         public static Vector4 ToVector4(this Vector2 v2xy, Vector2 v2zw) => new Vector4(v2xy.x, v2xy.y, v2zw.x, v2zw.y);
+
+        public static Vector4 ToVector4(this Vector3 v3xyz, float w = 0) => new Vector4(v3xyz.x, v3xyz.y, v3xyz.z, w);
 
         public static Vector4 ToVector4(this Rect rect, bool useMinMax) =>
             useMinMax ? new Vector4(rect.xMin, rect.yMin, rect.xMax, rect.yMax) : new Vector4(rect.x, rect.y, rect.width, rect.height);
 
+        public static Vector4 ToVector4(this Color col) => new Vector4(col.r, col.g, col.b, col.a);
+
+        public static Vector4 ToVector4(this Quaternion q) => new Vector4(q.x, q.y, q.z, q.w);
+
         public static Rect ToRect(this Vector4 v4, bool usingMinMax)
             => usingMinMax ? Rect.MinMaxRect(v4.x, v4.y, v4.z, v4.w) : new Rect(v4.x, v4.y, v4.z, v4.w);
-
-        public static Vector3 ToVector3(this Vector4 v4) => new Vector3(v4.x, v4.y, v4.z);
 
         #endregion
         
@@ -531,51 +654,5 @@ namespace QuizCanners.Utils
         }
 
     }
-
-  
-
-    /*
-    [Serializable]
-    public struct MyIntVec2
-    {
-        public int x;
-        public int y;
-
-        public int Max => x > y ? x : y;
-
-        public override string ToString() => "x:" + x + " y:" + y;
-
-        public void Clamp(int min, int max)
-        {
-            x = Mathf.Clamp(x, min, max);
-            y = Mathf.Clamp(y, min, max);
-        }
-
-        public MyIntVec2 From(Vector2 vec)
-        {
-            x = (int)vec.x;
-            y = (int)vec.y;
-            return this;
-        }
-
-        public MyIntVec2(float nx, float ny)
-        {
-            x = (int)nx;
-            y = (int)ny;
-        }
-
-        public MyIntVec2(int nx, int ny)
-        {
-            x = nx;
-            y = ny;
-        }
-
-        public MyIntVec2(int val)
-        {
-            x = y = val;
-        }
-
-    }
-    */
 }
 

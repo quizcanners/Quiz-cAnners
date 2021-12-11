@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using QuizCanners.Migration;
 using QuizCanners.Utils;
 using UnityEngine;
-using Object = UnityEngine.Object;
-
 
 namespace QuizCanners.Inspect
 {
@@ -14,28 +12,76 @@ namespace QuizCanners.Inspect
         public class EnterExitContext : ICfgCustom
         {
             [NonSerialized] internal int _currentIndex = -1;
-            [SerializeField] internal int _currentlyEntered = -1;
+            [HideInInspector] [SerializeField] private int _currentlyEntered = -1;
             private EnterExitContext _previous;
             [NonSerialized] internal bool contextUsed;
-
+            private readonly PlayerPrefValue.Int _playerPref = null;
+            private readonly LogicWrappers.Request checkPlayerPrefs = new LogicWrappers.Request();
+            private bool insideUsinglock;
             internal static EnterExitContext CurrentIndexer;
 
-            internal void Increment()
+            private void CheckUsingBlock(string function) 
             {
-                _currentIndex++;
+                if (!insideUsinglock)
+                {
+                    QcLog.ChillLogger.LogErrorOnce("Calling {0} outside of the Context Using() block".F(function), key: "CtxBlck"+ function);
+                }
             }
 
-            internal bool CanSkipCurrent => _currentlyEntered != -1 && _currentlyEntered != _currentIndex;
+            private int GetCurrentlyEnteredInternal() 
+            {
+                if (checkPlayerPrefs.TryUseRequest())
+                {
+                    _currentlyEntered = _playerPref.GetValue();
+                }
+                return _currentlyEntered;
+            }
 
-            public StateToken IsAnyEntered => new StateToken(_currentlyEntered != -1);
+            internal int CurrentlyEntered
+            {
+                get
+                {
+                    CheckUsingBlock(nameof(CurrentlyEntered));
+                    return GetCurrentlyEnteredInternal();
+                }
+                set
+                {
+                    _currentlyEntered = value;
+                    OnChanged();
+                }
+            }
+
+            public EnterExitContext(string playerPrefId = null)
+            {
+                if (!playerPrefId.IsNullOrEmpty())
+                {
+                    _playerPref = new PlayerPrefValue.Int("pegi/EntExit/" + playerPrefId, defaultValue: -1);
+                    checkPlayerPrefs.CreateRequest();
+
+                }
+            }
+
+            internal void OnChanged()
+            {
+                if (_playerPref != null)
+                    _playerPref.SetValue(_currentlyEntered);
+            }
+
+            internal void Increment() => _currentIndex++;
+            
+            internal bool CanSkipCurrent => IsAnyEntered && _currentlyEntered != _currentIndex;
+
+            public StateToken IsAnyEntered => new StateToken(GetCurrentlyEnteredInternal() != -1);
 
             public StateToken IsCurrentEntered
             {
-                get => new StateToken(_currentIndex == _currentlyEntered);
-                set
+                get
                 {
-                    _currentlyEntered = value ? _currentIndex : -1;
+                    CheckUsingBlock(nameof(IsCurrentEntered));
+                    return new StateToken(_currentIndex == CurrentlyEntered);
                 }
+                set => CurrentlyEntered = value ? _currentIndex : -1;
+
             }
 
             public IDisposable StartContext()
@@ -43,32 +89,39 @@ namespace QuizCanners.Inspect
                 _currentIndex = -1;
                 _previous = CurrentIndexer;
                 CurrentIndexer = this;
-                return QcSharp.DisposableAction(()=> 
+                insideUsinglock = true;
+                return QcSharp.DisposableAction(() =>
                 {
                     CurrentIndexer = _previous;
-                    if (_currentlyEntered > _currentIndex)
+                    if (CurrentlyEntered > _currentIndex)
                     {
                         Debug.LogWarning("Entered is outside the range, exiting");
-                        _currentlyEntered = -1;
+                        CurrentlyEntered = -1;
                     }
+                    insideUsinglock = false;
                 });
             }
 
-            public CfgEncoder Encode() => new CfgEncoder().Add_IfNotNegative("i", _currentlyEntered);
-            
+            #region Save & Load
+
+            public CfgEncoder Encode() => new CfgEncoder().Add_IfNotNegative("i", CurrentlyEntered);
+
             public void DecodeTag(string key, CfgData data)
             {
-                switch (key) 
+                switch (key)
                 {
-                    case "i": _currentlyEntered = data.ToInt(); break;
+                    case "i": CurrentlyEntered = data.ToInt(); break;
                 }
             }
 
             public void DecodeInternal(CfgData data)
             {
-                _currentlyEntered = -1;
+                CurrentlyEntered = -1;
                 this.DecodeTagsFrom(data);
             }
+
+            #endregion
+
         }
 
         internal static class Context
@@ -88,7 +141,15 @@ namespace QuizCanners.Inspect
             {
                 canSkip = !TryGet(out var context);
 
-                if (context.contextUsed == false)
+                if (context == null) 
+                {
+                    Nl();
+                    Icon.Copy.Click(toolTip: "Log").OnChanged(()=> Debug.LogError("Check out this Stack Trace!")); ;
+                    "You have forgotten to use Context".PegiLabel().WriteWarning().Nl();
+                    return null;
+                }
+
+                if (!context.contextUsed)
                 {
                     context.contextUsed = true;
                     context.Increment();
@@ -116,13 +177,13 @@ namespace QuizCanners.Inspect
                 context = EnterExitContext.CurrentIndexer;
                 if (context == null)
                 {
-                    "Indexer unset. wrap section in  using(EnterExitIndexes.StartContext()) {  }".PegiLabel().writeWarning();
+                    "Indexer unset. wrap section in  using(EnterExitIndexes.StartContext()) {  }".PegiLabel().WriteWarning();
                     return false;
                 }
                 return true;
             }
 
-            public static bool Internal_isConditionally_Entered(TextLabel label, bool canEnter, bool showLabelIfTrue = true)
+            internal static bool Internal_isConditionally_Entered(TextLabel label, bool canEnter, bool showLabelIfTrue = true)
             {
                 if (canEnter)
                     Internal_isEntered(label, showLabelIfTrue: showLabelIfTrue);
@@ -133,7 +194,31 @@ namespace QuizCanners.Inspect
                 return IsEnteredCurrent;
             }
 
-            public static void Internal_isEntered_ListIcon<T>(TextLabel txt, List<T> list, ref int inspected)
+            internal static void Internal_isEntered_ListIcon<Tkey, TValue>(TextLabel txt, Dictionary<Tkey,TValue> list, ref int inspected)
+            {
+                if (collectionInspector.CollectionIsNull(list))
+                {
+                    if (IsEnteredCurrent)
+                        IsEnteredCurrent = StateToken.False;
+                    return;
+                }
+
+                var before = IsEnteredCurrent;
+
+                var label = txt.AddCount(list, IsEnteredCurrent);
+
+                Internal_isEntered(label, showLabelIfTrue: false);
+
+                if (IsEnteredCurrent)
+                {
+                    if (!before && IsEnteredCurrent)
+                        inspected = -1;
+                }
+                else
+                    EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => IsEnteredCurrent = StateToken.True);
+            }
+
+            internal static void Internal_isEntered_ListIcon<T>(TextLabel txt, List<T> list, ref int inspected)
             {
                 if (collectionInspector.CollectionIsNull(list))
                 {
@@ -153,33 +238,33 @@ namespace QuizCanners.Inspect
                     if (!before && IsEnteredCurrent)
                         inspected = -1;
                 } else 
-                    list.clickEnter_DirectlyToElement(ref inspected).OnChanged(() => IsEnteredCurrent = StateToken.True);
+                    EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => IsEnteredCurrent = StateToken.True);
             }
 
-            public static void Internal_isEntered(TextLabel txt, bool showLabelIfTrue = true)
+            internal static void Internal_isEntered(TextLabel txt, bool showLabelIfTrue = true)
             {
                 if (IsEnteredCurrent)
                     ExitClick(txt, showLabelIfTrue: showLabelIfTrue);
                 else
                 {
                     txt.style = Styles.EnterLabel;
-                    (icon.Enter.ClickUnFocus(txt.label).IgnoreChanges(LatestInteractionEvent.Enter) |
+                    (Icon.Enter.ClickUnFocus(txt.label).IgnoreChanges(LatestInteractionEvent.Enter) |
                     txt.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter)).OnChanged(() => IsEnteredCurrent = StateToken.True);
                 }
             }
 
-            public static void Internal_enter_Inspect_AsList(IPEGI_ListInspect var, string exitLabel = null)
+            internal static void Internal_Enter_Inspect_AsList(IPEGI_ListInspect var, string exitLabel = null)
             {
                 if (!var.IsNullOrDestroyed_Obj())
                 {
                     if (!IsEnteredCurrent)
                     {
                         int current = EnterExitContext.CurrentIndexer._currentIndex;
-                        int entered = EnterExitContext.CurrentIndexer._currentlyEntered;
+                        int entered = EnterExitContext.CurrentIndexer.CurrentlyEntered;
 
                         if (Nested_Inspect(() => var.InspectInList(ref entered, current)))
                         {
-                            EnterExitContext.CurrentIndexer._currentlyEntered = entered;
+                            EnterExitContext.CurrentIndexer.CurrentlyEntered = entered;
                             new ChangesToken(IsEnteredCurrent).IgnoreChanges(LatestInteractionEvent.Enter);
                         }
                     }
@@ -198,15 +283,14 @@ namespace QuizCanners.Inspect
             {
                 using (Styles.Background.ExitLabel.SetDisposible())
                 {
-                    text.FallbackHint = ()=> icon.Exit.GetDescription();
+                    text.FallbackHint = ()=> Icon.Exit.GetDescription();
                     text.style = Styles.ExitLabel;
-                    (icon.Exit.ClickUnFocus("{0} L {1}".F(icon.Exit.GetText(), text)) |
+                    (Icon.Exit.ClickUnFocus("{0} L {1}".F(Icon.Exit.GetText(), text)) |
                         (showLabelIfTrue ? text.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit) : ChangesToken.False)
-                        ).OnChanged(() => IsEnteredCurrent = StateToken.False);
+                        ).OnChanged(() => IsEnteredCurrent = StateToken.False).IgnoreChanges();
                 }
             }
 
         }
-
     }
 }

@@ -30,15 +30,29 @@ namespace QuizCanners.Inspect
             [NonSerialized] private string _elementName;
             public string ElementName { get => _elementName.IsNullOrEmpty() ? Label : _elementName; set => _elementName = value; }
 
-            [SerializeField] internal int inspectedElement = -1;
+            [SerializeField] internal int inspectedElement_Internal = -1;
             [NonSerialized] internal int previouslyInspectedElement = -1;
             [SerializeField] internal int listSectionStartIndex;
             [NonSerialized] internal bool useOptimalShowRange = true;
             [NonSerialized] internal int itemsToShow = 10;
             [NonSerialized] internal UnNullable<ElementData> elementDatas = new UnNullable<ElementData>();
             [NonSerialized] internal bool inspectListMeta = false;
-
+            [NonSerialized] private PlayerPrefValue.Int _playerPref = null;
             [NonSerialized] private CollectionInspectParams _config;
+
+
+            internal int InspectedElement 
+            {
+                get => inspectedElement_Internal;
+                set 
+                {
+                    inspectedElement_Internal = value;
+                    if (_playerPref != null)
+                    {
+                        _playerPref.SetValue(value);
+                    }
+                }
+            }
 
             public bool this[CollectionInspectParams param]
             {
@@ -64,10 +78,19 @@ namespace QuizCanners.Inspect
                 }
             }
 
-            public bool IsInspectingElement
+            public bool IsAnyEntered
             {
-                get => inspectedElement != -1;
-                set { if (value == false) inspectedElement = -1; }
+                get => InspectedElement != -1;
+                set 
+                { 
+                    if (!value)
+                        InspectedElement = -1; 
+                }
+            }
+
+            internal void OnChanged() 
+            {
+                InspectedElement = inspectedElement_Internal;
             }
 
             internal List<int> GetSelectedElements()
@@ -91,36 +114,34 @@ namespace QuizCanners.Inspect
                     el.selected = value;
             }
 
-
             #region Inspector
 
             [NonSerialized] internal readonly SearchData searchData = new SearchData();
-
             [NonSerialized] private readonly EnterExitContext _context = new EnterExitContext();
 
             public void Inspect()
             {
                 using (_context.StartContext())
                 {
-                    nl();
+                    Nl();
                     if (!_context.IsAnyEntered)
                     {
-                        "List Label".PegiLabel(70).edit(ref Label).nl();
-                        "Config".PegiLabel().editEnumFlags(ref _config).nl();
+                        "List Label".PegiLabel(70).Edit(ref Label).Nl();
+                        "Config".PegiLabel().Edit_EnumFlags(ref _config).Nl();
                     }
 
-                    if ("Elements".PegiLabel().isEntered().nl())
+                    if ("Elements".PegiLabel().IsEntered().Nl())
                         elementDatas.Inspect();
                 }
             }
 
-            public CfgEncoder Encode() => new CfgEncoder().Add_IfNotNegative("ind", inspectedElement);
+            public CfgEncoder Encode() => new CfgEncoder().Add_IfNotNegative("ind", InspectedElement);
 
             public void DecodeTag(string key, CfgData data)
             {
                 switch (key) 
                 {
-                    case "ind": inspectedElement = data.ToInt(); break;
+                    case "ind": InspectedElement = data.ToInt(); break;
                 }
             }
             #endregion
@@ -139,13 +160,15 @@ namespace QuizCanners.Inspect
                     this[config] = true;
             }
 
-            public CollectionInspectorMeta(string labelName, bool allowDeleting = true,
+            public CollectionInspectorMeta(string labelName, 
+                bool allowDeleting = true,
                 bool allowReordering = true,
                 bool showAddButton = true,
                 bool showEditListButton = true,
                 bool showSearchButton = true,
                 bool showDictionaryKey = true,
-                bool showCopyPasteOptions = false)
+                bool showCopyPasteOptions = false,
+                string playerPrefsIndex = null)
             {
 
                 Label = labelName;
@@ -157,6 +180,12 @@ namespace QuizCanners.Inspect
                 this[CollectionInspectParams.showSearchButton] = showSearchButton;
                 this[CollectionInspectParams.showDictionaryKey] = showDictionaryKey;
                 this[CollectionInspectParams.showCopyPasteOptions] = showCopyPasteOptions;
+
+                if (!playerPrefsIndex.IsNullOrEmpty())
+                {
+                    _playerPref = new PlayerPrefValue.Int("pegi/Col/" + playerPrefsIndex, defaultValue: -1);
+                    inspectedElement_Internal = _playerPref.GetValue();
+                }
             }
         }
 
@@ -166,22 +195,17 @@ namespace QuizCanners.Inspect
 
             internal bool PEGI_inList<T>(ref object obj)
             {
-                var changed = pegi.ChangeTrackStart();
+                var changed = ChangeTrackStart();
 
                 if (typeof(T).IsUnityObject())
                 {
                     var uo = obj as UnityEngine.Object;
-                    if (pegi.edit(ref uo))
+                    if (Edit(ref uo))
                         obj = uo;
                 }
 
                 return changed;
             }
-
         }
-
-       
     }
-
- 
 }

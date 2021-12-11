@@ -40,9 +40,9 @@ namespace QuizCanners.Utils
                     if (!foldedOut)
                     {
 
-                        name.PegiLabel().edit(ref str.data);
+                        name.PegiLabel().Edit(ref str.data);
 
-                        if (name.Length > 7 && icon.Copy.Click("Copy name to clipboard", 15))
+                        if (name.Length > 7 && Icon.Copy.Click("Copy name to clipboard", 15))
                             GUIUtility.systemCopyBuffer = name;
 
                     }
@@ -50,14 +50,14 @@ namespace QuizCanners.Utils
                 else if (foldedOut && "Decode 1 layer".PegiLabel().Click())
                     TryDecode(ref j);
                 
-                pegi.nl();
+                pegi.Nl();
             }
 
             if (!foldedOut)
                 return;
 
             j.Inspect();
-            pegi.nl();
+            pegi.Nl();
         }
 
       
@@ -106,21 +106,21 @@ namespace QuizCanners.Utils
 
                 if (data.Length > 500)
                 {
-                    "String is too long to show: {0} chars".F(data.Length).PegiLabel().writeHint();
+                    "String is too long to show: {0} chars".F(data.Length).PegiLabel().WriteHint();
 
-                    if (icon.Copy.Click("TO Copy Paste Buffer"))
+                    if (Icon.Copy.Click("TO Copy Paste Buffer"))
                     {
                         pegi.SetCopyPasteBuffer(data);
                     }
 
-                    pegi.nl();
+                    pegi.Nl();
                 }
                 else
                 {
                     if (dataOnly)
-                        pegi.edit(ref data);
+                        pegi.Edit(ref data);
                     else
-                        pegi.editBig(ref data);
+                        pegi.EditBig(ref data);
                 }
 
                 if (changed)
@@ -369,12 +369,12 @@ namespace QuizCanners.Utils
                 inspected = this;
 
 
-                pegi.nl();
+                pegi.Nl();
 
                 if (data.GetCount() > 0)
                 {
                     if (data.HasNestedData)
-                        (name + " " + data.GetNameForInspector()).PegiLabel().isFoldout(ref foldedOut);
+                        (name + " " + data.GetNameForInspector()).PegiLabel().IsFoldout(ref foldedOut);
 
                     using (new PathAdd(GetReadOnlyName()))
                     {
@@ -382,9 +382,9 @@ namespace QuizCanners.Utils
                     }
                 }
                 else
-                    (name + " " + data.GetNameForInspector()).PegiLabel().write();
+                    (name + " " + data.GetNameForInspector()).PegiLabel().Write();
 
-                pegi.nl();
+                pegi.Nl();
 
                 inspected = null;
             }
@@ -414,14 +414,14 @@ namespace QuizCanners.Utils
                         if (cl != null && cl.properties.Count > 0)
                         {
 
-                            if (!previewFoldout && icon.Config.Click(15).UnfocusOnChange())
+                            if (!previewFoldout && Icon.Config.Click(15).UnfocusOnChange())
                                 previewFoldout = true;
                             
                             if (previewFoldout)
                             {
-                                "Select value to preview:".PegiLabel().nl();
+                                "Select value to preview:".PegiLabel().Nl();
 
-                                if (previewValue.Length > 0 && "NO PREVIEW VALUE".PegiLabel().Click().nl())
+                                if (previewValue.Length > 0 && "NO PREVIEW VALUE".PegiLabel().Click().Nl())
                                 {
                                     previewValue = "";
                                     previewFoldout = false;
@@ -431,11 +431,11 @@ namespace QuizCanners.Utils
                                 {
                                     if (p.name.Equals(previewValue))
                                     {
-                                        icon.Next.draw();
-                                        if ("CURRENT: {0}".F(previewValue).PegiLabel().ClickUnFocus().nl())
+                                        Icon.Next.Draw();
+                                        if ("CURRENT: {0}".F(previewValue).PegiLabel().ClickUnFocus().Nl())
                                             previewFoldout = false;
                                     }
-                                    else if (p.name.PegiLabel().Click().nl())
+                                    else if (p.name.PegiLabel().Click().Nl())
                                     {
                                         previewValue = p.name;
                                         previewFoldout = false;
@@ -445,7 +445,7 @@ namespace QuizCanners.Utils
                         }
                     }
 
-                    pegi.nl();
+                    pegi.Nl();
 
                     pegi.Indent();
 
@@ -486,11 +486,11 @@ namespace QuizCanners.Utils
                                     preview = "missing";
                             }
 
-                            ((preview.Length > 0 && !fo) ? "{1} ({0})".F(previewValue, preview) : "[{0} {1}]".F(nameForElemenet, i)).PegiLabel().isFoldout(ref fo);
+                            ((preview.Length > 0 && !fo) ? "{1} ({0})".F(previewValue, preview) : "[{0} {1}]".F(nameForElemenet, i)).PegiLabel().IsFoldout(ref fo);
                             foldedOut[i] = fo;
                         }
 
-                        pegi.Nested_Inspect(()=> DecodeOrInspectJson(ref val, fo)).nl();
+                        pegi.Nested_Inspect(()=> DecodeOrInspectJson(ref val, fo)).Nl();
                         values[i] = val;
                     }
                 }
@@ -650,9 +650,9 @@ namespace QuizCanners.Utils
         public void Inspect()
         {
 
-            pegi.nl();
+            pegi.Nl();
 
-            if (icon.Delete.Click())
+            if (Icon.Delete.Click())
             {
                 triedToDecodeAll = false;
                 rootJson = new JsonString();
@@ -663,9 +663,9 @@ namespace QuizCanners.Utils
                 TryToDecodeAll();
 
             if (jsonDestination.Length > 5)
-                jsonDestination.PegiLabel().write();
+                jsonDestination.PegiLabel().Write();
 
-            pegi.nl();
+            pegi.Nl();
 
             inspectedPath.Clear();
 

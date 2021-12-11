@@ -83,26 +83,26 @@ namespace QuizCanners.Inspect
 
                         var al = cur.alignment;
 
-                        if ("Allignment".PegiLabel(90).editEnum(ref al).nl())
+                        if ("Allignment".PegiLabel(90).Edit_Enum(ref al).Nl())
                             cur.alignment = al;
 
                         var fs = cur.fontSize;
-                        if ("Font Size".PegiLabel(90).edit(ref fs).nl())
+                        if ("Font Size".PegiLabel(90).Edit(ref fs).Nl())
                             cur.fontSize = fs;
 
-                        if ("Padding".PegiLabel().isFoldout().nl())
+                        if ("Padding".PegiLabel().IsFoldout().Nl())
                         {
                             RectOffset pad = cur.padding;
 
-                            if (edit(ref pad, -15, 15).nl())
+                            if (Edit(ref pad, -15, 15).Nl())
                                 cur.padding = pad;
                         }
 
-                        if ("Margins".PegiLabel().isFoldout().nl())
+                        if ("Margins".PegiLabel().IsFoldout().Nl())
                         {
                             RectOffset mar = cur.margin;
 
-                            if (edit(ref mar, -15, 15).nl())
+                            if (Edit(ref mar, -15, 15).Nl())
                                 cur.margin = mar;
                         }
                     }
@@ -365,10 +365,10 @@ namespace QuizCanners.Inspect
 
             private static void InspectInteranl(string StyleName, PegiGuiStyle style)
             {
-                if (StyleName.PegiLabel().isEntered(ref _inspectedFont, _iteratiedFont).nl())
+                if (StyleName.PegiLabel().IsEntered(ref _inspectedFont, _iteratiedFont).Nl())
                 {
-                    "Example text in {0} style ".F(StyleName).PegiLabel(style: style).nl();
-                    style.Nested_Inspect().nl();
+                    "Example text in {0} style ".F(StyleName).PegiLabel(style: style).Nl();
+                    style.Nested_Inspect().Nl();
                 }
 
                 _iteratiedFont++;

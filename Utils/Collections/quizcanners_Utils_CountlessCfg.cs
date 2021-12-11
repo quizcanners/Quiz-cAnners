@@ -280,7 +280,7 @@ namespace QuizCanners.Utils
                 List<int> indexes;
                 var allElements = GetAllObjs(out indexes);
 
-                if (_allowAdd && icon.Add.Click("Add "+typeof(T).ToPegiStringType())) {
+                if (_allowAdd && Icon.Add.Click("Add "+typeof(T).ToPegiStringType())) {
                     while (!IsDefaultOrNull(GetIfExists(lastFreeIndex)))
                         lastFreeIndex++;
 
@@ -288,28 +288,28 @@ namespace QuizCanners.Utils
                     
                 }
 
-                pegi.nl();
+                pegi.Nl();
 
                 for (var i = 0; i < allElements.Count; i++)  {
                     var ind = indexes[i];
                     var el = allElements[i];
 
-                    if (_allowDelete && icon.Delete.Click("Clear element without shifting the rest"))
+                    if (_allowDelete && Icon.Delete.Click("Clear element without shifting the rest"))
                         this[ind] = default;
                     else
                     {
-                        "{0}".F(ind).PegiLabel(20).write();
+                        "{0}".F(ind).PegiLabel(20).Write();
                         if (pegi.InspectValueInCollection(ref el, ind, ref _edited) && typeof(T).IsValueType)
                             this[ind] = el;
                     }
 
-                    pegi.nl();
+                    pegi.Nl();
                 }
 
             } 
             else
             {
-                if (icon.List.Click("Back to elements window"))
+                if (Icon.List.Click("Back to elements window"))
                     _edited = -1;
                 else
                 {

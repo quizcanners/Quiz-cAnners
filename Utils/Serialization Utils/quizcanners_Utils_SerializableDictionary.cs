@@ -7,16 +7,16 @@ namespace QuizCanners.Utils
     [System.Serializable]
     public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver, IPEGI, IGotReadOnlyName
     {
-        [HideInInspector] [SerializeField] protected List<TKey> keys = new List<TKey>();
-        [HideInInspector] [SerializeField] protected List<TValue> values = new List<TValue>();
+        [HideInInspector] [SerializeField] protected List<TKey> keys;
+        [HideInInspector] [SerializeField] protected List<TValue> values;
 
         protected virtual bool CanAdd => true;
         protected virtual string ElementName => "New "+this.GetNameForInspector();
 
         public virtual void OnBeforeSerialize()
         {
-            keys.Clear();
-            values.Clear();
+            keys = new List<TKey>();
+            values = new List<TValue>();
             foreach (var pair in this)
             {
                 keys.Add(pair.Key);
@@ -27,20 +27,23 @@ namespace QuizCanners.Utils
         {
             Clear();
 
-            if (keys.Count != values.Count)
+            if (keys != null)
             {
-                Debug.LogError(
-                    "there are {0} keys ({3}) and {1} values ({4}) after deserialization in {2}. Make sure that both key and value types are serializable."
-                    .F(keys.Count, values.Count, GetType().ToPegiStringType(), typeof(TKey).ToPegiStringType(), typeof(TValue).ToPegiStringType()));
-            }
-            else
-            {
-                for (int i = 0; i < keys.Count; i++)
-                    Add(keys[i], values[i]);
+                if (keys.Count != values.Count)
+                {
+                    Debug.LogError(
+                        "there are {0} keys ({3}) and {1} values ({4}) after deserialization in {2}. Make sure that both key and value types are serializable."
+                        .F(keys.Count, values.Count, GetType().ToPegiStringType(), typeof(TKey).ToPegiStringType(), typeof(TValue).ToPegiStringType()));
+                }
+                else
+                {
+                    for (int i = 0; i < keys.Count; i++)
+                        Add(keys[i], values[i]);
+                }
             }
 
-            keys.Clear();
-            values.Clear();
+            keys = null;
+            values = null;
         }
 
         #region Inspector
@@ -62,7 +65,7 @@ namespace QuizCanners.Utils
 
         public virtual void Inspect()
         {
-            CollectionMeta.edit_Dictionary(this).nl();
+            CollectionMeta.Edit_Dictionary(this).Nl();
         }
 
         public virtual string GetReadOnlyName() => QcSharp.AddSpacesToSentence(GetType().ToPegiStringType());
@@ -97,15 +100,16 @@ namespace QuizCanners.Utils
                         pegi.SetCopyPasteBuffer(name);
                     var change = pegi.ChangeTrackStart();
 
-                    pgi.InspectInList(ref CollectionMeta.inspectedElement, index);
+                    pgi.InspectInList(ref CollectionMeta.inspectedElement_Internal, index);
                     if (change)
                     {
+                        CollectionMeta.OnChanged();
                         this[key] = (TValue)pgi;
                     }
                 }
                 else
                 {
-                    name.PegiLabel().try_enter_Inspect(value, ref CollectionMeta.inspectedElement, index);
+                    name.PegiLabel().Try_enter_Inspect(value, ref CollectionMeta.inspectedElement_Internal, index).OnChanged(CollectionMeta.OnChanged);
                 }
             }
         }
@@ -116,7 +120,7 @@ namespace QuizCanners.Utils
 
             if (element == null)
             {
-                "NULL".PegiLabel().write();
+                "NULL".PegiLabel().Write();
                 return;
             }
 
@@ -130,17 +134,18 @@ namespace QuizCanners.Utils
         {
             var type = typeof(TKey);
 
-            type.ToString().PegiLabel(style: pegi.Styles.ListLabel).nl();
+            type.ToString().PegiLabel(style: pegi.Styles.ListLabel).Nl();
 
             TKey[] Keys = (TKey[])System.Enum.GetValues(typeof(TKey));
 
-            if (CollectionMeta.IsInspectingElement)
+            if (CollectionMeta.IsAnyEntered)
             {
-                var key = Keys[CollectionMeta.inspectedElement];
-                if (key.ToString().SimplifyTypeName().PegiLabel().isEntered(ref CollectionMeta.inspectedElement, CollectionMeta.inspectedElement).nl())
+                var key = Keys[CollectionMeta.InspectedElement];
+                if (key.ToString().SimplifyTypeName().PegiLabel().IsEntered(ref CollectionMeta.inspectedElement_Internal, CollectionMeta.InspectedElement).Nl())
                 {
+                    CollectionMeta.OnChanged();
                     InspectElement(key);
-                    pegi.nl();
+                    pegi.Nl();
                 }
             }
             else
@@ -148,7 +153,7 @@ namespace QuizCanners.Utils
                 for (int i = 0; i < Keys.Length; i++)
                 {
                     InspectElementInList(Keys[i], i);
-                    pegi.nl();
+                    pegi.Nl();
                 }
             }
 

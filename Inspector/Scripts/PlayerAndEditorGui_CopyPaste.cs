@@ -28,23 +28,21 @@ namespace QuizCanners.Inspect
                 return buff;
             }
 
-            public static bool InspectOptionsFor<T>(ref T el)
+            public static ChangesToken InspectOptionsFor<T>(ref T el)
             {
                 var type = typeof(T);
 
                 var changed = ChangeTrackStart();
 
-
-
                 if (type.IsSerializable)
                 {
                     if (_copyPasteBuffs.TryGetValue(type, out var buffer))
                     {
-                        if (!buffer.CopyPasteJson.IsNullOrEmpty() && icon.Paste.Click("Paste " + buffer.CopyPasteJsonSourceName))
+                        if (!buffer.CopyPasteJson.IsNullOrEmpty() && Icon.Paste.Click("Paste " + buffer.CopyPasteJsonSourceName))
                             JsonUtility.FromJsonOverwrite(buffer.CopyPasteJson, el);
                     }
 
-                    if (icon.Copy.Click().IgnoreChanges(LatestInteractionEvent.Click))
+                    if (Icon.Copy.Click().IgnoreChanges(LatestInteractionEvent.Click))
                     {
                         if (buffer == null)
                         {
@@ -66,13 +64,13 @@ namespace QuizCanners.Inspect
 
                 if (_copyPasteBuffs.TryGetValue(type, out Buffer buff))
                 {
-                    nl();
+                    Nl();
 
-                    "Copy Paste: {0}".F(buff.CopyPasteJsonSourceName).PegiLabel().write();
-                    if (icon.Clear.Click())
+                    "Copy Paste: {0}".F(buff.CopyPasteJsonSourceName).PegiLabel().Write();
+                    if (Icon.Clear.Click())
                         _copyPasteBuffs.Remove(type);
 
-                    nl();
+                    Nl();
                 }
 
                 return false;

@@ -11,9 +11,9 @@ namespace QuizCanners.Utils
 
         public static List<TInterface> GetAll<TInterface>() => CollectionSingleton<TInterface>.Instances;
 
-        public static TValue TryGetValue<TService, TValue>(Func<TService,TValue> valueGetter, TValue defaultValue = default(TValue)) where TService : IQcSingleton
+        public static TValue TryGetValue<TService, TValue>(Func<TService,TValue> valueGetter, TValue defaultValue = default(TValue), bool logOnServiceMissing = true) where TService : IQcSingleton
         {
-            Try<TService>(onFound: s => defaultValue = valueGetter(s));
+            Try<TService>(onFound: s => defaultValue = valueGetter(s), logOnServiceMissing: logOnServiceMissing);
             return defaultValue;
         }
 
@@ -24,7 +24,7 @@ namespace QuizCanners.Utils
         {
             var inst = SingletonGeneric<TService>.Instance;
 
-            if (QcUnity.IsNullOrDestroyed_Obj(inst) == false)
+            if (!QcUnity.IsNullOrDestroyed_Obj(inst))
             {
                 try
                 {
@@ -37,7 +37,7 @@ namespace QuizCanners.Utils
                 }
             } else if (logOnServiceMissing) 
             {
-                Debug.LogError("Service {0} is missing".F(typeof(TService).ToPegiStringType()));
+                QcLog.ChillLogger.LogErrorOnce("Service {0} is missing".F(typeof(TService).ToPegiStringType()), "SngMsng" + typeof(TService).ToString());
             }
          
 
@@ -104,8 +104,8 @@ namespace QuizCanners.Utils
                 var val = Get<TService>();
                 if (QcUnity.IsNullOrDestroyed_Obj(val))
                 {
-                    "Service {0} is needed".F(typeof(TService).ToPegiStringType()).PegiLabel().writeWarning();
-                    pegi.nl();
+                    "Service {0} is needed".F(typeof(TService).ToPegiStringType()).PegiLabel().WriteWarning();
+                    pegi.Nl();
                     return pegi.StateToken.True;
                 }
 
@@ -123,7 +123,6 @@ namespace QuizCanners.Utils
                 {
                     if (typeof(T).IsAssignableFrom(s.Key))
                           l.Add((T)s.Value);
-                    
                 }
                 return l;
             }
@@ -155,100 +154,168 @@ namespace QuizCanners.Utils
             private static readonly PlayerPrefValue.Int _prsstInspectedIndex = new PlayerPrefValue.Int("qc_SrvInsp", -1);
             private static readonly PlayerPrefValue.String _prsstInspectedCategory = new PlayerPrefValue.String("qc_SrvCat", "");
 
+            private static readonly LoopLock _serviceLoop = new LoopLock();
+
+            private static string _searchText = "";
 
             public static void Inspect()
             {
-                int inspectedService = _prsstInspectedIndex.GetValue();
-
-                pegi.nl();
-
-                HashSet<Type> processedTypes = new HashSet<Type>();
-                HashSet<string> processedCategories = new HashSet<string>();
-
-                if (_prsstInspectedCategory.GetValue().IsNullOrEmpty() == false) 
+                if (!_serviceLoop.Unlocked) 
                 {
-                    if (icon.Back.Click() | _prsstInspectedCategory.GetValue().PegiLabel().ClickLabel().nl()) 
-                        _prsstInspectedCategory.SetValue("");
+                    pegi.Nl();
+                    "Recursion detected.".PegiLabel().Write().Nl();
+                    return;
+
                 }
 
-                if (inspectedService == -1)
+                using (_serviceLoop.Lock())
                 {
-                    var enteredCategory = _prsstInspectedCategory.GetValue();
 
-                    for (int i = 0; i < _services.Count; i++)
+                    int inspectedService = _prsstInspectedIndex.GetValue();
+
+                    pegi.Nl();
+
+                    HashSet<Type> processedTypes = new HashSet<Type>();
+                    HashSet<string> processedCategories = new HashSet<string>();
+
+                    if (_prsstInspectedCategory.GetValue().IsNullOrEmpty() == false)
                     {
-                        KeyValuePair<Type, object> el = _services.GetElementAt(i);
+                        if (Icon.Exit.Click() | _prsstInspectedCategory.GetValue().PegiLabel().ClickLabel().Nl())
+                            _prsstInspectedCategory.SetValue("");
+                    }
 
-                        var srv = el.Value as IQcSingleton;
-                       
-                        string myCategory = srv == null ? Categories.DEFAULT : srv.InspectedCategory;
+                    if (inspectedService == -1)
+                    {
+                        var enteredCategory = _prsstInspectedCategory.GetValue();
 
-                        bool show = false;
+                        bool enteredAnyCategory = enteredCategory.IsNullOrEmpty() == false;
 
-                        if (enteredCategory.IsNullOrEmpty()) 
+                        bool inspectingSearch = false;
+
+                        if (!enteredAnyCategory)
                         {
-                            if (myCategory.IsNullOrEmpty())
-                                show = true;
-                            else
+                            "Search".PegiLabel(50).Edit(ref _searchText);
+                            Icon.Clear.Click(() => _searchText = "");
+                            pegi.Nl();
+
+                            inspectingSearch = _searchText.IsNullOrEmpty() == false;
+
+                            if (inspectingSearch)
                             {
-                                if (processedCategories.Contains(myCategory))
+                                for (int i = 0; i < _services.Count; i++)
+                                {
+                                    var s = _services.GetElementAt(i).Value;
+
+                                    if (pegi.Try_SearchMatch_Obj(s, _searchText))
+                                    {
+                                        InspectServiceInList(s, i);
+                                        pegi.Nl();
+                                    }
+
+                                }
+                            }
+                        }
+
+                        if (!inspectingSearch)
+                        {
+                            for (int i = 0; i < _services.Count; i++)
+                            {
+                                KeyValuePair<Type, object> el = _services.GetElementAt(i);
+
+                                var srv = el.Value as IQcSingleton;
+
+                                string myCategory = srv == null ? Categories.DEFAULT : srv.InspectedCategory;
+
+                                bool show = false;
+
+                                if (enteredCategory.IsNullOrEmpty())
+                                {
+                                    if (myCategory.IsNullOrEmpty())
+                                        show = true;
+                                    else
+                                    {
+                                        if (processedCategories.Contains(myCategory))
+                                            continue;
+
+                                        processedCategories.Add(myCategory);
+                                        if (Icon.List.Click() | myCategory.PegiLabel().ClickLabel().Nl())
+                                            _prsstInspectedCategory.SetValue(myCategory);
+                                    }
+                                }
+                                else
+                                {
+                                    show = enteredCategory.Equals(myCategory);
+                                }
+
+                                if (!show)
                                     continue;
 
-                                processedCategories.Add(myCategory);
-                                if (icon.List.Click() | myCategory.PegiLabel().ClickLabel().nl())
-                                    _prsstInspectedCategory.SetValue(myCategory);
+                                var service = el.Value;
+                                if (QcUnity.IsNullOrDestroyed_Obj(service))
+                                {
+                                    pegi.Nl();
+                                    "Service {0} destroyed".F(el.Key).PegiLabel().WriteWarning();
+                                    pegi.Nl();
+                                    continue;
+                                }
+
+                                if (processedTypes.Contains(service.GetType()))
+                                    continue;
+
+                                processedTypes.Add(service.GetType());
+
+                                InspectServiceInList(service, i);
+
+                                pegi.Nl();
                             }
-                        } else 
-                        {
-                            show = enteredCategory.Equals(myCategory);
                         }
-
-                        if (!show)
-                            continue;
-
-                        var service = el.Value;
-                        if (QcUnity.IsNullOrDestroyed_Obj(service))
-                        {
-                            pegi.nl();
-                            "Service {0} destroyed".F(el.Key).PegiLabel().writeWarning();
-                            pegi.nl();
-                            continue;
-                        }
-
-                        if (processedTypes.Contains(service.GetType())) 
-                            continue;
-                        
-                        processedTypes.Add(service.GetType());
-
-                        if (service.GetNameForInspector().PegiLabel().ClickLabel())
-                            inspectedService = i;
-
-                        if (icon.Enter.Click())
-                            inspectedService = i;
-
-                        (service as UnityEngine.Object).ClickHighlight();
-
-                        pegi.nl();
                     }
-                } else 
-                {
-                    var s = _services.TryGetByElementIndex(inspectedService);
-
-                    using (pegi.Styles.Background.ExitLabel.SetDisposible())
-                    {
-                        if (icon.Exit.Click() | s.GetNameForInspector().PegiLabel(style: pegi.Styles.ExitLabel).ClickLabel().nl())
-                            inspectedService = -1;
-                    }
-
-                    if (s != null)
-                        pegi.Nested_Inspect(ref s);
                     else
-                        "NULL".PegiLabel().nl();
+                    {
+                        var s = _services.TryGetElementByIndex(inspectedService);
+
+                        using (pegi.Styles.Background.ExitLabel.SetDisposible())
+                        {
+                            if (Icon.Exit.Click() | s.GetNameForInspector().PegiLabel(style: pegi.Styles.ExitLabel).ClickLabel().Nl())
+                                inspectedService = -1;
+                        }
+
+                        if (s != null)
+                            pegi.Nested_Inspect(ref s);
+                        else
+                            "NULL".PegiLabel().Nl();
+                    }
+
+
+                    void InspectServiceInList(object service, int index)
+                    {
+                        var lst = service as IPEGI_ListInspect;
+
+                        if (lst != null)
+                        {
+                            int entered = -1;
+                            if (lst.InspectInList_Nested(ref entered, index))
+                            {
+                                if (entered == index)
+                                    inspectedService = index;
+                            }
+                        }
+                        else
+                        {
+                            if (service.GetNameForInspector().PegiLabel().ClickLabel())
+                                inspectedService = index;
+
+                            if (Icon.Enter.Click())
+                                inspectedService = index;
+
+                            (service as UnityEngine.Object).ClickHighlight();
+                        }
+                    }
+
+                    Inspect_LoadingProgress();
+
+                    _prsstInspectedIndex.SetValue(inspectedService);
                 }
-
-                Inspect_LoadingProgress();
-
-                _prsstInspectedIndex.SetValue(inspectedService);
             }
 
             public static void Inspect_LoadingProgress() 
@@ -266,16 +333,16 @@ namespace QuizCanners.Utils
 
                             if (load != null && load.IsLoading(ref state, ref progress01))
                             {
-                               "{0} {1}%  ({2})".F(s.Key, Mathf.FloorToInt(progress01 * 100), state).PegiLabel().drawProgressBar(progress01);
+                               "{0} {1}%  ({2})".F(s.Key, Mathf.FloorToInt(progress01 * 100), state).PegiLabel().DrawProgressBar(progress01);
                             }
-                            pegi.nl();
+                            pegi.Nl();
 
                         }
                     } catch (Exception ex) 
                     {
                         Debug.LogException(ex);
-                        ex.ToString().PegiLabel().writeWarning();
-                        pegi.nl();
+                        ex.ToString().PegiLabel().WriteWarning();
+                        pegi.Nl();
                     }
                 }
             }
@@ -289,20 +356,16 @@ namespace QuizCanners.Utils
             public const string TEST = "Test";
             public const string GAME_LOGIC = "Game Logic";
             public const string ROOT = "";
+            public const string POOL = "Pools";
         }
-
-
-
 
         public abstract class BehaniourBase : MonoBehaviour, IQcSingleton, IPEGI, IGotReadOnlyName, IPEGI_ListInspect, INeedAttention
         {
-            protected enum SingletonType { DestroyNew, DestroyPrevious, KeepBothAssignNew, KeepBothAssignOld }
+            protected enum SingletonCollisionSolutionEnum { DestroyNew, DestroyPrevious, KeepBothAssignNew, KeepBothAssignOld }
 
-            protected virtual SingletonType Singleton => SingletonType.DestroyNew;
+            protected virtual SingletonCollisionSolutionEnum SingletonCollisionSolution => SingletonCollisionSolutionEnum.DestroyNew;
 
             public virtual string InspectedCategory => Categories.DEFAULT;
-
-            protected virtual void AfterEnable(){}
 
             protected virtual void OnRegisterServiceInterfaces() { }
 
@@ -314,25 +377,40 @@ namespace QuizCanners.Utils
                 Collector.RegisterService(this, typeof(T));
             }
 
+            //[SerializeField] 
+            private bool _afterEnableCalled;
+
+            protected virtual void AfterEnable() 
+            { 
+
+            }
+
             private System.Collections.IEnumerator AfterEnableCoro() 
             {
                 yield return null;
+                _afterEnableCalled = true;
                 AfterEnable();
             }
 
-            protected virtual void OnBeforeOnDisableOrEnterPlayMode() 
+            protected virtual void OnBeforeOnDisableOrEnterPlayMode(bool afterEnableCalled) 
             {
                 
             }
 
-            private void OnDisable()
+            protected void OnDisable()
             {
                 try
                 {
-                    OnBeforeOnDisableOrEnterPlayMode();
+                   
+                    OnBeforeOnDisableOrEnterPlayMode(_afterEnableCalled);
+                   
                 } catch(Exception ex) 
                 {
                     Debug.LogException(ex);
+                }
+                finally 
+                {
+                    _afterEnableCalled = false;
                 }
 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.playModeStateChanged -= StateChangeProcessor;
@@ -345,6 +423,12 @@ namespace QuizCanners.Utils
                 foreach (var t in _typesToRemove)
                     Collector.TryRemove(this, t);
 
+            }
+
+
+            protected void RegisterSevice() 
+            {
+                
             }
 
             protected void OnEnable()
@@ -360,8 +444,8 @@ namespace QuizCanners.Utils
 
                         if (previousObj && previousObj != this)
                         {
-                            bool destroy = Singleton == SingletonType.DestroyNew || Singleton == SingletonType.DestroyPrevious;
-                            bool useNew = Singleton == SingletonType.DestroyPrevious || Singleton == SingletonType.KeepBothAssignNew;
+                            bool destroy = SingletonCollisionSolution == SingletonCollisionSolutionEnum.DestroyNew || SingletonCollisionSolution == SingletonCollisionSolutionEnum.DestroyPrevious;
+                            bool useNew = SingletonCollisionSolution == SingletonCollisionSolutionEnum.DestroyPrevious || SingletonCollisionSolution == SingletonCollisionSolutionEnum.KeepBothAssignNew;
 
                             var deprecated = useNew ? previousObj : this;
                             var current = useNew ? this : previousObj;
@@ -369,13 +453,10 @@ namespace QuizCanners.Utils
                             if (destroy)
                                 Destroy(deprecated.gameObject);
 
-                            if (useNew)
+                            if (!useNew)
                             {
-                                Collector.RegisterService(current, type);
-                                StartCoroutine(AfterEnableCoro());
+                                return;
                             }
-
-                            return;
                         }
                     }
                 }
@@ -400,7 +481,10 @@ namespace QuizCanners.Utils
             private void StateChangeProcessor(UnityEditor.PlayModeStateChange newState)
             {
                 if (newState == UnityEditor.PlayModeStateChange.ExitingEditMode)
-                    OnBeforeOnDisableOrEnterPlayMode();
+                {
+                    OnBeforeOnDisableOrEnterPlayMode(_afterEnableCalled);
+                    _afterEnableCalled = false;
+                }
             }
 #endif
 
@@ -408,24 +492,29 @@ namespace QuizCanners.Utils
 
             public virtual string GetReadOnlyName() => 
                 QcSharp.AddSpacesInsteadOfCapitals(
-                GetType().ToPegiStringType().Replace("Service",""),
+                GetType().ToPegiStringType().Replace("Singleton_","").Replace("Pool_", ""),
                 keepCatipals: false);
 
             public virtual void Inspect()
             {
                 if (Application.isPlaying == false)
                 {
-                    string preferedName = GetReadOnlyName();
+                    string preferedName = "MGMT: "+ GetReadOnlyName();
 
                     if (preferedName.Equals(gameObject.name) == false && "Set Go Name".PegiLabel(toolTip: preferedName).Click())
                         gameObject.name = preferedName;
                 }
 
-                pegi.nl();
+                pegi.Nl();
             }
 
             public virtual void InspectInList(ref int edited, int ind)
             {
+                if (gameObject.activeSelf && !gameObject.activeInHierarchy)
+                    Icon.Warning.Draw("Object is disabled in hierarchy");
+                else if ((gameObject.activeSelf ? Icon.Active : Icon.InActive).Click(toolTip: gameObject.activeSelf ? "Make Inactive" : "Make Active")) 
+                    gameObject.SetActive(!gameObject.activeSelf);
+                
                 if (GetReadOnlyName().PegiLabel().ClickLabel() | this.Click_Enter_Attention())
                     edited = ind;
 
@@ -437,9 +526,6 @@ namespace QuizCanners.Utils
             {
                 if (!gameObject)
                     return "Game Object is destroyed";
-
-                if (!enabled || !gameObject.activeInHierarchy)
-                    return "Object is Disabled";
 
                 return null;
             }

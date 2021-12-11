@@ -11,66 +11,76 @@ using UnityEngine;
 namespace QuizCanners.Inspect.Examples
 {
 
-    public class PlayerAndEditorGui_DOCUMENTATION_COMPONENT : MonoBehaviour, IPEGI
+    public class PlayerAndEditorGui_ExampleComponent : MonoBehaviour, IPEGI
     {
-        int testValue;
         bool showInspectorInTheGameView;
         [SerializeField] private PlayerAndEditorGui_ExampleNested someOtherScript;
 
         //You should attach this script to the game object and see the example
-        private pegi.EnterExitContext _menuContext = new pegi.EnterExitContext();
-        private pegi.EnterExitContext _examplesSubContext = new pegi.EnterExitContext();
+        private readonly pegi.EnterExitContext _menuContext = new pegi.EnterExitContext();
+        private readonly pegi.EnterExitContext _examplesSubContext = new pegi.EnterExitContext();
         public void Inspect()
         {
-            pegi.nl();
+            pegi.Nl();
 
             using (_menuContext.StartContext())
             {
-                "Documentation".PegiLabel().isEntered().nl().If_Entered(() => PlayerAndEditorGui_Documentation.Inspect());
+                "Documentation".PegiLabel().IsEntered().Nl().If_Entered(() => PlayerAndEditorGui_Documentation.Inspect());
                    
-                if ("Example".PegiLabel().isEntered().nl())
+                if ("Example".PegiLabel().IsEntered().Nl())
                 {
                     using (_examplesSubContext.StartContext())
                     {
                         if (_examplesSubContext.IsAnyEntered == false)
-                            "Open this script. Use debug button to see default inspector for this script".PegiLabel().writeHint().nl();
-
-                        "GameView OnGUI Inspector".PegiLabel().isEntered().nl().If_Entered(() =>
                         {
-                            "Inspector visible in the game view".PegiLabel().toggle(ref showInspectorInTheGameView);
-                            pegi.nl();
+                            Icon.Debug.Draw();
+                            " - this icon at the top switches to Default Unity inspector".PegiLabel().Nl();
+                            "Open this script to learn how what code to use to display the elements.".PegiLabel().WriteHint().Nl();
+                        }
+
+                        "GameView OnGUI Inspector".PegiLabel().IsEntered().Nl().If_Entered(() =>
+                        {
+                            "Inspector visible in the game view".PegiLabel().Toggle(ref showInspectorInTheGameView);
+                            pegi.Nl();
 
                             if (showInspectorInTheGameView)
-                                "Inspector size".PegiLabel(70).edit(ref OnGUIWindow.Upscale, min: 1, max: 3).nl();
+                                "Inspector size".PegiLabel(70).Edit(ref OnGUIWindow.Upscale, min: 1, max: 3).Nl();
                         });
 
-                        if ("Script InspectCeptions".PegiLabel().isEntered().nl())
+                        if ("Nested Inspect".PegiLabel().IsEntered().Nl())
                         {
                             if (!someOtherScript)
                             {
-                                "Nested component not found".PegiLabel().writeWarning();
-                                pegi.nl();
+                                "Nested component not found".PegiLabel().WriteWarning();
+                                pegi.Nl();
 
-                                if ("Search for Component".PegiLabel().Click().nl())
+                                if ("Search for Component".PegiLabel().Click().Nl())
                                 {
                                     someOtherScript = GetComponent<PlayerAndEditorGui_ExampleNested>();
                                     if (!someOtherScript)
                                         Debug.Log("One is not attached. Please click Create");
                                 }
 
-                                if ("Attach component".PegiLabel().Click().nl())
+                                if ("Attach component".PegiLabel().Click().Nl())
                                 {
                                     someOtherScript = gameObject.AddComponent<PlayerAndEditorGui_ExampleNested>();
                                 }
                             }
                             else
                             {
-                                someOtherScript.Nested_Inspect().nl(); // Always use NestedInspect(); when referencing Inspect(); function of another UnityEngine.Object,
+                                someOtherScript.Nested_Inspect().Nl(); // Always use NestedInspect(); when referencing Inspect(); function of another UnityEngine.Object,
                                                                        // otherwise changes may not be serialized.
                             }
                         }
                     }
+
+                    if ("I will not be seen".PegiLabel().IsEntered().Nl())
+                    {
+                        //This will not be visible, as this section will use _menuContext, which already has index of Example Section.
+                    }
                 }
+
+               
             }
         }
 
@@ -85,7 +95,7 @@ namespace QuizCanners.Inspect.Examples
     }
 
     //Optional: To Override Unity's default inspector for this component
-    [PEGI_Inspector_Override(typeof(PlayerAndEditorGui_DOCUMENTATION_COMPONENT))] internal class InspectEXAMPLE_DOCDrawer : PEGI_Inspector_Override { }
+    [PEGI_Inspector_Override(typeof(PlayerAndEditorGui_ExampleComponent))] internal class InspectEXAMPLE_DOCDrawer : PEGI_Inspector_Override { }
 
 
 }

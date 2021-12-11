@@ -118,7 +118,7 @@ namespace QuizCanners.Inspect
             }
             public static ChangesToken DocumentationWarningClickOpen(string text, string toolTip, int buttonSize = 20)
             {
-                if (DocumentationClickInternal(toolTip, buttonSize: buttonSize, icon.Warning))
+                if (DocumentationClickInternal(toolTip, buttonSize: buttonSize, Icon.Warning))
                 {
                     popUpText = text;
                     InitiatePopUp();
@@ -127,10 +127,10 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
             public static ChangesToken WarningDocumentationClickOpen(Func<string> text, string toolTip = "What is this?",
-                int buttonSize = 20) => DocumentationClickOpen(text, toolTip, buttonSize, icon.Warning);
+                int buttonSize = 20) => DocumentationClickOpen(text, toolTip, buttonSize, Icon.Warning);
             public static ChangesToken WarningDocumentationClickOpen(string text, string toolTip = "What is this?",
-                int buttonSize = 20) => DocumentationClickOpen(text, toolTip, buttonSize, icon.Warning);
-            public static ChangesToken DocumentationClickOpen(Func<bool> inspectFunction, string toolTip = "", int buttonSize = 20, icon clickIcon = icon.Question)
+                int buttonSize = 20) => DocumentationClickOpen(text, toolTip, buttonSize, Icon.Warning);
+            public static ChangesToken DocumentationClickOpen(Func<bool> inspectFunction, string toolTip = "", int buttonSize = 20, Icon clickIcon = Icon.Question)
             {
                 if (toolTip.IsNullOrEmpty())
                     toolTip = clickIcon.GetDescription();
@@ -144,7 +144,7 @@ namespace QuizCanners.Inspect
 
                 return ChangesToken.False;
             }
-            public static ChangesToken DocumentationClickOpen(Func<string> text, string toolTip = "", int buttonSize = 20, icon clickIcon = icon.Question)
+            public static ChangesToken DocumentationClickOpen(Func<string> text, string toolTip = "", int buttonSize = 20, Icon clickIcon = Icon.Question)
             {
 
                 bool gotHeadline = false;
@@ -163,7 +163,7 @@ namespace QuizCanners.Inspect
 
                 return ChangesToken.False;
             }
-            public static ChangesToken DocumentationClickOpen(string text, string toolTip = "", int buttonSize = 20, icon clickIcon = icon.Question)
+            public static ChangesToken DocumentationClickOpen(string text, string toolTip = "", int buttonSize = 20, Icon clickIcon = Icon.Question)
             {
 
                 bool gotHeadline = false;
@@ -185,7 +185,7 @@ namespace QuizCanners.Inspect
             public static ChangesToken DocumentationWithLinkClickOpen(string text, string link, string linkName = null, string tip = "", int buttonSize = 20)
             {
                 if (tip.IsNullOrEmpty())
-                    tip = icon.Question.GetDescription();
+                    tip = Icon.Question.GetDescription();
 
                 if (DocumentationClickInternal(tip, buttonSize))
                 {
@@ -198,10 +198,10 @@ namespace QuizCanners.Inspect
 
                 return ChangesToken.False;
             }
-            private static ChangesToken DocumentationClickInternal(string toolTip = "", int buttonSize = 20, icon clickIcon = icon.Question)
+            private static ChangesToken DocumentationClickInternal(string toolTip = "", int buttonSize = 20, Icon clickIcon = Icon.Question)
             {
                 if (toolTip.IsNullOrEmpty())
-                    toolTip = icon.Question.GetDescription();
+                    toolTip = Icon.Question.GetDescription();
 
                 using (SetBgColorDisposable(Color.clear))
                 {
@@ -219,11 +219,11 @@ namespace QuizCanners.Inspect
 
                 if (areYouSureFunk != null)
                 {
-                    icon.Close.Click(Msg.No.GetText(), 35).OnChanged(ClosePopUp);
+                    Icon.Close.Click(Msg.No.GetText(), 35).OnChanged(ClosePopUp);
 
                     WriteHeaderIfAny();
 
-                    if (icon.Done.Click(Msg.Yes.GetText(), 35))
+                    if (Icon.Done.Click(Msg.Yes.GetText(), 35))
                     {
                         try
                         {
@@ -237,9 +237,9 @@ namespace QuizCanners.Inspect
                     }
 
 
-                    nl();
+                    Nl();
 
-                    popUpText.PegiLabel().writeBig();
+                    popUpText.PegiLabel().WriteBig();
 
                     return true;
 
@@ -247,11 +247,11 @@ namespace QuizCanners.Inspect
 
                 if (inspectDocumentationDelegate != null)
                 {
-                    if (icon.Back.Click(Msg.Exit))
+                    if (Icon.Back.Click(Msg.Exit))
                         ClosePopUp();
                     else
                     {
-                        WriteHeaderIfAny().nl();
+                        WriteHeaderIfAny().Nl();
                         inspectDocumentationDelegate();
                         ContactOptions();
                     }
@@ -262,11 +262,11 @@ namespace QuizCanners.Inspect
                 if (!popUpText.IsNullOrEmpty())
                 {
 
-                    WriteHeaderIfAny().nl();
+                    WriteHeaderIfAny().Nl();
 
                     popUpText.PegiLabel(
                         toolTip: "Click the blue text below to close this toolTip. This is basically a toolTip for a toolTip. It is the world we are living in now.")
-                        .writeBig();
+                        .WriteBig();
 
                     if (!relatedLink.IsNullOrEmpty() && relatedLinkName.PegiLabel().ClickText(14))
                         Application.OpenURL(relatedLink);
@@ -281,10 +281,10 @@ namespace QuizCanners.Inspect
             }
             private static void ContactOptions()
             {
-                nl();
-                "Didn't get the answer you need?".PegiLabel().write();
-                icon.Discord.Click(() => Application.OpenURL(DISCORD_SERVER));
-                icon.Email.Click(() => QcUnity.SendEmail(
+                Nl();
+                "Didn't get the answer you need?".PegiLabel().Write();
+                Icon.Discord.Click(() => Application.OpenURL(DISCORD_SERVER));
+                Icon.Email.Click(() => QcUnity.SendEmail(
                         email: SUPPORT_EMAIL, 
                         subject: "About this hint",
                         body: "The toolTip:{0}***{0} {1} {0}***{0} haven't answered some of the questions I had on my mind. Specifically: {0}".F(EnvironmentNl, popUpText)));
@@ -292,9 +292,9 @@ namespace QuizCanners.Inspect
             }
             private static void ConfirmLabel()
             {
-                nl();
+                Nl();
 
-                if (_understoodPopUpText.PegiLabel().ClickText(15).nl())
+                if (_understoodPopUpText.PegiLabel().ClickText(15).Nl())
                     ClosePopUp();
 
                 ContactOptions();
@@ -304,7 +304,7 @@ namespace QuizCanners.Inspect
             {
                 if (!popUpHeader.IsNullOrEmpty())
                 {
-                    popUpHeader.PegiLabel(Styles.ListLabel).write();
+                    popUpHeader.PegiLabel(Styles.ListLabel).Write();
                     return StateToken.True;
                 }
 

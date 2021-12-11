@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using QuizCanners.Inspect;
 using UnityEngine;
 using QuizCanners.Migration;
-
+using static QuizCanners.Utils.QcUtils;
 
 namespace QuizCanners.Utils 
 {
-
     public static class ShaderProperty {
 
         #region Base Abstract
@@ -36,19 +35,11 @@ namespace QuizCanners.Utils
 
             public abstract void SetOn(MaterialPropertyBlock block);
 
-            public Renderer SetOn(Renderer renderer, int materialIndex = 0)
+            public Renderer SetOn(Renderer renderer, MaterialPropertyBlock block, int materialIndex = 0)
             {
-#if UNITY_2018_3_OR_NEWER
-                var block = new MaterialPropertyBlock();
                 renderer.GetPropertyBlock(block, materialIndex);
                 SetOn(block);
                 renderer.SetPropertyBlock(block, materialIndex);
-#else
-                var block = new MaterialPropertyBlock();
-                renderer.GetPropertyBlock(block);
-                SetOn(block);
-                renderer.SetPropertyBlock(block);
-#endif
                 return renderer;
             }
 
@@ -57,13 +48,12 @@ namespace QuizCanners.Utils
             
             public virtual void InspectInList(ref int edited, int ind)
             {
-                "Id: {0}".F(id).PegiLabel(50).write();
-                name.PegiLabel().write_ForCopy();
+                name.PegiLabel(toolTip: "Id: {0}".F(id), width: 90).Write_ForCopy();
             }
 
             public virtual void Inspect()
             {
-                name.PegiLabel().write_ForCopy();
+                name.PegiLabel().Write_ForCopy();
             }
 
             #endregion
@@ -107,6 +97,7 @@ namespace QuizCanners.Utils
         public abstract class IndexGeneric<T> : BaseShaderPropertyIndex {
             
             [SerializeField] public T latestValue;
+            protected bool globalValueSet;
 
             public abstract T Get(Material mat);
 
@@ -116,11 +107,12 @@ namespace QuizCanners.Utils
 
             public T GlobalValue
             {
-                get => GlobalValue_Internal;
+                get => latestValue!= null ? latestValue : GlobalValue_Internal;
                 set
                 {
                     latestValue = value;
                     GlobalValue_Internal = value;
+                    globalValueSet = true;
                 }
 
             }
@@ -135,10 +127,10 @@ namespace QuizCanners.Utils
                 return material;
             }
 
-            public virtual Renderer SetOn(Renderer renderer, T value)
+            public virtual Renderer SetOn(Renderer renderer, MaterialPropertyBlock block,  T value)
             {
                 latestValue = value;
-                SetOn(renderer);
+                SetOn(renderer, block);
                 return renderer;
             }
 
@@ -153,6 +145,24 @@ namespace QuizCanners.Utils
             public void SetGlobal(T value) => GlobalValue = value;
 
             public T GetGlobal() => GlobalValue;
+
+            #region Inspector
+            public override void InspectInList(ref int edited, int ind)
+            {
+                base.InspectInList(ref edited, ind);
+                if (globalValueSet)
+                    Icon.SelectAll.Draw(toolTip: "Set as Global value");
+            }
+
+            public override void Inspect()
+            {
+                base.Inspect();
+                pegi.Nl();
+                if (globalValueSet)
+                    "Global Value Set: {0}".F(GlobalValue).PegiLabel().Nl();
+            }
+
+            #endregion
 
             protected IndexGeneric()
             {
@@ -225,9 +235,6 @@ namespace QuizCanners.Utils
         public static Material Set<T>(this Material mat, IndexGeneric<T> property, T value) =>
             property.SetOn(mat, value);
 
-        public static Renderer Set<T>(this Renderer renderer, IndexGeneric<T> property, T value) =>
-            property.SetOn(renderer, value);
-
         public static T Get<T>(this Material mat, IndexGeneric<T> property) => property.Get(mat);
 
         #endregion
@@ -237,6 +244,10 @@ namespace QuizCanners.Utils
         [Serializable]
         public class FloatValue : IndexGeneric<float> {
 
+            private bool _usingRange;
+            private float _min;
+            private float _max;
+
             public override void SetOn(Material material) => material.SetFloat(id, latestValue);
 
             public override float Get(Material material) => material.GetFloat(id);
@@ -244,12 +255,34 @@ namespace QuizCanners.Utils
 
             public override void SetOn(MaterialPropertyBlock block) => block.SetFloat(id, latestValue);
 
-
             protected override float GlobalValue_Internal
             {
                 get { return Shader.GetGlobalFloat(id); }
                 set{ Shader.SetGlobalFloat(id, value); }
             }
+
+            public override void InspectInList(ref int edited, int ind)
+            {
+                InspectValue();
+            }
+
+            public override void Inspect()
+            {
+                base.Inspect();
+                pegi.Nl();
+                InspectValue().Nl();
+            }
+
+            private pegi.ChangesToken InspectValue() =>
+                (_usingRange ?
+                    name.PegiLabel(0.25f).Edit(ref latestValue, min: _min, max: _max) :
+                    name.PegiLabel(0.25f).Edit(ref latestValue))
+              .OnChanged(() =>
+              {
+                  if (globalValueSet)
+                      GlobalValue = latestValue;
+              });
+            
 
             public FloatValue()
             {
@@ -259,6 +292,12 @@ namespace QuizCanners.Utils
             {
             }
 
+            public FloatValue(string name, float min, float max) : base(name)
+            {
+                _usingRange = true;
+                _min = min;
+                _max = max;
+            }
         }
 
         public class FloatFeature : IndexWithShaderFeatureGeneric<float>
@@ -282,6 +321,25 @@ namespace QuizCanners.Utils
             }
 
             protected override bool DirectiveEnabledForLastValue => latestValue > float.Epsilon * 10;
+
+            public override void InspectInList(ref int edited, int ind)
+            {
+                InspectValue();
+            }
+
+            public override void Inspect()
+            {
+                base.Inspect();
+                pegi.Nl();
+                InspectValue().Nl();
+            }
+
+            private pegi.ChangesToken InspectValue() =>
+                name.PegiLabel(0.25f).Edit_01(ref latestValue).OnChanged(() =>
+                {
+                    if (globalValueSet)
+                        GlobalValue = latestValue;
+                });
 
             public FloatFeature(string name, string featureDirective) : base(name, featureDirective) { }
         }
@@ -316,11 +374,11 @@ namespace QuizCanners.Utils
             public override void Inspect()
             {
 
-                GetReadOnlyName().PegiLabel().write(); 
+                GetReadOnlyName().PegiLabel().Write(); 
 
-                (DirectiveEnabledForLastValue ? icon.Active: icon.InActive).nl();
+                (DirectiveEnabledForLastValue ? Icon.Active: Icon.InActive).Nl();
                 
-                if (pegi.edit(ref latestValue).nl())
+                if (pegi.Edit(ref latestValue).Nl())
                     GlobalValue = latestValue;
             }
 
@@ -424,6 +482,30 @@ namespace QuizCanners.Utils
                 get { return Shader.GetGlobalVector(id); }
                 set { Shader.SetGlobalVector(id, value); }
             }
+
+            public override void InspectInList(ref int edited, int ind)
+            {
+                InspectValue();
+            }
+
+            public override void Inspect()
+            {
+                base.Inspect();
+                pegi.Nl();
+                InspectValue().Nl();
+            }
+
+            private pegi.ChangesToken InspectValue()
+            {
+                Icon.Copy.Click().OnChanged(() => pegi.SetCopyPasteBuffer(name, hint: "Valiable name copied to buffer"));
+
+                return name.PegiLabel().Edit(ref latestValue).OnChanged(() =>
+                {
+                    if (globalValueSet)
+                        GlobalValue = latestValue;
+                });
+            }
+
 
             public VectorValue()
             {
@@ -604,8 +686,8 @@ namespace QuizCanners.Utils
 
             public override void Inspect()
             {
-                mainTexture.GlobalValue.draw();
-                pegi.nl();
+                pegi.Draw(mainTexture.GlobalValue);
+                pegi.Nl();
             }
 
             #endregion
@@ -673,8 +755,8 @@ namespace QuizCanners.Utils
 
             public void Inspect()
             {
-                _name.PegiLabel().write_ForCopy();
-                pegi.nl();
+                _name.PegiLabel().Write_ForCopy();
+                pegi.Nl();
 
                 foreach (var val in _enumValues) 
                 {
@@ -683,7 +765,7 @@ namespace QuizCanners.Utils
                     else
                         "Add {0}".F(val).PegiLabel().Click(()=> this[val] = true);
 
-                    pegi.nl();
+                    pegi.Nl();
                 }
             }
         }
@@ -708,9 +790,9 @@ namespace QuizCanners.Utils
 
             public void Inspect()
             {
-                if (pegi.toggleIcon(ref lastValue))
+                if (pegi.ToggleIcon(ref lastValue))
                     Enabled = lastValue;
-                _name.PegiLabel().write_ForCopy();
+                _name.PegiLabel().Write_ForCopy();
             }
         }
 
@@ -741,9 +823,49 @@ namespace QuizCanners.Utils
                 _keywordId = Shader.PropertyToID(keywordName);
             }
 
-            public void Inspect() => _keyword.PegiLabel().toggleIcon(ref LastValue);
+            public void Inspect() => _keyword.PegiLabel().ToggleIcon(ref LastValue);
         }
 
+
+        #endregion
+
+        #region Array 
+
+        [Serializable]
+        public class VectorArrayValue : BaseShaderPropertyIndex
+        {
+            private Vector4[] _vectorArray;
+            private readonly Fallback.Int _arraySize = new Fallback.Int();
+
+            public Vector4[] GlobalValue
+            {
+                get => Shader.GetGlobalVectorArray(id); 
+                set 
+                { 
+                    if (_arraySize.IsSet) 
+                    {
+                        if (_arraySize.ManualValue != value.Length) 
+                        {
+                            QcLog.ChillLogger.LogErrorOnce(()=> "Trying to {0} of size {1} while previous length was {2}. Unsupported.".F(nameof(Shader.SetGlobalVectorArray), value.Length, _arraySize.ManualValue), key: "GlArSet");
+                        }
+                    } 
+                    else 
+                    {
+                        _arraySize.ManualValue = value.Length;
+                    }
+
+                    _vectorArray = value;
+
+                    Shader.SetGlobalVectorArray(id, value); 
+                }
+            }
+
+            public VectorArrayValue(string name) : base(name) {}
+
+            public override void SetOn(Material mat) => mat.SetVectorArray(id, _vectorArray);
+
+            public override void SetOn(MaterialPropertyBlock block) => block.SetVectorArray(id, _vectorArray);
+        }
 
         #endregion
 

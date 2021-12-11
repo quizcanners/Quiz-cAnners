@@ -5,58 +5,69 @@ using UnityEngine;
 namespace QuizCanners.Utils
 {
     [Serializable]
-    public class SerializableTimer : IPEGI
+    public class SerializableTimeInterval : IPEGI
     {
-        public double Duration;
-        [SerializeField] private SerializableDateTime _startTime;
-
-        public TimeSpan TimePassed 
+        [SerializeField] private bool _isStarted;
+        [SerializeField] private SerializableDateTime _startTime = new SerializableDateTime();
+        [SerializeField] private double _durationInsSeconds;
+        
+        public TimeSpan Duration 
         {
-            get 
-            {
-                var diff = DateTime.Now - _startTime;
-                return diff;
-            }
+            get => TimeSpan.FromSeconds(_durationInsSeconds);
+            set => _durationInsSeconds = value.TotalSeconds;
         }
+
+        public TimeSpan TimePassed => DateTime.Now - _startTime;
+     
         public float FractionPassed
         {
             get
             {
-                if (Duration == 0)
+                if (!_isStarted)
+                    return 0;
+
+                if (_durationInsSeconds <= 0)
                     return 1;
 
-                return Mathf.Clamp01((float)(TimePassed.TotalSeconds / Duration));
+                return Mathf.Clamp01((float)(TimePassed.TotalSeconds / _durationInsSeconds));
             }
         }
 
-        public void Skip(double seconds) => _startTime.Value -= TimeSpan.FromSeconds(seconds);
-        public void Skip(TimeSpan span) => _startTime.Value -= span;
-        public void Start() => _startTime.Value = DateTime.Now;
-
-        public SerializableTimer(float duration)
+        public State GetState() 
         {
-            _startTime = new SerializableDateTime();
-            Start();
+            if (!_isStarted)
+                return State.NeverStarted;
+
+            if (TimePassed >= Duration)
+                return State.Done;
+
+            return State.InProgress;
+        }
+
+        public void SkipSeconds(double seconds) => _startTime.Value -= TimeSpan.FromSeconds(seconds);
+        public void Skip(TimeSpan span) => _startTime.Value -= span;
+
+        public void Start(TimeSpan duration)
+        {
+            _isStarted = true;
+            _startTime.Value = DateTime.Now;
             Duration = duration;
         }
-        public SerializableTimer()
-        {
-            _startTime = new SerializableDateTime();
-            Start();
-        }
+
+        public enum State { NeverStarted, InProgress, Done }
 
         #region Inspector
         public void Inspect()
         {
-            "Progress: {0}".F(Mathf.FloorToInt(FractionPassed * 100)).PegiLabel().nl();
+            "Progress: {0}".F(Mathf.FloorToInt(FractionPassed * 100)).PegiLabel().Nl();
 
-            "Duration".PegiLabel().edit(ref Duration).nl();
+            "Duration (sec)".PegiLabel().Edit(ref _durationInsSeconds).Nl();
 
             if ("Start".PegiLabel().Click())
-                Start();
+                Start(Duration);
 
             if ("Skip 30 sec".PegiLabel().Click())
-                Skip(30);
+                SkipSeconds(30);
 
         }
         #endregion

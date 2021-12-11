@@ -64,7 +64,7 @@ namespace QuizCanners.Migration
             pegi.CopyPaste.InspectOptionsFor(ref this);
 
             if (_value != null)
-                "{0} characters".PegiLabel().write();
+                "{0} characters".PegiLabel().Write();
         }
 
         private int ToIntInternal(string text)
@@ -405,7 +405,10 @@ namespace QuizCanners.Migration
             var cstm = obj as ICfgCustom;
 
             if (cstm != null)
+            {
                 cstm.DecodeInternal(this);
+                obj = (T)((object)cstm);
+            }
             else
                 new CfgDecoder(this).DecodeTagsFor(ref obj);
         }
@@ -512,6 +515,29 @@ namespace QuizCanners.Migration
                 Debug.LogError("{0} doesn't have Derrived classes".F(typeof(T).ToPegiStringType()));
 
         }
+
+        public void TryToListElements<T>(List<T> list) where T : class, ICfg
+        {
+            var cody = new CfgDecoder(this);
+
+            int index = 0;
+
+            foreach (var _ in cody)
+            {
+                var dta = cody.GetData();
+                var tag = cody.CurrentTag;
+
+                if (tag != ListMetaTag)
+                {
+                    if (list.Count > index)
+                    {
+                        var el = list[index];
+                        el.Decode(dta);
+                    }
+                }
+                index++;
+            }
+        } 
 
         public void ToList<T>(out List<T> list) where T : ICfg, new()
         {
@@ -674,7 +700,7 @@ namespace QuizCanners.Migration
             txt = null;
 
             Object myType = null;
-            if (pegi.edit(ref myType)) {
+            if (pegi.Edit(ref myType)) {
                 txt = QcFile.Load.TryLoadAsTextAsset(myType, asBytes: true);
                 pegi.GameView.ShowNotification("Loaded " + myType.name);
 

@@ -19,8 +19,6 @@ namespace QuizCanners.Inspect
 
     public interface IPEGI_ListInspect { void InspectInList(ref int edited, int index); }
 
-    public interface IPEGI_SceneDraw { void DrawHandles(); }
-
     public interface IGotReadOnlyName { string GetReadOnlyName(); }
 
     public interface IGotName { string NameForInspector { get; set; } }
@@ -29,7 +27,7 @@ namespace QuizCanners.Inspect
 
     public interface IGotCount { int GetCount(); }
 
-    public interface ISearchable { IEnumerator<object> SearchKeywordsEnumerator(); }
+    public interface ISearchable { System.Collections.IEnumerator SearchKeywordsEnumerator(); }
 
     public interface INeedAttention { string NeedAttention(); }
 
@@ -40,9 +38,9 @@ namespace QuizCanners.Inspect
     public static partial class pegi
     {
         private const int PLAYTIME_GUI_WIDTH = 400;
-
-        private static int _elementIndex;
-        private static int selectedFold = -1;
+        internal static bool globChanged; // Some times user can change temporary fields, like delayed Edits
+        internal static int _elementIndex;
+        internal static int selectedFold = -1;
         internal static bool _horizontalStarted;
         private static readonly Color AttentionColor = new Color(1f, 0.7f, 0.7f, 1);
         private static readonly Color PreviousInspectedColor = new Color(0.3f, 0.7f, 0.3f, 1);
@@ -51,10 +49,21 @@ namespace QuizCanners.Inspect
         public static bool IsFoldedOut => PegiEditorOnly.isFoldedOutOrEntered;
         public static string EnvironmentNl => Environment.NewLine;
 
-     
         #region GUI Modes & Fitting
 
-        public static bool PaintingGameViewUI
+#if UNITY_EDITOR
+        private static ChangesToken EndChangeCheck()
+        {
+            var changed = UnityEditor.EditorGUI.EndChangeCheck();
+            if (changed)
+                globChanged = true;
+
+            return new ChangesToken(changed);
+        }
+#endif
+
+
+    public static bool PaintingGameViewUI
         {
             get { return currentMode == PegiPaintingMode.PlayAreaGui; }
             private set { currentMode = value ? PegiPaintingMode.PlayAreaGui : PegiPaintingMode.EditorInspector; }
@@ -78,7 +87,7 @@ namespace QuizCanners.Inspect
         #region Inspection Variables
 
         #region GUI Colors
-        private static icon GUIColor(this icon icn, Color col)
+        private static Icon GUIColor(this Icon icn, Color col)
         {
             SetGUIColor(col);
             return icn;
@@ -123,11 +132,11 @@ namespace QuizCanners.Inspect
 
 #endregion
 
-        private static void checkLine()
+        private static void CheckLine()
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                PegiEditorOnly.checkLine_Editor();
+                PegiEditorOnly.CheckLine_Editor();
             else
 #endif
             if (!_horizontalStarted)
@@ -205,7 +214,7 @@ namespace QuizCanners.Inspect
 #endif
 
             {
-                checkLine();
+                CheckLine();
                 GUILayout.Space(10);
             }
         }
@@ -252,27 +261,20 @@ namespace QuizCanners.Inspect
 
         #endregion
 
-
-
-
         public class ChangesTracker
         {
             private bool _wasAlreadyChanged;
             public bool Changed
             {
-                get => !_wasAlreadyChanged && PegiEditorOnly.globChanged;
-                set
-                {
-                    if (value)
-                    {
-                        _wasAlreadyChanged = false;
-                        PegiEditorOnly.globChanged = true;
-                    }
+                get => !_wasAlreadyChanged && globChanged;
+            }
 
-                    if (!value)
-                    {
-                        _wasAlreadyChanged = true;
-                    }
+            public void Feed(bool isChanged) 
+            {
+                if (isChanged)
+                {
+                    _wasAlreadyChanged = false;
+                    globChanged = true;
                 }
             }
 
@@ -282,7 +284,7 @@ namespace QuizCanners.Inspect
 
             internal ChangesTracker()
             {
-                _wasAlreadyChanged = PegiEditorOnly.globChanged;
+                _wasAlreadyChanged = globChanged;
             }
         }
 
@@ -303,7 +305,7 @@ namespace QuizCanners.Inspect
 
         public struct ChangesToken 
         {
-            internal bool IsChanged;
+            private bool IsChanged;
 
             public static implicit operator bool(ChangesToken d) => d.IsChanged;
 
@@ -380,12 +382,12 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static void nl()
+        public static void Nl()
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
             {
-                PegiEditorOnly.newLine_Editor();
+                PegiEditorOnly.NewLine_Editor();
                 return;
             }
 #endif
@@ -397,27 +399,27 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static void nl_ifEntered()
+        public static void Nl_ifEntered()
         {
             if (PegiEditorOnly.isFoldedOutOrEntered)
-                nl();
+                Nl();
         }
 
-        public static void nl_ifNotEntered()
+        public static void Nl_ifNotEntered()
         {
             if (PegiEditorOnly.isFoldedOutOrEntered == false)
-                nl();
+                Nl();
         }
 
-        public static StateToken nl_ifNotEntered(this StateToken value)
+        public static StateToken Nl_ifNotEntered(this StateToken value)
         {
-            nl_ifNotEntered();
+            Nl_ifNotEntered();
             return value;
         }
 
-        public static StateToken nl_ifEntered(this StateToken value)
+        public static StateToken Nl_ifEntered(this StateToken value)
         {
-            nl_ifEntered();
+            Nl_ifEntered();
             return value;
         }
 
@@ -429,34 +431,43 @@ namespace QuizCanners.Inspect
             return value;
         }
 
-        public static StateToken nl(this StateToken value)
+        public static StateToken Nl(this StateToken value)
         {
-            nl();
+            Nl();
             return value;
         }
 
-        public static ChangesToken nl(this ChangesToken value)
+        public static ChangesToken Nl(this ChangesToken value)
         {
-            nl();
+            Nl();
             return value;
         }
 
-        public static void nl(this IPegiText value)
+        public static ChangesToken Nl(this ChangesToken value, Action onChanged)
         {
-            write(value);
-            nl();
+            if (value)
+                onChanged?.Invoke();
+
+            Nl();
+            return value;
         }
 
-        public static void nl(this icon icon, int size = defaultButtonSize)
+        public static void Nl(this IPegiText value)
         {
-            icon.draw(size);
-            nl();
+            Write(value);
+            Nl();
         }
 
-        public static void nl(this icon icon, string hint, int size = defaultButtonSize)
+        public static void Nl(this Icon icon, int size = defaultButtonSize)
         {
-            icon.draw(hint, size);
-            nl();
+            icon.Draw(size);
+            Nl();
+        }
+
+        public static void Nl(this Icon icon, string hint, int size = defaultButtonSize)
+        {
+            icon.Draw(hint, size);
+            Nl();
         }
 
 #endregion

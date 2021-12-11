@@ -86,12 +86,12 @@ namespace QuizCanners.Inspect
                     if (typeof(Object).IsAssignableFrom(typeof(T)))
                     {
                         var tmp = el as Object;
-                        if (edit(ref tmp, typeof(T), 200))//edit(ref tmp))
+                        if (Edit(ref tmp, typeof(T), 200))//edit(ref tmp))
                             el = (T)(object)tmp;
                     }
                     else
                     {
-                        "{0}: NULL {1}".F(index, typeof(T).ToPegiStringType()).PegiLabel(150).write();
+                        "{0}: NULL {1}".F(index, typeof(T).ToPegiStringType()).PegiLabel(150).Write();
                     }
                 }
                 else
@@ -117,7 +117,7 @@ namespace QuizCanners.Inspect
                     }
                     catch (System.Exception ex)
                     {
-                        write(ex);
+                        Write(ex);
                     }
 
                     if (changed && (typeof(T).IsValueType))
@@ -147,7 +147,7 @@ namespace QuizCanners.Inspect
                     {
                         isShown = true;
 
-                        if (edit(ref uo, typeof(T), 200))
+                        if (Edit(ref uo, typeof(T), 200))
                             el = (T)(object)uo;
                     }
 
@@ -158,7 +158,7 @@ namespace QuizCanners.Inspect
 
                         if (el is Object)
                         {
-                            if (editDelayed(ref n))
+                            if (EditDelayed(ref n))
                             {
                                 named.NameForInspector = n;
 
@@ -167,7 +167,7 @@ namespace QuizCanners.Inspect
                         }
                         else
                         {
-                            if (editDelayed(ref n))
+                            if (EditDelayed(ref n))
                             {
                                 named.NameForInspector = n;
                                 if (typeof(T).IsValueType)
@@ -190,7 +190,7 @@ namespace QuizCanners.Inspect
                         var label = sb.ToString();
 
                         if (label.Length > 0)
-                            label.PegiLabel(70).write();
+                            label.PegiLabel(70).Write();
                     }
                     else
                     {
@@ -227,8 +227,8 @@ namespace QuizCanners.Inspect
                     }
 
                     if ((warningText == null &&
-                            icon.Enter.ClickUnFocus(Msg.InspectElement)) ||
-                        (warningText != null && icon.Warning.ClickUnFocus(warningText)))
+                            Icon.Enter.ClickUnFocus(Msg.InspectElement)) ||
+                        (warningText != null && Icon.Warning.ClickUnFocus(warningText)))
                     {
                         inspected = index;
                         isPrevious = true;
@@ -247,8 +247,8 @@ namespace QuizCanners.Inspect
 
             if (listMeta != null)
             {
-                if (listMeta.inspectedElement != -1)
-                    listMeta.previouslyInspectedElement = listMeta.inspectedElement;
+                if (listMeta.InspectedElement != -1)
+                    listMeta.previouslyInspectedElement = listMeta.InspectedElement;
                 else if (isPrevious)
                     listMeta.previouslyInspectedElement = index;
 
@@ -265,29 +265,29 @@ namespace QuizCanners.Inspect
 
         #region List of Unity Objects
 
-        public static ChangesToken edit_List_UObj<T>(this TextLabel label, List<T> list, ref int inspected) where T : Object
+        public static ChangesToken Edit_List_UObj<T>(this TextLabel label, List<T> list, ref int inspected) where T : Object
         {
             using (collectionInspector.Write_Search_ListLabel(label, ref inspected, list))
             {
-                return edit_or_select_List_UObj(list, ref inspected);
+                return Edit_or_select_List_UObj(list, ref inspected);
             }
         }
 
-        public static ChangesToken edit_List_UObj<T>(this TextLabel label, List<T> list) where T : Object
+        public static ChangesToken Edit_List_UObj<T>(this TextLabel label, List<T> list) where T : Object
         {
             using (collectionInspector.Write_Search_ListLabel(label, list))
             {
-                return list.edit_List_UObj();
+                return list.Edit_List_UObj();
             }
         }
 
-        public static ChangesToken edit_List_UObj<T>(this List<T> list) where T : Object
+        public static ChangesToken Edit_List_UObj<T>(this List<T> list) where T : Object
         {
             var edited = -1;
-            return edit_or_select_List_UObj(list, ref edited);
+            return Edit_or_select_List_UObj(list, ref edited);
         }
 
-        public static ChangesToken edit_List_UObj<T>(List<T> list, System.Func<T, T> lambda) where T : Object
+        public static ChangesToken Edit_List_UObj<T>(List<T> list, System.Func<T, T> lambda) where T : Object
         {
             var changed = ChangeTrackStart();
 
@@ -306,19 +306,19 @@ namespace QuizCanners.Inspect
                     var ch = GUI.changed;
 
                     var tmpEl = lambda(el);
-                    nl();
+                    Nl();
                     if (ch || !GUI.changed) 
                         continue;
 
-                    changed.Changed = true;
+                    changed.Feed(isChanged: true);
                     list[i] = tmpEl;
                 }
             }
-            nl();
+            Nl();
             return changed;
         }
 
-        public static ChangesToken edit_or_select_List_UObj<T>(List<T> list, ref int inspected, pegi.CollectionInspectorMeta listMeta = null) where T : Object
+        public static ChangesToken Edit_or_select_List_UObj<T>(List<T> list, ref int inspected, pegi.CollectionInspectorMeta listMeta = null) where T : Object
         {
             var changed = ChangeTrackStart();
 
@@ -327,7 +327,7 @@ namespace QuizCanners.Inspect
 
             var before = inspected;
             if (list.ClampIndexToCount(ref inspected, -1))
-                changed.Changed |= (inspected != before);
+                changed.Feed(inspected != before);
 
             if (inspected == -1)
             {
@@ -346,13 +346,13 @@ namespace QuizCanners.Inspect
                         {
                             var elTmp = el;
 
-                            if (edit(ref elTmp))
+                            if (Edit(ref elTmp))
                                 list[i] = elTmp;
                         }
                         else
                             collectionInspector.InspectClassInList(list, i, ref inspected, listMeta);
 
-                        nl();
+                        Nl();
                     }
 
                     CopyPaste.InspectOptions<T>(listMeta);
@@ -364,7 +364,7 @@ namespace QuizCanners.Inspect
             }
             else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
 
-            nl();
+            Nl();
             return changed;
 
         }
@@ -373,14 +373,14 @@ namespace QuizCanners.Inspect
 
         #region List
 
-        public static ChangesToken edit_List_Enum<T>(this TextLabel label, List<T> list, T defaultValue = default(T)) 
+        public static ChangesToken Edit_List_Enum<T>(this TextLabel label, List<T> list, T defaultValue = default(T)) 
         {
             label.style = Styles.ListLabel;
-            label.nl();
-            return list.edit_List_Enum(defaultValue: defaultValue);
+            label.Nl();
+            return list.Edit_List_Enum(defaultValue: defaultValue);
         }
 
-        public static ChangesToken edit_List_Enum<T>(this List<T> list, T defaultValue = default(T))
+        public static ChangesToken Edit_List_Enum<T>(this List<T> list, T defaultValue = default(T))
         {
             var changed = ChangeTrackStart();
             int toDelete = -1;
@@ -388,12 +388,12 @@ namespace QuizCanners.Inspect
             {
                 var d = list[i];
 
-                icon.Delete.Click(() => toDelete = i);
+                Icon.Delete.Click(() => toDelete = i);
 
-                if (editEnum(ref d))
+                if (Edit_Enum(ref d))
                     list[i] = d;
 
-                nl();
+                Nl();
             }
 
             if (toDelete != -1)
@@ -407,77 +407,77 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, ref int inspected)
+        public static ChangesToken Edit_List<T>(this TextLabel label, List<T> list, ref int inspected)
         {
             using (collectionInspector.Write_Search_ListLabel(label, ref inspected, list))
             {
-                return edit_List(list, ref inspected);
+                return Edit_List(list, ref inspected);
             }
         }
 
-        public static ChangesToken edit_List<T>(List<T> list, ref int inspected) => edit_List(list, ref inspected, out _);
+        public static ChangesToken Edit_List<T>(List<T> list, ref int inspected) => Edit_List(list, ref inspected, out _);
         
-        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list)
+        public static ChangesToken Edit_List<T>(this TextLabel label, List<T> list)
         {
             using (collectionInspector.Write_Search_ListLabel(label, list))
             {
-                return edit_List(list);
+                return Edit_List(list);
             }
         }
 
-        public static ChangesToken edit_List<T>(List<T> list)
+        public static ChangesToken Edit_List<T>(List<T> list)
         {
             var edited = -1;
-            return edit_List(list, ref edited);
+            return Edit_List(list, ref edited);
         }
 
-        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, out T added)
+        public static ChangesToken Edit_List<T>(this TextLabel label, List<T> list, out T added)
         {
             using (collectionInspector.Write_Search_ListLabel(label, list))
             {
-                return edit_List(list, out added);
+                return Edit_List(list, out added);
             }
         }
 
-        public static ChangesToken edit_List<T>(List<T> list, out T added)
+        public static ChangesToken Edit_List<T>(List<T> list, out T added)
         {
             var edited = -1;
-            return edit_List(list, ref edited, out added);
+            return Edit_List(list, ref edited, out added);
         }
 
-        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, ref int inspected, out T added)
+        public static ChangesToken Edit_List<T>(this TextLabel label, List<T> list, ref int inspected, out T added)
         {
             using (collectionInspector.Write_Search_ListLabel(label, ref inspected, list))
             {
-                return edit_List(list, ref inspected, out added);
+                return Edit_List(list, ref inspected, out added);
             }
         }
 
-        public static ChangesToken edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list)
+        public static ChangesToken Edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list)
         {
             var changed = ChangeTrackStart();
             using (collectionInspector.Write_Search_ListLabel(listMeta, list)) 
             {
                 if (listMeta == null)
                 {
-                    "List MEta is Null".PegiLabel().writeWarning(); nl();
+                    "List MEta is Null".PegiLabel().WriteWarning(); Nl();
                 }
                 else
-                    edit_List(list, ref listMeta.inspectedElement, out _, listMeta);
+                    Edit_List(list, ref listMeta.inspectedElement_Internal, out _, listMeta).OnChanged(listMeta.OnChanged);
             }
             collectionInspector.End();
             return changed;
         }
 
-        public static ChangesToken edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list, out T added)
+        public static ChangesToken Edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list, out T added)
         {
             using (collectionInspector.Write_Search_ListLabel(listMeta, list))
             {
-                return edit_List(list, ref listMeta.inspectedElement, out added, listMeta);
+                return Edit_List(list, ref listMeta.inspectedElement_Internal, out added, listMeta);
             }
         }
 
-        public static ChangesToken edit_List<T>(List<T> list, ref int inspected, out T added, CollectionInspectorMeta listMeta = null)
+        public static ChangesToken Edit_List<T>(List<T> list, ref int inspected, out T added, CollectionInspectorMeta listMeta = null)
         {
             var changes = ChangeTrackStart();
 
@@ -485,7 +485,7 @@ namespace QuizCanners.Inspect
 
             if (list == null)
             {
-                "List of {0} is null".F(typeof(T).ToPegiStringType()).PegiLabel().write();
+                "List of {0} is null".F(typeof(T).ToPegiStringType()).PegiLabel().Write();
 
                     return changes;
             }
@@ -493,7 +493,7 @@ namespace QuizCanners.Inspect
             if (inspected >= list.Count)
             {
                 inspected = -1;
-                changes.Changed = true;
+                changes.Feed(isChanged: true);
             }
 
             if (inspected == -1)
@@ -514,7 +514,7 @@ namespace QuizCanners.Inspect
                         {
                             if (!Utils.IsMonoType(list, i))
                             {
-                                write(typeof(T).IsSubclassOf(typeof(Object))
+                                Write(typeof(T).IsSubclassOf(typeof(Object))
                                     ? "use edit_List_UObj"
                                     : "is NUll");
                             }
@@ -524,7 +524,7 @@ namespace QuizCanners.Inspect
                             InspectValueInList(el, list, i, ref inspected, listMeta);
                         }
 
-                        nl();
+                        Nl();
                     }
 
                     collectionInspector.TryShowListCreateNewOptions(list, ref added, listMeta);
@@ -534,37 +534,43 @@ namespace QuizCanners.Inspect
             }
             else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
 
-            nl();
+            Nl();
+
+            if (changes && listMeta != null) 
+            {
+                listMeta.OnChanged();
+            }
+
             return changes;
         }
 
         #region Tagged Types
 
-        public static ChangesToken edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list, TaggedTypes.DerrivedList types, out T added)
+        public static ChangesToken Edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list, TaggedTypes.DerrivedList types, out T added)
         {
             using (collectionInspector.Write_Search_ListLabel(listMeta, list))
             {
-                return edit_List(list, ref listMeta.inspectedElement, types, out added, listMeta);
+                return Edit_List(list, ref listMeta.inspectedElement_Internal, types, out added, listMeta);
             }
         }
 
-        public static ChangesToken edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list, TaggedTypes.DerrivedList types)
+        public static ChangesToken Edit_List<T>(this CollectionInspectorMeta listMeta, List<T> list, TaggedTypes.DerrivedList types)
         {
             using (collectionInspector.Write_Search_ListLabel(listMeta, list))
             {
-                return edit_List(list, ref listMeta.inspectedElement, types, out _, listMeta);
+                return Edit_List(list, ref listMeta.inspectedElement_Internal, types, out _, listMeta);
             }
         }
 
-        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, ref int inspected, TaggedTypes.DerrivedList types, out T added)
+        public static ChangesToken Edit_List<T>(this TextLabel label, List<T> list, ref int inspected, TaggedTypes.DerrivedList types, out T added)
         {
             using (collectionInspector.Write_Search_ListLabel(label, ref inspected, list))
             {
-                return edit_List(list, ref inspected, types, out added);
+                return Edit_List(list, ref inspected, types, out added);
             }
         }
 
-        private static ChangesToken edit_List<T>(List<T> list, ref int inspected, TaggedTypes.DerrivedList types, out T added, CollectionInspectorMeta listMeta = null)
+        private static ChangesToken Edit_List<T>(List<T> list, ref int inspected, TaggedTypes.DerrivedList types, out T added, CollectionInspectorMeta listMeta = null)
         {
             var changes = ChangeTrackStart();
 
@@ -572,7 +578,7 @@ namespace QuizCanners.Inspect
 
             if (list == null)
             {
-                "List of {0} is null".F(typeof(T)).PegiLabel().write();
+                "List of {0} is null".F(typeof(T)).PegiLabel().Write();
 
                  return changes;
             }
@@ -580,7 +586,7 @@ namespace QuizCanners.Inspect
             if (inspected >= list.Count)
             {
                 inspected = -1;
-                changes.Changed = true;
+                changes.Feed(isChanged: true);
             }
 
             if (inspected == -1)
@@ -597,7 +603,7 @@ namespace QuizCanners.Inspect
                         {
                             if (!Utils.IsMonoType(list, i))
                             {
-                                write(typeof(T).IsSubclassOf(typeof(Object))
+                                Write(typeof(T).IsSubclassOf(typeof(Object))
                                     ? "use edit_List_UObj"
                                     : "is NUll");
                             }
@@ -606,17 +612,17 @@ namespace QuizCanners.Inspect
                         {
                             InspectValueInList(el, list, i, ref inspected, listMeta);
                         }
-                        nl();
+                        Nl();
                     }
 
-                    collectionInspector.TryShowListCreateNewOptions(list, ref added, types, listMeta).nl();
+                    collectionInspector.TryShowListCreateNewOptions(list, ref added, types, listMeta).Nl();
 
                     CopyPaste.InspectOptions<T>(listMeta);
                 }
             }
             else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
 
-            nl();
+            Nl();
             return changes;
         }
 
@@ -632,19 +638,19 @@ namespace QuizCanners.Inspect
 
         private static Color lambda_Color(Color val)
         {
-            edit(ref val);
+            Edit(ref val);
             return val;
         }
 
         private static Color32 lambda_Color(Color32 val)
         {
-            edit(ref val);
+            Edit(ref val);
             return val;
         }
 
         private static int lambda_int(int val)
         {
-            edit(ref val);
+            Edit(ref val);
             return val;
         }
 
@@ -652,48 +658,48 @@ namespace QuizCanners.Inspect
         {
             var role = listElementsRoles.TryGetObj(collectionInspector.Index);
             if (role != null)
-                role.GetNameForInspector().PegiLabel(90).edit(ref val);
-            else edit(ref val);
+                role.GetNameForInspector().PegiLabel(90).Edit(ref val);
+            else Edit(ref val);
 
             return val;
         }
 
         public static string lambda_string(string val)
         {
-            edit(ref val);
+            Edit(ref val);
             return val;
         }
 
-        public static ChangesToken edit_List(this TextLabel label, List<int> list) =>
-            label.edit_List(list, lambda_int);
+        public static ChangesToken Edit_List(this TextLabel label, List<int> list) =>
+            label.Edit_List(list, lambda_int);
 
-        public static ChangesToken edit_List(this TextLabel label, List<Color> list) =>
-            label.edit_List(list, lambda_Color);
+        public static ChangesToken Edit_List(this TextLabel label, List<Color> list) =>
+            label.Edit_List(list, lambda_Color);
 
-        public static ChangesToken edit_List(this TextLabel label, List<Color32> list) =>
-            label.edit_List(list, lambda_Color);
+        public static ChangesToken Edit_List(this TextLabel label, List<Color32> list) =>
+            label.Edit_List(list, lambda_Color);
 
-        public static ChangesToken edit_List(this TextLabel label, List<string> list) =>
-            label.edit_List(list, lambda_string);
+        public static ChangesToken Edit_List(this TextLabel label, List<string> list) =>
+            label.Edit_List(list, lambda_string);
         #endregion
 
-        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, System.Func<T, T> lambda) 
+        public static ChangesToken Edit_List<T>(this TextLabel label, List<T> list, System.Func<T, T> lambda) 
         {
             using (collectionInspector.Write_Search_ListLabel(label, list))
             {
-                return edit_List(list, lambda, out _);
+                return Edit_List(list, lambda, out _);
             }
         }
 
-        public static ChangesToken edit_List<T>(this TextLabel label, List<T> list, System.Func<T, T> lambda, out T added) 
+        public static ChangesToken Edit_List<T>(this TextLabel label, List<T> list, System.Func<T, T> lambda, out T added) 
         {
             using (collectionInspector.Write_Search_ListLabel(label, list))
             {
-                return edit_List(list, lambda, out added);
+                return Edit_List(list, lambda, out added);
             }
         }
 
-        public static ChangesToken edit_List<T>(List<T> list, System.Func<T, T> lambda, out T added)
+        public static ChangesToken Edit_List<T>(List<T> list, System.Func<T, T> lambda, out T added)
         {
             var changed = ChangeTrackStart();
 
@@ -718,22 +724,22 @@ namespace QuizCanners.Inspect
                     {
                         list[i] = tmpEl;
                     }
-                    nl();
+                    Nl();
                 }
             }
-            nl();
+            Nl();
             return changed;
         }
 
-        public static ChangesToken edit_List(this TextLabel name, List<string> list, System.Func<string, string> lambda)
+        public static ChangesToken Edit_List(this TextLabel name, List<string> list, System.Func<string, string> lambda)
         {
             using (collectionInspector.Write_Search_ListLabel(name, list))
             {
-                return edit_List(list, lambda);
+                return Edit_List(list, lambda);
             }
         }
 
-        public static ChangesToken edit_List(List<string> list, System.Func<string, string> lambda)
+        public static ChangesToken Edit_List(List<string> list, System.Func<string, string> lambda)
         {
             var changed = ChangeTrackStart();
 
@@ -744,7 +750,7 @@ namespace QuizCanners.Inspect
 
             if (list != collectionInspector.reordering)
             {
-                if (icon.Add.ClickUnFocus())
+                if (Icon.Add.ClickUnFocus())
                 {
                     list.Add("");
                     collectionInspector.SkrollToBottom();
@@ -756,16 +762,16 @@ namespace QuizCanners.Inspect
 
                     var ch = GUI.changed;
                     var tmpEl = lambda(el);
-                    nl();
+                    Nl();
                     if (ch || !GUI.changed) continue;
 
-                    changed.Changed = true;
+                    changed.Feed(isChanged: true);
                     list[i] = tmpEl;
                 }
 
             }
 
-            nl();
+            Nl();
             return changed;
         }
 
@@ -775,7 +781,7 @@ namespace QuizCanners.Inspect
 
         #region Hash Set
 
-        public static ChangesToken edit_HashSet<T>(HashSet<T> list, ref int inspected, out T added, CollectionInspectorMeta listMeta = null)
+        public static ChangesToken Edit_HashSet<T>(HashSet<T> list, ref int inspected, out T added, CollectionInspectorMeta listMeta = null)
         {
             var changes = ChangeTrackStart();
 
@@ -783,7 +789,7 @@ namespace QuizCanners.Inspect
 
             if (list == null)
             {
-                "List of {0} is null".F(typeof(T).ToPegiStringType()).PegiLabel().write();
+                "List of {0} is null".F(typeof(T).ToPegiStringType()).PegiLabel().Write();
 
                 return changes;
             }
@@ -791,7 +797,7 @@ namespace QuizCanners.Inspect
             if (inspected >= list.Count)
             {
                 inspected = -1;
-                changes.Changed = true;
+                changes.Feed(isChanged: true);
             }
 
             if (inspected == -1)
@@ -813,7 +819,7 @@ namespace QuizCanners.Inspect
                             
                             //if (!collectionInspector.IsMonoType(list, i))
                             //{
-                                write(typeof(T).IsSubclassOf(typeof(Object))
+                                Write(typeof(T).IsSubclassOf(typeof(Object))
                                     ? "need to create edit_HashSetFor_UObj"
                                     : "is NUll");
                             //}
@@ -823,7 +829,7 @@ namespace QuizCanners.Inspect
                             InspectValueInHashSet(el, list, i, ref inspected, listMeta);
                         }
 
-                        nl();
+                        Nl();
                     }
 
                     //collectionInspector.TryShowListCreateNewOptions(list, ref added, listMeta);
@@ -833,7 +839,7 @@ namespace QuizCanners.Inspect
             }
            // else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
 
-            nl();
+            Nl();
             return changes;
         }
 
@@ -872,19 +878,19 @@ namespace QuizCanners.Inspect
                
             }
 
-            public IEnumerator<object> SearchKeywordsEnumerator()
+            public IEnumerator SearchKeywordsEnumerator()
             {
                 yield return _pair.Value;
                 yield return _pair.Key;
             }
         }
 
-        private static void WriteNullDictionary_Internal<T>() => "NULL {0} Dictionary".PegiLabel().write();
+        private static void WriteNullDictionary_Internal<T>() => "NULL {0} Dictionary".PegiLabel().Write();
         
 
         private static int _tmpKeyInt;
         private static readonly Dictionary<System.Type, string> dictionaryNamesForAddNewElement = new Dictionary<System.Type, string>();
-        public static ChangesToken addDictionaryPairOptions<TValue>(Dictionary<int, TValue> dic) 
+        public static ChangesToken AddDictionaryPairOptions<TValue>(Dictionary<int, TValue> dic) 
         {
             var changed = ChangeTrackStart();
             if (dic == null)
@@ -893,20 +899,20 @@ namespace QuizCanners.Inspect
                 return changed;
             }
 
-            "Key".PegiLabel(60).edit(ref _tmpKeyInt);
+            "Key".PegiLabel(60).Edit(ref _tmpKeyInt);
 
             if (dic.ContainsKey(_tmpKeyInt))
             {
-                if (icon.Refresh.Click("Find Free index"))
+                if (Icon.Refresh.Click("Find Free index"))
                 {
                     while (dic.ContainsKey(_tmpKeyInt))
                         _tmpKeyInt++;
                 }
-                "Key {0} already exists".F(_tmpKeyInt).PegiLabel().writeWarning();
+                "Key {0} already exists".F(_tmpKeyInt).PegiLabel().WriteWarning();
             }
             else
             {
-                if (icon.Add.Click("Add new Value"))
+                if (Icon.Add.Click("Add new Value"))
                 {
                     dic.Add(_tmpKeyInt, System.Activator.CreateInstance<TValue>());
                     while (dic.ContainsKey(_tmpKeyInt))
@@ -914,13 +920,13 @@ namespace QuizCanners.Inspect
                 }
             }
 
-            nl();
+            Nl();
 
             return changed;
 
         }
 
-        public static ChangesToken addDictionaryPairOptions<TValue>(Dictionary<string, TValue> dic, string defaultElementName) 
+        public static ChangesToken AddDictionaryPairOptions<TValue>(Dictionary<string, TValue> dic, string defaultElementName) 
         {
             string newElementName;
             if (!dictionaryNamesForAddNewElement.TryGetValue(typeof(TValue), out newElementName))
@@ -933,24 +939,23 @@ namespace QuizCanners.Inspect
                 return changed;
             }
 
-            if ("Key".PegiLabel(60).edit(ref newElementName).IgnoreChanges())
+            if ("Key".PegiLabel(60).Edit(ref newElementName).IgnoreChanges())
                 dictionaryNamesForAddNewElement[typeof(TValue)] = newElementName;
 
             var suggestedName = "{0} {1}".F(defaultElementName.Length > 0 ? defaultElementName : NEW_ELEMENT, dic.Count);
 
-            if (!suggestedName.Equals(newElementName) && icon.Refresh.Click())
+            if (!suggestedName.Equals(newElementName) && Icon.Refresh.Click())
                 newElementName = suggestedName;
 
             if (dic.ContainsKey(newElementName))
             {
-                nl();
-                "Key {0} already exists".F(newElementName).PegiLabel().writeWarning();
+                Nl();
+                "Key {0} already exists".F(newElementName).PegiLabel().WriteWarning();
             }
             else
             {
-                if (icon.Add.Click("Add new Value"))
+                if (Icon.Add.Click("Add new Value"))
                 {
-
                     TValue value = default(TValue);
 
                     var t = typeof(TValue);
@@ -965,10 +970,9 @@ namespace QuizCanners.Inspect
 
                     newElementName = defaultElementName + " " + dic.Count;
                 }
-
             }
 
-            nl();
+            Nl();
 
             if (changed)
                 dictionaryNamesForAddNewElement[typeof(TValue)] = newElementName;
@@ -976,95 +980,95 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        public static ChangesToken edit_Dictionary<TKey, TValue>(Dictionary<TKey, TValue> dic, bool showKey = true)
+        public static ChangesToken Edit_Dictionary<TKey, TValue>(Dictionary<TKey, TValue> dic, bool showKey = true)
         {
             int inspected = -1;
             using (collectionInspector.Write_Search_DictionaryLabel(dic.ToString().PegiLabel(), ref inspected, dic))
             {
-                return edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
+                return Edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
             }
         }
 
-        public static ChangesToken edit_Dictionary<TKey, TValue>(Dictionary<TKey, TValue> dic, ref int inspected, bool showKey = true)
+        public static ChangesToken Edit_Dictionary<TKey, TValue>(Dictionary<TKey, TValue> dic, ref int inspected, bool showKey = true)
         {
             using (collectionInspector.Write_Search_DictionaryLabel(QcSharp.AddSpacesInsteadOfCapitals(dic.ToString().SimplifyTypeName()).PegiLabel(), ref inspected, dic))
             {
-                return edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
+                return Edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
             }
         }
 
-        public static ChangesToken edit_Dictionary<TKey, TValue>(this TextLabel label, Dictionary<TKey, TValue> dic, bool showKey = true)
+        public static ChangesToken Edit_Dictionary<TKey, TValue>(this TextLabel label, Dictionary<TKey, TValue> dic, bool showKey = true)
         {
             int inspected = -1;
             using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
             {
-                return edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
+                return Edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
             }
         }
 
-        public static ChangesToken edit_Dictionary<TKey, TValue>(this TextLabel label, Dictionary<TKey, TValue> dic, ref int inspected, bool showKey = true)
+        public static ChangesToken Edit_Dictionary<TKey, TValue>(this TextLabel label, Dictionary<TKey, TValue> dic, ref int inspected, bool showKey = true)
         {
             using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
             {
-                return edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
+                return Edit_Dictionary_Internal(dic, ref inspected, showKey: showKey);
             }
         }
 
-        public static ChangesToken edit_Dictionary<TKey, TValue>(this TextLabel label, Dictionary<TKey, TValue> dic, System.Func<TValue, TValue> lambda, bool showKey = false)
+        public static ChangesToken Edit_Dictionary<TKey, TValue>(this TextLabel label, Dictionary<TKey, TValue> dic, System.Func<TValue, TValue> lambda, bool showKey = false)
         {
             int inspected = -1;
             using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
             {
-                return edit_Dictionary_Internal(dic, lambda, showKey: showKey);
+                return Edit_Dictionary_Internal(dic, lambda, showKey: showKey);
             }
         }
 
-        public static ChangesToken edit_Dictionary<G, T>(this CollectionInspectorMeta listMeta, Dictionary<G, T> dic)
+        public static ChangesToken Edit_Dictionary<G, T>(this CollectionInspectorMeta listMeta, Dictionary<G, T> dic)
         {
             using (collectionInspector.Write_Search_DictionaryLabel(listMeta, dic))
             {
-                return edit_Dictionary_Internal(dic, ref listMeta.inspectedElement, showKey: listMeta[CollectionInspectParams.showDictionaryKey], listMeta: listMeta);
+                return Edit_Dictionary_Internal(dic, ref listMeta.inspectedElement_Internal, showKey: listMeta[CollectionInspectParams.showDictionaryKey], listMeta: listMeta);
             }
         }
 
-        public static ChangesToken edit_Dictionary<TKey, TValue>(this CollectionInspectorMeta listMeta, Dictionary<TKey, TValue> dic, System.Func<TValue, TValue> lambda)
+        public static ChangesToken Edit_Dictionary<TKey, TValue>(this CollectionInspectorMeta listMeta, Dictionary<TKey, TValue> dic, System.Func<TValue, TValue> lambda)
         {
             using (collectionInspector.Write_Search_DictionaryLabel(listMeta, dic))
             {
-                return edit_Dictionary_Internal(dic, lambda, listMeta: listMeta);
+                return Edit_Dictionary_Internal(dic, lambda, listMeta: listMeta);
             }
         }
 
-        public static ChangesToken edit_Dictionary(this CollectionInspectorMeta listMeta, Dictionary<string, string> dic)
+        public static ChangesToken Edit_Dictionary(this CollectionInspectorMeta listMeta, Dictionary<string, string> dic)
         {
             using (collectionInspector.Write_Search_DictionaryLabel(listMeta, dic))
             {
-                return edit_Dictionary_Internal(dic, lambda_string, listMeta: listMeta);
+                return Edit_Dictionary_Internal(dic, lambda_string, listMeta: listMeta);
             }
         }
         
-        public static ChangesToken edit_Dictionary(this TextLabel label, Dictionary<string, string> dic)
+        public static ChangesToken Edit_Dictionary(this TextLabel label, Dictionary<string, string> dic)
         {
             int inspected = -1;
             using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
             {
-                return edit_Dictionary_Internal(dic, lambda_string);
+                return Edit_Dictionary_Internal(dic, lambda_string);
             }
         }
 
-        public static ChangesToken edit_Dictionary(this TextLabel label, Dictionary<int, string> dic, List<string> roles)
+        public static ChangesToken Edit_Dictionary(this TextLabel label, Dictionary<int, string> dic, List<string> roles)
         {
             int inspected = -1;
             using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
             {
                 listElementsRoles = roles;
-                var changes = edit_Dictionary_Internal(dic, lambda_string_role, false);
+                var changes = Edit_Dictionary_Internal(dic, lambda_string_role, false);
                 listElementsRoles = null;
                 return changes;
             }
         }
 
-        internal static ChangesToken edit_Dictionary_Internal<TKey, TValue>(Dictionary<TKey, TValue> dic, System.Func<TValue, TValue> lambda, bool showKey = true, CollectionInspectorMeta listMeta = null)
+        internal static ChangesToken Edit_Dictionary_Internal<TKey, TValue>(Dictionary<TKey, TValue> dic, System.Func<TValue, TValue> lambda, bool showKey = true, CollectionInspectorMeta listMeta = null)
         {
 
             if (dic == null)
@@ -1073,22 +1077,22 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
-            nl();
+            Nl();
 
             if (listMeta != null)
                 showKey = listMeta[CollectionInspectParams.showDictionaryKey];
 
             var changed = ChangeTrackStart();
 
-            if (listMeta != null && listMeta.IsInspectingElement)
+            if (listMeta != null && listMeta.IsAnyEntered)
             {
 
-                if (icon.Exit.Click("Exit " + listMeta.Label))
-                    listMeta.IsInspectingElement = false;
+                if (Icon.Exit.Click("Exit " + listMeta.Label))
+                    listMeta.IsAnyEntered = false;
 
-                if (listMeta.IsInspectingElement && (dic.Count > listMeta.inspectedElement))
+                if (listMeta.IsAnyEntered && (dic.Count > listMeta.InspectedElement))
                 {
-                    var el = dic.GetElementAt(listMeta.inspectedElement);
+                    var el = dic.GetElementAt(listMeta.InspectedElement);
 
                     var val = el.Value;
 
@@ -1106,12 +1110,12 @@ namespace QuizCanners.Inspect
                 {
                     var itemKey = item.Key;
                     
-                    if ((listMeta != null && listMeta[CollectionInspectParams.allowDeleting]) && icon.Delete.Click(25).UnfocusOnChange())
+                    if ((listMeta != null && listMeta[CollectionInspectParams.allowDeleting]) && Icon.Delete.Click(25).UnfocusOnChange())
                         dic.Remove(itemKey);
                     else
                     {
                         if (showKey)
-                            itemKey.GetNameForInspector().PegiLabel(50).write_ForCopy();
+                            itemKey.GetNameForInspector().PegiLabel(50).Write_ForCopy();
 
                         var el = item.Value;
                         var ch = GUI.changed;
@@ -1123,20 +1127,20 @@ namespace QuizCanners.Inspect
                             break;
                         }
 
-                        if (listMeta != null && icon.Enter.Click("Enter " + el))
-                            listMeta.inspectedElement = collectionInspector.Index;
+                        if (listMeta != null && Icon.Enter.Click("Enter " + el))
+                            listMeta.InspectedElement = collectionInspector.Index;
                     }
-                    nl();
+                    Nl();
                 }
             }
             return changed;
         }
 
-        internal static ChangesToken edit_Dictionary_Internal<TKey, TValue>(Dictionary<TKey, TValue> dic, ref int inspected, bool showKey, CollectionInspectorMeta listMeta = null)
+        internal static ChangesToken Edit_Dictionary_Internal<TKey, TValue>(Dictionary<TKey, TValue> dic, ref int inspected, bool showKey, CollectionInspectorMeta listMeta = null)
         {
             var changed = ChangeTrackStart();
 
-            nl();
+            Nl();
 
             if (dic == null)
             {
@@ -1162,7 +1166,7 @@ namespace QuizCanners.Inspect
                     var itemKey = item.Key;
 
                     if ((listMeta == null || listMeta[CollectionInspectParams.allowDeleting]) 
-                        && icon.Delete.ClickConfirm(confirmationTag: "DelDicEl"+collectionInspector.Index))
+                        && Icon.Delete.ClickConfirm(confirmationTag: "DelDicEl"+collectionInspector.Index))
                     {
                         dic.Remove(itemKey);
                         return ChangesToken.True;
@@ -1189,14 +1193,14 @@ namespace QuizCanners.Inspect
 
                                         if (theName.IsNullOrEmpty())
                                         {
-                                            "NULL NAME".PegiLabel(60).write();
+                                            "NULL NAME".PegiLabel(60).Write();
                                         }
                                         else if (!theName.Equals(strKey))
                                         {
                                             var strDic = dic as Dictionary<string, TValue>;
 
                                             if (strDic.ContainsKey(theName))
-                                                "Name exists as Key".PegiLabel(90).write();
+                                                "Name exists as Key".PegiLabel(90).Write();
                                             else
                                             {
                                                 if ("Key<-".PegiLabel("Override Key with Name").ClickUnFocus())
@@ -1212,13 +1216,13 @@ namespace QuizCanners.Inspect
                                     }
                                 } catch (System.Exception ex) 
                                 {
-                                    if (icon.Warning.Click(toolTip: "Log Exception"))
+                                    if (Icon.Warning.Click(toolTip: "Log Exception"))
                                         Debug.LogException(ex);
 
                                 }
                                 string tmp = strKey;
 
-                                if (!keyHandled && editDelayed(ref tmp)) 
+                                if (!keyHandled && EditDelayed(ref tmp)) 
                                 {
                                     keyToReplace = strKey;
                                     keyToReplaceWith = tmp;
@@ -1229,7 +1233,7 @@ namespace QuizCanners.Inspect
 
                             if (!keyHandled)
                             {
-                                itemKey.GetNameForInspector().PegiLabel(50).write_ForCopy();
+                                itemKey.GetNameForInspector().PegiLabel(0.3f).Write_ForCopy();
                             }
                         }
 
@@ -1240,10 +1244,8 @@ namespace QuizCanners.Inspect
                             modifiedElement = new KeyValuePair<TKey, TValue>(item.Key, el);
                             modified = true;
                         }
-
-
                     }
-                    nl();
+                    Nl();
                 }
 
                 if (modified) 
@@ -1259,93 +1261,98 @@ namespace QuizCanners.Inspect
 
                 if ((listMeta == null || listMeta[CollectionInspectParams.showAddButton]) && typeof(TKey).Equals(typeof(string)))
                 {
-                    nl();
+                    Nl();
                     var stringDick = dic as Dictionary<string, TValue>;
 
                     string defaultName = (listMeta == null ? ("New " + QcSharp.AddSpacesToSentence(typeof(TValue).ToPegiStringType())) : listMeta.ElementName);
 
-                    addDictionaryPairOptions(stringDick, defaultElementName: defaultName);
+                    AddDictionaryPairOptions(stringDick, defaultElementName: defaultName);
                 }
 
             }
             else
                 collectionInspector.ExitOrDrawPEGI(dic, ref inspected);
 
-            nl();
+            Nl();
             return changed;
         }
-        
+
         #endregion
 
         #region Arrays
 
-        public static ChangesToken edit_Array<T>(this TextLabel label, ref T[] array)
+        public static ChangesToken Edit_Array<T>(this CollectionInspectorMeta listMeta, ref T[] array)
+        {
+            var changed = ChangeTrackStart();
+            using (collectionInspector.Write_Search_ListLabel(listMeta, array))
+            {
+                if (listMeta == null)
+                {
+                    "Array Meta is Null".PegiLabel().WriteWarning(); Nl();
+                }
+                else
+                    Edit_Array(ref array, ref listMeta.inspectedElement_Internal, out _, listMeta).OnChanged(listMeta.OnChanged);
+            }
+            collectionInspector.End();
+            return changed;
+        }
+
+        public static ChangesToken Edit_Array<T>(this TextLabel label, ref T[] array)
         {
             int inspected = -1;
             using (collectionInspector.Write_Search_ListLabel(label, array))
             {
-                return edit_Array(ref array, ref inspected);
+                return Edit_Array(ref array, ref inspected);
             }
         }
 
-        public static ChangesToken edit_Array<T>(this TextLabel label, ref T[] array, ref int inspected)
+        public static ChangesToken Edit_Array<T>(ref T[] array, ref int inspected) => Edit_Array(ref array, ref inspected, out _);
+        
+        private static ChangesToken Edit_Array<T>(ref T[] array, ref int inspected, out T added, CollectionInspectorMeta metaDatas = null)
         {
-            using (collectionInspector.Write_Search_ListLabel(label, ref inspected, array))
-            {
-                return edit_Array(ref array, ref inspected);
-            }
-        }
+            Nl();
 
-        public static ChangesToken edit_Array<T>(ref T[] array, ref int inspected)
-        {
-            edit_Array(ref array, ref inspected, out var changes);
-            return  changes;
-        }
+            var changed = ChangeTrackStart();
 
-        public static T edit_Array<T>(ref T[] array, ref int inspected, out ChangesToken changed, CollectionInspectorMeta metaDatas = null)
-        {
-            nl();
-
-            changed = ChangesToken.False;
-
-            var added = default(T);
+            added = default(T);
 
             if (array == null)
             {
-                if (Msg.Init.F(Msg.Array).PegiLabel().ClickUnFocus().nl())
+                if (Msg.Init.F(Msg.Array).PegiLabel().ClickUnFocus().Nl())
                     array = new T[0];
             }
             else
             {
+                collectionInspector.ExitOrDrawPEGI(array, ref inspected);
 
-                changed |= collectionInspector.ExitOrDrawPEGI(array, ref inspected);
-
-                if (inspected != -1) return added;
+                if (inspected != -1) 
+                    return changed;
 
                 if (!typeof(T).IsNew())
                 {
-                    if (icon.Add.ClickUnFocus(Msg.AddEmptyCollectionElement))
+                    if (Icon.Add.ClickUnFocus(Msg.AddEmptyCollectionElement))
                     {
-                        array = array.ExpandBy(1);
+                        QcSharp.ExpandBy(ref array, 1);
                         collectionInspector.SkrollToBottom();
                     }
                 }
-                else if (icon.Create.ClickUnFocus(Msg.AddNewCollectionElement))
+                else if (Icon.Create.ClickUnFocus(Msg.AddNewCollectionElement))
                     QcSharp.AddAndInit(ref array, 1);
 
-                changed |= collectionInspector.Edit_Array_Order(ref array, metaDatas).nl();
+                collectionInspector.Edit_Array_Order(ref array, metaDatas).Nl();
 
-                if (array == collectionInspector._editingArrayOrder) return added;
+                if (array == collectionInspector._editingArrayOrder) 
+                    return changed;
 
                 for (var i = 0; i < array.Length; i++)
                 {
-                    changed |= InspectValueInArray(ref array, i, ref inspected, metaDatas).nl();
+                    InspectValueInArray(ref array, i, ref inspected, metaDatas).Nl();
                 }
             }
 
             collectionInspector.End();
 
-            return added;
+            return changed;
         }
 
         #endregion
@@ -1397,7 +1404,6 @@ namespace QuizCanners.Inspect
                 }
             }
 
-
             public static bool MatchGameObjectToStrings(GameObject go, string[] text, ref bool[] matched)
             {
                 if (go)
@@ -1434,7 +1440,6 @@ namespace QuizCanners.Inspect
                 return false;
             }
 
-
             private static bool Internal_ByAttention(INeedAttention needAttention, string[] text, ref bool[] matched)
                 => Internal_String(needAttention?.NeedAttention(), text, ref matched);
 
@@ -1445,7 +1450,6 @@ namespace QuizCanners.Inspect
                  Internal_String(gotDisplayName?.GetReadOnlyName(), text, ref matched);
 
             public static bool Internal_GotIndex(IGotIndex gotIndex, int[] indexes) => gotIndex != null && indexes.Any(t => gotIndex.IndexForInspector == t);
-
 
             public static bool Internal_String(string label, string[] text, ref bool[] matched)
             {
@@ -1468,8 +1472,6 @@ namespace QuizCanners.Inspect
 
             }
 
-      
-
             public static bool Internal_ByISearchable(ISearchable searchable, string[] text, ref bool[] matched)
             {
                 if (searchable == null) return false;
@@ -1478,7 +1480,7 @@ namespace QuizCanners.Inspect
 
                 List<string> tmpStrings = new List<string>();
 
-                List<IEnumerator<object>> enumerators = new List<IEnumerator<object>>()
+                List<IEnumerator> enumerators = new List<IEnumerator>()
                 {
                     searchable.SearchKeywordsEnumerator()
                 };
@@ -1504,12 +1506,16 @@ namespace QuizCanners.Inspect
 
                             while (loopingEnumerator && !matched[i])
                             {
-                                var el = cur.Current;
+                                object el;
 
                                 if (!cur.MoveNext())
                                 {
                                     enumerators.RemoveAt(enumerators.Count - 1);
                                     loopingEnumerator = false;
+                                    continue;
+                                } else 
+                                {
+                                    el = cur.Current;
                                 }
 
                                 if (el == null)
@@ -1526,12 +1532,23 @@ namespace QuizCanners.Inspect
                                         break;
                                     }
 
-                                } else if (el is ISearchable) 
+                                } else if (el is ISearchable)
                                 {
                                     enumerators.Add((el as ISearchable).SearchKeywordsEnumerator());
                                     loopingEnumerator = false;
-                                } else 
-                                    Match(el, text, ref matched);
+                                }
+                                else if (el is IEnumerator)
+                                {
+                                    enumerators.Add(el as IEnumerator);
+                                    loopingEnumerator = false;
+                                }
+                                else if (el is IEnumerable)
+                                {
+                                    enumerators.Add((el as IEnumerable).GetEnumerator());
+                                    loopingEnumerator = false;
+                                }
+
+                                Match(el, text, ref matched);
                             }
                         }
 
@@ -1543,7 +1560,6 @@ namespace QuizCanners.Inspect
             }
 
         }
-
 
 
         private static readonly SearchData defaultSearchData = new SearchData();
@@ -1567,7 +1583,6 @@ namespace QuizCanners.Inspect
             private int _fileredForCount = -1;
             private int _focusOnSearchBarIn;
        
-
             public List<int> GetFilteredList(int count)
             {
                 if (_fileredForCount != count)
@@ -1596,12 +1611,12 @@ namespace QuizCanners.Inspect
 
                 var changed = ChangeTrackStart();
 
-                if (active && icon.FoldedOut.ClickUnFocus("{0} {1} {2}".F(icon.Hide.GetText(), icon.Search.GetText(), collection), 27) || KeyCode.UpArrow.IsDown())
+                if (active && Icon.FoldedOut.ClickUnFocus("{0} {1} {2}".F(Icon.Hide.GetText(), Icon.Search.GetText(), collection), 27) || KeyCode.UpArrow.IsDown())
                     active = false;
 
                 if (!active && !ReferenceEquals(collection, collectionInspector.reordering) &&
-                    (icon.Search
-                        .Click("{0} {1}".F(icon.Search.GetText(), label.IsNullOrEmpty() ? collection.ToString() : label), 27)))
+                    (Icon.Search
+                        .Click("{0} {1}".F(Icon.Search.GetText(), label.IsNullOrEmpty() ? collection.ToString() : label), 27)))
                 {
                     active = true;
                     _focusOnSearchBarIn = 2;
@@ -1610,8 +1625,8 @@ namespace QuizCanners.Inspect
 
                 if (active)
                 {
-                    icon.Warning.draw(toolTip: "Filter by warnings");
-                    if (toggleIcon(ref FilterByNeedAttention))
+                    Icon.Warning.Draw(toolTip: "Filter by warnings");
+                    if (ToggleIcon(ref FilterByNeedAttention))
                         Refresh();
                 }
 
@@ -1628,18 +1643,18 @@ namespace QuizCanners.Inspect
 
                 if (ReferenceEquals(list, FilteredList))
                 {
-
-                    nl();
-
-                    icon.Search.draw();
-
+                    Nl();
+                    Icon.Search.Draw();
                     NameNextForFocus(SEARCH_FIELD_FOCUS_NAME);
 
-                    if (edit(ref SearchedText) | icon.Refresh.Click("Search again", 20).nl())
+                    if (Edit(ref SearchedText) | Icon.Refresh.Click("Search again", 20).Nl())
                     {
                         UnityFocusNameWillWork = true;
                         Refresh();
-                        _searchBys = SearchedText.Split(splitCharacters, System.StringSplitOptions.RemoveEmptyEntries);
+                        if (SearchedText == null)
+                            _searchBys = new string[0];
+                        else
+                            _searchBys = SearchedText.Split(splitCharacters, System.StringSplitOptions.RemoveEmptyEntries);
                     }
 
                     if (_focusOnSearchBarIn > 0)
@@ -1651,10 +1666,8 @@ namespace QuizCanners.Inspect
                             RepaintEditor();
                         }
                     }
-
                     searching = FilterByNeedAttention || !_searchBys.IsNullOrEmpty();
                 }
-
                 searchBy = _searchBys;
             }
 
@@ -1667,7 +1680,6 @@ namespace QuizCanners.Inspect
             }
         
             public void Refresh()=> OnCountChange();
-
         }
 
         #endregion

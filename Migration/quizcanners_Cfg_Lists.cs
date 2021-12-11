@@ -17,7 +17,7 @@ namespace QuizCanners.Migration
         }
     }
 
-    public abstract class ConfigurationsSO_Generic<T> : ConfigurationsSO_Base, ICfg where T : Configuration, new()
+    public abstract class SO_Configurations_Generic<T> : ConfigurationsSO_Base, ICfg, IPEGI_ListInspect where T : Configuration, new()
     {
         public List<T> configurations = new List<T>();
 
@@ -68,17 +68,17 @@ namespace QuizCanners.Migration
                 var any = configurations[0];
                 var active = any.ActiveConfiguration as T;
 
-                if (pegi.select(ref active, configurations))
+                if (pegi.Select(ref active, configurations))
                     any.ActiveConfiguration = active;
 
-                if (active != null && icon.Save.Click())
+                if (active != null && Icon.Save.Click())
                     active.SaveCurrentState();
             }
 
             return changes;
         }
 
-        public override void Inspect() => "Configurations".PegiLabel().edit_List(configurations);
+        public override void Inspect() => "Configurations".PegiLabel().Edit_List(configurations);
 
         public CfgEncoder Encode()
         {
@@ -98,6 +98,17 @@ namespace QuizCanners.Migration
             }
         }
 
+        public void InspectInList(ref int edited, int index)
+        {
+            var ind = IndexOfActiveConfiguration;
+
+            if (pegi.Select_Index(ref ind, configurations))
+                ActiveConfiguration = configurations[ind];
+
+            if (Icon.Enter.Click())
+                edited = index;
+        }
+
         #endregion
     }
 
@@ -111,19 +122,16 @@ namespace QuizCanners.Migration
 
             if (configs)
             {
-                if (icon.UnLinked.Click("Disconnect config"))
-                    configs = null;
-                else
-                    configs.Nested_Inspect().nl();
+                configs.Nested_Inspect().Nl();
             }
             else
             {
-                "Configs".PegiLabel(90).edit(ref configs);
+                "Configs".PegiLabel(90).Edit(ref configs);
 
-                if (icon.Create.Click("Create new Config"))
+                if (Icon.Create.Click("Create new Config"))
                     configs = QcUnity.CreateScriptableObjectAsset<T>("ScriptableObjects/Configs", "Config");
 
-                pegi.nl();
+                pegi.Nl();
             }
 
             return changed;
@@ -180,27 +188,27 @@ namespace QuizCanners.Migration
             if (isActive)
                 pegi.SetBgColor(Color.green);
 
-            if (!allowOverride && !data.IsEmpty && icon.Clear.ClickConfirm(confirmationTag: "dlCfg"+ind, toolTip: "Delete this configuration?"))
+            if (!allowOverride && !data.IsEmpty && Icon.Clear.ClickConfirm(confirmationTag: "dlCfg"+ind, toolTip: "Delete this configuration?"))
                 data.Clear();
 
-            pegi.edit(ref name);
+            pegi.Edit(ref name);
 
             if (isActive)
             {
-                if (icon.Close.ClickUnFocus())
+                if (Icon.Close.ClickUnFocus())
                     ActiveConfiguration = null;
 
-                if (icon.Save.ClickUnFocus())
+                if (Icon.Save.ClickUnFocus())
                     SaveCurrentState();
             }
             else
             {
                 if (!data.IsEmpty)
                 {
-                    if (icon.Play.ClickUnFocus())
+                    if (Icon.Play.ClickUnFocus())
                         ActiveConfiguration = this;
                 }
-                else if (icon.SaveAsNew.ClickUnFocus())
+                else if (Icon.SaveAsNew.ClickUnFocus())
                     SaveCurrentState();
             }
 

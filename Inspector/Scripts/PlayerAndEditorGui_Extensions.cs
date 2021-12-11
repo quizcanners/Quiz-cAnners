@@ -19,20 +19,17 @@ namespace QuizCanners.Inspect
 
         #region Inspect Name
 
-        public static ChangesToken Try_NameInspect(object obj, string label = "", string tip = "", bool delayedEdit = false)=>
-             obj.Try_NameInspect(out _, label, tip, delayedEdit: delayedEdit);
-        
-        private static ChangesToken Try_NameInspect(this object obj, out bool couldInspect, string label = "", string tip = "", bool delayedEdit = false)
+        private static ChangesToken Try_NameInspect(object obj) =>
+             obj.Try_NameInspect(out _, delayedEdit: true);
+
+        private static ChangesToken Try_NameInspect(this object obj, out bool couldInspect, bool delayedEdit = false)
         {
-
             var changed = ChangeTrackStart();
-
-            bool gotLabel = !label.IsNullOrEmpty();
 
             couldInspect = true;
             var iname = obj as IGotName;
             if (iname != null)
-                return iname.inspect_Name(label, delayedEdit: delayedEdit);
+                return iname.inspect_Name(delayedEdit: delayedEdit);
 
             Object uObj = obj as ScriptableObject;
 
@@ -45,7 +42,7 @@ namespace QuizCanners.Inspect
             if (uObj)
             {
                 var n = uObj.name;
-                if (gotLabel ? label.PegiLabel(tip, 80).editDelayed( ref n) : editDelayed(ref n))
+                if (EditDelayed(ref n))
                 {
                     uObj.name = n;
                     QcUnity.RenameAsset(uObj, n);
@@ -57,20 +54,16 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        public static ChangesToken inspect_Name(this IGotName obj, bool delayedEdit = false) => obj.inspect_Name("", delayedEdit);
-
         private static bool focusPassedToTheNext;
-        public static ChangesToken inspect_Name(this IGotName obj, string label, bool delayedEdit = false)
+        public static ChangesToken inspect_Name(this IGotName obj, bool delayedEdit = true)
         {
             var n = obj.NameForInspector;
-
-            bool gotLabel = !label.IsNullOrEmpty();
 
             var uObj = obj as Object;
 
             if (uObj)
             {
-                if ((gotLabel && label.PegiLabel(80).editDelayed( ref n)) || (!gotLabel && editDelayed(ref n)))
+                if (EditDelayed(ref n))
                 {
                     obj.NameForInspector = n;
 
@@ -94,7 +87,7 @@ namespace QuizCanners.Inspect
 
                 if (delayedEdit)
                 {
-                    if ((gotLabel && label.PegiLabel(80).editDelayed( ref n)) || (!gotLabel && editDelayed(ref n)))
+                    if (EditDelayed(ref n))
                     {
                         obj.NameForInspector = n;
                         return ChangesToken.True;
@@ -102,8 +95,7 @@ namespace QuizCanners.Inspect
                 }
                 else
                 {
-
-                    if ((gotLabel && label.PegiLabel(80).edit(ref n)) || (!gotLabel && edit(ref n)))
+                    if (Edit(ref n))
                     {
                         obj.NameForInspector = n;
                         return ChangesToken.True;
@@ -116,14 +108,14 @@ namespace QuizCanners.Inspect
 
         #endregion
 
-        internal static void Nested_Inspect_Attention_MessageOnly(IPEGI ipg) 
+        internal static void Nested_Inspect_Attention_MessageOnly(IPEGI ipg)
         {
             var na = ipg as INeedAttention;
             if (na != null)
             {
                 var msg = na.NeedAttention();
                 if (msg.IsNullOrEmpty() == false)
-                    msg.PegiLabel().writeWarning();
+                    msg.PegiLabel().WriteWarning();
             }
         }
 
@@ -144,9 +136,11 @@ namespace QuizCanners.Inspect
                     else
                         function.Target.SetToDirty_Obj();
                 }
-            } catch (Exception ex) 
+            }
+            catch (Exception ex)
             {
-                write(ex);
+                QcLog.ChillLogger.LogExceptionExpOnly(ex, key: function.GetNameForInspector());
+                Write(ex);
             }
 
             IndentLevel = il;
@@ -157,14 +151,21 @@ namespace QuizCanners.Inspect
         public static ChangesToken Nested_Inspect<T>(ref T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : struct, IPEGI
           => Nested_Inspect_Internal(ref pgi, fromNewLine: fromNewLine, writeWhenNeedsAttention: writeWhenNeedsAttention);
 
+        public static ChangesToken Nested_Inspect<T>(this TextLabel text, ref T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : struct, IPEGI
+        {
+            text.Write();
+            return Nested_Inspect_Internal(ref pgi, fromNewLine: fromNewLine, writeWhenNeedsAttention: writeWhenNeedsAttention);
+        }
+
+
         public static ChangesToken Nested_Inspect<T>(this T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : class, IPEGI
         {
             if (fromNewLine)
-                nl();
+                Nl();
 
             if (pgi.IsNullOrDestroyed_Obj())
             {
-                "NULL".F(typeof(T).ToPegiStringType()).PegiLabel().write();
+                "NULL".F(typeof(T).ToPegiStringType()).PegiLabel().Write();
                 return ChangesToken.False;
             }
 
@@ -186,7 +187,7 @@ namespace QuizCanners.Inspect
         private static ChangesToken Nested_Inspect_Internal<T>(ref T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : IPEGI
         {
             if (fromNewLine)
-                nl();
+                Nl();
 
             var changed = ChangeTrackStart();
 
@@ -202,10 +203,37 @@ namespace QuizCanners.Inspect
 
                 var indent = IndentLevel;
 
-                pgi.Inspect();
+                try
+                {
+                    pgi.Inspect();
+                }
+                catch (Exception ex)
+                {
+                    QcLog.ChillLogger.LogExceptionExpOnly(ex, key: "InspEx" + typeof(T));
 
-                if (writeWhenNeedsAttention) 
-                    Nested_Inspect_Attention_MessageOnly(pgi);
+                    Nl();
+                    if (Icon.Debug.Click(toolTip: "Log Exception"))
+                        Debug.LogException(ex);
+
+                    if (Icon.Copy.Click(toolTip: "Copy to clipboard"))
+                        CopyPasteBuffer = ex.StackTrace;
+
+                    ex.StackTrace.PegiLabel().Write_ForCopy_Big(showCopyButton: true, lines: 10).Nl();
+                }
+
+                if (writeWhenNeedsAttention)
+                {
+                    try
+                    {
+                        Nested_Inspect_Attention_MessageOnly(pgi);
+                    }
+                    catch (Exception ex)
+                    {
+                        QcLog.ChillLogger.LogExceptionExpOnly(ex, key: "IndAtt" + typeof(T));
+                        Nl();
+                        ex.StackTrace.PegiLabel().Write_ForCopy_Big(showCopyButton: true, lines: 10).Nl();
+                    }
+                }
 
                 RestoreBGColor();
                 IndentLevel = indent;
@@ -220,16 +248,16 @@ namespace QuizCanners.Inspect
                 }
             }
             else
-                "3rd recursion".PegiLabel().writeWarning();
+                "3rd recursion".PegiLabel().WriteWarning();
 
             PegiEditorOnly.isFoldedOutOrEntered = isFOOE;
 
             return changed;
         }
 
-        public static ChangesToken Inspect_AsInListNested<T>(this T obj, ref int inspected, int current) where T : IPEGI_ListInspect
+        public static ChangesToken InspectInList_Nested<T>(this T obj, ref int inspected, int current) where T : IPEGI_ListInspect
         {
-            if (!EnterOptionsDrawn_Internal(ref inspected, current))
+            if (!EnterInternal.OptionsDrawn(ref inspected, current))
                 return ChangesToken.False;
 
             var change = ChangeTrackStart();
@@ -238,17 +266,15 @@ namespace QuizCanners.Inspect
 
             if (inspected == current)
             {
-                if (icon.Back.Click() | obj.GetNameForInspector().PegiLabel().ClickLabel().nl())
+                if (Icon.Back.Click() | obj.GetNameForInspector().PegiLabel().ClickLabel().Nl())
                     inspected = -1;
-                else 
+                else
                     Try_Nested_Inspect(obj);
             }
             else
             {
                 obj.InspectInList(ref inspected, current);
             }
-
-            nl();
 
             IndentLevel = il;
 
@@ -263,7 +289,8 @@ namespace QuizCanners.Inspect
             return change;
         }
 
-        public static ChangesToken Inspect_AsInList<T>(this T obj) where T: class, IPEGI_ListInspect
+        
+        public static ChangesToken InspectInList_Nested<T>(this T obj) where T : class, IPEGI_ListInspect
         {
             var tmp = -1;
 
@@ -284,7 +311,7 @@ namespace QuizCanners.Inspect
 
             return changed;
         }
-
+        
         public static ChangesToken Nested_Inspect(ref object obj)
         {
             var pgi = obj as IPEGI;
@@ -292,18 +319,18 @@ namespace QuizCanners.Inspect
 
             if (pgi != null)
                 pgi.Nested_Inspect();
-            else 
+            else
                 TryDefaultInspect(ref obj);
 
 
-            nl();
+            Nl();
 
             UnIndent();
 
             return changed;
         }
 
-        public static ChangesToken Inspect_AsInList_Value<T>(ref T obj) where T: struct, IPEGI_ListInspect
+        public static ChangesToken Inspect_AsInList_Value<T>(ref T obj) where T : struct, IPEGI_ListInspect
         {
             var pgi = obj as IPEGI_ListInspect;
             var ch = ChangeTrackStart();
@@ -311,12 +338,31 @@ namespace QuizCanners.Inspect
             if (pgi != null)
             {
                 int entered = -1;
-                pgi.Inspect_AsInListNested(ref entered, 0);
+                pgi.InspectInList_Nested(ref entered, 0);
                 if (ch)
                     obj = (T)pgi;
             }
 
-            nl();
+            Nl();
+
+            UnIndent();
+
+            return ch;
+        }
+
+        public static ChangesToken Try_Inspect_AsInList(ref object obj)
+        {
+            var pgi = obj as IPEGI_ListInspect;
+            var ch = ChangeTrackStart();
+
+            if (pgi != null)
+            {
+                int entered = -1;
+                if (pgi.InspectInList_Nested(ref entered, 0))
+                    obj = pgi;
+            }
+
+            Nl();
 
             UnIndent();
 
@@ -330,17 +376,17 @@ namespace QuizCanners.Inspect
 
             if (pgi != null)
             {
-                if (pgi.Inspect_AsInListNested(ref entered, current))
+                if (pgi.InspectInList_Nested(ref entered, current))
                     obj = pgi;
             }
 
-            nl();
+            Nl();
 
             UnIndent();
 
             return ch;
         }
-        
+
         public static ChangesToken TryDefaultInspect(Object uObj)
         {
 #if UNITY_EDITOR
@@ -351,14 +397,12 @@ namespace QuizCanners.Inspect
                 if (ed == null)
                     return ChangesToken.False;
 
-                nl();
+                Nl();
                 UnityEditor.EditorGUI.BeginChangeCheck();
-                ed.DrawDefaultInspector();
-                var changed = UnityEditor.EditorGUI.EndChangeCheck();
-                if (changed)
-                    PegiEditorOnly.globChanged = true;
 
-                return new ChangesToken(changed);
+                ed.DrawDefaultInspector();
+
+                return EndChangeCheck();
 
             }
 #endif
@@ -383,14 +427,12 @@ namespace QuizCanners.Inspect
                     if (ed == null)
                         return ChangesToken.False;
 
-                    nl();
+                    Nl();
                     UnityEditor.EditorGUI.BeginChangeCheck();
                     ed.DrawDefaultInspector();
-                    var changed = UnityEditor.EditorGUI.EndChangeCheck();
-                    if (changed)
-                        PegiEditorOnly.globChanged = true;
 
-                    return new ChangesToken(changed);
+
+                    return EndChangeCheck();
                 }
             }
 #endif
@@ -398,17 +440,18 @@ namespace QuizCanners.Inspect
             if (obj != null && obj is string)
             {
                 var txt = obj as string;
-                if (editBig(ref txt, 40))
+                if (EditBig(ref txt, 40))
                 {
                     obj = txt;
                     return ChangesToken.True;
                 }
-            } else
+            }
+            else
             {
-                nl();
+                Nl();
                 if (obj != null)
-                    "Nothing to inspect inside {0}".F(obj).PegiLabel().writeHint();
-                nl();
+                    "Nothing to inspect inside {0}".F(obj).PegiLabel().WriteHint();
+                Nl();
             }
 
             return ChangesToken.False;
@@ -420,13 +463,13 @@ namespace QuizCanners.Inspect
             var pgi = obj as IPEGI;
             var ch = pgi?.Nested_Inspect() ?? TryDefaultInspect(ref obj);
 
-            nl();
+            Nl();
 
             UnIndent();
 
             return ch;
         }
-        
+
         public static int CountForInspector<T>(this List<T> lst) where T : IGotCount
         {
             var count = 0;
@@ -442,7 +485,7 @@ namespace QuizCanners.Inspect
         {
             var uobj = obj as Object;
 
-            if (uobj!= null)
+            if (uobj != null)
                 return !uobj;
 
             return obj == null;
@@ -450,7 +493,7 @@ namespace QuizCanners.Inspect
 
         private static bool IsDefaultOrNull<T>(this T obj) => (obj == null) || EqualityComparer<T>.Default.Equals(obj, default);
 
-        public static void AddOrReplaceByIGotIndex<T>(this List<T> list, T newElement) where T: IGotIndex
+        public static void AddOrReplaceByIGotIndex<T>(this List<T> list, T newElement) where T : IGotIndex
         {
             var newIndex = newElement.IndexForInspector;
 
@@ -486,7 +529,7 @@ namespace QuizCanners.Inspect
         public static string GetNameForInspector<T>(this T obj)
         {
             if (obj.IsNullOrDestroyed_Obj())
-                return "NULL {0}".F(typeof(T).ToPegiStringType());
+                return "NULL ({0})".F(typeof(T).ToPegiStringType());
 
             var type = obj.GetType();
 
@@ -503,25 +546,42 @@ namespace QuizCanners.Inspect
                 if (obj.GetType().IsUnityObject())
                     return (obj as Object).GetNameForInspector_Uobj();
 
-                string tmp;
-                return (obj.ToPegiStringInterfacePart(out tmp)) ? tmp : obj.ToString().SimplifyTypeName();
+                //string tmp;
+                return DefaultName();// (obj.ToPegiStringInterfacePart(out tmp)) ? tmp : obj.ToString().SimplifyTypeName();
             }
 
-            if (type.IsEnum) 
+            if (type.IsEnum)
             {
                 return QcSharp.AddSpacesToSentence(obj.ToString());
             }
 
             if (!type.IsPrimitive)
             {
-                string tmp;
-                return (obj.ToPegiStringInterfacePart(out tmp)) ? tmp : obj.ToString();
+               // string tmp;
+                return DefaultName(); // (obj.ToPegiStringInterfacePart(out tmp)) ? tmp : obj.ToString();
             }
 
-            if (type == typeof(double)) 
+            string DefaultName() 
             {
-                return QcSharp.BigDoubleToString((double)((object)obj));
+                string tmp;
+                if (obj.ToPegiStringInterfacePart(out tmp))
+                    return tmp;
+
+                string typeName = obj.ToString().SimplifyTypeName();
+
+                var cnt = obj as IGotCount;
+
+                if (cnt != null) 
+                {
+                    typeName += " [{0}]".F(cnt.GetCount());
+                }
+
+                return typeName;
             }
+            /*if (type == typeof(double))
+            {
+                return QcSharp.ToReadableString((double)((object)obj));
+            }*/
 
             return obj.ToString();
         }
@@ -538,7 +598,7 @@ namespace QuizCanners.Inspect
             return default;
         }
 
-        internal static V TryGetByElementIndex<T, V>(this Dictionary<T, V> list, int index, V defaultValue = default)
+        internal static V TryGetElementByIndex<T, V>(this Dictionary<T, V> list, int index, V defaultValue = default)
         {
             if (list == null || index < 0 || index >= list.Count)
                 return defaultValue;
@@ -599,7 +659,6 @@ namespace QuizCanners.Inspect
                     name = name.FirstLine();
                     return true;
                 }
-
             }
 
             var sn = obj as IGotName;
@@ -617,12 +676,27 @@ namespace QuizCanners.Inspect
             return false;
         }
 
+        public static bool TryGetAttentionMessage<T>(this T attention, out string warningMsg, bool canBeNull = false) where T: INeedAttention
+        {
+            warningMsg = null;
+
+            if (attention.IsNullOrDestroyed_Obj())
+            {
+                if (canBeNull)
+                    return false;
+
+                warningMsg = "{0} is null".F(typeof(T).ToPegiStringType());
+
+            }
+            else
+            {
+                warningMsg = attention.NeedAttention();
+
+                if (!warningMsg.IsNullOrEmpty())
+                    warningMsg = "{0}: {1}".F(attention.GetNameForInspector(), warningMsg);
+            }
+
+            return !warningMsg.IsNullOrEmpty();
+        }
     }
-
-    internal static class Inspector_Extensions_Internal
-    {
-       
-    }
-
-
 }

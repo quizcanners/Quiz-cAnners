@@ -20,11 +20,6 @@ namespace QuizCanners.Utils
 
     public static partial class QcSharp
     {
-
-        // public static string ThisMethodName() => ThisMethodName(1);
-
-        // public static string ThisMethodName(int up) => (new StackFrame(up)).GetMethod()?.Name;
-
         #region Time
 
         public static string SecondsToReadableString(int seconds) => TicksToReadableString(seconds * TimeSpan.TicksPerSecond);
@@ -39,11 +34,11 @@ namespace QuizCanners.Utils
         {
             double absElapsed = Math.Abs(totalTicks);
 
-            if (absElapsed < TimeSpan.TicksPerMillisecond)  return "{0} ticks  ({1} ms)".F(totalTicks.ToString("0.00"), ForScale(TimeSpan.TicksPerMillisecond));
-            if (absElapsed < TimeSpan.TicksPerSecond)       return "{0} miliseconds  ({1} s)".F(ForScale(TimeSpan.TicksPerMillisecond), ForScale(TimeSpan.TicksPerSecond));
-            if (absElapsed < TimeSpan.TicksPerMinute)       return "{0} seconds  ({1} min)".F(ForScale(TimeSpan.TicksPerSecond), ForScale(TimeSpan.TicksPerMinute));
-            if (absElapsed < TimeSpan.TicksPerHour)         return "{0} minutes  ({1} hours)".F(ForScale(TimeSpan.TicksPerMinute), ForScale(TimeSpan.TicksPerHour));
-                                                            return "{0} hours  ({1} days)".F(ForScale(TimeSpan.TicksPerHour), ForScale(TimeSpan.TicksPerDay));
+            if (absElapsed < TimeSpan.TicksPerMillisecond)  return "{1} ms ({0} ticks)".F(totalTicks.ToString("0.00"), ForScale(TimeSpan.TicksPerMillisecond));
+            if (absElapsed < TimeSpan.TicksPerSecond)       return "{1} s ({0} miliseconds)".F(ForScale(TimeSpan.TicksPerMillisecond), ForScale(TimeSpan.TicksPerSecond));
+            if (absElapsed < TimeSpan.TicksPerMinute)       return "{1} min ({0} seconds)".F(ForScale(TimeSpan.TicksPerSecond), ForScale(TimeSpan.TicksPerMinute));
+            if (absElapsed < TimeSpan.TicksPerHour)         return "{1} hours ({0} minutes)".F(ForScale(TimeSpan.TicksPerMinute), ForScale(TimeSpan.TicksPerHour));
+                                                            return "{1} days ({0} hours)".F(ForScale(TimeSpan.TicksPerHour), ForScale(TimeSpan.TicksPerDay));
 
             string ForScale(long scale)
             {
@@ -92,7 +87,7 @@ namespace QuizCanners.Utils
                   .AppendIfNonZero(value: span.Milliseconds, span.TotalMilliseconds, suffix: "ms", last: true);
             } else //if (span.TotalMilliseconds >= 1) 
             {
-                sb.AppendIfNonZero(value: span.Milliseconds, span.TotalMilliseconds, suffix: "mss", last: false)
+                sb.AppendIfNonZero(value: span.Milliseconds, span.TotalMilliseconds, suffix: "ms", last: false)
                 .AppendIfNonZero(value: 0, span.Ticks, suffix: "ticks", last: true);
             }
 
@@ -166,16 +161,6 @@ namespace QuizCanners.Utils
 
         #endregion
 
-        internal static T TryGetClassAttribute<T>(this Type type, bool inherit = false) where T : Attribute
-        {
-
-            if (!type.IsClass) return null;
-
-            var attrs = type.GetCustomAttributes(typeof(T), inherit);
-            return (attrs.Length > 0) ? (T)attrs[0] : null;
-
-        }
-
         #region Enum
 
         public static T ToEnum<T>(int intValue) => (T)Enum.ToObject(typeof(T), intValue);
@@ -207,7 +192,9 @@ namespace QuizCanners.Utils
                 else go = obj as GameObject;
 
                 if (go)
+#pragma warning disable UNT0014 // Invalid type for call to GetComponent
                     conv = go.GetComponent<T>();
+#pragma warning restore UNT0014 // Invalid type for call to GetComponent
             }
             else conv = t;
 
@@ -220,7 +207,6 @@ namespace QuizCanners.Utils
             {
                 if (!dl.Contains(objType))
                     return false;
-
             }
             else
             {
@@ -261,8 +247,42 @@ namespace QuizCanners.Utils
             list.Add(e);
             var named = e as IGotName;
             if (named != null)
-                named.NameForInspector = name;
-            AssignUniqueNameIn(e, list);
+            {
+                bool duplicate = false;
+
+                var oldName = named.NameForInspector;
+
+                if (oldName.IsNullOrEmpty())
+                {
+                    duplicate = true;
+                }
+                else
+                {
+                    for (int i = 0; i < list.Count - 1; i++)
+                    {
+                        var el = list[i];
+                        if (el != null)
+                        {
+                            var existingName = el as IGotName;
+                            if (existingName != null)
+                            {
+                                if (oldName.Equals(existingName.NameForInspector))
+                                {
+                                    duplicate = true;
+                                    break;
+                                }
+
+                            }
+                        }
+                    }
+                }
+
+                if (duplicate)
+                {
+                    named.NameForInspector = name;
+                    AssignUniqueNameIn(e, list);
+                }
+            }
             return e;
         }
 
@@ -337,6 +357,16 @@ namespace QuizCanners.Utils
 
             return list[Random.Range(0, list.Count)];
         }
+        public static TValue GetRandom<TKey, TValue>(this Dictionary<TKey, TValue> dic)
+        {
+            if (dic.IsNullOrEmpty())
+                return default;
+
+            if (dic.Count == 1)
+                return dic.GetElementAt(0).Value;
+
+            return dic.GetElementAt(Random.Range(0, dic.Count)).Value;
+        }
 
         public static T GetRandomByWeight<T>(this List<T> sequence, Func<T, float> weightSelector)
         {
@@ -410,6 +440,22 @@ namespace QuizCanners.Utils
             return val;
         }
 
+        public static T GetOrSet<T>(this List<T> list, int index, T defaultValue)
+        {
+            T val;
+
+            if (list.Count > index)
+                return list[index];
+
+            while (list.Count < (index + 1))
+                list.Add(default(T));
+
+            val = defaultValue;
+            list[index] = val;
+
+            return val;
+        }
+
         public static List<T> TryAdd<T>(this List<T> list, object ass, bool onlyIfNew = true)
         {
 
@@ -434,6 +480,8 @@ namespace QuizCanners.Utils
 
             return ret;
         }
+
+        public static T TryTakeLast<T>(this List<T> list) => list.TryTake(list.Count - 1);
 
         public static void ForceSet<T, G>(this List<T> list, int index, G val) where G : T
         {
@@ -471,6 +519,7 @@ namespace QuizCanners.Utils
 
             return list[index];
         }
+
 
         public static bool IsNew(this Type t) => t.IsValueType || (!t.IsUnityObject() && !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) != null);
 
@@ -525,6 +574,8 @@ namespace QuizCanners.Utils
 
         public static bool IsNullOrEmpty(this ICollection list) => list == null || list.Count == 0;
 
+        public static bool IsNullOrEmpty<T>(this HashSet<T> hashSet) => hashSet == null || hashSet.Count == 0;
+
         #endregion
 
         #region Array Management
@@ -538,18 +589,20 @@ namespace QuizCanners.Utils
 
         }
 
-        public static T TryGet<T>(this T[] array, int index)
+        public static bool TryGetValue<T>(this T[] array, int index, out T value)
         {
-
             if (array == null || array.Length <= index || index < 0)
-                return default;
+            {
+                value = default(T);
+                return false;
+            }
 
-            return array[index];
+            value = array[index];
+            return true;
         }
 
-        public static T TryGet<T>(this T[] array, int index, T defaultValue)
+        public static T TryGet<T>(this T[] array, int index, T defaultValue = default(T))
         {
-
             if (array == null || array.Length <= index || index < 0)
                 return defaultValue;
 
@@ -572,25 +625,25 @@ namespace QuizCanners.Utils
             array[b] = tmp;
         }
 
-        public static T[] Resize<T>(this T[] args, int to)
+        public static void Resize<T>(ref T[] args, int to)
         {
             var temp = new T[to];
             if (args != null)
                 Array.Copy(args, 0, temp, 0, Mathf.Min(to, args.Length));
 
-            return temp;
+            args = temp;
         }
 
-        public static T[] ExpandBy<T>(this T[] args, int add)
+        public static void ExpandBy<T>(ref T[] array, int add)
         {
-            T[] temp;
-            if (args != null)
+            T[] tempArray;
+            if (array != null)
             {
-                temp = new T[args.Length + add];
-                args.CopyTo(temp, 0);
+                tempArray = new T[array.Length + add];
+                array.CopyTo(tempArray, 0);
             }
-            else temp = new T[add];
-            return temp;
+            else tempArray = new T[add];
+            array = tempArray;
         }
 
         public static void Remove<T>(ref T[] args, int ind)
@@ -619,6 +672,22 @@ namespace QuizCanners.Utils
         #endregion
 
         #region Dictionaries
+
+        public static TValue GetOrSet<TKey, TValue>(this IDictionary<TKey, TValue> dic, TKey key, TValue defaultVal) 
+        {
+            if (dic == null || key == null)
+            {
+                Debug.LogError("Dictionary of {0}{1} {2} for key {3}".F(nameof(TKey), nameof(TValue), (dic == null ? "IS NULL" : ""), key.GetNameForInspector()));
+                return default;
+            }
+
+            if (dic.TryGetValue(key, out var val))
+                return val;
+
+            dic.Add(key, defaultVal);
+
+            return defaultVal;
+        }
 
         public static TValue GetOrCreate<TKey, TValue>(this IDictionary<TKey, TValue> dic, TKey key) where TValue : new()
         {
@@ -673,6 +742,8 @@ namespace QuizCanners.Utils
         #region TextOperations
 
         private const string BadFormat = "!Bad format: ";
+
+        public const string NonBreakableString = "\u00A0";
 
         public static string F(this string format, Type type)
         {
@@ -885,11 +956,9 @@ namespace QuizCanners.Utils
             return newText.ToString();
         }
 
-
-  
         public static string FirstLine(this string str) => new StringReader(str).ReadLine();
 
-        public static string ToPegiStringType(this Type type) => type.ToString().SimplifyTypeName();
+        public static string ToPegiStringType(this Type type) => type == null ? "NULL Type" : type.Name;
 
         public static string SimplifyTypeName(this string name)
         {
@@ -899,7 +968,7 @@ namespace QuizCanners.Utils
                 return "TYPE IS EMPTY STRING";
 
             var ind = Mathf.Max(name.LastIndexOf(".", StringComparison.Ordinal), name.LastIndexOf("+", StringComparison.Ordinal));
-            return (ind == -1 || ind > name.Length - 5) ? name : name.Substring(ind + 1);
+            return (ind == -1 || ind == name.Length -1) ? name : name.Substring(ind + 1);
         }
 
         public static string SimplifyDirectory(this string name)
@@ -963,7 +1032,7 @@ namespace QuizCanners.Utils
             }
             catch (Exception ex)
             {
-                QcUnity.ChillLogger.LogErrorOnce(() => "Is Substring of({0} -> {1}) Error {2}".F(text, biggerText, ex.ToString()), key: text);
+                QcLog.ChillLogger.LogErrorOnce(() => "Is Substring of({0} -> {1}) Error {2}".F(text, biggerText, ex.ToString()), key: text);
             }
 
             return false;
@@ -1051,54 +1120,6 @@ namespace QuizCanners.Utils
 
         public static int CharToInt(this char c) => c - '0';
 
-        #region Type MGMT
-        public static List<Type> GetAllChildTypesOf<T>() => GetAllChildTypes(typeof(T));
-
-        public static List<Type> GetAllChildTypes(this Type type)
-        {
-            var types = Assembly.GetAssembly(type).GetTypes();
-
-            List<Type> list = new List<Type>();
-
-            foreach (var t in types)
-            {
-                if (t.IsSubclassOf(type) && t.IsClass && !t.IsAbstract && (t != type))
-                    list.Add(t);
-            }
-
-            return list;
-        }
-
-        public static bool ContainsInstanceOfType<T>(this List<T> collection, Type type)
-        {
-
-            foreach (var t in collection)
-                if (t != null && t.GetType() == type) return true;
-
-            return false;
-        }
-
-        public static List<List<Type>> GetAllChildTypesOf(List<Type> baseTypes)
-        {
-            var types = new List<List<Type>>();
-            for (var i = 0; i < baseTypes.Count; i++)
-                types[i] = new List<Type>();
-
-            foreach (var type in Assembly.GetAssembly(baseTypes[0]).GetTypes())
-            {
-                if (!type.IsClass || type.IsAbstract) continue;
-
-                for (var i = 0; i < baseTypes.Count; i++)
-                    if (type.IsSubclassOf(baseTypes[i]) && (type != baseTypes[i]))
-                    {
-                        types[i].Add(type);
-                        break;
-                    }
-            }
-            return types;
-        }
-        #endregion
-
         public static IDisposable SetTemporaryValueDisposable<T> (T valueToSet, Action<T> contextSetter, Func<T> previousValue)
             => new TemporaryContextSetterGeneric<T>(valueToSet, contextSetter, previousValue);
 
@@ -1140,8 +1161,6 @@ namespace QuizCanners.Utils
                 _setter.Invoke(valueToSet);
             }
         }
-
-
     }
 }
 

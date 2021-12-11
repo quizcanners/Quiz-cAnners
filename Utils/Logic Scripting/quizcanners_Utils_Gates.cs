@@ -8,25 +8,34 @@ namespace QuizCanners.Utils
     {
         public abstract class GateBase 
         {
-            protected bool initialized;
-            public bool ValueIsDefined => initialized;
+            public bool ValueIsDefined;
         }
 
-        public abstract class GateGeneric<T> : GateBase
+        public abstract class GateGenericBase<T> : GateBase
         {
             protected T previousValue;
-            public virtual bool IsDirty(T newValue) => (!initialized) || (!newValue.Equals(previousValue));
+
+            public T CurrentValue => previousValue;
+
+            protected void SetValue(T val) 
+            {
+                previousValue = val;
+                ValueIsDefined = true;
+            }
+
+            protected abstract bool DifferentFromPrevious(T newValue);
+
+            public virtual bool IsDirty(T newValue) => (!ValueIsDefined) || (DifferentFromPrevious(newValue));
 
             public virtual bool TryChange(T value)
             {
-                if (!initialized)
+                if (!ValueIsDefined)
                 {
-                    initialized = true;
-                    previousValue = value;
+                    SetValue(value);
                     return true;
                 }
 
-                if (value.Equals(previousValue))
+                if (!DifferentFromPrevious(value))
                 {
                     return false;
                 }
@@ -38,10 +47,17 @@ namespace QuizCanners.Utils
 
             public virtual bool TryChange(T value, out bool wasInitialized)
             {
-                wasInitialized = initialized;
+                wasInitialized = ValueIsDefined;
                 return TryChange(value);
             }
+        }
 
+        public class GateGenericValue<T> : GateGenericBase<T> where T: struct
+        {
+            protected override bool DifferentFromPrevious(T newValue) 
+            {
+                return !newValue.Equals(previousValue);
+            }
         }
 
         public class Frame : GateBase
@@ -61,7 +77,7 @@ namespace QuizCanners.Utils
 
             public bool TryEnter(out bool wasInitialized)
             {
-                wasInitialized = initialized;
+                wasInitialized = ValueIsDefined;
                 return TryEnter();
             }
 
@@ -83,14 +99,14 @@ namespace QuizCanners.Utils
             {
                 get
                 {
-                    if (!initialized)
+                    if (!ValueIsDefined)
                         return false;
 
                     return _frameIndex == CurrentFrame;
                 }
                 set
                 {
-                    initialized = true;
+                    ValueIsDefined = true;
 
                     if (value)
                         _frameIndex = CurrentFrame;
@@ -129,7 +145,7 @@ namespace QuizCanners.Utils
 
             public bool TryUpdateIfTimePassed(double secondsPassed, out bool wasInitialized)
             {
-                wasInitialized = initialized;
+                wasInitialized = ValueIsDefined;
                 return TryUpdateIfTimePassed(secondsPassed);
             }
 
@@ -160,10 +176,10 @@ namespace QuizCanners.Utils
 
             private bool WasInitialized()
             {
-                if (initialized)
+                if (ValueIsDefined)
                     return true;
 
-                initialized = true;
+                ValueIsDefined = true;
                 _lastTime = DateTime.Now;
                 return false;
 
@@ -172,85 +188,54 @@ namespace QuizCanners.Utils
             public void Inspect()
             {
 
-                "Delta: ".F(TimeSpan.FromSeconds(GetDeltaWithoutUpdate()).ToShortDisplayString()).PegiLabel().write();
+                "Delta: ".F(TimeSpan.FromSeconds(GetDeltaWithoutUpdate()).ToShortDisplayString()).PegiLabel().Write();
             }
         }
 
-        public class Bool : GateGeneric<bool>
+        public class Bool : GateGenericBase<bool>
         {
-
-            public bool CurrentValue => previousValue;
+            protected override bool DifferentFromPrevious(bool newValue) => newValue != previousValue;
 
             public Bool() { }
 
-            public Bool (bool value) 
+            public Bool (bool initialValue) 
             {
-                initialized = true;
-                previousValue = value;
+                SetValue(initialValue);
             }
         }
 
-        public class Integer : GateGeneric<int>, IGotReadOnlyName
+        public class Integer : GateGenericBase<int>, IGotReadOnlyName
         {
-            public int CurrentValue => previousValue;
+            protected override bool DifferentFromPrevious(int newValue) => newValue != previousValue;
 
-            public Integer()
-            {
-
-            }
+            public Integer() {}
             public Integer(int initialValue)
             {
-                previousValue = initialValue;
-                initialized = true;
+                SetValue(initialValue);
             }
 
-            public string GetReadOnlyName() => initialized ? previousValue.ToString() : "NOT INIT";
+            public string GetReadOnlyName() => ValueIsDefined ? previousValue.ToString() : "NOT INIT";
         }
 
-        public class Double : GateBase
+        public class Double : GateGenericBase<double>
         {
-            private double _previousValue;
+            protected override bool DifferentFromPrevious(double newValue) => Math.Abs(newValue - previousValue) > double.Epsilon * 10;
 
-            public double Value => _previousValue;
+            protected virtual bool DifferentFromPrevious(double newValue, double changeTreshold) => Math.Abs(newValue - previousValue) >= changeTreshold;
 
-            public bool TryChange(double value)
-            {
-                if (!initialized)
-                {
-                    initialized = true;
-                    _previousValue = value;
-                    return true;
-                }
-
-                if (Math.Abs(value - _previousValue) < double.Epsilon * 10)
-                {
-                    _previousValue = value;
-                    return false;
-                }
-
-                _previousValue = value;
-
-                return true;
-            }
-
-            public bool TryChange(double value, out bool wasInitialized)
-            {
-                wasInitialized = initialized;
-                return TryChange(value);
-            }
+            public virtual bool IsDirty(double newValue, double changeTreshold) => (!ValueIsDefined) || DifferentFromPrevious(newValue, changeTreshold); // (Math.Abs(newValue - previousValue) >= changeTreshold);
 
             public bool TryChange(double value, double changeTreshold)
             {
-                if (!initialized)
+                if (!ValueIsDefined)
                 {
-                    initialized = true;
-                    _previousValue = value;
+                    SetValue(value);
                     return true;
                 }
 
-                if (Math.Abs(value - _previousValue) >= changeTreshold)
+                if (DifferentFromPrevious(value, changeTreshold: changeTreshold)) //Math.Abs(value - previousValue) >= changeTreshold)
                 {
-                    _previousValue = value;
+                    previousValue = value;
                     return true;
                 }
 
@@ -259,7 +244,7 @@ namespace QuizCanners.Utils
 
             public bool TryChange(double value, double changeTreshold, out bool wasInitialized)
             {
-                wasInitialized = initialized;
+                wasInitialized = ValueIsDefined;
                 return TryChange(value, changeTreshold);
             }
 
@@ -269,104 +254,125 @@ namespace QuizCanners.Utils
             }
             public Double(double initialValue)
             {
-                TryChange(initialValue);
+                SetValue(initialValue);
             }
         }
 
-        public class ColorValue : GateBase, IGotReadOnlyName
+        public class Float : GateGenericBase<float>
         {
-            private Color32 _previousValue;
+            protected override bool DifferentFromPrevious(float newValue) => Math.Abs(newValue - previousValue) > float.Epsilon * 10;
 
-            public bool TryChange(Color value) => TryChange_Internal(value);
-            public bool TryChange(Color32 value) => TryChange_Internal(value);
-
-            public bool TryChange_Internal(Color32 value)
+            public bool TryChange(float value, float changeTreshold)
             {
-                if (!initialized)
+                if (!ValueIsDefined)
                 {
-                    initialized = true;
-                    _previousValue = value;
+                    SetValue(value);
                     return true;
                 }
 
-                if (value.Equals(_previousValue))
-                    return false;
+                if (Math.Abs(value - previousValue) >= changeTreshold)
+                {
+                    previousValue = value;
+                    return true;
+                }
 
-                _previousValue = value;
-
-                return true;
+                return false;
             }
+
+            public bool TryChange(float value, float changeTreshold, out bool wasInitialized)
+            {
+                wasInitialized = ValueIsDefined;
+                return TryChange(value, changeTreshold);
+            }
+
+            public Float()
+            {
+
+            }
+            public Float(float initialValue)
+            {
+                SetValue(initialValue);
+            }
+        }
+
+        public class ColorValue : GateGenericBase<Color>, IGotReadOnlyName
+        {
+            protected override bool DifferentFromPrevious(Color newValue) => !newValue.Equals(previousValue);
+
+            public bool TryChange32(Color32 value) => TryChange(value);
 
             public bool TryChange(Color32 value, out bool wasInitialized)
             {
-                wasInitialized = initialized;
+                wasInitialized = ValueIsDefined;
                 return TryChange(value);
             }
 
-            public Color32 CurrentValue => _previousValue;
-
-            public ColorValue()
-            {
-
-            }
+            public ColorValue() { }
             public ColorValue(Color32 initialValue)
             {
-                _previousValue = initialValue;
-                initialized = true;
+                SetValue(initialValue);
             }
-
             public ColorValue(Color initialValue)
             {
-                _previousValue = initialValue;
-                initialized = true;
+                SetValue(initialValue);
             }
 
-            public string GetReadOnlyName() => initialized ? _previousValue.ToString() : "NOT INIT";
+            public string GetReadOnlyName() => ValueIsDefined ? previousValue.ToString() : "NOT INIT";
         }
 
-        public class Vector3Value : GateBase
+        public class Vector2Value : GateGenericBase<Vector2>
         {
-            private Vector3 _previousValue;
+            protected override bool DifferentFromPrevious(Vector2 newValue) => newValue != previousValue;
 
-            public Vector3 Value => _previousValue;
-
-            public bool TryChange(Vector3 value)
+            public bool TryChange(Vector2 value, double changeTreshold)
             {
-                if (!initialized)
+                if (!ValueIsDefined)
                 {
-                    initialized = true;
-                    _previousValue = value;
+                    SetValue(value);
                     return true;
                 }
 
-                if (value == _previousValue)
+                if (Vector2.Distance(value, previousValue) > changeTreshold)
                 {
-                    return false;
+                    previousValue = value;
+                    return true;
                 }
 
-                _previousValue = value;
-
-                return true;
+                return false;
             }
 
-            public bool TryChange(Vector3 value, out bool wasInitialized)
+            public bool TryChange(Vector2 value, double changeTreshold, out bool wasInitialized)
             {
-                wasInitialized = initialized;
-                return TryChange(value);
+                wasInitialized = ValueIsDefined;
+                return TryChange(value, changeTreshold);
             }
+
+            public Vector2Value()
+            {
+
+            }
+            public Vector2Value(Vector2 initialValue)
+            {
+                SetValue(initialValue);
+            }
+        }
+
+
+        public class Vector3Value : GateGenericBase<Vector3>
+        {
+            protected override bool DifferentFromPrevious(Vector3 newValue) => newValue != previousValue;
 
             public bool TryChange(Vector3 value, double changeTreshold)
             {
-                if (!initialized)
+                if (!ValueIsDefined)
                 {
-                    initialized = true;
-                    _previousValue = value;
+                    SetValue(value);
                     return true;
                 }
 
-                if (Vector3.Distance(value, _previousValue)> changeTreshold)
+                if (Vector3.Distance(value, previousValue)> changeTreshold)
                 {
-                    _previousValue = value;
+                    previousValue = value;
                     return true;
                 }
 
@@ -375,7 +381,7 @@ namespace QuizCanners.Utils
 
             public bool TryChange(Vector3 value, double changeTreshold, out bool wasInitialized)
             {
-                wasInitialized = initialized;
+                wasInitialized = ValueIsDefined;
                 return TryChange(value, changeTreshold);
             }
 
@@ -385,53 +391,25 @@ namespace QuizCanners.Utils
             }
             public Vector3Value(Vector3 initialValue)
             {
-                TryChange(initialValue);
+                SetValue(initialValue);
             }
         }
 
-        public class Vector4Value : GateBase
+        public class Vector4Value : GateGenericBase<Vector4>
         {
-            private Vector4 _previousValue;
-
-            public Vector4 Value => _previousValue;
-
-            public bool TryChange(Vector4 value)
-            {
-                if (!initialized)
-                {
-                    initialized = true;
-                    _previousValue = value;
-                    return true;
-                }
-
-                if (value == _previousValue)
-                {
-                    return false;
-                }
-
-                _previousValue = value;
-
-                return true;
-            }
-
-            public bool TryChange(Vector4 value, out bool wasInitialized)
-            {
-                wasInitialized = initialized;
-                return TryChange(value);
-            }
+            protected override bool DifferentFromPrevious(Vector4 newValue) => newValue != previousValue;
 
             public bool TryChange(Vector4 value, double changeTreshold)
             {
-                if (!initialized)
+                if (!ValueIsDefined)
                 {
-                    initialized = true;
-                    _previousValue = value;
+                    SetValue(value);
                     return true;
                 }
 
-                if (Vector4.Distance(value, _previousValue) > changeTreshold)
+                if (Vector3.Distance(value, previousValue) > changeTreshold)
                 {
-                    _previousValue = value;
+                    previousValue = value;
                     return true;
                 }
 
@@ -440,7 +418,7 @@ namespace QuizCanners.Utils
 
             public bool TryChange(Vector4 value, double changeTreshold, out bool wasInitialized)
             {
-                wasInitialized = initialized;
+                wasInitialized = ValueIsDefined;
                 return TryChange(value, changeTreshold);
             }
 
@@ -450,9 +428,88 @@ namespace QuizCanners.Utils
             }
             public Vector4Value(Vector4 initialValue)
             {
-                TryChange(initialValue);
+                SetValue(initialValue);
             }
         }
 
+        public class QuaternionValue : GateGenericBase<Quaternion>
+        {
+            protected override bool DifferentFromPrevious(Quaternion newValue) => newValue != previousValue;
+
+            public bool TryChange(Quaternion value, double changeTreshold)
+            {
+                if (!ValueIsDefined)
+                {
+                    SetValue(value);
+                    return true;
+                }
+
+                if (Quaternion.Angle(value, previousValue) > changeTreshold)
+                {
+                    previousValue = value;
+                    return true;
+                }
+
+                return false;
+            }
+
+            public bool TryChange(Quaternion value, double changeTreshold, out bool wasInitialized)
+            {
+                wasInitialized = ValueIsDefined;
+                return TryChange(value, changeTreshold);
+            }
+
+            public QuaternionValue()
+            {
+
+            }
+            public QuaternionValue(Quaternion initialValue)
+            {
+                SetValue(initialValue);
+            }
+        }
+
+        public class DirtyVersion 
+        {
+            private int _dataVersion = 0;
+            public int Version { get; private set; } = -1;
+
+            public bool TryClear() 
+            {
+                if (IsDirty) 
+                {
+                    IsDirty = false;
+                    return true;
+                }
+
+                return false;
+            }
+
+
+            public bool TryClear(int versionDifference)
+            {
+                if ((_dataVersion - Version) >= versionDifference)
+                {
+                    IsDirty = false;
+                    return true;
+                }
+
+                return false;
+            }
+
+
+            public bool IsDirty
+            {
+                get =>  Version != _dataVersion;
+                set
+                {
+                    if (value)
+                        _dataVersion++;
+                    else
+                        Version = _dataVersion;
+                }
+            }
+
+        }
     }
 }

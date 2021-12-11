@@ -10,7 +10,7 @@ namespace QuizCanners.Inspect {
     // ReSharper disable InconsistentNaming
     #pragma warning disable IDE1006 // Naming Styles
 
-    public enum icon
+    public enum Icon
     {
         Alpha, Active, Add, Animation, Audio,
         Back, Book,
@@ -23,7 +23,7 @@ namespace QuizCanners.Inspect {
         Off,
         Lock, Unlock, List, Link, UnLinked,
         Round, Record, Replace, Refresh,
-        Search, Script, Square, Save, SaveAsNew, StateMachine, State, Show, SelectAll, Share, Size, ScreenGrab, Subtract,
+        Search, Script, Square, Save, SaveAsNew, StateMachine, State, Show, SelectAll, Share, Size, ScreenGrab, Subtract, Swap,
         Question,
         Painter,
         PreviewShader,
@@ -59,13 +59,13 @@ namespace QuizCanners.Inspect {
 
         private static readonly Countless<Texture2D> _managementIcons = new Countless<Texture2D>();
 
-        internal static bool TryGetTexture(this icon icon, out Texture2D tex)
+        internal static bool TryGetTexture(this Icon icon, out Texture2D tex)
         {
             tex = icon.GetIcon();
             return tex && tex != Texture2D.whiteTexture;
         }
 
-        public static Texture2D GetIcon(this icon icon)
+        public static Texture2D GetIcon(this Icon icon)
         {
 
             var ind = (int) icon;
@@ -76,12 +76,12 @@ namespace QuizCanners.Inspect {
                 return ico;
 
             switch (icon) {
-                case icon.Red: return ColorIcon(0) as Texture2D;
-                case icon.Green: return ColorIcon(1) as Texture2D;
-                case icon.Blue: return ColorIcon(2) as Texture2D;
-                case icon.Alpha: return ColorIcon(3) as Texture2D;
+                case Icon.Red: return ColorIcon(0) as Texture2D;
+                case Icon.Green: return ColorIcon(1) as Texture2D;
+                case Icon.Blue: return ColorIcon(2) as Texture2D;
+                case Icon.Alpha: return ColorIcon(3) as Texture2D;
                 default:
-                    var name = Enum.GetName(typeof(icon), ind);
+                    var name = Enum.GetName(typeof(Icon), ind);
 
                     Texture2D tmp = null;
                     
@@ -134,7 +134,7 @@ namespace QuizCanners.Inspect {
 
         private static readonly TranslationsEnum iconTranslations = new TranslationsEnum();
 
-        public static LazyTranslation GetTranslations(this icon msg, int lang = 0) 
+        public static LazyTranslation GetTranslations(this Icon msg, int lang = 0) 
         {
 
             int index = (int)msg;
@@ -144,30 +144,30 @@ namespace QuizCanners.Inspect {
 
             switch (msg) {
 
-                case icon.Add:          msg.Translate("Add"); break;
-                case icon.Enter:        msg.Translate("Enter", "Click to enter"); break;
-                case icon.Exit:         msg.Translate("Exit", "Click to exit"); break;
-                case icon.Empty:        msg.Translate("Empty"); break;
-                case icon.SelectAll:    msg.Translate("Select All"); break;
-                case icon.DeSelectAll:  msg.Translate("Deselect All"); break;
-                case icon.Search:       msg.Translate("Serch"); break;
-                case icon.Show:         msg.Translate("Show"); break;
-                case icon.Hide:         msg.Translate("Hide"); break;
-                case icon.Question:     msg.Translate("Question", "What is this?"); break;
+                case Icon.Add:          msg.Translate("Add"); break;
+                case Icon.Enter:        msg.Translate("Enter", "Click to enter"); break;
+                case Icon.Exit:         msg.Translate("Exit", "Click to exit"); break;
+                case Icon.Empty:        msg.Translate("Empty"); break;
+                case Icon.SelectAll:    msg.Translate("Select All"); break;
+                case Icon.DeSelectAll:  msg.Translate("Deselect All"); break;
+                case Icon.Search:       msg.Translate("Serch"); break;
+                case Icon.Show:         msg.Translate("Show"); break;
+                case Icon.Hide:         msg.Translate("Hide"); break;
+                case Icon.Question:     msg.Translate("Question", "What is this?"); break;
                 default:                msg.Translate(msg.ToString().SimplifyTypeName()); break;
             }
 
             return iconTranslations.GetWhenInited(index, lang);
         }
 
-        public static pegi.TextLabel GetText(this icon msg, string toolTip, int width)
+        public static pegi.TextLabel GetText(this Icon msg, string toolTip, int width)
         {
             var lt = msg.GetText(toolTip);
             lt.width = width;
             return lt;
         }
 
-        public static pegi.TextLabel GetText(this icon msg, string toolTip = null)
+        public static pegi.TextLabel GetText(this Icon msg, string toolTip = null)
         {
             var lt = msg.GetTranslations();
             var lbl = new pegi.TextLabel(lt != null ? lt.ToString() : msg.ToString());
@@ -176,29 +176,29 @@ namespace QuizCanners.Inspect {
             return lbl;
         }
 
-        public static string GetDescription(this icon msg)
+        public static string GetDescription(this Icon msg)
         {
             var lt = msg.GetTranslations();
             return lt != null ? lt.details : msg.ToString();
         }
 
-        private static Countless<LazyTranslation> Translate(this icon smg, string english)
+        private static Countless<LazyTranslation> Translate(this Icon smg, string english)
         {
             var org = iconTranslations[(int)smg];
             org[eng] = new LazyTranslation(english);
             return org;
         }
 
-        private static Countless<LazyTranslation> Translate(this icon smg, string english, string englishDetails)
+        private static Countless<LazyTranslation> Translate(this Icon smg, string english, string englishDetails)
         {
             var org = iconTranslations[(int)smg];
             org[eng] = new LazyTranslation(english, englishDetails);
             return org;
         }
         
-        public static string F(this icon msg, Msg other) =>  "{0} {1}".F(msg.GetText(), other.GetText());
+        public static string F(this Icon msg, Msg other) =>  "{0} {1}".F(msg.GetText(), other.GetText());
 
-        public static string F(this Msg msg, icon other) => "{0} {1}".F(msg.GetText(), other.GetText());
+        public static string F(this Msg msg, Icon other) => "{0} {1}".F(msg.GetText(), other.GetText());
      
     }
 

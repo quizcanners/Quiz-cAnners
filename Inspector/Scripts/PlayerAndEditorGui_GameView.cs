@@ -83,7 +83,7 @@ namespace QuizCanners.Inspect
                 private void DrawFunctionWrapper(int windowID)
                 {
                     PaintingGameViewUI = true;
-                    PegiEditorOnly.start();
+                    PegiEditorOnly.StartObject();
 
                     try
                     {
@@ -115,7 +115,7 @@ namespace QuizCanners.Inspect
                         }
 
 
-                        _tooltip.PegiLabel(style: Styles.HintText).nl();
+                        _tooltip.PegiLabel(style: Styles.HintText).Nl();
 
                         UnIndent();
 
@@ -140,7 +140,7 @@ namespace QuizCanners.Inspect
                         Debug.LogException(ex);
                     }
 
-                    PegiEditorOnly.end(PegiEditorOnly.inspectedUnityObject);
+                    PegiEditorOnly.EndObject(PegiEditorOnly.inspectedUnityObject);
 
                     PaintingGameViewUI = false;
                 }

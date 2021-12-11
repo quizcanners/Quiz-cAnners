@@ -3,7 +3,7 @@ using PlayerPrefs = UnityEngine.PlayerPrefs;
 
 namespace QuizCanners.Utils
 {
-    public class PlayerPrefValue
+    public static class PlayerPrefValue
     {
         public abstract class BaseGeneric<T>
         {
@@ -13,6 +13,17 @@ namespace QuizCanners.Utils
             private bool _initialized;
             private bool _setByUser;
 
+            public bool SetByUser 
+            {
+                get 
+                {
+                    if (!_initialized)
+                        GetValue();
+
+                    return _setByUser;
+                } 
+            }
+
             protected abstract void SaveValue(T value);
 
             protected abstract T LoadValue();
@@ -20,6 +31,7 @@ namespace QuizCanners.Utils
             public void SetValue(T value)
             {
                 _setByUser = true;
+                _initialized = true;
                 setValue = value;
                 SaveValue(value);
             }
@@ -35,9 +47,13 @@ namespace QuizCanners.Utils
                         setValue = LoadValue();
                     }
                 }
-                return _setByUser ? setValue : defaultValue;
+                return SetByUser ? setValue : defaultValue;
             }
 
+            public void Clear() => SetValue(defaultValue);
+
+            public override string ToString() => GetValue().ToString();
+            
             public BaseGeneric(string key, T defaultValue)
             {
                 this.key = key;
@@ -54,7 +70,7 @@ namespace QuizCanners.Utils
             public void Inspect()
             {
                 var tmp = GetValue();
-                if (key.PegiLabel().edit(ref tmp))
+                if (key.PegiLabel().Edit(ref tmp))
                     SetValue(tmp);
             }
         }
@@ -68,7 +84,7 @@ namespace QuizCanners.Utils
             public void Inspect()
             {
                 var tmp = GetValue();
-                if (key.PegiLabel().edit(ref tmp))
+                if (key.PegiLabel().Edit(ref tmp))
                     SetValue(tmp);
             }
         }
@@ -82,7 +98,7 @@ namespace QuizCanners.Utils
             public void Inspect()
             {
                 var tmp = GetValue();
-                if (key.PegiLabel().edit(ref tmp))
+                if (key.PegiLabel().Edit(ref tmp))
                     SetValue(tmp);
             }
         }
@@ -100,7 +116,7 @@ namespace QuizCanners.Utils
             public void Inspect()
             {
                 var tmp = GetValue();
-                if (key.PegiLabel().toggleIcon(ref tmp))
+                if (key.PegiLabel().ToggleIcon(ref tmp))
                     SetValue(tmp);
             }
         }

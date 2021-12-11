@@ -16,14 +16,14 @@ namespace QuizCanners.Inspect
 
         public static ChangesTracker ChangeTrackStart() => new ChangesTracker();
         
-        private static ChangesToken SetChangedTrue_Internal() { PegiEditorOnly.globChanged = true; return ChangesToken.True; }
+        private static ChangesToken SetChangedTrue_Internal() { globChanged = true; return ChangesToken.True; }
 
         private static ChangesToken FeedChanges_Internal(this bool changed, LatestInteractionEvent evnt)
         {
             if (changed)
             {
                 GameView.LatestEvent = evnt;
-                PegiEditorOnly.globChanged = true;
+                globChanged = true;
             }
 
             return new ChangesToken(changed);
@@ -33,7 +33,7 @@ namespace QuizCanners.Inspect
         {
             if (changed)
             {
-                PegiEditorOnly.globChanged = false;
+                globChanged = false;
                 GameView.LatestEvent = evnt;
             }
             return changed;
@@ -49,7 +49,7 @@ namespace QuizCanners.Inspect
         public static ChangesToken IgnoreChanges(this ChangesToken changed)
         {
             if (changed)
-                PegiEditorOnly.globChanged = false;
+                globChanged = false;
             return changed;
         }
 
@@ -57,26 +57,35 @@ namespace QuizCanners.Inspect
 
         private static void _START()
         {
-            checkLine();
+            CheckLine();
             wasChangedBefore = GUI.changed;
         }
 
-        private static ChangesToken _END() => new ChangesToken(PegiEditorOnly.globChanged |= GUI.changed && !wasChangedBefore);
-
-        
+        private static ChangesToken _END() => new ChangesToken(globChanged |= GUI.changed && !wasChangedBefore);
 
         #endregion
 
         #region Edit
 
+        #region Vectors & Rects
 
-#region Vectors & Rects
+        public static ChangesToken Edit(this TextLabel label, ref AnimationCurve curve)
+        {
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.Edit(label, ref curve);
+#endif  
 
-        public static ChangesToken edit(this TextLabel label, ref Quaternion qt)
+            label.Write();
+            return ChangesToken.False;
+        }
+
+
+        public static ChangesToken Edit(this TextLabel label, ref Quaternion qt)
         {
             var eul = qt.eulerAngles;
 
-            if (edit(label, ref eul))
+            if (Edit(label, ref eul))
             {
                 qt.eulerAngles = eul;
                 return ChangesToken.True;
@@ -85,17 +94,17 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken edit(this TextToken label, ref Quaternion qt)
+        public static ChangesToken Edit(this TextToken label, ref Quaternion qt)
         {
-            label.write();
-            return edit(ref qt);
+            label.Write();
+            return Edit(ref qt);
         }
 
-        public static ChangesToken edit(ref Quaternion qt)
+        public static ChangesToken Edit(ref Quaternion qt)
         {
             var eul = qt.eulerAngles;
 
-            if (edit(ref eul))
+            if (Edit(ref eul))
             {
                 qt.eulerAngles = eul;
                 return ChangesToken.True;
@@ -104,41 +113,34 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
         
-        public static ChangesToken edit(ref Vector4 val)
+        public static ChangesToken Edit(ref Vector4 val)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val);
+                return PegiEditorOnly.Edit(ref val);
 #endif
-
-            return "X".PegiLabel(15).edit(ref val.x) | "Y".PegiLabel(15).edit(ref val.y) | "Z".PegiLabel(15).edit(ref val.z) | "W".PegiLabel(15).edit(ref val.w);
-
+            return "X".PegiLabel(15).Edit(ref val.x) | "Y".PegiLabel(15).Edit(ref val.y) | "Z".PegiLabel(15).Edit(ref val.z) | "W".PegiLabel(15).Edit(ref val.w);
         }
 
-        public static ChangesToken edit01(this TextLabel label, ref Rect val)
+        public static ChangesToken Edit_01(ref float val) => Edit(ref val, 0, 1);
+
+        public static ChangesToken Edit_01(this TextLabel label, ref float val)
         {
-            label.write();
-            return edit01(ref val);
+            label.ApproxWidth().Write();
+            return Edit(ref val, 0, 1);
         }
 
-        public static ChangesToken edit01(ref float val) => edit(ref val, 0, 1);
-
-        public static ChangesToken edit01(this TextLabel label, ref float val)
-        {
-            label.ApproxWidth().write();
-            return edit(ref val, 0, 1);
-        }
-        public static ChangesToken edit01(ref Rect val)
+        public static ChangesToken Edit_01(ref Rect val)
         {
             var center = val.center;
             var size = val.size;
 
             if (
-                "X".PegiLabel(30).edit01(ref center.x).nl() |
-                "Y".PegiLabel(30).edit01(ref center.y).nl() |
-                "W".PegiLabel(30).edit01(ref size.x).nl() |
-                "H".PegiLabel(30).edit01(ref size.y).nl())
+                "X".PegiLabel(30).Edit_01(ref center.x).Nl() |
+                "Y".PegiLabel(30).Edit_01(ref center.y).Nl() |
+                "W".PegiLabel(30).Edit_01(ref size.x).Nl() |
+                "H".PegiLabel(30).Edit_01(ref size.y).Nl())
             {
                 var half = size * 0.5f;
                 val.min = center - half;
@@ -149,11 +151,21 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken edit(this TextLabel label, ref Rect val)
+        public static ChangesToken Edit_01(this TextLabel label, ref Vector2 val)
+        {
+            label.ApproxWidth().Nl();
+            return Edit_01(ref val);
+        }
+
+        public static ChangesToken Edit_01(ref Vector2 val) =>
+            "X".PegiLabel(10).Edit_01(ref val.x).Nl() |
+            "Y".PegiLabel(10).Edit_01(ref val.y).Nl();
+
+        public static ChangesToken Edit(this TextLabel label, ref Rect val)
         {
             var v4 = val.ToVector4(true);
 
-            if (label.edit(ref v4))
+            if (label.Edit(ref v4))
             {
                 val = v4.ToRect(true);
                 return ChangesToken.True;
@@ -162,7 +174,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken edit(ref RectOffset val, int min, int max)
+        public static ChangesToken Edit(ref RectOffset val, int min, int max)
         {
             int top = val.top;
             int bottom = val.bottom;
@@ -170,10 +182,10 @@ namespace QuizCanners.Inspect
             int right = val.right;
 
             if (
-                "Left".PegiLabel(70).edit(ref left, min, max).nl() |
-                "Right".PegiLabel(70).edit(ref right, min, max).nl() |
-                "Top".PegiLabel(70).edit(ref top, min, max).nl() |
-                "Bottom".PegiLabel(70).edit(ref bottom, min, max).nl())
+                "Left".PegiLabel(70).Edit(ref left, min, max).Nl() |
+                "Right".PegiLabel(70).Edit(ref right, min, max).Nl() |
+                "Top".PegiLabel(70).Edit(ref top, min, max).Nl() |
+                "Bottom".PegiLabel(70).Edit(ref bottom, min, max).Nl())
             {
                 val = new RectOffset(left: left, right: right, top: top, bottom: bottom);
 
@@ -183,7 +195,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken edit(ref RectOffset val)
+        public static ChangesToken Edit(ref RectOffset val)
         {
             int top = val.top;
             int bottom = val.bottom;
@@ -191,10 +203,10 @@ namespace QuizCanners.Inspect
             int right = val.right;
 
             if (
-                "Left".PegiLabel(70).edit(ref left).nl() |
-                "Right".PegiLabel(70).edit(ref right).nl() |
-                "Top".PegiLabel(70).edit(ref top).nl() |
-                "Bottom".PegiLabel(70).edit(ref bottom).nl())
+                "Left".PegiLabel(70).Edit(ref left).Nl() |
+                "Right".PegiLabel(70).Edit(ref right).Nl() |
+                "Top".PegiLabel(70).Edit(ref top).Nl() |
+                "Bottom".PegiLabel(70).Edit(ref bottom).Nl())
             {
                 val = new RectOffset(left: left, right: right, top: top, bottom: bottom);
 
@@ -204,89 +216,77 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
         
-        public static ChangesToken edit(this TextLabel label, ref Vector4 val)
+        public static ChangesToken Edit(this TextLabel label, ref Vector4 val)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(label, ref val);
+                return PegiEditorOnly.Edit(label, ref val);
 #endif
 
             label.TryWrite();
             return
-                edit(ref val.x) |
-                edit(ref val.y) |
-                edit(ref val.z) |
-                edit(ref val.w);
+                Edit(ref val.x) |
+                Edit(ref val.y) |
+                Edit(ref val.z) |
+                Edit(ref val.w);
 
         }
 
-        public static ChangesToken edit(ref Vector3 val) =>
-           "X".PegiLabel(15).edit(ref val.x) | "Y".PegiLabel(15).edit(ref val.y) | "Z".PegiLabel(15).edit(ref val.z);
+        public static ChangesToken Edit(ref Vector3 val) =>
+           "X".PegiLabel(15).Edit(ref val.x) | "Y".PegiLabel(15).Edit(ref val.y) | "Z".PegiLabel(15).Edit(ref val.z);
 
-        public static ChangesToken edit(this TextLabel label, ref Vector3 val)
+        public static ChangesToken Edit(this TextLabel label, ref Vector3 val)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(label, ref val);
+                return PegiEditorOnly.Edit(label, ref val);
 #endif
 
-            write(label);
-            nl();
-            return edit(ref val);
+            Write(label);
+            Nl();
+            return Edit(ref val);
         }
 
-        public static ChangesToken edit(this TextLabel label, ref Vector2 val)
+        public static ChangesToken Edit(this TextLabel label, ref Vector2 val)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(label, ref val);
+                return PegiEditorOnly.Edit(label, ref val);
 
 #endif
             label.TryWrite();
-            return edit(ref val.x) | edit(ref val.y);
+            return Edit(ref val.x) | Edit(ref val.y);
         }
 
-        public static ChangesToken edit01(this TextLabel label, ref Vector2 val)
+        public static ChangesToken Edit(this TextLabel label, ref Vector2 val, float min, float max)
         {
-            label.ApproxWidth().nl();
-            return edit01(ref val);
+            "{0} [X: {1} Y: {2}]".F(label, val.x.RoundTo(2), val.y.RoundTo(2)).PegiLabel().Nl();
+            return Edit(ref val, min, max);
         }
 
-       
+        public static ChangesToken Edit(ref Vector2 val, float min, float max) =>
+            "X".PegiLabel(10).Edit(ref val.x, min, max) |
+            "Y".PegiLabel(10).Edit(ref val.y, min, max);
 
-        public static ChangesToken edit01(ref Vector2 val) =>
-            "X".PegiLabel(10).edit01(ref val.x).nl() |
-            "Y".PegiLabel(10).edit01(ref val.y).nl();
-
-        public static ChangesToken edit(this TextLabel label, ref Vector2 val, float min, float max)
-        {
-            "{0} [X: {1} Y: {2}]".F(label, val.x.RoundTo(2), val.y.RoundTo(2)).PegiLabel().nl();
-            return edit(ref val, min, max);
-        }
-
-        public static ChangesToken edit(ref Vector2 val, float min, float max) =>
-            "X".PegiLabel(10).edit(ref val.x, min, max) |
-            "Y".PegiLabel(10).edit(ref val.y, min, max);
-
-        public static ChangesToken edit(this TextLabel label, ref Vector2Int val)
+        public static ChangesToken Edit(this TextLabel label, ref Vector2Int val)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(label, ref val);
+                return PegiEditorOnly.Edit(label, ref val);
 
 #endif
-            label.ApproxWidth().write();
-            return edit(ref val);
+            label.ApproxWidth().Write();
+            return Edit(ref val);
         }
 
-        public static ChangesToken edit(ref Vector2Int val) 
+        public static ChangesToken Edit(ref Vector2Int val) 
         {
             var x = val.x;
             var y = val.y;
-            if ("X".PegiLabel(35).edit(ref x) | "Y".PegiLabel(35).edit(ref y))
+            if ("X".PegiLabel(35).Edit(ref x) | "Y".PegiLabel(35).Edit(ref y))
             {
                 val = new Vector2Int(x, y);
                 return ChangesToken.True;
@@ -298,10 +298,10 @@ namespace QuizCanners.Inspect
 
         #region Color
 
-        public static ChangesToken edit(ref Color32 col)
+        public static ChangesToken Edit(ref Color32 col)
         {
             Color tcol = col;
-            if (edit(ref tcol))
+            if (Edit(ref tcol))
             {
                 col = tcol;
                 return ChangesToken.True;
@@ -309,51 +309,51 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken edit(ref Color col)
+        public static ChangesToken Edit(ref Color col)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref col);
+                return PegiEditorOnly.Edit(ref col);
 
 #endif
      
             using (SetBgColorDisposable(col))
             {
-                if ("Color".PegiLabel().isFoldout())
+                if ("Color".PegiLabel().IsFoldout())
                 {
-                    nl();
+                    Nl();
 
-                    return icon.Red.edit_ColorChannel(ref col, 0).nl() |
-                           icon.Green.edit_ColorChannel(ref col, 1).nl() |
-                           icon.Blue.edit_ColorChannel(ref col, 2).nl() |
-                           icon.Alpha.edit_ColorChannel(ref col, 3).nl();
+                    return Icon.Red.Edit_ColorChannel(ref col, 0).Nl() |
+                           Icon.Green.Edit_ColorChannel(ref col, 1).Nl() |
+                           Icon.Blue.Edit_ColorChannel(ref col, 2).Nl() |
+                           Icon.Alpha.Edit_ColorChannel(ref col, 3).Nl();
                 }
             }
 
             return ChangesToken.False;
         }
 
-        public static ChangesToken edit(ref Color col, int width)
+        public static ChangesToken Edit(ref Color col, int width)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref col, width);
+                return PegiEditorOnly.Edit(ref col, width);
 
 #endif
             return ChangesToken.False;
         }
 
-        public static ChangesToken edit_ColorChannel(this icon ico, ref Color col, int channel)
+        public static ChangesToken Edit_ColorChannel(this Icon ico, ref Color col, int channel)
         {
             var changed = ChangeTrackStart();
 
             if (channel < 0 || channel > 3)
-                "Color has no channel {0} ".F(channel).PegiLabel().writeWarning();
+                "Color has no channel {0} ".F(channel).PegiLabel().WriteWarning();
             else
             {
                 var chan = col[channel];
 
-                if (ico.edit(ref chan, 0, 1))
+                if (ico.Edit(ref chan, 0, 1))
                     col[channel] = chan;
 
             }
@@ -361,17 +361,17 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        public static ChangesToken edit_ColorChannel(this TextLabel label, ref Color col, int channel)
+        public static ChangesToken Edit_ColorChannel(this TextLabel label, ref Color col, int channel)
         {
             var changed = ChangeTrackStart();
 
             if (channel < 0 || channel > 3)
-                "{0} color does not have {1}'th channel".F(label, channel).PegiLabel().writeWarning();
+                "{0} color does not have {1}'th channel".F(label, channel).PegiLabel().WriteWarning();
             else
             {
                 var chan = col[channel];
 
-                if (label.edit(ref chan, 0, 1))
+                if (label.Edit(ref chan, 0, 1))
                     col[channel] = chan;
 
             }
@@ -379,17 +379,17 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        public static ChangesToken edit(this TextLabel label, ref Color col)
+        public static ChangesToken Edit(this TextLabel label, ref Color col)
         {
             if (PaintingGameViewUI)
             {
-                if (label.isFoldout())
-                    return edit(ref col);
+                if (label.IsFoldout())
+                    return Edit(ref col);
             }
             else
             {
-                write(label);
-                return edit(ref col);
+                Write(label);
+                return Edit(ref col);
             }
 
             return ChangesToken.False;
@@ -397,45 +397,66 @@ namespace QuizCanners.Inspect
 
         #endregion
 
-
-
         #region Enum
 
-        public static ChangesToken editEnum<T>(ref T current, System.Func<T, object> nameGetter, int width)
+        public static ChangesToken Edit_Enum<T>(ref T current, System.Func<T, object> nameGetter, int width)
         {
-            return editEnum_Internal(ref current, typeof(T), nameGetter, width: width);
+            return EditEnum_Internal(ref current, typeof(T), nameGetter, width: width);
         }
 
-        public static ChangesToken editEnum<T>(this TextLabel label, ref T current, int valueWidth)
-        {
-            label.TryWrite();
-            return editEnum(ref current, width: valueWidth);
-        }
-
-        public static ChangesToken editEnum<T>(this TextLabel label, ref T current, System.Func<T, object> nameGetter, int width = -1)
-        {
-            label.write();
-            return editEnum_Internal(ref current, typeof(T), nameGetter, width: width);
-        }
-
-        public static ChangesToken editEnum<T>(this TextLabel text, ref T eval)
-        {
-            text.write();
-            return editEnum(ref eval);
-        }
-
-
-        public static ChangesToken editEnum<T>(this TextLabel label, ref int current, List<int> options)
+        public static ChangesToken Edit_Enum<T>(this TextLabel label, ref T current, int valueWidth)
         {
             label.TryWrite();
-            return editEnum_Internal<T>(ref current, options);
+            return Edit_Enum(ref current, width: valueWidth);
         }
 
-        public static ChangesToken editEnum<T>(ref T eval, int width = -1)
+        public static ChangesToken Edit_Enum<T>(this TextLabel label, ref T current, System.Func<T, object> nameGetter, int width = -1)
+        {
+            label.Write();
+            return EditEnum_Internal(ref current, typeof(T), nameGetter, width: width);
+        }
+
+        public static ChangesToken Edit_Enum<T>(this TextLabel text, ref T eval)
+        {
+            text.Write();
+            return Edit_Enum(ref eval);
+        }
+
+        public static ChangesToken Edit_Enum<T>(this TextLabel label, ref int current, List<int> options)
+        {
+            label.TryWrite();
+            return EditEnum_Internal<T>(ref current, options);
+        }
+
+        public static ChangesToken Edit_Enum<T>(ref T eval, int width = -1)
+        {
+            try
+            {
+                var val = System.Convert.ToInt32(eval);
+
+                if (EditEnum_Internal(ref val, typeof(T), width))
+                {
+                    eval = (T)((object)val);
+                    return ChangesToken.True;
+                }
+
+                return ChangesToken.False;
+
+            } catch (System.Exception ex)
+            {
+                "Can't convert {0} to Enum".F(typeof(T).Name).PegiLabel().WriteWarning().Nl();
+                if ("Log to Console".PegiLabel().Click())
+                    Debug.LogException(ex);
+
+                return ChangesToken.False;
+            }
+        }
+
+        private static ChangesToken Edit_Enum<T>(ref T eval, List<int> options, int width = -1)
         {
             var val = System.Convert.ToInt32(eval);
 
-            if (editEnum_Internal(ref val, typeof(T), width))
+            if (EditEnum_Internal(ref val, typeof(T), options, width))
             {
                 eval = (T)((object)val);
                 return ChangesToken.True;
@@ -444,33 +465,20 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        private static ChangesToken editEnum<T>(ref T eval, List<int> options, int width = -1)
+        public static ChangesToken Edit_Enum<T>(this TextLabel label, ref int current, int valueWidth = -1)
         {
-            var val = System.Convert.ToInt32(eval);
-
-            if (editEnum_Internal(ref val, typeof(T), options, width))
-            {
-                eval = (T)((object)val);
-                return ChangesToken.True;
-            }
-
-            return ChangesToken.False;
+            label.Write();
+            return EditEnum_Internal(ref current, typeof(T), width: valueWidth);
         }
 
-        public static ChangesToken editEnum<T>(this TextLabel label, ref int current, int valueWidth = -1)
+        public static ChangesToken Edit_Enum<T>(ref int current, int width = -1) => EditEnum_Internal(ref current, typeof(T), width: width);
+
+        private static ChangesToken EditEnum_Internal<T>(ref int eval, List<int> options, int width = -1)
+            => EditEnum_Internal(ref eval, typeof(T), options, width);
+
+        private static ChangesToken EditEnum_Internal(ref int current, System.Type type, int width = -1, bool showIndex = false)
         {
-            label.write();
-            return editEnum_Internal(ref current, typeof(T), width: valueWidth);
-        }
-
-        public static ChangesToken editEnum<T>(ref int current, int width = -1) => editEnum_Internal(ref current, typeof(T), width: width);
-
-        private static ChangesToken editEnum_Internal<T>(ref int eval, List<int> options, int width = -1)
-            => editEnum_Internal(ref eval, typeof(T), options, width);
-
-        private static ChangesToken editEnum_Internal(ref int current, System.Type type, int width = -1, bool showIndex = false)
-        {
-            checkLine();
+            CheckLine();
             var tmpVal = -1;
 
             string[] names = System.Enum.GetNames(type);
@@ -489,19 +497,19 @@ namespace QuizCanners.Inspect
                     tmpVal = i;
             }
 
-            if (!select(ref tmpVal, names, width)) 
+            if (!Select(ref tmpVal, names, width)) 
                 return ChangesToken.False;
 
             current = val[tmpVal];
             return ChangesToken.True;
         }
 
-        private static ChangesToken editEnum_Internal<T>(ref T value, System.Type type, System.Func<T, object> nameGetter, int width = -1, bool showIndex = false)
+        private static ChangesToken EditEnum_Internal<T>(ref T value, System.Type type, System.Func<T, object> nameGetter, int width = -1, bool showIndex = false)
         {
 
            // var current = System.Convert.ToInt32(value);
 
-            checkLine();
+            CheckLine();
             var tmpVal = -1;
 
             var names = System.Enum.GetNames(type);
@@ -527,15 +535,15 @@ namespace QuizCanners.Inspect
                     tmpVal = i;
             }
 
-            if (!select(ref tmpVal, names, width)) return ChangesToken.False;
+            if (!Select(ref tmpVal, names, width)) return ChangesToken.False;
 
             value = val[tmpVal];
             return ChangesToken.True;
         }
 
-        private static ChangesToken editEnum_Internal(ref int current, System.Type type, List<int> options, int width = -1)
+        private static ChangesToken EditEnum_Internal(ref int current, System.Type type, List<int> options, int width = -1)
         {
-            checkLine();
+            CheckLine();
             var tmpVal = -1;
 
             List<string> names = new List<string>(options.Count + 1);
@@ -548,7 +556,7 @@ namespace QuizCanners.Inspect
                     tmpVal = i;
             }
 
-            if (width == -1 ? select(ref tmpVal, names) : select_Index(ref tmpVal, names, width))
+            if (width == -1 ? Select(ref tmpVal, names) : Select_Index(ref tmpVal, names, width))
             {
                 current = options[tmpVal];
                 return ChangesToken.True;
@@ -559,19 +567,19 @@ namespace QuizCanners.Inspect
         
 #endregion
 
-#region Enum Flags
+        #region Enum Flags
 
-        public static ChangesToken editEnumFlags<T>(this TextLabel text, ref T eval)
+        public static ChangesToken Edit_EnumFlags<T>(this TextLabel text, ref T eval)
         {
-            write(text);
-            return editEnumFlags(ref eval);
+            Write(text);
+            return Edit_EnumFlags(ref eval);
         }
 
-        public static ChangesToken editEnumFlags<T>(ref T eval, int width = -1)
+        public static ChangesToken Edit_EnumFlags<T>(ref T eval, int width = -1)
         {
             var val = System.Convert.ToInt32(eval);
 
-            if (editEnumFlags(ref val, typeof(T), width))
+            if (Edit_EnumFlags(ref val, typeof(T), width))
             {
                 eval = (T)((object)val);
                 return ChangesToken.True;
@@ -580,10 +588,10 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        private static ChangesToken editEnumFlags(ref int current, System.Type type, int width = -1)
+        private static ChangesToken Edit_EnumFlags(ref int current, System.Type type, int width = -1)
         {
 
-            checkLine();
+            CheckLine();
 
             var names = System.Enum.GetNames(type);
             var values = (int[])System.Enum.GetValues(type);
@@ -612,9 +620,9 @@ namespace QuizCanners.Inspect
             for (int i = 0; i <= currentPower; i++)
                 snms[i] = sortedNames[i];
 
-            return selectFlags(ref current, snms, width);
+            return SelectFlags(ref current, snms, width);
         }
-#endregion
+        #endregion
 
 #endregion
         

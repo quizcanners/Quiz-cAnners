@@ -118,41 +118,36 @@ namespace QuizCanners.Utils
 
         private static readonly System.Globalization.CultureInfo provider = new System.Globalization.CultureInfo("en-US");
 
-        public static string BigDoubleToString(double value)
+        public static string ToReadableString(this int value) => ToReadableString((double)value);
+    
+        public static string ToReadableString(this double value, int maxNumbers = 3)
         {
             string sign = value < 0 ? "-" : "";
             string unit = "";
-
             value = Math.Abs(value);
-
-            const string format = "0.#";
-
             string result;
+
+            string FORMAT = "G" + maxNumbers.ToString();
 
             if (value < 1000)
             {
-                const int NUM_COUNT = 4;
-
-                var str = value.ToString(format, System.Globalization.CultureInfo.CurrentCulture);
-                var ret = str.Length > NUM_COUNT ? str.Substring(0, NUM_COUNT) : str;
-                result = ret.TrimEnd('.');
+                result = value.ToString(FORMAT, provider);
             }
             else
             {
                 const int THE_LOG = 1000;
-
                 int n = (int)Math.Log(value, THE_LOG);
-
-                result = (Math.Floor(value / Math.Pow(THE_LOG, n) * 100) / 100).ToString(format, provider);
+                var numeral = (value * 100 / Math.Pow(THE_LOG, n)) / 100;
+                result = numeral.ToString(FORMAT, provider);
 
                 if (n > 0)
                 {
-
                     if (n < MAX_NUMBER_INDEX)
                     {
                         var enumNumber = (LargeNumber)n;
-                        unit = " " + enumNumber.GetAbbreviation(); 
-                    } else
+                        unit = NonBreakableString + enumNumber.GetAbbreviation();
+                    }
+                    else
                     {
                         int unitInt = n - MAX_NUMBER_INDEX;
 
@@ -160,13 +155,39 @@ namespace QuizCanners.Utils
 
                         char notationA = Convert.ToChar((unitInt / LETTER_COUNT) % (LETTER_COUNT) + charA);
                         char notationB = Convert.ToChar(unitInt % LETTER_COUNT + charA);
-                        unit = " " + notationA + notationB;
+                        unit = NonBreakableString + notationA + notationB;
                     }
                 }
             }
 
-            var finalNumber = "{0}{1}{2}".F(sign, result, unit);
+            var gotDot = result.Contains('.') || result.Contains(',');
 
+            if (gotDot)
+                maxNumbers += 1;
+
+            if (result.Length > maxNumbers)
+            {
+                result = result.Substring(0, maxNumbers);
+
+                if (gotDot)
+                    result = result.TrimEnd('.', ',');
+
+                // Now trim zeros in fractional part
+                gotDot = result.Contains(".") || result.Contains(",");
+
+                if (gotDot)
+                {
+                    while (result[result.Length - 1] == '0')
+                    {
+                        result = result.Substring(0, result.Length - 1);
+                    }
+
+                    result = result.TrimEnd('.', ',');
+                }
+
+            }
+
+            var finalNumber = "{0}{1}{2}".F(sign, result, unit);
             return finalNumber;
         }
     }

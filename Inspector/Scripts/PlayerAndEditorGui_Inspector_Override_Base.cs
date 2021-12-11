@@ -28,7 +28,7 @@ namespace QuizCanners.Inspect {
                 return;
             }
 
-            pegi.toggleDefaultInspector(materialEditor.target);
+            pegi.Toggle_DefaultInspector(materialEditor.target);
 
             DrawDefaultInspector();
 
@@ -66,12 +66,32 @@ namespace QuizCanners.Inspect {
 #else
     public abstract class PEGI_Inspector_Override : Editor
     {
+        public void OnSceneGUI()
+        {
+            var trg = target as IPEGI_Handles;
+
+            if (trg != null) 
+            {
+                pegi.IsDrawingHandles = true;
+                try
+                {
+                    trg.OnSceneDraw();
+                    if (GUI.changed)
+                        target.SetToDirty_Obj();
+                } catch (Exception ex) 
+                {
+                    Debug.LogException(ex);
+                }
+                pegi.IsDrawingHandles = false;
+            }
+        }
+
 
         public override void OnInspectorGUI()
         {
             PegiEditorOnly.ResetInspectionTarget(target);
 
-            if (target != PegiEditorOnly.drawDefaultInspector)
+            if (target != PegiEditorOnly.DrawDefaultInspector)
             {
                 if (target is MonoBehaviour)
                 {
@@ -87,7 +107,7 @@ namespace QuizCanners.Inspect {
                 }
             }
 
-            pegi.toggleDefaultInspector(target);
+            pegi.Toggle_DefaultInspector(target);
 
             EditorGUI.BeginChangeCheck();
             DrawDefaultInspector();

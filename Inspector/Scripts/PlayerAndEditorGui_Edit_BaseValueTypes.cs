@@ -16,11 +16,11 @@ namespace QuizCanners.Inspect
     {
         #region UInt
 
-        public static bool edit(ref uint val)
+        public static bool Edit(ref uint val)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val);
+                return PegiEditorOnly.Edit(ref val);
 #endif
             _START();
             var newval = GUILayout.TextField(val.ToString(), Utils.GuiMaxWidthOption);
@@ -35,12 +35,12 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static bool edit(ref uint val, int width)
+        public static bool Edit(ref uint val, int width)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val, width);
+                return PegiEditorOnly.Edit(ref val, width);
 #endif
 
             _START();
@@ -55,12 +55,12 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static bool edit(ref uint val, uint min, uint max)
+        public static bool Edit(ref uint val, uint min, uint max)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val, min, max);
+                return PegiEditorOnly.Edit(ref val, min, max);
 #endif
 
             _START();
@@ -69,25 +69,25 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static bool edit(this TextLabel label, ref uint val)
+        public static bool Edit(this TextLabel label, ref uint val)
         {
-            write(label);
-            return edit(ref val);
+            Write(label);
+            return Edit(ref val);
         }
 
-        public static bool edit(this TextLabel label, ref uint val, uint min, uint max)
+        public static bool Edit(this TextLabel label, ref uint val, uint min, uint max)
         {
             label.sliderText(val);
-            return edit(ref val, min, max);
+            return Edit(ref val, min, max);
         }
 
         #endregion
 
         #region Int
 
-        public static ChangesToken edit_Layer(this TextLabel label, ref int layer)
+        public static ChangesToken Edit_Layer(this TextLabel label, ref int layer)
         {
-            label.write();
+            label.Write();
 
             List<string> lst = new List<string>();
 
@@ -96,12 +96,12 @@ namespace QuizCanners.Inspect
                 lst.Add("{0}: {1}".F(i, LayerMask.LayerToName(i)));
             }
 
-            return select(ref layer, lst);
+            return Select(ref layer, lst);
         }
 
-        public static ChangesToken editLayerMask(this TextLabel label, ref string tag)
+        public static ChangesToken EditLayerMask(this TextLabel label, ref string tag)
         {
-            label.write();
+            label.Write();
             return editTag(ref tag);
         }
 
@@ -109,23 +109,23 @@ namespace QuizCanners.Inspect
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.editTag(ref tag);
+                return PegiEditorOnly.EditTag(ref tag);
 #endif
 
             return ChangesToken.False;
         }
 
-        public static ChangesToken editLayerMask(this TextLabel label, ref int val)
+        public static ChangesToken EditLayerMask(this TextLabel label, ref int val)
         {
-            label.ApproxWidth().write();
-            return editLayerMask(ref val);
+            label.ApproxWidth().Write();
+            return EditLayerMask(ref val);
         }
 
-        public static ChangesToken editLayerMask(ref int val)
+        public static ChangesToken EditLayerMask(ref int val)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.editLayerMask(ref val);
+                return PegiEditorOnly.EditLayerMask(ref val);
 #endif
 
             return ChangesToken.False;
@@ -133,41 +133,41 @@ namespace QuizCanners.Inspect
 
         private const int ADD_SUBTRACT_BUTTON_SIZE = 20;
 
-        public static ChangesToken edit_WithButtons(this TextLabel label, ref int value)
+        public static ChangesToken Edit_WithButtons(this TextLabel label, ref int value)
         {
             var change = ChangeTrackStart();
-            label.edit(ref value);
+            label.Edit(ref value);
             edit_WithButtons_Internal(ref value);
             return change;
         }
 
-        public static ChangesToken edit_WithButtons(this TextLabel label,  ref int value, int valueWidth)
+        public static ChangesToken Edit_WithButtons(this TextLabel label,  ref int value, int valueWidth)
         {
             var change = ChangeTrackStart();
-            label.edit(ref value, valueWidth);
+            label.Edit(ref value, valueWidth);
             edit_WithButtons_Internal(ref value);
             return change;
         }
 
-        public static ChangesToken edit_WithButtons(ref int value, int valueWidth)
+        public static ChangesToken Edit_WithButtons(ref int value, int valueWidth)
         {
             var change = ChangeTrackStart();
-            edit(ref value, valueWidth);
+            Edit(ref value, valueWidth);
             edit_WithButtons_Internal(ref value);
             return change;
         }
 
         private static void edit_WithButtons_Internal(ref int value) 
         {
-            if (icon.Subtract.Click(ADD_SUBTRACT_BUTTON_SIZE).UnfocusOnChange()) value--;
-            if (icon.Add.Click(ADD_SUBTRACT_BUTTON_SIZE).UnfocusOnChange()) value++;
+            if (Icon.Subtract.Click(ADD_SUBTRACT_BUTTON_SIZE).UnfocusOnChange()) value--;
+            if (Icon.Add.Click(ADD_SUBTRACT_BUTTON_SIZE).UnfocusOnChange()) value++;
         }
 
-        public static ChangesToken edit(ref int val)
+        public static ChangesToken Edit(ref int val)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val);
+                return PegiEditorOnly.Edit(ref val);
 #endif
 
             _START();
@@ -182,12 +182,12 @@ namespace QuizCanners.Inspect
             return ChangesToken.True;
         }
 
-        public static ChangesToken edit(ref int val, int width)
+        public static ChangesToken Edit(ref int val, int width)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val, width);
+                return PegiEditorOnly.Edit(ref val, width);
 #endif
 
             _START();
@@ -204,12 +204,12 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken edit(ref int val, int minInclusive, int maxInclusive)
+        public static ChangesToken Edit(ref int val, int minInclusive, int maxInclusive)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val, minInclusive: minInclusive, maxInclusive: maxInclusive);
+                return PegiEditorOnly.Edit(ref val, minInclusive: minInclusive, maxInclusive: maxInclusive);
 #endif
 
             _START();
@@ -220,22 +220,22 @@ namespace QuizCanners.Inspect
 
         private static int editedInteger;
         private static int editedIntegerIndex = -1;
-        public static ChangesToken editDelayed(ref int val, int width = -1)
+        public static ChangesToken EditDelayed(ref int val, int width = -1)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.editDelayed(ref val, width);
+                return PegiEditorOnly.EditDelayed(ref val, width);
 
 #endif
 
-            checkLine();
+            CheckLine();
 
             var tmp = (editedIntegerIndex == _elementIndex) ? editedInteger : val;
 
             if (KeyCode.Return.IsDown() && (_elementIndex == editedIntegerIndex))
             {
-                edit(ref tmp);
+                Edit(ref tmp);
                 val = editedInteger;
                 editedIntegerIndex = -1;
 
@@ -244,7 +244,7 @@ namespace QuizCanners.Inspect
                 return SetChangedTrue_Internal();
             }
 
-            if (edit(ref tmp).IgnoreChanges())
+            if (Edit(ref tmp).IgnoreChanges())
             {
                 editedInteger = tmp;
                 editedIntegerIndex = _elementIndex;
@@ -256,49 +256,49 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken editDelayed(this TextLabel label, ref int val)
+        public static ChangesToken EditDelayed(this TextLabel label, ref int val)
         {
             label.FallbackHint = () => Msg.EditDelayed_HitEnter.GetText();
-            label.write();
-            return editDelayed(ref val);
+            label.Write();
+            return EditDelayed(ref val);
         }
 
-        public static ChangesToken editDelayed(this TextLabel label, ref int val, int valueWidth)
+        public static ChangesToken EditDelayed(this TextLabel label, ref int val, int valueWidth)
         {
             label.FallbackHint = ()=> Msg.EditDelayed_HitEnter.GetText();
-            label.write();
-            return editDelayed(ref val, width: valueWidth);
+            label.Write();
+            return EditDelayed(ref val, width: valueWidth);
         }
 
-        public static ChangesToken edit(this IPegiText label, ref int val)
+        public static ChangesToken Edit(this IPegiText label, ref int val)
         {
-            write(label);
-            return edit(ref val);
+            Write(label);
+            return Edit(ref val);
         }
 
-        public static ChangesToken edit(this TextLabel label, ref int val, int minInclusiven, int maxInclusive)
+        public static ChangesToken Edit(this TextLabel label, ref int val, int minInclusiven, int maxInclusive)
         {
             label.sliderText(val);
-            return edit(ref val, minInclusive: minInclusiven, maxInclusive: maxInclusive);
+            return Edit(ref val, minInclusive: minInclusiven, maxInclusive: maxInclusive);
         }
 
-        public static ChangesToken edit(this TextLabel label, ref int val, int valueWidth)
+        public static ChangesToken Edit(this TextLabel label, ref int val, int valueWidth)
         {
-            write(label);
-            return edit(ref val, valueWidth);
+            Write(label);
+            return Edit(ref val, valueWidth);
         }
 
 
-        public static ChangesToken edit_Range(this TextLabel label, ref int from, ref int to)
+        public static ChangesToken Edit_Range(this TextLabel label, ref int from, ref int to)
         {
-            label.ApproxWidth().write();
+            label.ApproxWidth().Write();
             var changed = ChangeTrackStart();
-            if (editDelayed(ref from))
+            if (EditDelayed(ref from))
                 to = Mathf.Max(from, to);
 
-            write("-", 10);
+            Write("-", 10);
 
-            if (editDelayed(ref to))
+            if (EditDelayed(ref to))
                 from = Mathf.Min(from, to);
 
             return changed;
@@ -308,11 +308,11 @@ namespace QuizCanners.Inspect
 
         #region Long
 
-        public static ChangesToken edit(ref long val)
+        public static ChangesToken Edit(ref long val)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val);
+                return PegiEditorOnly.Edit(ref val);
 #endif
 
             _START();
@@ -327,12 +327,12 @@ namespace QuizCanners.Inspect
             return ChangesToken.True;
         }
 
-        public static ChangesToken edit(ref long val, int width)
+        public static ChangesToken Edit(ref long val, int width)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val, width);
+                return PegiEditorOnly.Edit(ref val, width);
 #endif
 
             _START();
@@ -349,22 +349,21 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken edit(this TextLabel label, ref long val)
+        public static ChangesToken Edit(this TextLabel label, ref long val)
         {
-            write(label);
-            return edit(ref val);
+            Write(label);
+            return Edit(ref val);
         }
 
         #endregion
 
         #region Float
-
-        public static ChangesToken edit(ref float val)
+        public static ChangesToken Edit(ref float val)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val);
+                return PegiEditorOnly.Edit(ref val);
 #endif
 
             _START();
@@ -379,12 +378,12 @@ namespace QuizCanners.Inspect
             return SetChangedTrue_Internal();
         }
 
-        public static ChangesToken edit(ref float val, int width)
+        public static ChangesToken Edit(ref float val, int width)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val, width);
+                return PegiEditorOnly.Edit(ref val, width);
 #endif
 
             _START();
@@ -401,23 +400,22 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken edit(this TextLabel label, ref float val)
+        public static ChangesToken Edit(this TextLabel label, ref float val)
         {
-            label.TryWrite();
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val);
+                return PegiEditorOnly.Edit(label, ref val);
 #endif
-
-            return edit(ref val);
+            label.TryWrite();
+            return Edit(ref val);
         }
 
-        public static ChangesToken edit(ref float val, float min, float max)
+        public static ChangesToken Edit(ref float val, float min, float max)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val, min, max);
+                return PegiEditorOnly.Edit(ref val, min, max);
 #endif
 
             _START();
@@ -426,39 +424,39 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken editDelayed(this TextLabel label, ref float val)
+        public static ChangesToken EditDelayed(this TextLabel label, ref float val)
         {
-            label.write();
-            return editDelayed(ref val);
+            label.Write();
+            return EditDelayed(ref val);
         }
 
-        public static ChangesToken editDelayed(ref float val, int width)
+        public static ChangesToken EditDelayed(ref float val, int width)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.editDelayed(ref val, width);
+                return PegiEditorOnly.EditDelayed(ref val, width);
 #endif
 
-            return editDelayed(ref val);
+            return EditDelayed(ref val);
         }
 
-        public static ChangesToken editDelayed(ref float val)
+        public static ChangesToken EditDelayed(ref float val)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.editDelayed(ref val);
+                return PegiEditorOnly.EditDelayed(ref val);
 #endif
 
 
-            checkLine();
+            CheckLine();
 
             var tmp = (editedFloatIndex == _elementIndex) ? editedFloat : val.ToString(CultureInfo.InvariantCulture);
 
             if (KeyCode.Return.IsDown() && (_elementIndex == editedFloatIndex))
             {
-                edit(ref tmp);
+                Edit(ref tmp);
 
                 float newValue;
                 if (float.TryParse(editedFloat, out newValue))
@@ -470,7 +468,7 @@ namespace QuizCanners.Inspect
                 return SetChangedTrue_Internal();
             }
 
-            if (edit(ref tmp).IgnoreChanges())
+            if (Edit(ref tmp).IgnoreChanges())
             {
                 editedFloat = tmp;
                 editedFloatIndex = _elementIndex;
@@ -490,16 +488,16 @@ namespace QuizCanners.Inspect
             return edit(ref val);
         }*/
 
-        public static ChangesToken edit_Range(this IPegiText label, ref float from, ref float to)
+        public static ChangesToken Edit_Range(this IPegiText label, ref float from, ref float to)
         {
             label.TryWrite();
             var changed = ChangeTrackStart();
-            if (editDelayed(ref from))
+            if (EditDelayed(ref from))
                 to = Mathf.Max(from, to);
 
-            write("-", 10);
+            Write("-", 10);
 
-            if (editDelayed(ref to))
+            if (EditDelayed(ref to))
                 from = Mathf.Min(from, to);
 
             return changed;
@@ -510,10 +508,10 @@ namespace QuizCanners.Inspect
             if (PaintingGameViewUI)
             {
                 label.label = "{0} [{1}]".F(label, val.ToString());
-                label.write();
+                label.Write();
             }
             else
-                write(label);
+                Write(label);
         }
 
         private static void sliderText(this TextLabel label, int val)
@@ -522,10 +520,10 @@ namespace QuizCanners.Inspect
             {
 
                 label.label = "{0} [{1}]".F(label, val.ToString());
-                label.write();
+                label.Write();
             }
             else
-                write(label);
+                Write(label);
         }
 
         private static void sliderText(this TextLabel label, float val)
@@ -534,41 +532,48 @@ namespace QuizCanners.Inspect
             {
                 label.label = "{0} [{1}]".F(label.label, val.ToString("F3"));
                 label.ApproxWidth();
-                label.write();
+                label.Write();
             }
             else
-                write(label);
+                Write(label);
         }
 
-        public static ChangesToken edit(this TextLabel label, ref float val, float min, float max)
+        public static ChangesToken Edit(this TextLabel label, ref float val, float min, float max)
         {
+            max = Mathf.Max(max, val);
             
             label.sliderText(val);
-            return edit(ref val, min, max);
+            return Edit(ref val, min, max);
         }
 
-        private static ChangesToken edit(this icon ico, ref float val, float min, float max)
+        private static ChangesToken Edit(this Icon ico, ref float val, float min, float max)
         {
-            ico.draw();
-            return edit(ref val, min, max);
+            ico.Draw();
+            return Edit(ref val, min, max);
         }
 
         #endregion
 
         #region Double
 
-        public static ChangesToken edit(this TextLabel label, ref double val, double min, double max)
+        public static ChangesToken Edit(this TextLabel label, ref double val, int valueWidth)
         {
-            label.sliderText(val);
-            return edit(ref val, min, max);
+            label.Write();
+            return Edit(ref val, valueWidth);
         }
 
-        public static ChangesToken edit(ref double val, double min, double max)
+        public static ChangesToken Edit(this TextLabel label, ref double val, double min, double max)
+        {
+            label.sliderText(val);
+            return Edit(ref val, min, max);
+        }
+
+        public static ChangesToken Edit(ref double val, double min, double max)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val, min, max);
+                return PegiEditorOnly.Edit(ref val, min, max);
 #endif
 
             _START();
@@ -601,54 +606,72 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken editDelayed(this TextToken label, ref double val)
+        public static ChangesToken EditDelayed(this TextLabel label, ref double val, int valueWidth)
         {
-            label.write();
-            return editDelayed(ref val);
+            label.Write();
+            return EditDelayed(ref val, width: valueWidth);
         }
 
-        public static ChangesToken editDelayed(ref double val, int width)
+        public static ChangesToken EditDelayed(this TextLabel label, ref double val)
+        {
+            label.Write();
+            return EditDelayed(ref val);
+        }
+
+        public static ChangesToken EditDelayed(ref double val, int width)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.editDelayed(ref val, width);
+                return PegiEditorOnly.EditDelayed(ref val, width);
 #endif
 
-            return editDelayed(ref val);
+            return EditDelayed(ref val);
         }
 
-        public static ChangesToken editDelayed(ref double val)
+        public static ChangesToken EditDelayed(ref double val)
         {
-
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.editDelayed(ref val);
+                return PegiEditorOnly.EditDelayed(ref val);
 #endif
 
+            CheckLine();
 
-            checkLine();
+            var curVal = val.ToString(CultureInfo.InvariantCulture);
 
-            var tmp = (editedDoubleIndex == _elementIndex) ? editedDouble : val.ToString(CultureInfo.InvariantCulture);
+            bool isCurrent = (_elementIndex == editedDoubleIndex);
 
-            if (KeyCode.Return.IsDown() && (_elementIndex == editedDoubleIndex))
+            var tmp = isCurrent ? editedDouble : curVal;
+
+            if (KeyCode.Return.IsDown() && isCurrent)
             {
-                edit(ref tmp);
+                Edit(ref tmp);
 
-                double newValue;
-                if (double.TryParse(editedDouble, out newValue))
-                    val = newValue;
-                _elementIndex++;
-
-                editedDoubleIndex = -1;
-
+                SetValue(ref val);
                 return SetChangedTrue_Internal();
             }
 
-            if (edit(ref tmp).IgnoreChanges())
+            if (Edit(ref tmp).IgnoreChanges())
             {
                 editedDouble = tmp;
                 editedDoubleIndex = _elementIndex;
+            }
+
+            if (isCurrent && editedDouble != curVal && Icon.Done.Click())
+            {
+                SetValue(ref val);
+                return SetChangedTrue_Internal();
+            }
+
+            void SetValue(ref double value)
+            {
+                double newValue;
+                if (double.TryParse(editedDouble, out newValue))
+                    value = newValue;
+                _elementIndex++;
+
+                editedDoubleIndex = -1;
             }
 
             _elementIndex++;
@@ -659,12 +682,12 @@ namespace QuizCanners.Inspect
         private static string editedDouble;
         private static int editedDoubleIndex = -1;
 
-        public static ChangesToken edit(ref double val)
+        public static ChangesToken Edit(ref double val)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val);
+                return PegiEditorOnly.Edit(ref val);
 #endif
             _START();
             var newval = GUILayout.TextField(val.ToString(CultureInfo.InvariantCulture), Utils.GuiMaxWidthOption);
@@ -675,18 +698,18 @@ namespace QuizCanners.Inspect
             return SetChangedTrue_Internal();
         }
 
-        public static ChangesToken edit(this TextLabel label, ref double val)
+        public static ChangesToken Edit(this TextLabel label, ref double val)
         {
-            label.write();
-            return edit(ref val);
+            label.Write();
+            return Edit(ref val);
         }
 
-        public static ChangesToken edit(ref double val, int width)
+        public static ChangesToken Edit(ref double val, int width)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val, width);
+                return PegiEditorOnly.Edit(ref val, width);
 #endif
 
             _START();
@@ -707,27 +730,32 @@ namespace QuizCanners.Inspect
 
         private static string editedText;
         private static string editedHash = "";
-        public static ChangesToken editDelayed(ref string val)
+        public static ChangesToken EditDelayed(ref string val)
         {
-            if (LengthIsTooLong(ref val)) return ChangesToken.False;
+            if (LengthIsTooLong(ref val)) 
+                return ChangesToken.False;
+
+            if (val == null)
+                val = "";
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.editDelayed(ref val);
+                return PegiEditorOnly.EditDelayed(ref val);
 #endif
 
-            checkLine();
+            CheckLine();
 
             if ((KeyCode.Return.IsDown() && (val.GetHashCode().ToString() == editedHash)))
             {
                 GUILayout.TextField(val, Utils.GuiMaxWidthOption);
                 val = editedText;
+                editedHash = "dummy";
 
                 return SetChangedTrue_Internal();
             }
 
             var tmp = val;
-            if (edit(ref tmp).IgnoreChanges())
+            if (Edit(ref tmp).IgnoreChanges())
             {
                 editedText = tmp;
                 editedHash = val.GetHashCode().ToString();
@@ -737,31 +765,31 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken editDelayed(this TextLabel label, ref string val)
+        public static ChangesToken EditDelayed(this TextLabel label, ref string val)
         {
             label.FallbackHint = () => Msg.EditDelayed_HitEnter.GetText();
-            write(label);
-            return editDelayed(ref val);
+            Write(label);
+            return EditDelayed(ref val);
         }
 
-        public static ChangesToken editDelayed(this TextLabel label, ref string val, int valueWidth)
+        public static ChangesToken EditDelayed(this TextLabel label, ref string val, int valueWidth)
         {
             label.FallbackHint = () => Msg.EditDelayed_HitEnter.GetText();
-            write(label);
-            return editDelayed(ref val, valueWidth);
+            Write(label);
+            return EditDelayed(ref val, valueWidth);
         }
 
-        public static ChangesToken editDelayed(ref string val, int width)
+        public static ChangesToken EditDelayed(ref string val, int width)
         {
 
             if (LengthIsTooLong(ref val)) return ChangesToken.False;
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.editDelayed(ref val, width);
+                return PegiEditorOnly.EditDelayed(ref val, width);
 #endif
 
-            checkLine();
+            CheckLine();
 
             if ((KeyCode.Return.IsDown() && (val.GetHashCode().ToString() == editedHash)))
             {
@@ -771,7 +799,7 @@ namespace QuizCanners.Inspect
             }
 
             var tmp = val;
-            if (edit(ref tmp, width).IgnoreChanges())
+            if (Edit(ref tmp, width).IgnoreChanges())
             {
                 editedText = tmp;
                 editedHash = val.GetHashCode().ToString();
@@ -790,7 +818,7 @@ namespace QuizCanners.Inspect
             if (label == null || label.Length < maxStringSize)
                 return false;
 
-            if (icon.Delete.ClickUnFocus())
+            if (Icon.Delete.ClickUnFocus())
             {
                 label = "";
                 return false;
@@ -802,14 +830,14 @@ namespace QuizCanners.Inspect
             return true;
         }
 
-        public static ChangesToken edit(ref string val)
+        public static ChangesToken Edit(ref string val)
         {
 
             if (LengthIsTooLong(ref val)) return ChangesToken.False;
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val);
+                return PegiEditorOnly.Edit(ref val);
 #endif
 
             _START();
@@ -817,14 +845,14 @@ namespace QuizCanners.Inspect
             return _END();
         }
 
-        public static ChangesToken edit(ref string val, int width)
+        public static ChangesToken Edit(ref string val, int width)
         {
 
             if (LengthIsTooLong(ref val)) return ChangesToken.False;
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(ref val, width);
+                return PegiEditorOnly.Edit(ref val, width);
 #endif
 
             _START();
@@ -838,41 +866,43 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken edit(this TextLabel label, ref string val)
+        public static ChangesToken Edit(this TextLabel label, ref string val)
         {
 
-            if (LengthIsTooLong(ref val)) return ChangesToken.False;
+            if (LengthIsTooLong(ref val)) 
+                return ChangesToken.False;
 
+            Write(label);
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.edit(label, ref val);
+                return PegiEditorOnly.Edit(ref val);
 #endif
 
-            write(label);
-            return edit(ref val);
+           
+            return Edit(ref val);
         }
 
-        public static ChangesToken edit(this IPegiText label, ref string val, int valueWidth)
+        public static ChangesToken Edit(this IPegiText label, ref string val, int valueWidth)
         {
-            write(label);
-            return edit(ref val, width: valueWidth);
+            Write(label);
+            return Edit(ref val, width: valueWidth);
         }
 
-        public static ChangesToken editBig(this IPegiText label, ref string val, int height = 100)
+        public static ChangesToken EditBig(this IPegiText label, ref string val, int height = 100)
         {
-            write(label);
-            return editBig(ref val, height: height);
+            Write(label);
+            return EditBig(ref val, height: height);
         }
 
 
-        public static ChangesToken editBig(ref string val, int height = 100)
+        public static ChangesToken EditBig(ref string val, int height = 100)
         {
 
-            nl();
+            Nl();
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.editBig(ref val, height).nl();
+                return PegiEditorOnly.EditBig(ref val, height).Nl();
 #endif
 
             _START();

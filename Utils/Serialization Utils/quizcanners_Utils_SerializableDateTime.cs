@@ -4,7 +4,7 @@ using UnityEngine;
 namespace QuizCanners.Utils
 {
     [Serializable]
-    public struct SerializableDateTime
+    public class SerializableDateTime
     {
         [SerializeField] private bool _isSet;
         [SerializeField] private long _ticks;

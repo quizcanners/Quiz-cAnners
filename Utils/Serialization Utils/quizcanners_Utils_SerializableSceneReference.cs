@@ -26,20 +26,20 @@ namespace QuizCanners.Utils
             if (Application.isEditor)
             {
 #if UNITY_EDITOR
-                pegi.edit(ref _asset);
+                pegi.Edit(ref _asset);
 #endif
 
                 var path = GetAssetPath();
                 if (!path.IsNullOrEmpty() && !path.Equals(ScenePath))
                 {
-                    icon.Warning.draw("Scene pas has changed");
+                    Icon.Warning.Draw("Scene pas has changed");
                     if ("Update Path".PegiLabel(path).Click())
                         ScenePath = path;
                 }
             }
             else
             {
-                pegi.edit_Scene(ref ScenePath);
+                pegi.Edit_Scene(ref ScenePath);
             }
         }
 

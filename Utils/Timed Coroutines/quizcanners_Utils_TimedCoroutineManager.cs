@@ -64,44 +64,44 @@ namespace QuizCanners.Utils
             private Task _debugTask;
             public void Inspect()
             {
-                pegi.nl();
+                pegi.Nl();
 
-                if (!coroutinesListMeta.IsInspectingElement)
+                if (!coroutinesListMeta.IsAnyEntered)
                 {
-                    "Pool Size: {0}".F(pool.Count).PegiLabel().nl();
+                    "Pool Size: {0}".F(pool.Count).PegiLabel().Nl();
 
-                    if ("Run an Example Managed Coroutine".PegiLabel().Click().nl())
+                    if ("Run an Example Managed Coroutine".PegiLabel().Click().Nl())
                         DefaultCoroutineManager.Add(Coroutine_Test());
 
                     if (_debugTask != null)
                     {
-                        "Task status:{0}".F(_debugTask.Status).PegiLabel().nl();
+                        "Task status:{0}".F(_debugTask.Status).PegiLabel().Nl();
 
                         if (_debugTask.Exception != null)
-                            _debugTask.Exception.ToString().PegiLabel().writeBig();
+                            _debugTask.Exception.ToString().PegiLabel().WriteBig();
 
                         if ("Clear".PegiLabel().Click())
                             _debugTask = null;
                     }
-                    else if ("Run an Example Task".PegiLabel().Click().nl())
+                    else if ("Run an Example Task".PegiLabel().Click().Nl())
                     {
                         var tmp = new TimedCoroutine(Coroutine_Test());
                         _debugTask = tmp.StartTask();
                     }
                 }
 
-                if ("Yield 1 frame".PegiLabel().Click().nl())
+                if ("Yield 1 frame".PegiLabel().Click().Nl())
                     UpdateManagedCoroutines();
 
-                coroutinesListMeta.edit_List(_enumerators).nl();
+                coroutinesListMeta.Edit_List(_enumerators).Nl();
 
-                if (!coroutinesListMeta.IsInspectingElement)
+                if (!coroutinesListMeta.IsAnyEntered)
                 {
                     ("Managed Timed coroutines can run in Editor, but need an object to send an update call to them every frame: QcAsync.UpdateManagedCoroutines()." +
                      " Alternatively a TimedEnumerator can be started with Unity's " +
-                     "StartCoroutine(new TimedEnumeration(enumerator)). It will in turn call yield on it multiple times with care for performance.").PegiLabel().writeHint();
+                     "StartCoroutine(new TimedEnumeration(enumerator)). It will in turn call yield on it multiple times with care for performance.").PegiLabel().WriteHint();
 
-                    ("Examples are in QcAsync.cs class").PegiLabel().writeHint();
+                    ("Examples are in QcAsync.cs class").PegiLabel().WriteHint();
                 }
             }
 

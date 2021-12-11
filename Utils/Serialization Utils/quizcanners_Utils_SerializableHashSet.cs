@@ -36,7 +36,7 @@ namespace QuizCanners.Utils
 
         public virtual void Inspect()
         {
-            pegi.edit_HashSet(_set, ref inspectedElement, out _);
+            pegi.Edit_HashSet(_set, ref inspectedElement, out _);
         }
 
         public void Add(T item) => _set.Add(item);
@@ -80,12 +80,27 @@ namespace QuizCanners.Utils
     public abstract class SerializableHashSetForEnum<T> : SerializableHashSet<T>
     {
 
+        public bool this[T key] 
+        {
+            get => Contains(key);
+            set 
+            {
+                if (this[key] == value)
+                    return;
+
+                if (value)
+                    Add(key);
+                else
+                    Remove(key);
+            }
+        }
+
         private string search = "";
         public override void Inspect()
         {
             var vals = (T[])System.Enum.GetValues(typeof(T));
 
-            "Search".PegiLabel(70).edit(ref search).nl();
+            "Search".PegiLabel(70).Edit(ref search).Nl();
 
             foreach (var val in vals)
             {
@@ -95,7 +110,7 @@ namespace QuizCanners.Utils
                     continue;
 
                 var isOn = Contains(val);
-                if (pegi.toggle(ref isOn))
+                if (pegi.Toggle(ref isOn))
                 {
                     if (isOn)
                         Add(val);
@@ -103,7 +118,7 @@ namespace QuizCanners.Utils
                         Remove(val);
                 }
 
-                name.GetNameForInspector().PegiLabel().nl();
+                name.GetNameForInspector().PegiLabel().Nl();
             }
         }
     }

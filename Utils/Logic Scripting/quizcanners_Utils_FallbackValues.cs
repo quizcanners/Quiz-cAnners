@@ -20,13 +20,20 @@ namespace QuizCanners.Utils
                     IsSet = true;
                     manualValue = value;
                 }
+                get 
+                {
+                    if (!IsSet)
+                        QcLog.ChillLogger.LogErrosExpOnly(() => "Getting unset {0} Value. Returning default".F(typeof(T)), "FallBackInt");
+
+                    return manualValue;
+                }
             }
 
             public T Get(T defaultValue) => IsSet ? manualValue : defaultValue;
 
             public T Get(Func<T> defaultValueGetter) => IsSet ? manualValue : defaultValueGetter.Invoke();
 
-            public T this[Func<T> defaultValueGetter] => Get(defaultValueGetter: defaultValueGetter);
+           // public T this[Func<T> defaultValueGetter] => Get(defaultValueGetter: defaultValueGetter);
         }
 
         [Serializable]
@@ -39,15 +46,15 @@ namespace QuizCanners.Utils
             {
                 if (IsSet)
                 {
-                    icon.Clear.Click(() => IsSet = false, toolTip: "Switch to default value");
+                    Icon.Clear.Click(() => IsSet = false, toolTip: "Switch to default value");
 
-                    if (label.PegiLabel(70).edit(ref manualValue, 60))
+                    if (label.PegiLabel(70).Edit(ref manualValue, 60))
                         ManualValue = manualValue;
                 }
                 else
                 {
-                    icon.Edit.Click(() => ManualValue = fallbackValue, toolTip: "Input value manually");
-                    "{0}: {1}".F(label, fallbackValue).PegiLabel().write();
+                    Icon.Edit.Click(() => ManualValue = fallbackValue, toolTip: "Input value manually");
+                    "{0}: {1}".F(label, fallbackValue).PegiLabel().Write();
                 }
             }
         }

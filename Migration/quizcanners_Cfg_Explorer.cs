@@ -33,13 +33,13 @@ namespace QuizCanners.Migration
 
             var changed = false;
 
-            "Load File:".PegiLabel(90).write();
-            target.LoadCfgOnDrop(); pegi.nl();
+            "Load File:".PegiLabel(90).Write();
+            target.LoadCfgOnDrop(); pegi.Nl();
 
-            if (icon.Copy.Click("Copy Component Data").nl())
+            if (Icon.Copy.Click("Copy Component Data").Nl())
                 ICfgExtensions.copyBufferValue = target.Encode().ToString();
 
-            pegi.nl();
+            pegi.Nl();
 
             return changed;
         }
@@ -54,7 +54,7 @@ namespace QuizCanners.Migration
 
             CfgState added; 
 
-            "Saved CFGs:".PegiLabel().edit_List(states, ref inspectedState, out added);
+            "Saved CFGs:".PegiLabel().Edit_List(states, ref inspectedState, out added);
 
             if (added != null && target != null)
             {
@@ -67,7 +67,7 @@ namespace QuizCanners.Migration
             {
                 Object myType = null;
                 
-                if ("From File:".PegiLabel(65).edit(ref myType))
+                if ("From File:".PegiLabel(65).Edit(ref myType))
                 {
                     added = new CfgState();
 
@@ -104,7 +104,7 @@ namespace QuizCanners.Migration
                     }
                 }
                 */
-                pegi.nl();
+                pegi.Nl();
             }
 
             inspectedCfg = null;
@@ -162,7 +162,7 @@ namespace QuizCanners.Migration
                 var changes = pegi.ChangeTrackStart();
 
                 if (_tags != null)
-                    tag.PegiLabel().edit_List(_tags, ref inspectedTag);
+                    tag.PegiLabel().Edit_List(_tags, ref inspectedTag);
 
                 dirty |= changes;
 
@@ -183,10 +183,10 @@ namespace QuizCanners.Migration
 
                     if (dirty)
                     {
-                        if (icon.Refresh.Click("Update data string from tags"))
+                        if (Icon.Refresh.Click("Update data string from tags"))
                             UpdateData();
 
-                        if (icon.Load.Click("Load from data String").nl())
+                        if (Icon.Load.Click("Load from data String").Nl())
                         {
                             _tags = null;
                             this.Decode(data);//.DecodeTagsFor(this);
@@ -194,41 +194,41 @@ namespace QuizCanners.Migration
                         }
                     }
 
-                    pegi.nl();
+                    pegi.Nl();
                 }
 
 
-                pegi.nl();
+                pegi.Nl();
             }
 
             public void InspectInList(ref int edited, int ind)
             {
 
-                GetCount().ToString().PegiLabel(50).write();
+                GetCount().ToString().PegiLabel(50).Write();
 
                 if (data.IsEmpty == false && data.ToString().Contains("|"))
                 {
-                    pegi.edit(ref tag);
+                    pegi.Edit(ref tag);
 
-                    if (icon.Enter.Click("Explore data"))
+                    if (Icon.Enter.Click("Explore data"))
                         edited = ind;
                 }
                 else
                 {
-                    if (pegi.edit(ref tag))
+                    if (pegi.Edit(ref tag))
                         dirty = true;
 
                     data.Inspect(); //.changes(ref dirty);
                     //pegi.edit(ref data).changes(ref dirty);
                 }
 
-                if (icon.Copy.Click("Copy " + tag + " data to buffer."))
+                if (Icon.Copy.Click("Copy " + tag + " data to buffer."))
                 {
                     ICfgExtensions.copyBufferValue = data.ToString();
                     ICfgExtensions.copyBufferTag = tag;
                 }
 
-                if (ICfgExtensions.copyBufferValue != null && icon.Paste.Click("Paste " + ICfgExtensions.copyBufferTag + " Data").nl())
+                if (ICfgExtensions.copyBufferValue != null && Icon.Paste.Click("Paste " + ICfgExtensions.copyBufferTag + " Data").Nl())
                 {
                     dirty = true;
                     data = new CfgData(ICfgExtensions.copyBufferValue);
@@ -289,32 +289,32 @@ namespace QuizCanners.Migration
                 if (dataExplorer.inspectedTag == -1)
                 {
                     this.inspect_Name();
-                    if (dataExplorer.tag.Length > 0 && icon.Save.Click("Save To Assets"))
+                    if (dataExplorer.tag.Length > 0 && Icon.Save.Click("Save To Assets"))
                     {
                         QcFile.Save.ToAssets(Mgmt.fileFolderHolder, filename: dataExplorer.tag, data: dataExplorer.data.ToString(), asBytes: true);
                         QcUnity.RefreshAssetDatabase();
                     }
 
-                    pegi.nl();
+                    pegi.Nl();
 
                     if (Cfg != null)
                     {
                         if (dataExplorer.tag.Length == 0)
                             dataExplorer.tag = Cfg.GetNameForInspector() + " config";
 
-                        "Save To:".PegiLabel(50).edit(ref Mgmt.fileFolderHolder);
+                        "Save To:".PegiLabel(50).Edit(ref Mgmt.fileFolderHolder);
 
                         var uObj = Cfg as Object;
 
-                        if (uObj && icon.Done.Click("Use the same directory as current object."))
+                        if (uObj && Icon.Done.Click("Use the same directory as current object."))
                             Mgmt.fileFolderHolder = QcUnity.GetAssetFolder(uObj);
 
-                        uObj.ClickHighlight().nl();
+                        uObj.ClickHighlight().Nl();
                     }
 
-                    if ("Description".PegiLabel().isFoldout().nl())
+                    if ("Description".PegiLabel().IsFoldout().Nl())
                     {
-                        pegi.editBig(ref comment).nl();
+                        pegi.EditBig(ref comment).Nl();
                     }
                 }
 
@@ -324,23 +324,23 @@ namespace QuizCanners.Migration
             public void InspectInList(ref int edited, int ind)
             {
 
-                if (dataExplorer.data.ToString().IsNullOrEmpty() == false && icon.Copy.Click())
+                if (dataExplorer.data.ToString().IsNullOrEmpty() == false && Icon.Copy.Click())
                     pegi.SetCopyPasteBuffer(dataExplorer.data.ToString());
                 
-                GetCount().ToString().PegiLabel(60).edit(ref dataExplorer.tag);
+                GetCount().ToString().PegiLabel(60).Edit(ref dataExplorer.tag);
 
                 if (Cfg != null)
                 {
-                    if (icon.Load.ClickConfirm("sfgLoad", "Decode Data into " + Cfg.GetNameForInspector()))
+                    if (Icon.Load.ClickConfirm("sfgLoad", "Decode Data into " + Cfg.GetNameForInspector()))
                     {
                         dataExplorer.UpdateData();
                         Cfg.Decode(dataExplorer.data);
                     }
-                    if (icon.Save.ClickConfirm("cfgSave", "Save data from " + Cfg.GetNameForInspector()))
+                    if (Icon.Save.ClickConfirm("cfgSave", "Save data from " + Cfg.GetNameForInspector()))
                         dataExplorer = new ICfgProperty(dataExplorer.tag, Cfg.Encode().CfgData);
                 }
 
-                if (icon.Enter.Click(comment))
+                if (Icon.Enter.Click(comment))
                     edited = ind;
             }
 
