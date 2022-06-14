@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using QuizCanners.Utils;
 using UnityEngine;
+using static QuizCanners.Inspect.pegi;
 using Object = UnityEngine.Object;
 
 // ReSharper disable InconsistentNaming
@@ -15,13 +17,46 @@ namespace QuizCanners.Inspect
 {
     public static partial class pegi
     {
-        public static StateToken Toggle_Enter (this TextLabel exitLabel, ref bool toggle) 
+        public static StateToken Toggle_Enter (this TextLabel exitLabel, ref bool toggle, bool hideTextWhenTrue = false) 
         {
-            exitLabel.ToggleIcon(ref toggle, hideTextWhenTrue: true);
-            if (toggle)
-                return exitLabel.IsEntered();
+            using (Context.IncrementDisposible(out bool canSkip))
+            {
+                if (canSkip)
+                    return StateToken.False;
 
-            return StateToken.False;
+                if (Context.IsEnteredCurrent)
+                {
+                    using (Styles.Background.ExitLabel.SetDisposible())
+                    {
+                        Icon.Exit.ClickUnFocus("{0} {1}".F(Icon.Exit.GetText(), exitLabel)).IgnoreChanges(LatestInteractionEvent.Exit).OnChanged(() => Context.IsEnteredCurrent = StateToken.False);
+                    }
+
+                    if (!hideTextWhenTrue)
+                    {
+                        exitLabel.style = Styles.ExitLabel;
+                        if (exitLabel.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit))
+                            Context.IsEnteredCurrent = StateToken.False;
+                    }
+                }
+                else
+                {
+                    if (toggle) 
+                    {
+                        exitLabel.style = Styles.EnterLabel;
+                        Icon.Enter.ClickUnFocus(exitLabel.label).IgnoreChanges(LatestInteractionEvent.Enter).OnChanged(() => Context.IsEnteredCurrent = StateToken.True);
+                    }
+
+                    exitLabel.ToggleIcon(ref toggle, hideTextWhenTrue: true);
+
+                    if (toggle) 
+                    {
+                        exitLabel.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter).OnChanged(() => Context.IsEnteredCurrent = StateToken.True);
+                    }
+                }
+
+                return Context.IsEnteredCurrent;
+
+            }
         }
 
 #       region Enter & Exit
@@ -126,6 +161,55 @@ namespace QuizCanners.Inspect
 
             return PegiEditorOnly.isFoldedOutOrEntered;
         }
+
+        public static ChangesToken Enter_Inspect(this TextLabel label, System.Action inspectFunction)
+        {
+            using (Context.IncrementDisposible(out bool canSkip))
+            {
+                if (canSkip)
+                    return ChangesToken.False;
+
+                var change = ChangeTrackStart();
+
+                Context.Internal_isEntered(label);
+
+                if (Context.IsEnteredCurrent)
+                {
+                    try
+                    {
+                        inspectFunction.Invoke();
+                    } catch (Exception ex) 
+                    {
+                        pegi.Write_Exception(ex);
+                    }
+                }
+
+                return change;
+            }
+        }
+
+        public static ChangesToken Conditionally_Enter_Inspect(this TextLabel label, bool canEnter, IPEGI val, bool showLabelIfTrue = true)
+        {
+            using (Context.IncrementDisposible(out bool canSkip))
+            {
+                if (canSkip)
+                    return ChangesToken.False;
+
+                if (!canEnter && Context.IsEnteredCurrent)
+                    Context.IsEnteredCurrent = StateToken.False;
+
+                if (val == null)
+                    label.label = "NULL ({0})".F(label.label);
+
+                if (Context.Internal_isConditionally_Entered(label, canEnter: canEnter, showLabelIfTrue: showLabelIfTrue))
+                {
+                    return val.Nested_Inspect();
+                }
+
+                return ChangesToken.False;
+            }
+        }
+
 
         public static ChangesToken Enter_Inspect(this TextLabel label, IPEGI val)
         {
@@ -320,10 +404,12 @@ namespace QuizCanners.Inspect
             }
             public static StateToken IsEntered(TextLabel txt, ref bool state, bool showLabelIfTrue = true) => IsEntered(Icon.Enter, txt, ref state, showLabelIfTrue);
 
+      
             public static ChangesToken ClickEnter_DirectlyToElement_Internal<K, V>(Dictionary<K, V> dic, ref int inspected)
             {
 
-                if ((inspected == -1 && dic.Count > 1) || dic.Count == 0) return ChangesToken.False;
+                if (dic.IsNullOrEmpty() || (inspected == -1 && dic.Count > 1)) 
+                    return ChangesToken.False;
 
                 int suggestedIndex = Mathf.Max(inspected, 0);
 
@@ -360,7 +446,8 @@ namespace QuizCanners.Inspect
             public static ChangesToken ClickEnter_DirectlyToElement_Internal<T>(List<T> list, ref int inspected)
             {
 
-                if ((inspected == -1 && list.Count > 1) || list.Count == 0) return ChangesToken.False;
+                if (list.IsNullOrEmpty() || (inspected == -1 && list.Count > 1)) 
+                    return ChangesToken.False;
 
                 int suggestedIndex = Mathf.Max(inspected, 0);
 
@@ -549,12 +636,6 @@ namespace QuizCanners.Inspect
 
                 if (!el.IsNullOrDestroyed_Obj())
                 {
-
-                    var nm = el as IGotReadOnlyName;
-
-                    if (nm != null)
-                        return "{0}: {1}".F(txt, nm.GetReadOnlyName());
-
                     var n = el as IGotName;
 
                     if (n != null)

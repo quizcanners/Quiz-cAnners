@@ -19,8 +19,6 @@ namespace QuizCanners.Inspect
 
     public interface IPEGI_ListInspect { void InspectInList(ref int edited, int index); }
 
-    public interface IGotReadOnlyName { string GetReadOnlyName(); }
-
     public interface IGotName { string NameForInspector { get; set; } }
 
     public interface IGotIndex { int IndexForInspector { get; set; } }
@@ -38,13 +36,31 @@ namespace QuizCanners.Inspect
     public static partial class pegi
     {
         private const int PLAYTIME_GUI_WIDTH = 400;
-        internal static bool globChanged; // Some times user can change temporary fields, like delayed Edits
+
+        private static bool _globChanged = false;
+
+        internal static bool globChanged 
+        {
+            get => _globChanged;
+            set 
+            {
+                // Debug Inspector
+                /* 
+                if (value && !_globChanged)
+                    Debug.Log("Glob Changed to true");*/
+
+                _globChanged = value;
+            }
+        }
+        
+        // Some times user can change temporary fields, like delayed Edits
         internal static int _elementIndex;
         internal static int selectedFold = -1;
         internal static bool _horizontalStarted;
         private static readonly Color AttentionColor = new Color(1f, 0.7f, 0.7f, 1);
         private static readonly Color PreviousInspectedColor = new Color(0.3f, 0.7f, 0.3f, 1);
         private static readonly List<Color> _previousBgColors = new List<Color>();
+        private static readonly List<Color> _previousGuiColors = new List<Color>();
 
         public static bool IsFoldedOut => PegiEditorOnly.isFoldedOutOrEntered;
         public static string EnvironmentNl => Environment.NewLine;
@@ -86,17 +102,7 @@ namespace QuizCanners.Inspect
 
         #region Inspection Variables
 
-        #region GUI Colors
-        private static Icon GUIColor(this Icon icn, Color col)
-        {
-            SetGUIColor(col);
-            return icn;
-        }
-        private static void SetGUIColor(this Color col)
-        {
-            GUI.color = col;
-        }
-        #endregion
+
 
         #region BG Color
 
@@ -110,10 +116,25 @@ namespace QuizCanners.Inspect
             }
         }
 
+        public static void SetPreviousGuiColor()
+        {
+            if (_previousGuiColors.Count>0)
+            {
+                GUI.color = _previousGuiColors.RemoveLast();
+            }
+        }
+
         public static void SetBgColor(Color col)
         {
-            _previousBgColors.Add(GUI.backgroundColor);
+           _previousBgColors.Add(GUI.backgroundColor);
             GUI.backgroundColor = col;
+        }
+
+        public static IDisposable SetGuiColorDisposable(Color col) 
+        {
+            _previousGuiColors.Add(GUI.color);
+            GUI.color = col;
+            return QcSharp.DisposableAction(SetPreviousGuiColor);
         }
 
         public static IDisposable SetBgColorDisposable(Color col)
@@ -204,7 +225,7 @@ namespace QuizCanners.Inspect
             return msg;
         }
 
-        public static void space()
+        public static void Space()
         {
 
 #if UNITY_EDITOR
@@ -452,12 +473,14 @@ namespace QuizCanners.Inspect
             return value;
         }
 
-        public static void Nl(this IPegiText value)
+        public static void Nl(this TextLabel value)
         {
             Write(value);
             Nl();
         }
 
+        public static void Nl(this TextToken value) => Nl();
+        
         public static void Nl(this Icon icon, int size = defaultButtonSize)
         {
             icon.Draw(size);

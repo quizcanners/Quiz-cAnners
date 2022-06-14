@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace QuizCanners.Utils
 {
-    public abstract class SerializableDictionaryForTaggedTypesEnum<T> : Dictionary<string, T>, ISerializationCallbackReceiver, IPEGI, IGotReadOnlyName where T : IGotClassTag
+    public abstract class SerializableDictionaryForTaggedTypesEnum<T> : Dictionary<string, T>, ISerializationCallbackReceiver, IPEGI where T : IGotClassTag
     {
         protected enum SerializationMode { Json = 0, ICfg = 1 }
 
@@ -152,7 +152,7 @@ namespace QuizCanners.Utils
         private string _selectedTag = "_";
         public void Inspect()
         {
-            GetReadOnlyName().PegiLabel().Edit_Dictionary(this, ref _inspected).Nl();
+            ToString().PegiLabel().Edit_Dictionary(this, ref _inspected).Nl();
 
             if (_inspected == -1) 
             {
@@ -172,7 +172,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        public virtual string GetReadOnlyName()
+        public override string ToString()
         {
             var tmp = typeof(T).ToString();
 

@@ -5,6 +5,8 @@ using UnityEngine;
 
 using Graphic = UnityEngine.UI.Graphic;
 using Object = UnityEngine.Object;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 #if UNITY_EDITOR
 using  UnityEditor;
@@ -207,11 +209,10 @@ namespace QuizCanners.Utils {
 
         public static double TimeSinceStartup() =>
 #if UNITY_EDITOR
-            (!Application.isPlaying)
-                ? EditorApplication.timeSinceStartup
-                :
+            EditorApplication.timeSinceStartup;
+#else
+            Time.realtimeSinceStartup;
 #endif
-                Time.realtimeSinceStartup;
 
         #endregion
 
@@ -239,39 +240,44 @@ namespace QuizCanners.Utils {
 
         private static readonly Dictionary<Camera, Dictionary<Vector3, bool>> s_camsCulling = new Dictionary<Camera, Dictionary<Vector3, bool>>();
 
-        public static bool IsInCameraViewArea(this Camera cam, Vector3 worldPosition, float size = 1)
+        public static bool IsInCameraViewArea(this Camera cam, Vector3 worldPosition, float objectSize = 1, float maxDistance = -1)
         {
             if (_cameraCullingCache.TryEnter()) 
             {
                 s_camsCulling.Clear();
             }
 
-            var dic = s_camsCulling.GetOrCreate(cam);
-
-            if (dic.TryGetValue(worldPosition, out var resul))
-                return resul;
-
             if (cam)
             {
-                if (Vector3.Distance(cam.transform.position, worldPosition) < size) 
+                float distanceToCamera = Vector3.Distance(cam.transform.position + cam.transform.forward * cam.nearClipPlane, worldPosition);
+
+                if (distanceToCamera < objectSize)
                 {
-                    dic[worldPosition] = true;
                     return true;
                 }
+
+                if (maxDistance > 0 && distanceToCamera > maxDistance)
+                {
+                    return false;
+                }    
+
+                var dic = s_camsCulling.GetOrCreate(cam);
+
+                if (dic.TryGetValue(worldPosition, out var resul))
+                    return resul;
 
                 var pos = cam.WorldToViewportPoint(worldPosition);
 
-                if (pos.x >= 0 && pos.x <= 1 && pos.y >= 0 && pos.y <= 1)
-                {
-                    dic[worldPosition] = true;
-                    return true;
-                }
+                bool isVisible = (pos.x >= 0 && pos.x <= 1 && pos.y >= 0 && pos.y <= 1);
+                
+                dic[worldPosition] = isVisible;
+                return isVisible;
+               
             } else 
             {
                 QcLog.ChillLogger.LogErrorOnce(()=> "Camera is null", key: "NoCam");
             }
 
-            dic[worldPosition] = false;
             return false;
         }
 
@@ -537,6 +543,47 @@ namespace QuizCanners.Utils {
 
         #region Components & GameObjects
 
+        public static T AddOrCopyComponent<T>(this GameObject go, GameObject originalParent) where T : Component 
+        {
+            if (!originalParent)
+                return null;
+
+            return go.AddOrCopyComponent(originalParent.GetComponent<T>());
+        }
+
+        public static T AddOrCopyComponent<T>(this GameObject go, T original) where T : Component
+        {
+            if (!original)
+                return null;
+
+            T comp = go.GetComponent<T>();
+                
+            if (!comp) 
+            {
+                comp = go.AddComponent<T>();
+            }
+
+            BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Default | BindingFlags.DeclaredOnly;
+            PropertyInfo[] pinfos = typeof(T).GetProperties(flags);
+            foreach (var pinfo in pinfos)
+            {
+                if (pinfo.CanWrite)
+                {
+                    try
+                    {
+                        pinfo.SetValue(comp, pinfo.GetValue(original, null), null);
+                    }
+                    catch { } // In case of NotImplementedException being thrown. For some reason specifying that exception didn't seem to catch it, so I didn't catch anything specific.
+                }
+            }
+            FieldInfo[] finfos = typeof(T).GetFields(flags);
+            foreach (var finfo in finfos)
+            {
+                finfo.SetValue(comp, finfo.GetValue(original));
+            }
+            return comp;
+        }
+        
         public static void SetActive_List<T>(this List<T> list, bool to) where T : Component {
             if (!list.IsNullOrEmpty())
                 foreach (var e in list)
@@ -583,10 +630,13 @@ namespace QuizCanners.Utils {
 
         public static bool IsNullOrDestroyed_Obj(object obj)
         {
-            if (obj as Object)
-                return false;
+            if (obj == null)
+                return true;
 
-            return obj == null;
+            if (typeof(Object).IsAssignableFrom(obj.GetType()))
+                return !(obj as Object);
+
+             return false;
         }
 
         public static bool TrySetEnabled(this Behaviour component, bool value)
@@ -634,6 +684,20 @@ namespace QuizCanners.Utils {
         public static void DestroyWhatever(this Texture tex) => tex.DestroyWhateverUnityObject();
 
         public static void DestroyWhatever(this GameObject go) => go.DestroyWhateverUnityObject();
+
+        public static void DestroyAndClear<T>(this List<T> gos) where T : Component
+        {
+            if (gos.IsNullOrEmpty())
+                return;
+
+            foreach (var go in gos)
+            {
+                if (go)
+                    go.gameObject.DestroyWhatever();
+            }
+
+            gos.Clear();
+        }
 
         public static void DestroyWhateverComponent(this Component cmp) => cmp.DestroyWhateverUnityObject();
 
@@ -1209,14 +1273,16 @@ namespace QuizCanners.Utils {
             while (go.transform.parent)
                 go = go.transform.parent.gameObject;
 
-            //return PrefabUtility.GetPrefabParent(go) != null && PrefabUtility.GetPrefabObject(go) != null;
-
-            if (PrefabUtility.IsPartOfAnyPrefab(go)  || (UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() != null)
-                )
+#       if UNITY_2021_1_OR_NEWER
+            if (PrefabUtility.IsPartOfAnyPrefab(go)  
+                || (UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() != null))
                 return true;
-            else
+#       else
+            return PrefabUtility.GetCorrespondingObjectFromSource(go) && PrefabUtility.GetPrefabInstanceHandle(go);
+#       endif
+
 #endif
-                return false;
+            return false;
         }
 
         public static string SetUniqueObjectName(Object obj, string folderName, string extension)
@@ -1314,11 +1380,16 @@ namespace QuizCanners.Utils {
 
         public static int NumericKeyDown(this Event e)  {
 
-            if (Application.isPlaying && (!Input.anyKeyDown)) return -1;
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (Application.isPlaying && (!Input.anyKeyDown)) 
+                return -1;
+#endif
 
             if (!Application.isPlaying && (e.type != UnityEngine.EventType.KeyDown)) return -1;
 
-            if (Application.isPlaying) {
+            if (Application.isPlaying) 
+            {
+#if ENABLE_LEGACY_INPUT_MANAGER
                 if (Input.GetKeyDown(KeyCode.Alpha0)) return 0;
                 if (Input.GetKeyDown(KeyCode.Alpha1)) return 1;
                 if (Input.GetKeyDown(KeyCode.Alpha2)) return 2;
@@ -1329,6 +1400,7 @@ namespace QuizCanners.Utils {
                 if (Input.GetKeyDown(KeyCode.Alpha7)) return 7;
                 if (Input.GetKeyDown(KeyCode.Alpha8)) return 8;
                 if (Input.GetKeyDown(KeyCode.Alpha9)) return 9;
+#endif
             }
             else
             {
@@ -1347,9 +1419,11 @@ namespace QuizCanners.Utils {
         public static bool IsDown(this KeyCode k)
         {
             var down = k.EventType(UnityEngine.EventType.KeyDown);
-         
+
+#if ENABLE_LEGACY_INPUT_MANAGER
             if (Application.isPlaying)
                 down |= Input.GetKeyDown(k);
+#endif
 
             return down;
         }
@@ -1358,8 +1432,10 @@ namespace QuizCanners.Utils {
 
             var up = k.EventType(UnityEngine.EventType.KeyUp);
 
+#if ENABLE_LEGACY_INPUT_MANAGER
             if (Application.isPlaying)
                 up |= Input.GetKeyUp(k);
+#endif
 
             return up;
         }
@@ -1702,8 +1778,6 @@ namespace QuizCanners.Utils {
 
             var needsReimport = false;
 
-
-
             if (importer.isReadable == false)
             {
                 importer.isReadable = true;
@@ -1797,20 +1871,20 @@ namespace QuizCanners.Utils {
 
             var importer = tex.GetTextureImporter_Editor();
 
-            if ((importer != null) && (importer.WasAlphaNotTransparency_Editor()))
+            if ((importer != null) && (importer.WasWrongAlphaIsTransparency_Editor()))
                 importer.SaveAndReimport();
 
 
         }
 
-        public static bool WasAlphaNotTransparency_Editor(this TextureImporter importer)
+        public static bool WasWrongAlphaIsTransparency_Editor(this TextureImporter importer, bool isTransparency = true)
         {
 
             var needsReimport = false;
 
-            if (importer.alphaIsTransparency == false)
+            if (importer.alphaIsTransparency != isTransparency)
             {
-                importer.alphaIsTransparency = true;
+                importer.alphaIsTransparency = isTransparency;
                 needsReimport = true;
             }
 
@@ -1820,7 +1894,7 @@ namespace QuizCanners.Utils {
                 needsReimport = true;
             }
 
-            if (importer.alphaSource != TextureImporterAlphaSource.FromInput)
+            if (isTransparency && importer.alphaSource != TextureImporterAlphaSource.FromInput)
             {
                 importer.alphaSource = TextureImporterAlphaSource.FromInput;
                 needsReimport = true;
@@ -1857,11 +1931,22 @@ namespace QuizCanners.Utils {
         }
 
 
+        public static bool WasWrong_TextureImporterType(this TextureImporter importer, TextureImporterType targetType)
+        {
+            if (importer.textureType != targetType)
+            {
+                importer.textureType = targetType;
+                return true;
+            }
+
+            return false;
+        }
+
 #endif
 
-#endregion
+        #endregion
 
-#region Texture Saving
+        #region Texture Saving
 
         private static string GetPathWithout_Assets_Word(Object tex)
         {
@@ -1878,23 +1963,30 @@ namespace QuizCanners.Utils {
         {
             var bytes = tex.EncodeToPNG();
 
-            var dest = AssetDatabase.GetAssetPath(tex).Replace("Assets", "");
+            var dest = QcSharp.ReplaceFirst(AssetDatabase.GetAssetPath(tex),"Assets", "");
 
             File.WriteAllBytes(Application.dataPath + dest, bytes);
 
             AssetDatabase.Refresh();
         }
 
-        public static Texture2D RewriteOriginalTexture_NewName(Texture2D tex, string name)
+        public static bool TrySaveTexture(ref Texture2D tex, string name)
         {
             if (name == tex.name)
-                return QcUnity.RewriteOriginalTexture(tex);
+            {
+                return TrySaveTexture(ref tex);
+            }
 
             var bytes = tex.EncodeToPNG();
 
             var dest = GetPathWithout_Assets_Word(tex);
             dest = ReplaceLastOccurrence(dest, tex.name, name);
-            if (string.IsNullOrEmpty(dest)) return tex;
+
+            if (string.IsNullOrEmpty(dest))
+            {
+                Debug.LogError("{0} doesn't gave an Asset Path".F(tex));
+                return false;
+            }
 
             File.WriteAllBytes(Application.dataPath + dest, bytes);
 
@@ -1908,35 +2000,44 @@ namespace QuizCanners.Utils {
 
             AssetDatabase.Refresh();
 
-            return result;
+            tex = result;
+
+            return true;
         }
 
-        public static Texture2D RewriteOriginalTexture(Texture2D tex)
+        public static bool TrySaveTexture(ref Texture2D tex)
         {
+            if (!tex)
+            {
+                Debug.LogError("Texture is NULL. Can't save.");
+            }
 
             var dest = GetPathWithout_Assets_Word(tex);
+
             if (dest.IsNullOrEmpty())
-                return tex;
+            {
+                Debug.LogError("Destination path for {0} is Empty".F(tex.ToString()));
+                return false;
+            }
 
             var bytes = tex.EncodeToPNG();
 
-            File.WriteAllBytes(Application.dataPath + dest, bytes);
+            File.WriteAllBytes(Path.Combine(Application.dataPath, dest), bytes);
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceUncompressedImport);
 
-            var result = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets" + dest, typeof(Texture2D));
+            var result = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/" + dest, typeof(Texture2D));
 
             result.CopyImportSettingFrom(tex);
 
-            return result;
+            tex = result;
+
+            return true;
         }
 
-        public static Texture2D SaveTextureAsAsset(Texture2D tex, string folderName, ref string textureName,
-            bool saveAsNew)
+        public static Texture2D SaveTextureAsAsset(Texture2D tex, string folderName, ref string textureName, bool saveAsNew)
         {
-
             var bytes = tex.EncodeToPNG();
-
 
             var folderPath = Path.Combine(Application.dataPath, folderName);
             Directory.CreateDirectory(folderPath);
@@ -1966,13 +2067,13 @@ namespace QuizCanners.Utils {
             return result;
         }
 
-        public static Texture2D CreatePngSameDirectory( Texture2D diffuse, string newName) =>
+        public static Texture2D CreatePngSameDirectory(Texture2D diffuse, string newName) =>
             CreatePngSameDirectory(diffuse, newName, diffuse.width, diffuse.height);
 
         public static Texture2D CreatePngSameDirectory(Texture2D diffuse, string newName, int width, int height)
         {
-
-            if (!diffuse) return null;
+            if (!diffuse) 
+                return null;
 
             var result = new Texture2D(width, height, TextureFormat.RGBA32, true, false);
 
@@ -1982,10 +2083,9 @@ namespace QuizCanners.Utils {
             pixels[0].a = 128;
 
             result.SetPixels32(pixels);
-
             var bytes = result.EncodeToPNG();
 
-            var dest = AssetDatabase.GetAssetPath(diffuse).Replace("Assets", "");
+            var dest = QcSharp.ReplaceFirst(text: AssetDatabase.GetAssetPath(diffuse), search: "Assets", replace: ""); // AssetDatabase.GetAssetPath(diffuse).Replace("Assets", "", 1);// AssetDatabase.GetAssetPath(diffuse).Replace("Assets", "");
 
             var extension = dest.Substring(dest.LastIndexOf(".", StringComparison.Ordinal) + 1);
 
@@ -2061,6 +2161,38 @@ namespace QuizCanners.Utils {
 #endregion
 
         #region Meshes
+
+        public static float CalculateVolume(this Mesh mesh) 
+        {
+            float volume = 0;
+
+            Vector3[] vertices = mesh.vertices;
+            int[] triangles = mesh.triangles;
+
+            for (int i = 0; i < triangles.Length; i += 3)
+            {
+                Vector3 p1 = vertices[triangles[i + 0]];
+                Vector3 p2 = vertices[triangles[i + 1]];
+                Vector3 p3 = vertices[triangles[i + 2]];
+                volume += SignedVolumeOfTriangle(p1, p2, p3);
+            }
+
+            return Mathf.Abs(volume);
+        }
+
+        public static float SignedVolumeOfTriangle(Vector3 p1, Vector3 p2, Vector3 p3)
+        {
+            float v321 = p3.x * p2.y * p1.z;
+            float v231 = p2.x * p3.y * p1.z;
+            float v312 = p3.x * p1.y * p2.z;
+            float v132 = p1.x * p3.y * p2.z;
+            float v213 = p2.x * p1.y * p3.z;
+            float v123 = p1.x * p2.y * p3.z;
+
+            return (1.0f / 6.0f) * (-v321 + v231 + v312 - v132 - v213 + v123);
+        }
+
+
 
         public static void SetColor(this MeshFilter mf, Color col) {
 

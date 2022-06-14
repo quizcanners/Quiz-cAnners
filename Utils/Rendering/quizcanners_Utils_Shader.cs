@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using QuizCanners.Inspect;
 using UnityEngine;
 using QuizCanners.Migration;
-using static QuizCanners.Utils.QcUtils;
 
 namespace QuizCanners.Utils 
 {
-    public static class ShaderProperty {
-
+    public static class ShaderProperty 
+    {
         #region Base Abstract
 
-        public abstract class BaseShaderPropertyIndex : ICfg, IGotReadOnlyName, IPEGI_ListInspect, IPEGI
+        public abstract class BaseShaderPropertyIndex : ICfg, IPEGI_ListInspect, IPEGI
         {
             protected int id;
             protected string name;
@@ -26,59 +25,45 @@ namespace QuizCanners.Utils
             }
 
             public override int GetHashCode() => id;
-            
             private void UpdateIndex() => id = Shader.PropertyToID(name);
 
             public override string ToString() => name;
 
-            public abstract void SetOn(Material mat);
+            public abstract void SetLatestValueOn(Material mat);
+            public abstract void SetLatestValueOn(MaterialPropertyBlock block);
 
-            public abstract void SetOn(MaterialPropertyBlock block);
-
-            public Renderer SetOn(Renderer renderer, MaterialPropertyBlock block, int materialIndex = 0)
+            public Renderer SetLatestValueOn(Renderer renderer, MaterialPropertyBlock block, int materialIndex = 0)
             {
                 renderer.GetPropertyBlock(block, materialIndex);
-                SetOn(block);
+                SetLatestValueOn(block);
                 renderer.SetPropertyBlock(block, materialIndex);
                 return renderer;
             }
 
             #region Inspector
-            public string GetReadOnlyName()=> name;
             
-            public virtual void InspectInList(ref int edited, int ind)
-            {
+            public virtual void InspectInList(ref int edited, int ind) =>
                 name.PegiLabel(toolTip: "Id: {0}".F(id), width: 90).Write_ForCopy();
-            }
-
-            public virtual void Inspect()
-            {
+            
+            public virtual void Inspect()=>
                 name.PegiLabel().Write_ForCopy();
-            }
-
             #endregion
 
             #region Encode & Decode
             public virtual CfgEncoder Encode() => new CfgEncoder()
-                .Add_String("n", name)
-                //.Add_IfTrue("nm", nonMaterialProperty)
-            ;
+                .Add_String("n", name) ;
             
             public virtual void DecodeTag(string key, CfgData data)
             {
                 switch (key)
                 {
                     case "n":  name = data.ToString(); UpdateIndex();  break;
-                   // case "nm": nonMaterialProperty = data.ToBool();  break;
                 }
             }
             #endregion
 
             #region Constructors
-            protected BaseShaderPropertyIndex()
-            {
-            }
-
+            protected BaseShaderPropertyIndex() { }
             protected BaseShaderPropertyIndex(string name)
             {
                 this.name = name;
@@ -100,7 +85,6 @@ namespace QuizCanners.Utils
             protected bool globalValueSet;
 
             public abstract T Get(Material mat);
-
             public abstract T Get(MaterialPropertyBlock block);
 
             protected abstract T GlobalValue_Internal { get; set; }
@@ -114,7 +98,6 @@ namespace QuizCanners.Utils
                     GlobalValue_Internal = value;
                     globalValueSet = true;
                 }
-
             }
 
             public virtual Material SetOn(Material material, T value)
@@ -122,7 +105,7 @@ namespace QuizCanners.Utils
                 latestValue = value;
 
                 if (material)
-                    SetOn(material);
+                    SetLatestValueOn(material);
 
                 return material;
             }
@@ -130,20 +113,18 @@ namespace QuizCanners.Utils
             public virtual Renderer SetOn(Renderer renderer, MaterialPropertyBlock block,  T value)
             {
                 latestValue = value;
-                SetOn(renderer, block);
+                SetLatestValueOn(renderer, block);
                 return renderer;
             }
 
             public virtual void SetOn(MaterialPropertyBlock block, T value)
             {
                 latestValue = value;
-                SetOn(block);
+                SetLatestValueOn(block);
             }
 
             public void SetGlobal() => GlobalValue = latestValue;
-
             public void SetGlobal(T value) => GlobalValue = value;
-
             public T GetGlobal() => GlobalValue;
 
             #region Inspector
@@ -164,14 +145,8 @@ namespace QuizCanners.Utils
 
             #endregion
 
-            protected IndexGeneric()
-            {
-            }
-
-            protected IndexGeneric(string name) : base(name)
-            {
-            }
-
+            protected IndexGeneric() { }
+            protected IndexGeneric(string name) : base(name) {}
         }
 
         public abstract class IndexWithShaderFeatureGeneric<T> : IndexGeneric<T> {
@@ -182,7 +157,8 @@ namespace QuizCanners.Utils
             
             protected override T GlobalValue_Internal
             {
-                set {
+                set 
+                {
                     latestValue = value;
                     
                     if (_directiveGlobalValue == DirectiveEnabledForLastValue)
@@ -194,29 +170,24 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public override Material SetOn(Material material, T value) {
-
+            public override Material SetOn(Material material, T value) 
+            {
                 var ret =  base.SetOn(material, value);
-                
                 material.SetShaderKeyword(_featureDirective, DirectiveEnabledForLastValue);
-
                 return ret;
             }
 
             protected IndexWithShaderFeatureGeneric(string name, string featureDirective) : base(name)
             {
-
                 _featureDirective = featureDirective;
-
             }
 
             protected abstract bool DirectiveEnabledForLastValue { get; }
-
         }
 
         public static MaterialPropertyBlock Set<T>(this MaterialPropertyBlock block, IndexGeneric<T> property)
         {
-            property.SetOn(block);
+            property.SetLatestValueOn(block);
             return block;
         }
 
@@ -228,7 +199,7 @@ namespace QuizCanners.Utils
 
         public static Material Set<T>(this Material mat, IndexGeneric<T> property)
         {
-            property.SetOn(mat);
+            property.SetLatestValueOn(mat);
             return mat;
         }
 
@@ -244,28 +215,23 @@ namespace QuizCanners.Utils
         [Serializable]
         public class FloatValue : IndexGeneric<float> {
 
-            private bool _usingRange;
-            private float _min;
-            private float _max;
+            private readonly bool _usingRange;
+            private readonly float _min;
+            private readonly float _max;
 
-            public override void SetOn(Material material) => material.SetFloat(id, latestValue);
-
-            public override float Get(Material material) => material.GetFloat(id);
+            public override void SetLatestValueOn(Material material) => material.SetFloat(id, latestValue);
+            public override float Get(Material material) => material ? material.GetFloat(id) : latestValue;
             public override float Get(MaterialPropertyBlock block) => block.GetFloat(id);
-
-            public override void SetOn(MaterialPropertyBlock block) => block.SetFloat(id, latestValue);
+            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetFloat(id, latestValue);
 
             protected override float GlobalValue_Internal
             {
-                get { return Shader.GetGlobalFloat(id); }
-                set{ Shader.SetGlobalFloat(id, value); }
+                get => Shader.GetGlobalFloat(id);
+                set => Shader.SetGlobalFloat(id, value);
             }
 
-            public override void InspectInList(ref int edited, int ind)
-            {
-                InspectValue();
-            }
-
+            public override void InspectInList(ref int edited, int ind) => InspectValue();
+            
             public override void Inspect()
             {
                 base.Inspect();
@@ -284,13 +250,9 @@ namespace QuizCanners.Utils
               });
             
 
-            public FloatValue()
-            {
-            }
+            public FloatValue() {}
 
-            public FloatValue(string name) : base(name)
-            {
-            }
+            public FloatValue(string name) : base(name) {}
 
             public FloatValue(string name, float min, float max) : base(name)
             {
@@ -302,17 +264,14 @@ namespace QuizCanners.Utils
 
         public class FloatFeature : IndexWithShaderFeatureGeneric<float>
         {
-
-            public override void SetOn(Material material) => material.SetFloat(id, latestValue);
-
+            public override void SetLatestValueOn(Material material) => material.SetFloat(id, latestValue);
             public override float Get(Material material) => material.GetFloat(id);
             public override float Get(MaterialPropertyBlock block) => block.GetFloat(id);
-
-            public override void SetOn(MaterialPropertyBlock block) => block.SetFloat(id, latestValue);
+            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetFloat(id, latestValue);
 
             protected override float GlobalValue_Internal
             {
-                get { return Shader.GetGlobalFloat(id); }
+                get => Shader.GetGlobalFloat(id);
                 set
                 {
                     base.GlobalValue_Internal = value;
@@ -322,11 +281,68 @@ namespace QuizCanners.Utils
 
             protected override bool DirectiveEnabledForLastValue => latestValue > float.Epsilon * 10;
 
-            public override void InspectInList(ref int edited, int ind)
+            public override void InspectInList(ref int edited, int ind) => InspectValue();
+            public override void Inspect()
             {
-                InspectValue();
+                base.Inspect();
+                pegi.Nl();
+                InspectValue().Nl();
             }
 
+            private pegi.ChangesToken InspectValue()
+            {
+                var changes = pegi.ChangeTrackStart();
+
+                if (globalValueSet == false)
+                    Icon.InActive.Draw("Global value not set");
+
+                bool useDefine = latestValue > 0;
+                if (pegi.ToggleIcon(ref useDefine))
+                {
+                    latestValue = useDefine ? 1 : 0;
+                    if (globalValueSet)
+                        GlobalValue = latestValue;
+                }
+
+                name.PegiLabel(0.25f).Edit_01(ref latestValue).OnChanged(() =>
+                {
+                    if (globalValueSet)
+                        GlobalValue = latestValue;
+                });
+
+                return changes;
+            }
+
+            public FloatFeature(string name, string featureDirective) : base(name, featureDirective) { }
+        }
+
+        #endregion
+
+        #region Int
+
+#if UNITY_2021_1_OR_NEWER 
+
+        [Serializable]
+        public class IntValue : IndexGeneric<int>
+        {
+            private readonly bool _usingRange;
+            private readonly int _min;
+            private readonly int _max;
+
+            public override void SetLatestValueOn(Material material) => material.SetInteger(id, latestValue);
+
+            public override int Get(Material material) => material.GetInteger(id);
+            public override int Get(MaterialPropertyBlock block) => block.GetInteger(id);
+            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetInteger(id, latestValue);
+
+            protected override int GlobalValue_Internal
+            {
+                get => Shader.GetGlobalInteger(id);
+                set => Shader.SetGlobalInteger(id, value); 
+            }
+
+            public override void InspectInList(ref int edited, int ind) =>  InspectValue();
+            
             public override void Inspect()
             {
                 base.Inspect();
@@ -335,16 +351,31 @@ namespace QuizCanners.Utils
             }
 
             private pegi.ChangesToken InspectValue() =>
-                name.PegiLabel(0.25f).Edit_01(ref latestValue).OnChanged(() =>
-                {
-                    if (globalValueSet)
-                        GlobalValue = latestValue;
-                });
+                (_usingRange ?
+                    name.PegiLabel(0.25f).Edit(ref latestValue, minInclusiven: _min, maxInclusive: _max) :
+                    name.PegiLabel(0.25f).Edit(ref latestValue))
+              .OnChanged(() =>
+              {
+                  if (globalValueSet)
+                      GlobalValue = latestValue;
+              });
 
-            public FloatFeature(string name, string featureDirective) : base(name, featureDirective) { }
+
+            public IntValue(){}
+
+            public IntValue(string name) : base(name){}
+
+            public IntValue(string name, int min, int max) : base(name)
+            {
+                _usingRange = true;
+                _min = min;
+                _max = max;
+            }
         }
 
-        #endregion
+#endif
+
+#endregion
 
         #region Color
 
@@ -352,17 +383,14 @@ namespace QuizCanners.Utils
 
             public static readonly ColorFloat4Value tintColor = new ColorFloat4Value("_TintColor");
 
-            public override void SetOn(Material material) => material.SetColor(id, latestValue);
-            
+            public override void SetLatestValueOn(Material material) => material.SetColor(id, latestValue);
             public override Color Get(Material material) => material.GetColor(id);
-
             public override Color Get(MaterialPropertyBlock material) => material.GetColor(id);
-
-            public override void SetOn(MaterialPropertyBlock block) => block.SetColor(id, latestValue);
+            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetColor(id, latestValue);
             
             protected override Color GlobalValue_Internal
             {
-                get { return Shader.GetGlobalColor(id); }
+                get => Shader.GetGlobalColor(id);
                 set {
                     base.GlobalValue_Internal = value;
                     Shader.SetGlobalColor(id, value);
@@ -373,9 +401,7 @@ namespace QuizCanners.Utils
 
             public override void Inspect()
             {
-
-                GetReadOnlyName().PegiLabel().Write(); 
-
+                ToString().PegiLabel().Write(); 
                 (DirectiveEnabledForLastValue ? Icon.Active: Icon.InActive).Nl();
                 
                 if (pegi.Edit(ref latestValue).Nl())
@@ -410,12 +436,11 @@ namespace QuizCanners.Utils
 
             private Color ConvertedColor => ConvertToLinear ? latestValue.linear : latestValue;
 
-            public override void SetOn(Material material) => material.SetColor(id, ConvertedColor);
+            public override void SetLatestValueOn(Material material) => material.SetColor(id, ConvertedColor);
 
             public override Color Get(Material material) => material.GetColor(id);
             public override Color Get(MaterialPropertyBlock block) => block.GetColor(id);
-
-            public override void SetOn(MaterialPropertyBlock block) => block.SetColor(id, ConvertedColor);
+            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetColor(id, ConvertedColor);
 
             protected override Color GlobalValue_Internal
             {
@@ -461,7 +486,6 @@ namespace QuizCanners.Utils
             {
                 latestValue = startingColor;
             }
-
         }
 
         #endregion
@@ -470,23 +494,18 @@ namespace QuizCanners.Utils
 
         public class VectorValue : IndexGeneric<Vector4>
         {
-
-            public override void SetOn(Material material) => material.SetVector(id, latestValue);
-
-            public override void SetOn(MaterialPropertyBlock block) => block.SetVector(id, latestValue);
+            public override void SetLatestValueOn(Material material) => material.SetVector(id, latestValue);
+            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetVector(id, latestValue);
             public override Vector4 Get(MaterialPropertyBlock block) => block.GetVector(id);
             public override Vector4 Get(Material mat) => mat.GetVector(id);
 
             protected override Vector4 GlobalValue_Internal
             {
-                get { return Shader.GetGlobalVector(id); }
-                set { Shader.SetGlobalVector(id, value); }
+                get => Shader.GetGlobalVector(id);
+                set => Shader.SetGlobalVector(id, value);
             }
 
-            public override void InspectInList(ref int edited, int ind)
-            {
-                InspectValue();
-            }
+            public override void InspectInList(ref int edited, int ind) => InspectValue();
 
             public override void Inspect()
             {
@@ -506,15 +525,13 @@ namespace QuizCanners.Utils
                 });
             }
 
+            public void SetGlobal(float x) => SetGlobal(new Vector4(x, 0));
+            public void SetGlobal(float x, float y) => SetGlobal(new Vector4(x, y));
+            public void SetGlobal(float x, float y, float z) => SetGlobal(new Vector4(x, y, z));
+            public void SetGlobal(float x, float y, float z, float w) => SetGlobal(new Vector4(x, y, z, w));
 
-            public VectorValue()
-            {
-            }
-
-            public VectorValue(string name) : base(name)
-            {
-            }
-
+            public VectorValue() { }
+            public VectorValue(string name) : base(name) { }
         }
 
         #endregion
@@ -523,26 +540,21 @@ namespace QuizCanners.Utils
 
         public class MatrixValue : IndexGeneric<Matrix4x4>
         {
-            public override void SetOn(Material material) => material.SetMatrix(id, latestValue);
-
-            public override void SetOn(MaterialPropertyBlock block) => block.SetMatrix(id, latestValue);
+            public override void SetLatestValueOn(Material material) => material.SetMatrix(id, latestValue);
+            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetMatrix(id, latestValue);
 
             public override Matrix4x4 Get(Material mat) => mat.GetMatrix(id);
             public override Matrix4x4 Get(MaterialPropertyBlock block) => block.GetMatrix(id);
 
             protected override Matrix4x4 GlobalValue_Internal
             {
-                get { return Shader.GetGlobalMatrix(id); }
-                set { Shader.SetGlobalMatrix(id, value); }
+                get => Shader.GetGlobalMatrix(id);
+                set => Shader.SetGlobalMatrix(id, value);
             }
             
-            public MatrixValue()
-            {
-            }
+            public MatrixValue() { }
 
-            public MatrixValue(string name) : base(name)
-            {
-            }
+            public MatrixValue(string name) : base(name) { }
         }
 
         #endregion
@@ -555,21 +567,18 @@ namespace QuizCanners.Utils
 
             public override Texture Get(Material mat) => mat.GetTexture(id);
             public override Texture Get(MaterialPropertyBlock block) => block.GetTexture(id);
-
-            public override void SetOn(Material material) => material.SetTexture(id, latestValue);
-
-            public override void SetOn(MaterialPropertyBlock block) => block.SetTexture(id, latestValue);
+            public override void SetLatestValueOn(Material material) => material.SetTexture(id, latestValue);
+            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetTexture(id, latestValue);
 
             protected override Texture GlobalValue_Internal
             {
-                get { return Shader.GetGlobalTexture(id); }
+                get => Shader.GetGlobalTexture(id);
                 set
                 {
                     Shader.SetGlobalTexture(id, value);
 
                     if (_screenFillAspect!=null)
                         Set_ScreenFillAspect();
-
                 }
             }
 
@@ -580,7 +589,8 @@ namespace QuizCanners.Utils
 
             public TextureValue AddUsageTag(string value)
             {
-                if (!_usageTags.Contains(value)) _usageTags.Add(value);
+                if (!_usageTags.Contains(value)) 
+                    _usageTags.Add(value);
                 return this;
             }
 
@@ -604,7 +614,7 @@ namespace QuizCanners.Utils
                     mat.SetTextureOffset(id, value);
             }
 
-            public void SetTiling(Material mat, Vector2 value)
+            public void SetScale(Material mat, Vector2 value)
             {
                 if (mat)
                     mat.SetTextureScale(id, value);
@@ -637,17 +647,13 @@ namespace QuizCanners.Utils
                 else
                     aspectCorrection.x = (screenAspect / texAspect);
 
-                
-
                 GetScreenFillAspect().GlobalValue = aspectCorrection;
             } 
 
             #endregion
 
             #region Constructors
-            public TextureValue()
-            {
-            }
+            public TextureValue() { }
 
             public TextureValue(string name, string tag, bool set_ScreenFillAspect = false) : base(name)
             {
@@ -701,7 +707,7 @@ namespace QuizCanners.Utils
             property.SetOffset(mat, value);
 
         public static void SetTiling(this Material mat, TextureValue property, Vector2 value) =>
-            property.SetTiling(mat, value);
+            property.SetScale(mat, value);
 
         public static List<TextureValue> MyGetTextureProperties_Editor(this Material m)
         {
@@ -779,14 +785,13 @@ namespace QuizCanners.Utils
             
             [SerializeField] private bool lastValue;
 
-            public bool Enabled {
-                get { return lastValue; }
+            public bool Enabled 
+            {
+                get => lastValue;
                 set { lastValue = value; QcUnity.SetShaderKeyword(_name, value); }
             }
 
-            public Feature(string name) {
-                _name = name;
-            }
+            public Feature(string name) {  _name = name; }
 
             public void Inspect()
             {
@@ -862,9 +867,9 @@ namespace QuizCanners.Utils
 
             public VectorArrayValue(string name) : base(name) {}
 
-            public override void SetOn(Material mat) => mat.SetVectorArray(id, _vectorArray);
+            public override void SetLatestValueOn(Material mat) => mat.SetVectorArray(id, _vectorArray);
 
-            public override void SetOn(MaterialPropertyBlock block) => block.SetVectorArray(id, _vectorArray);
+            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetVectorArray(id, _vectorArray);
         }
 
         #endregion
@@ -896,33 +901,26 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public ShaderName (string name) 
-            {
-                _name = name;
-            }
+            public ShaderName (string name) { _name = name; }
         }
-
     }
 
     #region Shader Tags
-    public class ShaderTag : IGotReadOnlyName
+    public class ShaderTag 
     {
         public readonly string tag;
-        public string GetReadOnlyName()=> tag;
+        public override string ToString() => tag;
         public bool Has(Material mat) => mat.HasTag(tag);
         public string Get(Material mat, bool searchFallBacks = false, string defaultValue = "") => mat.GetTag(tag, searchFallBacks, defaultValue);
 
         public string Get(Material mat, ShaderProperty.BaseShaderPropertyIndex property,
             bool searchFallBacks = false) =>
-            Get(mat, property.GetReadOnlyName(), searchFallBacks);
+            Get(mat, property.ToString(), searchFallBacks);
 
         public string Get(Material mat, string prefix, bool searchFallBacks = false) =>
             mat.GetTag(prefix + tag, searchFallBacks);
 
-        public ShaderTag(string nTag)
-        {
-            tag = nTag;
-        }
+        public ShaderTag(string nTag) { tag = nTag; }
 
         public List<Material> GetTaggedMaterialsFromAssets()
         {
@@ -936,13 +934,12 @@ namespace QuizCanners.Utils
 
             return mats;
         }
-
     }
 
-    public class ShaderTagValue : IGotReadOnlyName
+    public class ShaderTagValue 
     {
         private readonly ShaderTag tag;
-        public string GetReadOnlyName()=> value;
+        public override string ToString() => value;
         private readonly string value;
 
         public bool Has(Material mat, bool searchFallBacks = false) =>
@@ -960,10 +957,9 @@ namespace QuizCanners.Utils
         }
     }
 
-    public static class ShaderTags {
-        
+    public static class ShaderTags 
+    {
         public static readonly ShaderTag ShaderTip = new ShaderTag("ShaderTip");
-
         public static readonly ShaderTag Queue = new ShaderTag("Queue");
 
         public static class Queues 
@@ -1002,10 +998,12 @@ namespace QuizCanners.Utils
 
     
 #if UNITY_EDITOR
+
     [UnityEditor.CustomPropertyDrawer(typeof(ShaderProperty.TextureValue))]
     public class TextureValueDrawer : UnityEditor.PropertyDrawer
     {
-        public override void OnGUI(Rect pos, UnityEditor.SerializedProperty prop, GUIContent label) {
+        public override void OnGUI(Rect pos, UnityEditor.SerializedProperty prop, GUIContent label) 
+        {
             if (prop.Inspect("latestValue", pos, label))
                 prop.GetValue<ShaderProperty.TextureValue>().SetGlobal();
         }

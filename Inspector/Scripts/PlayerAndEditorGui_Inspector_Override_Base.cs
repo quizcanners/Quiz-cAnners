@@ -64,29 +64,11 @@ namespace QuizCanners.Inspect {
 #if !UNITY_EDITOR
      public abstract class PEGI_Inspector_Override { }
 #else
+
+  
+
     public abstract class PEGI_Inspector_Override : Editor
     {
-        public void OnSceneGUI()
-        {
-            var trg = target as IPEGI_Handles;
-
-            if (trg != null) 
-            {
-                pegi.IsDrawingHandles = true;
-                try
-                {
-                    trg.OnSceneDraw();
-                    if (GUI.changed)
-                        target.SetToDirty_Obj();
-                } catch (Exception ex) 
-                {
-                    Debug.LogException(ex);
-                }
-                pegi.IsDrawingHandles = false;
-            }
-        }
-
-
         public override void OnInspectorGUI()
         {
             PegiEditorOnly.ResetInspectionTarget(target);
@@ -114,6 +96,27 @@ namespace QuizCanners.Inspect {
             if (EditorGUI.EndChangeCheck())
             {
                 target.SetToDirty();
+            }
+        }
+
+        public void OnSceneGUI()
+        {
+            var trg = target as IPEGI_Handles;
+
+            if (trg != null)
+            {
+                pegi.IsDrawingHandles = true;
+                try
+                {
+                    trg.OnSceneDraw();
+                    if (GUI.changed)
+                        target.SetToDirty_Obj();
+                }
+                catch (Exception ex)
+                {
+                    QcLog.ChillLogger.LogExceptionExpOnly(ex, "OnGuiInsp", target);
+                }
+                pegi.IsDrawingHandles = false;
             }
         }
     }

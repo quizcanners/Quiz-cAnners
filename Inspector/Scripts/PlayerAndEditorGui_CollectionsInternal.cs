@@ -2,6 +2,7 @@ using QuizCanners.Migration;
 using QuizCanners.Utils;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 using Enm = System.Linq.Enumerable;
@@ -338,7 +339,7 @@ namespace QuizCanners.Inspect
 
                                 if (searchString == null || typeName.Contains(searchString))
                                 {
-                                    Write(typeName);
+                                    typeName.PegiLabel().Write();
                                     if (Icon.Create.ClickUnFocus().Nl())
                                     {
                                         added = (T)System.Activator.CreateInstance(t);
@@ -361,7 +362,7 @@ namespace QuizCanners.Inspect
                                 {
                                     availableOptions++;
 
-                                    Write(tagTypes.DisplayNames[i]);
+                                    tagTypes.DisplayNames[i].PegiLabel().Write();
                                     if (Icon.Create.ClickUnFocus().Nl())
                                     {
                                         added = (T)System.Activator.CreateInstance(tagTypes.TaggedTypes.TryGet(k[i]));
@@ -423,7 +424,7 @@ namespace QuizCanners.Inspect
                         for (var i = 0; i < k.Count; i++)
                         {
 
-                            Write(types.DisplayNames[i]);
+                            types.DisplayNames[i].PegiLabel().Write();
                             if (Icon.Create.ClickUnFocus().Nl())
                             {
                                 changed = true;
@@ -913,7 +914,7 @@ namespace QuizCanners.Inspect
                     }
 
                     if (!isNull)
-                        Write(el.GetNameForInspector());
+                        el.GetNameForInspector().PegiLabel().Write();
                     else
                         "{0} {1}".F(Icon.Empty.GetText(), typeof(T).ToPegiStringType()).PegiLabel().Write();
 
@@ -1009,7 +1010,7 @@ namespace QuizCanners.Inspect
                         }
 
                         if (!isNull)
-                            Write(el.GetNameForInspector());
+                            el.GetNameForInspector().PegiLabel().Write();
                         else
                             "{0} {1}".F(Icon.Empty.GetText(), typeof(T).ToPegiStringType()).PegiLabel().Write();
 
@@ -1038,7 +1039,7 @@ namespace QuizCanners.Inspect
                 if (selectedCount > 0 && Icon.DeSelectAll.Click().IgnoreChanges(LatestInteractionEvent.Click))
                     SetSelected(listMeta, list, false);
 
-                if (selectedCount == 0 && Icon.SelectAll.Click().IgnoreChanges(LatestInteractionEvent.Click))
+                if (selectedCount == 0 && list.Count>0 && Icon.SelectAll.Click().IgnoreChanges(LatestInteractionEvent.Click))
                     SetSelected(listMeta, list, true);
 
 
@@ -1304,7 +1305,7 @@ namespace QuizCanners.Inspect
 
                             if (so)
                             {
-                                if (EditDelayed(ref n))
+                                if (Edit_Delayed(ref n))
                                 {
                                     QcUnity.RenameAsset(so, n);
                                     named.NameForInspector = n;
@@ -1340,7 +1341,7 @@ namespace QuizCanners.Inspect
 
                                     if (tex)
                                     {
-                                        if (uo.ClickHighlight(tex))
+                                        if (ClickHighlight(uo, tex))
                                             isPrevious = true;
 
                                         clickHighlightHandled = true;
@@ -1364,7 +1365,7 @@ namespace QuizCanners.Inspect
                             isPrevious = true;
                         }
 
-                        if (!clickHighlightHandled && uo.ClickHighlight())
+                        if (!clickHighlightHandled && pegi.ClickHighlight(uo))
                             isPrevious = true;
                     }
                 }

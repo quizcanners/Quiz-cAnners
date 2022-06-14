@@ -33,6 +33,8 @@ namespace QuizCanners.Utils
             public bool IsFinished => Count <= 0;
             public void RemoveOne() => Count--;
 
+            public void Clear() => Count = 0;
+
             public void ResetCountDown(int newCount) => Count = newCount;
             public void AddToCountdown(int valueToAdd) => Count += valueToAdd;
         }
@@ -83,7 +85,7 @@ namespace QuizCanners.Utils
 
             public void Inspect()
             {
-                if (!Application.isPlaying && "Max Count".PegiLabel().EditDelayed(ref _maxCount).Nl())
+                if (!Application.isPlaying && "Max Count".PegiLabel().Edit_Delayed(ref _maxCount).Nl())
                     _maxCount = Math.Max(1, _maxCount);
 
                 if (IsFinished)
@@ -101,7 +103,7 @@ namespace QuizCanners.Utils
         }
 
         [Serializable]
-        public class CountDownFromMax : IPEGI, IGotReadOnlyName
+        public class CountDownFromMax : IPEGI
         {
             [SerializeField] private int _maxCount;
             [NonSerialized] private int _count;
@@ -123,13 +125,13 @@ namespace QuizCanners.Utils
 
             public void Inspect()
             {
-                if (!Application.isPlaying && "Count".PegiLabel().EditDelayed(ref _maxCount).Nl())
+                if (!Application.isPlaying && "Count".PegiLabel().Edit_Delayed(ref _maxCount).Nl())
                     _maxCount = Math.Max(1, _maxCount);
 
-                GetReadOnlyName().PegiLabel().Nl();
+                ToString().PegiLabel().Nl();
             }
 
-            public string GetReadOnlyName()
+            public override string ToString()
             {
                 if (IsFinished)
                     return "Finished";
@@ -146,11 +148,14 @@ namespace QuizCanners.Utils
 
         public class TimeFixedSegmenter 
         {
+            private bool _unscaledTime;
             private bool _timeSet;
             private float _lastTime;
             private readonly float _defaultSegment = 1;
             private readonly int _returnOnFirstRequest;
+            private bool _defaultSegmentSet;
 
+            float CurrentTime => _unscaledTime ? Time.unscaledTime : Time.time;
             public int GetSegmentsWithouUpdate() => GetSegmentsWithouUpdate(_defaultSegment);
 
             public void Reset() 
@@ -158,22 +163,38 @@ namespace QuizCanners.Utils
                 _timeSet = false;
             }
 
+            public void Update()
+            {
+#if UNITY_EDITOR
+                CheckDefaultSegment();
+#endif
+
+                GetSegmentsAndUpdate(_defaultSegment);
+            }
+
+            public void Update(float segment) => GetSegmentsAndUpdate(segment);
+
             public int GetSegmentsWithouUpdate(float segment) 
             {
                 if (!_timeSet) 
                 {
                     _timeSet = true;
-                    _lastTime = Time.time;
+                    _lastTime = CurrentTime;
                     return _returnOnFirstRequest;
                 }
 
-                var gap = Time.time - _lastTime;
+                var gap = CurrentTime - _lastTime;
                 var segments = Mathf.FloorToInt(gap / segment);
                 return segments;
             }
 
-            public int GetSegmentsAndUpdate() => GetSegmentsAndUpdate(_defaultSegment);
-
+            public int GetSegmentsAndUpdate()
+            {
+#if UNITY_EDITOR
+                CheckDefaultSegment();
+#endif
+                return GetSegmentsAndUpdate(_defaultSegment);
+            }
             public int GetSegmentsAndUpdate(float segment) 
             {
                 var segments = GetSegmentsWithouUpdate(segment);
@@ -181,10 +202,20 @@ namespace QuizCanners.Utils
                 return segments;
             }
 
-            public TimeFixedSegmenter(float segmentLength = 1, int returnOnFirstRequest = 0) 
+            private void CheckDefaultSegment() 
             {
+                if (!_defaultSegmentSet)
+                {
+                    QcLog.ChillLogger.LogErrorOnce("Default Segment was not set", key: "No Dflt Sgm");
+                }
+            }
+
+            public TimeFixedSegmenter(bool unscaledTime, float segmentLength = 1, int returnOnFirstRequest = 0) 
+            {
+                _unscaledTime = unscaledTime;
                 _returnOnFirstRequest = returnOnFirstRequest;
                 _defaultSegment = segmentLength;
+                _defaultSegmentSet = true;
             }
         }
 
@@ -200,16 +231,28 @@ namespace QuizCanners.Utils
             {
                 get
                 {
-                    if (TryGetValue(out _))
-                        return "Result Ready";
-                    else if (_task == null)
-                        return "Not Started";
-                    else if (_task.Status == TaskStatus.WaitingForActivation)
-                        return "Yielding";
-                    else
-                        return _task.Status.ToString();
+                    var stat = GetStatusEnum();
+                    switch (stat) 
+                    {
+                        case StatusEnum.Other: return _task.Status.ToString();
+                        default: return stat.ToString();
+                    }
                 }
             }
+
+            public StatusEnum GetStatusEnum() 
+            {
+                if (TryGetValue(out _))
+                    return StatusEnum.Ready;
+                else if (_task == null)
+                    return StatusEnum.NotStarted;
+                else if (_task.Status == TaskStatus.WaitingForActivation)
+                    return StatusEnum.Yielding;
+                else
+                    return StatusEnum.Other;
+            }
+
+            public enum StatusEnum { Ready, NotStarted, Yielding, Other }
 
             public string NameForInspector { get => _name; set => _name = value; }
 
@@ -257,6 +300,15 @@ namespace QuizCanners.Utils
 
             public void InspectInList(ref int edited, int index)
             {
+                var enm = GetStatusEnum();
+                switch (enm) 
+                {
+                    case StatusEnum.Ready: Icon.Done.Draw(); break;
+                    case StatusEnum.Yielding: Icon.Wait.Draw(); break;
+                    case StatusEnum.NotStarted: Icon.InActive.Draw(); break;
+                    case StatusEnum.Other: Icon.Warning.Draw(enm.ToString()); break;
+                }
+
                 if (result != null)
                 {
                     var asIls = result as IPEGI_ListInspect;
@@ -267,9 +319,12 @@ namespace QuizCanners.Utils
                     }
                 }
 
-                if ("{0}: {1}".F(_name, Status).PegiLabel().ClickLabel() | Icon.Enter.Click())
+                if (ToString().PegiLabel().ClickLabel() | Icon.Enter.Click())
                     edited = index;
             }
+
+            public override string ToString() => "{0}".F(_name.IsNullOrEmpty() ? typeof(T).ToPegiStringType() : _name);
+
 
             #endregion
 
@@ -283,6 +338,41 @@ namespace QuizCanners.Utils
                 Set(task, name);
 
             }
+        }
+
+        public class DeltaPositionSegments 
+        {
+            Vector3 _previousPosition;
+
+            public bool TryGetSegments(Vector3 newPosition, float delta, out Vector3[] points) 
+            {
+                var segment = (newPosition - _previousPosition);
+
+                float totalDistance = segment.magnitude;
+
+                int count = Mathf.FloorToInt(totalDistance / delta);
+                points = new Vector3[count];
+
+                if (count == 0) 
+                    return false;
+                
+                float fraction = (delta * count) / totalDistance;
+
+                var direction = segment.normalized;
+
+                for (int i = 0; i < count; i++)
+                    points[i] = _previousPosition + direction * delta * (i + 1);
+
+                _previousPosition = Vector3.Lerp(_previousPosition, newPosition, fraction);
+
+                return true;
+            }
+
+            public void Reset(Vector3 position) 
+            {
+                _previousPosition = position;
+            }
+
         }
 
     }

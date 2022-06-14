@@ -128,7 +128,7 @@ namespace QuizCanners.Utils
                         FromJson();
                     }).Nl();
 
-                    "Json Data".PegiLabel().EditBig(ref Data).Nl().OnChanged(FromJson);
+                    "Json Data".PegiLabel().Edit_Big(ref Data).Nl().OnChanged(FromJson);
                 }
 
                 if (TryGetDecoded(out var value)) //_isDecoded && _decoded != null)

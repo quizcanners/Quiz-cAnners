@@ -6,12 +6,7 @@ using UnityEngine;
 
 namespace QuizCanners.Utils
 {
-
-#if ENABLE_IL2CPP
-    [Unity.IL2CPP.CompilerServices.Il2CppSetOption (Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
-    [Unity.IL2CPP.CompilerServices.Il2CppSetOption (Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
-#endif
-    public abstract class ValidatabeArrayGeneric<T> : IPEGI, IGotReadOnlyName, IGotCount, IEnumerable<T> 
+    public abstract class ValidatabeArrayGeneric<T> : IPEGI, IGotCount, IEnumerable<T> where T: struct
     {
         [SerializeField] protected T[] _array;
         [SerializeField] private bool[] _valid = new bool[0];
@@ -167,7 +162,7 @@ namespace QuizCanners.Utils
 
         }
 
-        public virtual string GetReadOnlyName() => "{0} Array [{1}]".F(typeof(T).ToPegiStringType(), GetValidatedCount());
+        public override string ToString() => "{0} Array [{1}]".F(typeof(T).ToPegiStringType(), GetValidatedCount());
 
         public int GetCount() => _validatedCount;
 

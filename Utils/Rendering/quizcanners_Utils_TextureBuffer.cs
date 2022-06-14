@@ -77,7 +77,7 @@ namespace QuizCanners.Utils
         }
 
 
-        public class DoubleBuffer : RenderTextureBufferBase, IPEGI, IGotReadOnlyName
+        public class DoubleBuffer : RenderTextureBufferBase, IPEGI
         {
             private string _name;
             private int _size;
@@ -217,7 +217,7 @@ namespace QuizCanners.Utils
                 pegi.Click(Swap).Nl();
             }
 
-            public string GetReadOnlyName() => _name;
+            public override string ToString() => _name;
 
             public DoubleBuffer(string name, int size, bool isFloat)
             {

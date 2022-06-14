@@ -85,6 +85,16 @@ namespace QuizCanners.Utils
 
         #region Trigonometry
 
+        public static Vector3 Interpolate(List<Vector3> vectors, float progress01)
+        {
+            float pointSection = Mathf.Clamp01(progress01) * (vectors.Count - 1);
+
+            var from = vectors[Mathf.FloorToInt(pointSection)];
+            var to = vectors[Mathf.CeilToInt(pointSection - float.Epsilon * 10)];
+
+            return Vector3.Lerp(from, to, pointSection % 1);
+        }
+
         public static void Clamp(this Vector2Int value, int from, int to)
         {
             value.Clamp(new Vector2Int(from, from), new Vector2Int(to, to));
@@ -188,10 +198,15 @@ namespace QuizCanners.Utils
             return Vector3.LerpUnclamped(m1, m2, portion);
         }
 
-        public static float Angle(this Vector2 vec) =>
-             (vec.x < 0) ? 360 - (Mathf.Atan2(vec.x, vec.y) * Mathf.Rad2Deg * -1) :
-             Mathf.Atan2(vec.x, vec.y) * Mathf.Rad2Deg;
-        
+        public static float Angle(this Vector2 vec)
+        {
+            float angle = Mathf.Atan2(vec.x, vec.y) * Mathf.Rad2Deg;
+
+            if (vec.x < 0)
+                angle += 360;
+
+            return angle;
+        }
         public static bool IsAcute(float a, float b, float c)
         {
             if (c == 0) return true;

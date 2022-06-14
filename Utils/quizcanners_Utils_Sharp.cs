@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -370,6 +371,16 @@ namespace QuizCanners.Utils
 
         public static T GetRandomByWeight<T>(this List<T> sequence, Func<T, float> weightSelector)
         {
+            if (sequence.IsNullOrEmpty())
+            {
+                var typeName = typeof(T).Name;
+                QcLog.ChillLogger.LogErrorOnce("{0}: List<{1}> is {2}".F(nameof(GetRandomByWeight), typeName, sequence == null ? "NULL" : "Empty"), key: "{0} grnd".F(typeName));
+                return default(T);
+            }
+
+            if (sequence.Count == 1)
+                return sequence[0];
+
             float TotalWeight = 0;
 
             foreach (var el in sequence)
@@ -878,7 +889,31 @@ namespace QuizCanners.Utils
 
         #endregion
 
-        public static string AddSpacesToSentence(string text, bool preserveAcronyms = false)
+        public static string FixDecimalSeparator(string text)
+        {
+            var separator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+
+            switch (separator)
+            {
+                case ".":
+                    return text.Replace(",", ".");
+                case ",":
+                default:
+                    return text.Replace(".", ",");
+            }
+        }
+
+        public static string ReplaceFirst(string text, string search, string replace)
+        {
+            int pos = text.IndexOf(search);
+            if (pos < 0)
+            {
+                return text;
+            }
+            return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
+        }
+
+        public static string AddSpacesToSentence(string text, bool preserveAcronyms = true)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return string.Empty;
@@ -958,8 +993,28 @@ namespace QuizCanners.Utils
 
         public static string FirstLine(this string str) => new StringReader(str).ReadLine();
 
-        public static string ToPegiStringType(this Type type) => type == null ? "NULL Type" : type.Name;
+        public static string ToPegiStringType(this Type type)
+        {
+            if (type == null)
+                return "NULL Type";
 
+            if (type.IsGenericType)
+            {
+                var ind = type.Name.IndexOf("`");
+
+                if (ind <= 0)
+                    return type.Name;
+
+
+                string genericArguments = type.GetGenericArguments()
+                                    .Select(x => x.Name)
+                                    .Aggregate((x1, x2) => $"{x1}, {x2}");
+                return $"{type.Name.Substring(0, ind)}"
+                     + $"<{genericArguments}>";
+            }
+
+            return type.Name;
+        }
         public static string SimplifyTypeName(this string name)
         {
             if (name == null)

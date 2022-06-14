@@ -5,7 +5,7 @@ using UnityEngine;
 namespace QuizCanners.Utils
 {
     [System.Serializable]
-    public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver, IPEGI, IGotReadOnlyName
+    public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver, IPEGI
     {
         [HideInInspector] [SerializeField] protected List<TKey> keys;
         [HideInInspector] [SerializeField] protected List<TValue> values;
@@ -68,7 +68,7 @@ namespace QuizCanners.Utils
             CollectionMeta.Edit_Dictionary(this).Nl();
         }
 
-        public virtual string GetReadOnlyName() => QcSharp.AddSpacesToSentence(GetType().ToPegiStringType());
+        public override string ToString() => QcSharp.AddSpacesToSentence(GetType().ToPegiStringType());
         #endregion
     }
 

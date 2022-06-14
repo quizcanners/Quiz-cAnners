@@ -115,9 +115,22 @@ namespace QuizCanners.Inspect
 
                     var change = ChangeTrackStart();
 
-                    pgi.Inspect();
+                    try
+                    {
+                        pgi.Inspect();
+                    } catch (Exception ex) 
+                    {
+                        Write_Exception(ex);
+                    }
 
-                    Nested_Inspect_Attention_MessageOnly(pgi);
+                    try
+                    {
+                        Nested_Inspect_Attention_MessageOnly(pgi);
+                    }
+                    catch (Exception ex)
+                    {
+                        Write_Exception(ex);
+                    }
 
                     if (change)
                         ClearFromPooledSerializedObjects(o);
@@ -181,9 +194,24 @@ namespace QuizCanners.Inspect
                     StartObject();
                     SerObj = so;
                     Toggle_DefaultInspector(scrObj);
-                    pgi.Inspect();
 
-                    Nested_Inspect_Attention_MessageOnly(pgi);
+                    try 
+                    { 
+                        pgi.Inspect();
+                    }
+                    catch (Exception ex)
+                    {
+                        Write_Exception(ex);
+                    }
+
+                    try
+                    {
+                        Nested_Inspect_Attention_MessageOnly(pgi);
+                    }
+                    catch (Exception ex)
+                    {
+                        Write_Exception(ex);
+                    }
 
                     EndObject(scrObj);
                 }
@@ -249,7 +277,7 @@ namespace QuizCanners.Inspect
                 }
                 else
                 {
-                    target.ClickHighlight();
+                    pegi.ClickHighlight(target);
                 }
             }
 
@@ -704,7 +732,9 @@ namespace QuizCanners.Inspect
             text = EditorGUILayout.TextArea(text, GUILayout.MaxHeight(height));
             return _END();
         }
-        
+
+
+
         public static ChangesToken Edit<T>(ref T field, bool allowSceneObjects = true) where T : Object
         {
             _START();
@@ -719,10 +749,10 @@ namespace QuizCanners.Inspect
             return _END();
         }
 
-        public static ChangesToken Edit<T>(ref T field, Type type, int width, bool allowSceneObjects = true) where T : Object
+        public static ChangesToken Edit(ref Object field, Type type, int width, bool allowSceneObjects = true) 
         {
             _START();
-            field = (T)EditorGUILayout.ObjectField(field, type, allowSceneObjects, GUILayout.MaxWidth(width));
+            field = EditorGUILayout.ObjectField(field, type, allowSceneObjects, GUILayout.MaxWidth(width));
             return _END();
         }
 
@@ -745,11 +775,16 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(TextLabel label, ref float val)
         {
+            if (label.GotWidth)
+            {
+                Write(label);
+                return Edit(ref val);
+            }
+
             _START();
-            if (label.TryGetLabel(out var txt))
-                val = EditorGUILayout.FloatField(txt, val);
-            else
-                val = EditorGUILayout.FloatField(val);
+
+            val = EditorGUILayout.FloatField(label.label, val);
+              //  val = EditorGUILayout.FloatField(val);
             return _END();
         }
 
@@ -845,7 +880,6 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(TextLabel label, ref Vector3 vec)
         {
-
             _START();
             if (label.TryGetLabel(out var txt))
                 vec = EditorGUILayout.Vector3Field(txt, vec);
@@ -875,7 +909,7 @@ namespace QuizCanners.Inspect
         public static ChangesToken Edit(ref Dictionary<int, string> dic, int atKey)
         {
             var before = dic[atKey];
-            if (EditDelayed(ref before))
+            if (Edit_Delayed(ref before))
             {
                 dic[atKey] = before;
                 return FeedChanged();
@@ -963,7 +997,7 @@ namespace QuizCanners.Inspect
 
         // private static string _editedText;
         // private static string _editedHash = "";
-        public static ChangesToken EditDelayed(ref string text)
+        public static ChangesToken Edit_Delayed(ref string text)
         {
 
             _START();
@@ -991,7 +1025,7 @@ namespace QuizCanners.Inspect
               return false;//(String.Compare(before, text) != 0);*/
         }
 
-        public static ChangesToken EditDelayed(ref string text, int width)
+        public static ChangesToken Edit_Delayed(ref string text, int width)
         {
             _START();
             text = EditorGUILayout.DelayedTextField(text, GUILayout.MaxWidth(width));
@@ -1009,7 +1043,7 @@ namespace QuizCanners.Inspect
 
         // static int editedIntegerIndex;
         // static int editedInteger;
-        public static ChangesToken EditDelayed(ref int val, int width)
+        public static ChangesToken Edit_Delayed(ref int val, int width)
         {
 
             _START();
@@ -1045,7 +1079,7 @@ namespace QuizCanners.Inspect
         //private static int _editedFloatIndex;
         //private static float _editedFloat;
 
-        public static ChangesToken EditDelayed(ref float val)
+        public static ChangesToken Edit_Delayed(ref float val)
         {
 
             _START();
@@ -1053,7 +1087,7 @@ namespace QuizCanners.Inspect
             return _END();
         }
 
-        public static ChangesToken EditDelayed(ref float val, int width)
+        public static ChangesToken Edit_Delayed(ref float val, int width)
         {
 
             _START();
@@ -1082,7 +1116,7 @@ namespace QuizCanners.Inspect
              return false;*/
         }
 
-        public static ChangesToken EditDelayed(ref double val)
+        public static ChangesToken Edit_Delayed(ref double val)
         {
 
             _START();
@@ -1090,7 +1124,7 @@ namespace QuizCanners.Inspect
             return _END();
         }
 
-        public static ChangesToken EditDelayed(ref double val, int width)
+        public static ChangesToken Edit_Delayed(ref double val, int width)
         {
 
             _START();
@@ -1586,32 +1620,40 @@ namespace QuizCanners.Inspect
                 var uo = el as Object;
                 if (uo)
                 {
-                    var cmp = uo as Component;
-                    var go = cmp ? cmp.gameObject : uo as GameObject;
+                    GameObject go = uo as GameObject;
 
-                    if (!go)
-                        EditorGUI.ObjectField(rect, _textAndToolTip, uo, _currentReorderedType, true);
-                    else
+                    if (go)
                     {
-                        var mbs = go.GetComponents<Component>();
+                        EditorGUI.ObjectField(rect, _textAndToolTip, uo, _currentReorderedType, true);
+                    } else {
 
-                        if (mbs.Length > 1)
-                        {
-                            rect.width = Screen.width*0.5f;
+                        Component cmp = uo as Component;
+                        go = cmp ? cmp.gameObject : null;
 
-                            rect.y -= 2;
-                            EditorGUI.LabelField(rect, _textAndToolTip);
-                            rect.y += 2;
-
-                            rect.x += Screen.width * 0.5f;
-
-                            rect.width = Math.Max(rect.width - 80, 10);
-
-                            if (Select(ref cmp, mbs, rect))
-                                _currentReorderedList[index] = cmp;
-                        }
-                        else
+                        if (!go)
                             EditorGUI.ObjectField(rect, _textAndToolTip, uo, _currentReorderedType, true);
+                        else
+                        {
+                            var mbs = go.GetComponents(_currentReorderedType);
+
+                            if (mbs.Length > 1)
+                            {
+                                rect.width = Screen.width * 0.5f;
+
+                                rect.y -= 2;
+                                EditorGUI.LabelField(rect, _textAndToolTip);
+                                rect.y += 2;
+
+                                rect.x += Screen.width * 0.5f;
+
+                                rect.width = Math.Max(rect.width - 80, 10);
+
+                                if (Select(ref cmp, mbs, rect))
+                                    _currentReorderedList[index] = cmp;
+                            }
+                            else
+                                EditorGUI.LabelField(rect, _textAndToolTip); //ObjectField(rect, _textAndToolTip, uo, _currentReorderedType, true);
+                        }
                     }
                 }
                 else

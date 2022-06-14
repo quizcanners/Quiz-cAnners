@@ -32,7 +32,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class OverviewEntry : DocEntry
         {
-            public override string GetReadOnlyName() => "Overview";
+            public override string ToString() => "Overview";
 
             public override void Inspect_About()
             {
@@ -78,7 +78,7 @@ namespace QuizCanners.Inspect.Examples
         // TODO: Interfaces
         private class InterfacesEntry : DocEntry
         {
-            public override string GetReadOnlyName() => "Interfaces";
+            public override string ToString() => "Interfaces";
 
             public override void Inspect_About()
             {
@@ -90,7 +90,6 @@ namespace QuizCanners.Inspect.Examples
 
                 "A short, preferably one-line version of the inspector for the class. Automatically used by {0} function, but can also be called manuall.".F(nameof(pegi.Edit_List)).PegiLabel().WriteBig();
 
-                WriteInterface<IGotReadOnlyName>();
                 WriteInterface<IGotName>();
                 WriteInterface<IGotIndex>();
                 WriteInterface<IGotCount>();
@@ -107,7 +106,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class LabelEntry : DocEntry
         {
-            public override string GetReadOnlyName() => "Pegi Label";
+            public override string ToString() => "Pegi Label";
 
             private string _testValue = "Editable Text";
 
@@ -129,7 +128,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class WriteEntry : DocEntry, ISearchable
         {
-            public override string GetReadOnlyName() => "Write";
+            public override string ToString() => "Write";
 
             public override void Inspect_About()
             {
@@ -191,7 +190,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class NewLineEntry : DocEntry
         {
-            public override string GetReadOnlyName() => "New Line";
+            public override string ToString() => "New Line";
 
             public override void Inspect_About()
             {
@@ -211,7 +210,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class ChangesEntry : DocEntry
         {
-            public override string GetReadOnlyName() => "Changes";
+            public override string ToString() => "Changes";
 
             public override void Inspect_About()
             {
@@ -233,7 +232,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class EditEntry : DocEntry
         {
-            public override string GetReadOnlyName() => "Edit";
+            public override string ToString() => "Edit";
 
             public override void Inspect_About()
             {
@@ -253,7 +252,7 @@ namespace QuizCanners.Inspect.Examples
                     new Parameter(name: "minInclusive", description: "A minimum value", optional: true),
                     new Parameter(name: "maxInclusive", description: "A maximum value.", optional: true)),
 
-                 new FunctionData(nameof(pegi.EditDelayed), ReturnType.Changes, 
+                 new FunctionData(nameof(pegi.Edit_Delayed), ReturnType.Changes, 
                      about: "Changes to this field aren't registered  until user presses Enter or unfocuses from the field. Useful for when you don't want to react to change until it is finalized.",
                       extendsPegiLabel: true,
                     new Parameter(name: "ref value", description: "A value to edit", optional: false),
@@ -288,7 +287,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class ClickEntry : DocEntry
         {
-            public override string GetReadOnlyName() => "Click";
+            public override string ToString() => "Click";
 
             public override void Inspect_About()
             {
@@ -345,7 +344,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class NestedInspectEntry : DocEntry
         {
-            public override string GetReadOnlyName() => "Nested Inspect";
+            public override string ToString() => "Nested Inspect";
 
             public override void Inspect_About()
             {
@@ -355,7 +354,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class EnterEntry : DocEntry, ISearchable
         {
-            public override string GetReadOnlyName() => "Enter";
+            public override string ToString() => "Enter";
 
             private int _foldedOutIndex = -1;
             private readonly pegi.EnterExitContext _enteredIndex = new pegi.EnterExitContext();
@@ -430,7 +429,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class SelectEntry : DocEntry
         {
-            public override string GetReadOnlyName() => "Select";
+            public override string ToString() => "Select";
 
             public override void Inspect_About()
             {
@@ -465,7 +464,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class CollectionEntry : DocEntry
         {
-            public override string GetReadOnlyName() => "Collection";
+            public override string ToString() => "Collection";
 
             public override void Inspect_About()
             {
@@ -475,7 +474,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class DrawEntry : DocEntry, ISearchable
         {
-            public override string GetReadOnlyName() => "Draw";
+            public override string ToString() => "Draw";
 
             public override void Inspect_About()
             {
@@ -511,7 +510,7 @@ namespace QuizCanners.Inspect.Examples
 
         private class ReturnTypesEntry : DocEntry
         {
-            public override string GetReadOnlyName() => "Return Types";
+            public override string ToString() => "Return Types";
 
             public override void Inspect_About()
             {

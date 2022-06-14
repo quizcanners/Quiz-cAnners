@@ -241,7 +241,7 @@ namespace QuizCanners.Inspect
                     EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => IsEnteredCurrent = StateToken.True);
             }
 
-            internal static void Internal_isEntered(TextLabel txt, bool showLabelIfTrue = true)
+            internal static bool Internal_isEntered(TextLabel txt, bool showLabelIfTrue = true)
             {
                 if (IsEnteredCurrent)
                     ExitClick(txt, showLabelIfTrue: showLabelIfTrue);
@@ -251,6 +251,8 @@ namespace QuizCanners.Inspect
                     (Icon.Enter.ClickUnFocus(txt.label).IgnoreChanges(LatestInteractionEvent.Enter) |
                     txt.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter)).OnChanged(() => IsEnteredCurrent = StateToken.True);
                 }
+
+                return IsEnteredCurrent;
             }
 
             internal static void Internal_Enter_Inspect_AsList(IPEGI_ListInspect var, string exitLabel = null)
@@ -277,6 +279,7 @@ namespace QuizCanners.Inspect
                 }
                 else if (IsEnteredCurrent)
                     IsEnteredCurrent = StateToken.False;
+
             }
 
             private static void ExitClick(TextLabel text, bool showLabelIfTrue) 

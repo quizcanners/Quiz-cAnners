@@ -24,7 +24,7 @@ namespace QuizCanners.Utils
         {
             var inst = SingletonGeneric<TService>.Instance;
 
-            if (!QcUnity.IsNullOrDestroyed_Obj(inst))
+            if (!QcUnity.IsNullOrDestroyed_Obj(inst) && inst.IsSingletonActive())
             {
                 try
                 {
@@ -74,7 +74,7 @@ namespace QuizCanners.Utils
                 set
                 {
                     instance = value;
-                    Collector.RegisterService(value, typeof(T));
+                    Collector.RegisterSingleton(value, typeof(T));
                 }
             }
         }
@@ -139,13 +139,20 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public static void RegisterService(object service, Type type) 
+            public static void RegisterSingleton(object service, Type type) 
             {
+#if UNITY_EDITOR
+
+                if (_services.TryGetValue(type, out var existing) && service.GetType() != existing.GetType())
+                    Debug.LogError("Singleton Collection already Contains {0}. Trying to replace with {1}".F(existing.GetType().ToPegiStringType(), service.GetType().ToPegiStringType()));
+
+#endif
+
                 _services[type] = service;
                 Version++;
             }
 
-            public static void RegisterService<T>(T service)
+            public static void RegisterSingleton<T>(T service)
             {
                 _services[typeof(T)] = service;
                 Version++;
@@ -154,13 +161,13 @@ namespace QuizCanners.Utils
             private static readonly PlayerPrefValue.Int _prsstInspectedIndex = new PlayerPrefValue.Int("qc_SrvInsp", -1);
             private static readonly PlayerPrefValue.String _prsstInspectedCategory = new PlayerPrefValue.String("qc_SrvCat", "");
 
-            private static readonly LoopLock _serviceLoop = new LoopLock();
+            private static readonly LoopLock _singletonLoop = new LoopLock();
 
             private static string _searchText = "";
 
             public static void Inspect()
             {
-                if (!_serviceLoop.Unlocked) 
+                if (!_singletonLoop.Unlocked) 
                 {
                     pegi.Nl();
                     "Recursion detected.".PegiLabel().Write().Nl();
@@ -168,7 +175,7 @@ namespace QuizCanners.Utils
 
                 }
 
-                using (_serviceLoop.Lock())
+                using (_singletonLoop.Lock())
                 {
 
                     int inspectedService = _prsstInspectedIndex.GetValue();
@@ -308,7 +315,7 @@ namespace QuizCanners.Utils
                             if (Icon.Enter.Click())
                                 inspectedService = index;
 
-                            (service as UnityEngine.Object).ClickHighlight();
+                            pegi.ClickHighlight((service as UnityEngine.Object));
                         }
                     }
 
@@ -351,7 +358,7 @@ namespace QuizCanners.Utils
         public class Categories 
         {
             public const string DEFAULT = "Other";
-            public const string SCENE_MGMT = "Scene Management";
+            public const string SCENE_MGMT = "Unity Systems";
             public const string RENDERING = "Rendering";
             public const string TEST = "Test";
             public const string GAME_LOGIC = "Game Logic";
@@ -359,13 +366,15 @@ namespace QuizCanners.Utils
             public const string POOL = "Pools";
         }
 
-        public abstract class BehaniourBase : MonoBehaviour, IQcSingleton, IPEGI, IGotReadOnlyName, IPEGI_ListInspect, INeedAttention
+        public abstract class BehaniourBase : MonoBehaviour, IQcSingleton, IPEGI, IPEGI_ListInspect, INeedAttention
         {
             protected enum SingletonCollisionSolutionEnum { DestroyNew, DestroyPrevious, KeepBothAssignNew, KeepBothAssignOld }
 
             protected virtual SingletonCollisionSolutionEnum SingletonCollisionSolution => SingletonCollisionSolutionEnum.DestroyNew;
 
             public virtual string InspectedCategory => Categories.DEFAULT;
+
+            public virtual bool IsSingletonActive ()=> gameObject.activeInHierarchy;
 
             protected virtual void OnRegisterServiceInterfaces() { }
 
@@ -374,7 +383,7 @@ namespace QuizCanners.Utils
             protected void RegisterServiceAs<T>() 
             {
                 _typesToRemove.Add(typeof(T));
-                Collector.RegisterService(this, typeof(T));
+                Collector.RegisterSingleton(this, typeof(T));
             }
 
             //[SerializeField] 
@@ -422,9 +431,7 @@ namespace QuizCanners.Utils
                 Collector.TryRemove(this);
                 foreach (var t in _typesToRemove)
                     Collector.TryRemove(this, t);
-
             }
-
 
             protected void RegisterSevice() 
             {
@@ -469,7 +476,7 @@ namespace QuizCanners.Utils
                     Debug.LogException(ex, this);
                 }
 
-                Collector.RegisterService(this, type);
+                Collector.RegisterSingleton(this, type);
                 StartCoroutine(AfterEnableCoro());
 
 #if UNITY_EDITOR
@@ -490,16 +497,16 @@ namespace QuizCanners.Utils
 
             #region Inspector
 
-            public virtual string GetReadOnlyName() => 
-                QcSharp.AddSpacesInsteadOfCapitals(
+            public override string ToString() => 
+                QcSharp.AddSpacesToSentence(
                 GetType().ToPegiStringType().Replace("Singleton_","").Replace("Pool_", ""),
-                keepCatipals: false);
+                preserveAcronyms: true);
 
             public virtual void Inspect()
             {
                 if (Application.isPlaying == false)
                 {
-                    string preferedName = "MGMT: "+ GetReadOnlyName();
+                    string preferedName = "MGMT-"+ ToString();
 
                     if (preferedName.Equals(gameObject.name) == false && "Set Go Name".PegiLabel(toolTip: preferedName).Click())
                         gameObject.name = preferedName;
@@ -512,13 +519,13 @@ namespace QuizCanners.Utils
             {
                 if (gameObject.activeSelf && !gameObject.activeInHierarchy)
                     Icon.Warning.Draw("Object is disabled in hierarchy");
-                else if ((gameObject.activeSelf ? Icon.Active : Icon.InActive).Click(toolTip: gameObject.activeSelf ? "Make Inactive" : "Make Active")) 
+                else if ((IsSingletonActive() ? Icon.Active : Icon.InActive).Click(toolTip: gameObject.activeSelf ? "Make Inactive" : "Make Active")) 
                     gameObject.SetActive(!gameObject.activeSelf);
                 
-                if (GetReadOnlyName().PegiLabel().ClickLabel() | this.Click_Enter_Attention())
+                if (ToString().PegiLabel().ClickLabel() | this.Click_Enter_Attention())
                     edited = ind;
 
-                this.ClickHighlight();
+                pegi.ClickHighlight(this);
 
             }
 
@@ -526,6 +533,9 @@ namespace QuizCanners.Utils
             {
                 if (!gameObject)
                     return "Game Object is destroyed";
+
+                if (gameObject.activeInHierarchy && !enabled)
+                    return "Game object is active but component is disabled.";
 
                 return null;
             }
@@ -537,9 +547,11 @@ namespace QuizCanners.Utils
         {
             public virtual string InspectedCategory => Categories.DEFAULT;
 
+            public virtual bool IsSingletonActive() => true;
+
             public ClassBase()
             {
-                Collector.RegisterService(this, GetType()); 
+                Collector.RegisterSingleton(this, GetType()); 
             }
 
             public string NameForDisplayPEGI() => QcSharp.AddSpacesInsteadOfCapitals(GetType().ToString().SimplifyTypeName(), keepCatipals: false);
@@ -548,6 +560,8 @@ namespace QuizCanners.Utils
         public interface IQcSingleton 
         {
             string InspectedCategory { get; }
+
+            bool IsSingletonActive();
         }
 
         public interface ILoadingProgressForInspector 

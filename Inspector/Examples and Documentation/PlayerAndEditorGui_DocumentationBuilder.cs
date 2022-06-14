@@ -9,12 +9,11 @@ namespace QuizCanners.Inspect.Examples
 {
     internal static partial class PlayerAndEditorGui_Documentation
     {
-        private abstract class DocEntry : IPEGI, IGotReadOnlyName, ISearchable
+        private abstract class DocEntry : IPEGI, ISearchable
         {
 
             protected pegi.CollectionInspectorMeta functionsList = new pegi.CollectionInspectorMeta("Functions", allowDeleting: false, showAddButton: false, showEditListButton: false);
 
-            public abstract string GetReadOnlyName();
             public virtual void Inspect()
             {
                 if (functionsList.IsAnyEntered == false)
@@ -50,7 +49,7 @@ namespace QuizCanners.Inspect.Examples
 
             protected enum ReturnType { Void, Changes, Click, State, TextToken, ChangesTracker, SameReturnType }
 
-            protected class FunctionData : IPEGI, IGotReadOnlyName, IPEGI_ListInspect
+            protected class FunctionData : IPEGI, IPEGI_ListInspect
             {
                 private readonly string FunctionName;
                 private readonly ReturnType ReturnType;
@@ -67,7 +66,7 @@ namespace QuizCanners.Inspect.Examples
                     ExtendsPegiLabel = extendsPegiLabel;
                 }
 
-                public string GetReadOnlyName()
+                public override string ToString()
                 {
                     string returnTypeString;
 
@@ -125,7 +124,7 @@ namespace QuizCanners.Inspect.Examples
 
                 public void InspectInList(ref int edited, int index)
                 {
-                    string txt = GetReadOnlyName();
+                    string txt = ToString();
                     // icon.Copy.Click().OnChanged(()=> pegi.SetCopyPasteBuffer(txt));
 
                     if (Icon.Enter.Click() | txt.PegiLabel().ClickText(fontSize: 18))
@@ -176,7 +175,7 @@ namespace QuizCanners.Inspect.Examples
 
             protected class TestClass
             {
-                private string name;
+                private readonly string name;
 
                 public override string ToString()
                 {
@@ -198,9 +197,9 @@ namespace QuizCanners.Inspect.Examples
             private int lines;
             private bool _newLineRequested = false;
 
-            private StringBuilder _sb = new StringBuilder();
+            private readonly StringBuilder _sb = new StringBuilder();
 
-            private void nl()
+            private void Nl()
             {
                 lines++;
                 _newLineRequested = true;
@@ -243,21 +242,21 @@ namespace QuizCanners.Inspect.Examples
             public CodeStringBuilder AppendLine()
             {
                 _sb.AppendLine("");
-                nl();
+                Nl();
                 return this;
             }
             public CodeStringBuilder AppendLine(string value)
             {
                 CheckPreviousLine();
                 _sb.AppendLine(value);
-                nl();
+                Nl();
                 return this;
             }
             public CodeStringBuilder AppendLine(char ch)
             {
                 CheckPreviousLine();
                 _sb.Append(ch).AppendLine();
-                nl();
+                Nl();
                 return this;
             }
 

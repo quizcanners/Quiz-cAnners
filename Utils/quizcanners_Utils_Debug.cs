@@ -129,7 +129,7 @@ namespace QuizCanners.Utils
             public void Inspect()
             {
 
-                "Test Json".PegiLabel().EditBig(ref _testJson).Nl();
+                "Test Json".PegiLabel().Edit_Big(ref _testJson).Nl();
 
                 try
                 {

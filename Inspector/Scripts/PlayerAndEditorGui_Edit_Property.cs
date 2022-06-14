@@ -20,10 +20,14 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit_Property<T>(this TextLabel label, Expression<System.Func<T>> memberExpression, Object obj, int fieldWidth = -1, bool includeChildren = true)
         {
-            
+
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return PegiEditorOnly.Edit_Property(TextAndTip(label), memberExpression, obj, fieldWidth, includeChildren);
+            {
+                label.FallbackWidthFraction = 0.25f;
+                label.Write();
+                return PegiEditorOnly.Edit_Property(null, memberExpression, obj, fieldWidth, includeChildren);
+            }
 
 #endif
             return ChangesToken.False;

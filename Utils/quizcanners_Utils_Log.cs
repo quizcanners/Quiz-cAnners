@@ -41,7 +41,7 @@ namespace QuizCanners.Utils
         {
             private bool _subscribedToLogs;
             private bool _subscribedToQuit;
-            private int _maxLogs;
+            private readonly int _maxLogs;
 
             public bool SavingLogs
             {
@@ -128,7 +128,7 @@ namespace QuizCanners.Utils
             #endregion
         }
 
-        private class LogData : IGotReadOnlyName, IPEGI, INeedAttention, ISearchable, IPEGI_ListInspect
+        private class LogData : IPEGI, INeedAttention, ISearchable, IPEGI_ListInspect
         {
             public string Log;
             public string Stack;
@@ -141,7 +141,7 @@ namespace QuizCanners.Utils
                 "Stack: ".PegiLabel().Write_ForCopy_Big(Stack, showCopyButton: true);
             }
 
-            public string GetReadOnlyName() => Log;
+            public override string ToString() => Log;
 
             public string NeedAttention()
             {
@@ -157,7 +157,7 @@ namespace QuizCanners.Utils
 
             public void InspectInList(ref int edited, int ind)
             {
-                if (this.Click_Enter_Attention() | GetReadOnlyName().PegiLabel().ClickLabel())
+                if (this.Click_Enter_Attention() | ToString().PegiLabel().ClickLabel())
                     edited = ind;
             }
 
@@ -167,7 +167,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class ChillLogger : IGotReadOnlyName
+        public class ChillLogger 
         {
             private bool _logged;
             private readonly bool _logInBuild;
@@ -175,7 +175,7 @@ namespace QuizCanners.Utils
             private int _calls;
             private readonly string _name = "error";
 
-            public string GetReadOnlyName() => _name + (Disabled ? " Disabled" : " Enabled");
+            public override string ToString() => _name + (Disabled ? " Disabled" : " Enabled");
 
             protected bool Disabled => QcDebug.IsRelease && !_logInBuild;
             private static readonly Dictionary<string, int> loggedErrors = new Dictionary<string, int>();
@@ -272,6 +272,12 @@ namespace QuizCanners.Utils
 
             public static void LogErrorOnce(string msg, string key, Object target = null)
             {
+                if (key.IsNullOrEmpty()) 
+                {
+                    Debug.LogError("Chill Key is Null: " + msg);
+                    return;
+                }
+
                 int count = loggedErrors.GetOrCreate(key);
                 loggedErrors[key]++;
 
@@ -286,6 +292,12 @@ namespace QuizCanners.Utils
 
             public static void LogErrorOnce(Func<string> action, string key, Object target = null)
             {
+                if (key.IsNullOrEmpty())
+                {
+                    Debug.LogError("Chill Key is Null: " + action?.Invoke());
+                    return;
+                }
+
                 int count = loggedErrors.GetOrCreate(key);
                 loggedErrors[key]++;
 
@@ -298,8 +310,33 @@ namespace QuizCanners.Utils
                     Debug.LogError(action());
             }
 
+            public static void LogWarningOnce(Func<string> action, string key, Object target = null)
+            {
+                if (key.IsNullOrEmpty())
+                {
+                    Debug.LogError("Chill Key is Null: " + action());
+                    return;
+                }
+
+                int count = loggedWarnings.GetOrCreate(key);
+                loggedWarnings[key]++;
+
+                if (count > 0)
+                    return;
+
+                if (target)
+                    Debug.LogWarning(action(), target);
+                else
+                    Debug.LogWarning(action());
+            }
+
             public static void LogWarningOnce(string msg, string key, Object target = null)
             {
+                if (key.IsNullOrEmpty())
+                {
+                    Debug.LogError("Chill Key is Null: " + msg);
+                    return;
+                }
 
                 int count = loggedWarnings.GetOrCreate(key);
                 loggedWarnings[key]++;
@@ -315,6 +352,12 @@ namespace QuizCanners.Utils
 
             public static void LogErrosExpOnly(Func<string> action, string key, Object target = null)
             {
+                if (key.IsNullOrEmpty())
+                {
+                    Debug.LogError("Chill Key is Null: " + action?.Invoke());
+                    return;
+                }
+
                 int count = loggedErrors.GetOrCreate(key);
                 loggedErrors[key]++;
 
@@ -331,6 +374,12 @@ namespace QuizCanners.Utils
 
             public static void LogExceptionExpOnly(Exception ex, string key, Object target = null)
             {
+                if (key.IsNullOrEmpty())
+                {
+                    Debug.LogException(ex);
+                    return;
+                }
+
                 int count = loggedErrors.GetOrCreate(key);
                 loggedErrors[key]++;
 

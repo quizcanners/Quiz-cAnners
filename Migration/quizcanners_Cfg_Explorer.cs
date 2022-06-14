@@ -309,12 +309,12 @@ namespace QuizCanners.Migration
                         if (uObj && Icon.Done.Click("Use the same directory as current object."))
                             Mgmt.fileFolderHolder = QcUnity.GetAssetFolder(uObj);
 
-                        uObj.ClickHighlight().Nl();
+                        pegi.ClickHighlight(uObj).Nl();
                     }
 
                     if ("Description".PegiLabel().IsFoldout().Nl())
                     {
-                        pegi.EditBig(ref comment).Nl();
+                        pegi.Edit_Big(ref comment).Nl();
                     }
                 }
 

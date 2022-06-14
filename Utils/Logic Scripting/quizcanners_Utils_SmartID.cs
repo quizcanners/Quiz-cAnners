@@ -11,10 +11,10 @@ namespace QuizCanners.Utils
 
     public abstract class SmartId
     {
-        public abstract bool SameAs(SmartId other);
+        public abstract bool Equals(SmartId other);
     }
 
-    public abstract class SmartStringIdGeneric<TValue> : SmartId, IPEGI_ListInspect, ICfg, IPEGI, IGotReadOnlyName, INeedAttention, ISearchable where TValue : IGotName//, new()
+    public abstract class SmartStringIdGeneric<TValue> : SmartId, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable where TValue : IGotName//, new()
     {
         public string Id;
 
@@ -44,7 +44,7 @@ namespace QuizCanners.Utils
             return default(TValue);
         }
 
-        public override bool SameAs(SmartId other) 
+        public override bool Equals(SmartId other) 
         {
             if (other == null)
                 return false;
@@ -52,9 +52,18 @@ namespace QuizCanners.Utils
             if (GetType() != other.GetType())
                 return false;
             
+            if (Id.IsNullOrEmpty())
+                return false;
+
             var asId = other as SmartStringIdGeneric<TValue>;
 
             return Id.Equals(asId.Id);
+        }
+
+        public override bool Equals(object obj) => Equals(obj as SmartId);
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id);
         }
 
         public void SetEntity(SmartStringIdGeneric<TValue> value) => Id = value.Id;
@@ -120,7 +129,7 @@ namespace QuizCanners.Utils
 
         }
 
-        public virtual string GetReadOnlyName()
+        public override string ToString()
         {
             TValue ent = GetEntity();
             return ent != null ? "Id of {0}".F(ent.GetNameForInspector()) : "Target (Id: {0}) NOT FOUND".F(Id);
@@ -147,11 +156,13 @@ namespace QuizCanners.Utils
             }
         }
 
+  
+
         #endregion
     }
 
 
-    public abstract class SmartIntIdGeneric<TValue> : SmartId, IPEGI_ListInspect, ICfg, IPEGI, IGotReadOnlyName, INeedAttention, ISearchable
+    public abstract class SmartIntIdGeneric<TValue> : SmartId, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable
     {
         public int Id = -1;
 
@@ -197,11 +208,11 @@ namespace QuizCanners.Utils
             }
         }
 
-        public override bool Equals(object obj) => SameAs(obj as SmartId);
+        public override bool Equals(object obj) => Equals(obj as SmartId);
 
         public override int GetHashCode() => Id + typeof(TValue).GetHashCode();
 
-        public override bool SameAs(SmartId other)
+        public override bool Equals(SmartId other)
         {
             if (other == null)
                 return false;
@@ -269,7 +280,7 @@ namespace QuizCanners.Utils
                 edited = ind;
         }
 
-        public virtual string GetReadOnlyName()
+        public override string ToString()
         {
             TValue ent = GetEntity();
             return ent != null ? "Id of {0}".F(ent.GetNameForInspector()) : "Target (Id: {0}) NOT FOUND".F(Id);

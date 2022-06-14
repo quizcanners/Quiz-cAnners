@@ -10,7 +10,7 @@ namespace QuizCanners.Inspect
     public static partial class pegi 
     {
         [System.Flags]
-        public enum CollectionInspectParams
+        internal enum CollectionInspectParams
         {
             None = 0,
             allowDeleting = 1,
@@ -21,6 +21,7 @@ namespace QuizCanners.Inspect
             showDictionaryKey = 32,
             allowDuplicates = 64,
             showCopyPasteOptions = 128,
+            nameIsDictionaryKey = 256,
         }
 
         [Serializable]
@@ -37,9 +38,9 @@ namespace QuizCanners.Inspect
             [NonSerialized] internal int itemsToShow = 10;
             [NonSerialized] internal UnNullable<ElementData> elementDatas = new UnNullable<ElementData>();
             [NonSerialized] internal bool inspectListMeta = false;
-            [NonSerialized] private PlayerPrefValue.Int _playerPref = null;
             [NonSerialized] private CollectionInspectParams _config;
 
+            private readonly PlayerPrefValue.Int _playerPref = null;
 
             internal int InspectedElement 
             {
@@ -54,7 +55,7 @@ namespace QuizCanners.Inspect
                 }
             }
 
-            public bool this[CollectionInspectParams param]
+            internal bool this[CollectionInspectParams param]
             {
                 get => (_config & param) == param;
                 set
@@ -153,13 +154,6 @@ namespace QuizCanners.Inspect
                 this[CollectionInspectParams.allowReordering] = true;
             }
 
-            public CollectionInspectorMeta(string labelName, params CollectionInspectParams[] configs)
-            {
-                Label = labelName;
-                foreach (var config in configs)
-                    this[config] = true;
-            }
-
             public CollectionInspectorMeta(string labelName, 
                 bool allowDeleting = true,
                 bool allowReordering = true,
@@ -168,6 +162,7 @@ namespace QuizCanners.Inspect
                 bool showSearchButton = true,
                 bool showDictionaryKey = true,
                 bool showCopyPasteOptions = false,
+                bool nameIsDictionaryKey = true,
                 string playerPrefsIndex = null)
             {
 
@@ -180,6 +175,7 @@ namespace QuizCanners.Inspect
                 this[CollectionInspectParams.showSearchButton] = showSearchButton;
                 this[CollectionInspectParams.showDictionaryKey] = showDictionaryKey;
                 this[CollectionInspectParams.showCopyPasteOptions] = showCopyPasteOptions;
+                this[CollectionInspectParams.nameIsDictionaryKey] = nameIsDictionaryKey;
 
                 if (!playerPrefsIndex.IsNullOrEmpty())
                 {

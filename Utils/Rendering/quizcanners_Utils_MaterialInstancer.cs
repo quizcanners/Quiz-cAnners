@@ -2,25 +2,26 @@ using QuizCanners.Inspect;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.ParticleSystem;
 
 namespace QuizCanners.Utils
 {
-    public class MaterialInstancer
+    public static class MaterialInstancer
     {
         [Serializable]
-        public class ForUiGraphics
+        public class ForUiGraphics : IPEGI
         {
             [SerializeField] public List<UnityEngine.UI.Graphic> materialUsers = new List<UnityEngine.UI.Graphic>();
-            [NonSerialized] private Material labelMaterialInstance;
+            [NonSerialized] private Material _materialInstance;
 
             public Material MaterialInstance
             {
                 get
                 {
-                    if (labelMaterialInstance)
-                        return labelMaterialInstance;
+                    if (_materialInstance)
+                        return _materialInstance;
 
-                    if (materialUsers.Count == 0)
+                    if (materialUsers.IsNullOrEmpty())
                         return null;
 
                     var first = materialUsers[0];
@@ -31,13 +32,13 @@ namespace QuizCanners.Utils
                     if (!Application.isPlaying)
                         return first.material;
 
-                    labelMaterialInstance = UnityEngine.Object.Instantiate(first.material);
+                    _materialInstance = UnityEngine.Object.Instantiate(first.material);
 
                     foreach (var u in materialUsers)
                         if (u)
-                            u.material = labelMaterialInstance;
+                            u.material = _materialInstance;
 
-                    return labelMaterialInstance;
+                    return _materialInstance;
                 }
             }
 
@@ -45,13 +46,18 @@ namespace QuizCanners.Utils
             {
                 materialUsers.Add(graphic);
             }
+
+            public void Inspect()
+            {
+                "Instance".PegiLabel().Edit(ref _materialInstance).Nl();
+            }
         }
 
         [Serializable]
-        public class ForMeshRenderer
+        public class ForMeshRenderer : IPEGI
         {
 
-            [SerializeField] public bool instantiateInEditor;
+            [SerializeField] public bool InstantiateInEditor;
             [SerializeField] public List<MeshRenderer> materialUsers = new List<MeshRenderer>();
             [NonSerialized] private Material materialInstance;
 
@@ -74,15 +80,21 @@ namespace QuizCanners.Utils
                         return materialInstance;
 
                     if (materialUsers.Count == 0)
+                    {
+                        QcLog.ChillLogger.LogErrorOnce("No Renderer Assigned", key: "No Rnd");
                         return null;
+                    }
 
                     var first = materialUsers[0];
 
                     if (!first)
                         return null;
 
-                    if (!Application.isPlaying && !instantiateInEditor)
+                    if ((!InstantiateInEditor && !Application.isPlaying) || QcUnity.IsPartOfAPrefab(first.gameObject))
                         return first.sharedMaterial;
+
+                    if (!first.sharedMaterial)
+                        return null;
 
                     materialInstance = UnityEngine.Object.Instantiate(first.sharedMaterial);
 
@@ -101,9 +113,19 @@ namespace QuizCanners.Utils
 
             }
 
-            public ForMeshRenderer(bool instantiateInEditor)
+            public ForMeshRenderer(MeshRenderer rendy)
             {
-                this.instantiateInEditor = instantiateInEditor;
+                materialUsers.Add(rendy);
+            }
+
+            public void Inspect()
+            {
+                "Material User".PegiLabel().Edit_List(materialUsers).Nl();
+
+                if (materialUsers.Count > 0 && materialUsers[0])
+                    "Is Part of the PRefab: {0} ".F(QcUnity.IsPartOfAPrefab(materialUsers[0].gameObject)).PegiLabel().Nl();
+
+                "Instance".PegiLabel().Edit(ref materialInstance).Nl();
             }
         }
 
@@ -135,8 +157,8 @@ namespace QuizCanners.Utils
             }
         }
 
-        [Serializable]
-        public class ByShader
+
+        public class ByShader : IPEGI
         {
             [NonSerialized] private Material instance;
 
@@ -150,6 +172,11 @@ namespace QuizCanners.Utils
                     instance.shader = shader;
 
                 return instance;
+            }
+
+            public void Inspect()
+            {
+                "Material Instance".PegiLabel().Edit(ref instance).Nl();
             }
         }
     }

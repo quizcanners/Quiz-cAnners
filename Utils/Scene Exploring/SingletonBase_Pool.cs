@@ -9,6 +9,20 @@ namespace QuizCanners.Utils
     public abstract class PoolSingletonBase<T> : Singleton.BehaniourBase, IEnumerable<T>, IGotCount where T: Component
     {
         [SerializeField] protected List<T> prefabs = new List<T>();
+        [SerializeField] private bool _disablePooling;
+
+        public bool DisablePooling 
+        {
+            get => _disablePooling;
+            set 
+            {
+                _disablePooling = value;
+                if (value)
+                {
+                    ClearPool();
+                }    
+            }
+        }
 
         protected int lastInstancePrefab;
 
@@ -16,16 +30,16 @@ namespace QuizCanners.Utils
 
         public virtual float VacancyPortion => (MAX_INSTANCES - (float)instances.Count) / MAX_INSTANCES;
 
-        protected static List<T> pool = new List<T>();
-        protected static List<T> instances = new List<T>();
+        protected List<T> pool = new List<T>();
+        protected List<T> instances = new List<T>();
 
-        public static int InstancesCount => instances.Count;
+        public int InstancesCount => instances.Count;
 
-        public static int TotalCount => instances.Count + pool.Count;
+        public int TotalCount => instances.Count + pool.Count;
 
         public bool CanSpawn() 
         {
-            if (!gameObject.activeInHierarchy)
+            if (!IsSingletonActive()) //!gameObject.activeInHierarchy)
                 return false;
 
             if (prefabs.Count == 0)
@@ -48,11 +62,45 @@ namespace QuizCanners.Utils
             return CanSpawn();
         }
 
-        public static void ReturnToPool(T effect)
+        protected Vector3 GetScaleBasedOnDistance(Vector3 pos) => Vector3.one * GetScaleFactorFromDistance(pos);
+
+        protected float GetScaleFactorFromDistance(Vector3 pos) => (0.25f + QcMath.SmoothStep(0, 5, GetDistanceToCamera(pos)) * 0.75f);
+
+        protected float GetDistanceToCamera(Vector3 pos)
+        {
+            var cam = Singleton.Get<Singleton_CameraOperatorGodMode>();
+
+            if (cam) 
+            {
+                Vector3.Distance(cam.transform.position, pos);
+            }
+
+            return Vector3.Distance(Camera.main.transform.position, pos);
+        }
+        
+        protected virtual void OnReturn(T element) { }
+
+        public void ReturnToPool(T effect)
         {
             instances.Remove(effect);
+
+            try 
+            {
+                OnReturn(effect);
+            } catch (Exception ex) 
+            {
+                Debug.LogException(ex);
+            }
+
+            if (DisablePooling)
+            {
+                effect.gameObject.DestroyWhatever();
+                return;
+            }
+
             pool.Add(effect);
             effect.gameObject.SetActive(false);
+            
         }
 
         public bool TrySpawnIfVisible(Vector3 worldPosition, Action<T> onInstanciate = null)
@@ -126,8 +174,8 @@ namespace QuizCanners.Utils
             {
                 inst = pool.TryTake(0);
                 instances.Add(inst);
-                inst.gameObject.SetActive(true);
                 inst.transform.position = worldPosition;
+                inst.gameObject.SetActive(true);
             }
             else
             {
@@ -146,12 +194,13 @@ namespace QuizCanners.Utils
 
             OnInstanciated(inst);
 
+          
+
             return true;
         }
 
         protected virtual void OnInstanciated(T inst) {}
 
-  
         protected override void OnBeforeOnDisableOrEnterPlayMode(bool _afterEnableCalled)
         {
             base.OnBeforeOnDisableOrEnterPlayMode(_afterEnableCalled);
@@ -160,17 +209,22 @@ namespace QuizCanners.Utils
 
         protected void ClearAll()
         {
-            foreach (var e in pool)
-                if (e)
-                    e.gameObject.DestroyWhatever();
-            
-            pool.Clear();
+            ClearPool();
 
             foreach (var e in instances)
                 if (e)
                     e.gameObject.DestroyWhatever();
 
             instances.Clear();
+        }
+
+        private void ClearPool() 
+        {
+            foreach (var e in pool)
+                if (e)
+                    e.gameObject.DestroyWhatever();
+
+            pool.Clear();
         }
 
         #region Inspector
@@ -193,18 +247,21 @@ namespace QuizCanners.Utils
         public override string InspectedCategory => Singleton.Categories.POOL;
         public int GetCount() => instances.Count;
 
-        private pegi.TabContext _tab = new pegi.TabContext();
+        private readonly pegi.TabContext _tab = new pegi.TabContext();
         public override void Inspect()
         {
             "Pool of {0}".F(typeof(T).Name).PegiLabel(pegi.Styles.ListLabel).Write();
 
-            if (Icon.Play.Click())
+            if (Application.isPlaying && Icon.Play.Click())
                 TrySpawn(Vector3.zero, out _);
 
             if (pool.Count > 0 || instances.Count > 0)
                 Icon.Delete.Click().OnChanged(ClearAll);
 
             pegi.Nl();
+
+            bool isPooling = !DisablePooling;
+            "Pooling".PegiLabel().ToggleIcon(ref isPooling).OnChanged(()=> DisablePooling = !isPooling).Nl();
 
             using (_tab.StartContext()) 
             {
@@ -233,5 +290,70 @@ namespace QuizCanners.Utils
         }
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();//instances.GetEnumerator();
         #endregion
+
+        protected override void OnRegisterServiceInterfaces()
+        {
+            base.OnRegisterServiceInterfaces();
+            RegisterServiceAs<PoolSingletonBase<T>>();
+        }
     }
+
+    public static partial class Pool
+    {
+        public static bool TrySpawn<T>(Vector3 position) where T : Component => Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawn(position, out var result));
+        
+        public static bool TrySpawn<T>(Vector3 position, out T instance) where T : Component
+        {
+            T result = null;
+
+            Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawn(position, out result));
+
+            instance = result;
+
+            return instance;
+        }
+
+        public static bool TrySpawn<T>(Vector3 position, Action<T> onInstanciated) where T : Component 
+            => Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawn(position, onInstanciated));
+
+        public static bool TrySpawnIfVisible<T>(Vector3 position) where T : Component => Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawnIfVisible(position, out var result));
+
+        public static bool TrySpawnIfVisible<T>(Vector3 position, out T instance) where T : Component
+        {
+            T result = null;
+
+            Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawnIfVisible(position, out result));
+
+            instance = result;
+
+            return instance;
+        }
+
+        public static bool TrySpawnIfVisible<T>(Vector3 position, Action<T> onInstanciated) where T : Component 
+            => Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawnIfVisible(position, onInstanciated));
+
+        public static float VacancyFraction<T>(float defaultValue = 1f) where T : Component => Singleton.TryGetValue<PoolSingletonBase<T>, float>(s => s.VacancyPortion, defaultValue: defaultValue);
+
+        public static void Return<T>(T instance) where T : Component => Singleton.Try<PoolSingletonBase<T>>(s => s.ReturnToPool(instance)); 
+
+        public static void TrySpawnIfVisible<T>(Vector3 position, int preferedCount, Action<T> onInstanciate) where T : Component
+        {
+            Singleton.Try<PoolSingletonBase<T>>(pool =>
+            {
+                if (Camera.main.IsInCameraViewArea(position))
+                {
+                    int count = (int)Math.Max(1, preferedCount * pool.VacancyPortion);
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (!pool.TrySpawn(worldPosition: position, out var instance))
+                            break;
+
+                        onInstanciate.Invoke(instance);
+                    }
+                };
+            });
+        }
+    }
+
 }

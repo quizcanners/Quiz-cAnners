@@ -2,6 +2,7 @@
 using QuizCanners.Inspect;
 using QuizCanners.Lerp;
 using System;
+using System.Diagnostics.Contracts;
 
 namespace QuizCanners.Utils
 {
@@ -12,6 +13,8 @@ namespace QuizCanners.Utils
     {
         Vector3 GetTargetPosition();
         Vector3 GetCameraOffsetPosition();
+
+        bool TryGetCameraHeight(out float height);
     }
 
     [ExecuteInEditMode]
@@ -31,9 +34,7 @@ namespace QuizCanners.Utils
         public float spinStartTime;
 
         [SerializeField] protected Camera _mainCam;
-        [NonSerialized] public IGodModeCameraController controller;
-
-
+       
         public override string InspectedCategory => Utils.Singleton.Categories.SCENE_MGMT;
 
         public Camera MainCam
@@ -53,7 +54,6 @@ namespace QuizCanners.Utils
 
             if (Input.GetMouseButtonDown(2))
             {
-
                 var ray = MainCam.ScreenPointToRay(Input.mousePosition);
 
                 RaycastHit hit;
@@ -95,7 +95,7 @@ namespace QuizCanners.Utils
             transform.position = campos;
             if (!orbitingFocused)
             {
-                camTr.localRotation = LerpUtils.LerpBySpeed(camTr.localRotation, rot2, 200);
+                camTr.localRotation = LerpUtils.LerpBySpeed(camTr.localRotation, rot2, 200, unscaledTime: true);
                 if (Quaternion.Angle(camTr.localRotation, rot2) < 1)
                     orbitingFocused = true;
             }
@@ -105,60 +105,52 @@ namespace QuizCanners.Utils
 
         protected virtual void OnUpdateInternal() 
         {
-            if (controller != null && QcUnity.IsNullOrDestroyed_Obj(controller))
-                controller = null;
-
             var operatorTf = transform;
             var camTf = _mainCam.transform;
 
-            if (controller == null)
+            camTf.localPosition = Vector3.zero;
+
+            var add = Vector3.zero;
+
+            if (Input.GetKey(KeyCode.W)) add += camTf.forward;
+            if (Input.GetKey(KeyCode.A)) add -= camTf.right;
+            if (Input.GetKey(KeyCode.S)) add -= camTf.forward;
+            if (Input.GetKey(KeyCode.D)) add += camTf.right;
+
+            if (!simulateFlying)
+                add.y = 0;
+
+            if (Input.GetKey(KeyCode.Q)) add += Vector3.down;
+            if (Input.GetKey(KeyCode.E)) add += Vector3.up;
+
+            add.Normalize();
+
+            var mainCameraVelocity = (Input.GetKey(KeyCode.LeftShift) ? 3f : 1f) * speed * add;
+
+            operatorTf.localPosition += mainCameraVelocity * Time.deltaTime;
+
+            operatorTf.localRotation = LerpUtils.LerpBySpeed(operatorTf.localRotation, Quaternion.identity, 160, unscaledTime: true);
+
+            if (!Application.isPlaying || _disableRotation) 
+                return;
+
+            if (rotateWithoutRmb || Input.GetMouseButton(1))
             {
-                var add = Vector3.zero;
+                var eul = camTf.localEulerAngles;
 
-                if (Input.GetKey(KeyCode.W)) add += camTf.forward;
-                if (Input.GetKey(KeyCode.A)) add -= camTf.right;
-                if (Input.GetKey(KeyCode.S)) add -= camTf.forward;
-                if (Input.GetKey(KeyCode.D)) add += camTf.right;
+                var rotationX = eul.y;
+                float _rotationY = eul.x;
 
-                if (!simulateFlying)
-                    add.y = 0;
+                rotationX += Input.GetAxis("Mouse X") * sensitivity;
+                _rotationY -= Input.GetAxis("Mouse Y") * sensitivity;
 
-                if (Input.GetKey(KeyCode.Q)) add += Vector3.down;
-                if (Input.GetKey(KeyCode.E)) add += Vector3.up;
+                _rotationY = _rotationY < 120 ? Mathf.Min(_rotationY, 85) : Mathf.Max(_rotationY, 270);
 
-                add.Normalize();
-
-
-                var mainCameraVelocity = (Input.GetKey(KeyCode.LeftShift) ? 3f : 1f) * speed * add;
-
-                operatorTf.localPosition += mainCameraVelocity * Time.deltaTime;
-
-                operatorTf.localRotation = LerpUtils.LerpBySpeed(operatorTf.localRotation, Quaternion.identity, 160);
-
-                if (!Application.isPlaying || _disableRotation) return;
-
-                if (rotateWithoutRmb || Input.GetMouseButton(1))
-                {
-                    var eul = camTf.localEulerAngles;
-
-                    var rotationX = eul.y;
-                    float _rotationY = eul.x;
-
-                    rotationX += Input.GetAxis("Mouse X") * sensitivity;
-                    _rotationY -= Input.GetAxis("Mouse Y") * sensitivity;
-
-                    _rotationY = _rotationY < 120 ? Mathf.Min(_rotationY, 85) : Mathf.Max(_rotationY, 270);
-
-                    camTf.localEulerAngles = new Vector3(_rotationY, rotationX, 0);
-                }
-
-                SpinAround();
-            } else 
-            {
-                var trg = controller.GetTargetPosition();
-                transform.position = trg + controller.GetCameraOffsetPosition();
-                camTf.LookAt(trg, Vector3.up);
+                camTf.localEulerAngles = new Vector3(_rotationY, rotationX, 0);
             }
+
+            SpinAround();
+            
         }
 
         public void Update()
@@ -170,6 +162,9 @@ namespace QuizCanners.Utils
         }
 
         #region Inspector
+
+        
+
         public override void Inspect()
         {
          
@@ -208,10 +203,7 @@ namespace QuizCanners.Utils
 
             "Editor Only".PegiLabel().ToggleIcon(ref _onlyInEditor).Nl();
 
-            if (controller != null) 
-            {
-                "Controller Assigned".PegiLabel().Write(); pegi.ClickHighlight(controller as UnityEngine.Object).Nl();
-            }
+         
 
         }
 

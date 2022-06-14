@@ -14,19 +14,19 @@ namespace QuizCanners.Utils
      
         public static class Reflector 
         {
-            private class AssignableTypeSetting : IPEGI_ListInspect, IGotReadOnlyName
+            private class AssignableTypeSetting : IPEGI_ListInspect
             {
                 public Type Type;
 
                 public void InspectInList(ref int edited, int index)
                 {
-                    GetReadOnlyName().PegiLabel().Write_ForCopy();
+                    ToString().PegiLabel().Write_ForCopy();
 
                     if (Icon.Enter.Click())
                         edited = index;
                 }
 
-                public string GetReadOnlyName() => Type.FullName;
+                public override string ToString() => Type.FullName;
 
                 public AssignableTypeSetting(Type type) 
                 {
@@ -124,7 +124,7 @@ namespace QuizCanners.Utils
                 else
                 {
                     var typeName = _reflectCLassName.GetValue();
-                    "Class Name".PegiLabel(90).EditDelayed(ref typeName).OnChanged(() => _reflectCLassName.SetValue(typeName)).OnChanged(Clear).UnfocusOnChange().Nl();
+                    "Class Name".PegiLabel(90).Edit_Delayed(ref typeName).OnChanged(() => _reflectCLassName.SetValue(typeName)).OnChanged(Clear).UnfocusOnChange().Nl();
 
                     if (matches == null && !typeName.IsNullOrEmpty())
                     {

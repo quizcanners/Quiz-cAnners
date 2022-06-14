@@ -15,7 +15,7 @@ namespace QuizCanners.Utils
             public class DisposableTimer : IDisposable
             {
                 private Action _onDispose;
-                private TimerCollectionElements.Base _element;
+                private readonly TimerCollectionElements.Base _element;
 
                 public string Description 
                 {
@@ -152,6 +152,8 @@ namespace QuizCanners.Utils
 
                 #region Inspector
 
+                public override string ToString() => "List";
+
                 private readonly pegi.CollectionInspectorMeta collectionMeta = new pegi.CollectionInspectorMeta("Timings");
                 private bool _sortByDuration;
 
@@ -201,7 +203,7 @@ namespace QuizCanners.Utils
 
                 public void InspectInList(ref int edited, int index)
                 {
-                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PegiLabel(90).Write();
+                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PegiLabel().Write();
 
                     if (Icon.Enter.Click())
                         edited = index;
@@ -338,6 +340,9 @@ namespace QuizCanners.Utils
                 }
 
                 #region Inspector
+
+                public override string ToString() => "Dictionary";
+
                 private bool _sortByDuration;
                 private readonly pegi.CollectionInspectorMeta _listMeta = new pegi.CollectionInspectorMeta("Timings", showDictionaryKey: false);
 
@@ -389,7 +394,7 @@ namespace QuizCanners.Utils
 
                 public void InspectInList(ref int edited, int index)
                 {
-                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PegiLabel(90).Write();
+                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PegiLabel().Write();
 
                     if (Icon.Enter.Click())
                         edited = index;
@@ -407,9 +412,10 @@ namespace QuizCanners.Utils
                     public abstract long GetTotalTicksDuration();
 
                     public TimeSpan ElapsedTime => TimeSpan.FromTicks(GetTotalTicksDuration());
+
                 }
 
-                public abstract class ValueBase : Base, IPEGI_ListInspect, IGotReadOnlyName
+                public abstract class ValueBase : Base, IPEGI_ListInspect
                 {
                     protected long _totalTicksDuration;
                     public string Key;
@@ -477,10 +483,10 @@ namespace QuizCanners.Utils
                             Icon.Wait.Draw();
                         }
 
-                        GetReadOnlyName().PegiLabel().Write();
+                        ToString().PegiLabel().Write();
                     }
 
-                    public virtual string GetReadOnlyName()
+                    public override string ToString()
                     {
                         string keyParameter;
 
@@ -504,9 +510,9 @@ namespace QuizCanners.Utils
                         return val;
                     }
 
-                        #endregion
+                    #endregion
 
-                        protected ValueBase (string key) 
+                    protected ValueBase (string key) 
                     {
                         Key = key;
                     }
@@ -531,7 +537,7 @@ namespace QuizCanners.Utils
                         OperationsCount += operationsCount;
                     }
 
-                    public override string GetReadOnlyName() => "Sum " + base.GetReadOnlyName(); 
+                    public override string ToString() => "Sum " + base.ToString(); 
 
                     public SumValue( string key) : base(key) { }
                 }
@@ -556,7 +562,7 @@ namespace QuizCanners.Utils
                     }
 
 
-                    public override string GetReadOnlyName() => "Val " + base.GetReadOnlyName(); // {0} {1}".F(QcSharp.AddSpacesToSentence(Key), _details.IsNullOrEmpty() ? "" : " ({0}) ".F(_details));
+                    public override string ToString() => "Val " + base.ToString(); // {0} {1}".F(QcSharp.AddSpacesToSentence(Key), _details.IsNullOrEmpty() ? "" : " ({0}) ".F(_details));
 
                     public LastValue(string key) : base(key) { }
                 }
@@ -587,7 +593,7 @@ namespace QuizCanners.Utils
                         base.details = details;
                     }
 
-                    public override string GetReadOnlyName() => "Avg " + base.GetReadOnlyName(); // {0} {1}".F(QcSharp.AddSpacesToSentence(Key), _details.IsNullOrEmpty() ? "" : " ({0}) ".F(_details));
+                    public override string ToString() => "Avg " + base.ToString(); // {0} {1}".F(QcSharp.AddSpacesToSentence(Key), _details.IsNullOrEmpty() ? "" : " ({0}) ".F(_details));
 
                     public AvgValue(string key) : base(key) { }
                 }
@@ -615,10 +621,12 @@ namespace QuizCanners.Utils
                         }
                     }
 
+                    public override string ToString() => "Max " + base.ToString();
+
                     public MaxValue(string key) : base(key) { }
                 }
 
-                public class NestedCollection : Base, IPEGI_ListInspect, IGotReadOnlyName, IPEGI
+                public class NestedCollection : Base, IPEGI_ListInspect, IPEGI
                 {
                     public string Name;
 
@@ -637,12 +645,12 @@ namespace QuizCanners.Utils
                         if (QcSharp.AddSpacesToSentence(Name).PegiLabel().ClickLabel())
                             edited = index;
 
-                        "{0} %".F(Percentage).PegiLabel(0.25f).Write();
+                        "{0} %".F(Percentage).PegiLabel(65).Write();
 
                         collection.InspectInList(ref edited, index);
                     }
 
-                    public string GetReadOnlyName() => collection.GetNameForInspector();
+                    public override string ToString() => Name + " " + collection.GetNameForInspector();
 
                     public void Inspect()
                     {
@@ -651,7 +659,7 @@ namespace QuizCanners.Utils
                     #endregion
                 }
 
-                public class NestedDictionary : Base, IPEGI_ListInspect, IGotReadOnlyName, IPEGI
+                public class NestedDictionary : Base, IPEGI_ListInspect, IPEGI
                 {
                     public string Name;
 
@@ -670,12 +678,12 @@ namespace QuizCanners.Utils
                         if (QcSharp.AddSpacesToSentence(Name).PegiLabel().ClickLabel())
                             edited = index;
 
-                        "{0} %".F(Percentage).PegiLabel(0.25f).Write();
+                        "{0} %".F(Percentage).PegiLabel(65).Write();
 
                         collection.InspectInList(ref edited, index);
                     }
 
-                    public string GetReadOnlyName() => collection.GetNameForInspector();
+                    public override string ToString() => Name + " " + collection.GetNameForInspector();
 
                     public void Inspect()
                     {

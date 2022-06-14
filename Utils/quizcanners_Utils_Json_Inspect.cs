@@ -61,7 +61,7 @@ namespace QuizCanners.Utils
         }
 
       
-        protected class JsonString : JsonBase, IGotReadOnlyName
+        protected class JsonString : JsonBase
         {
             public bool dataOnly;
 
@@ -94,7 +94,7 @@ namespace QuizCanners.Utils
 
             public override int GetCount() => data.Length;
 
-            public string GetReadOnlyName() => data.IsNullOrEmpty() ? "Empty" : data.FirstLine();
+            public override string ToString() => data.IsNullOrEmpty() ? "Empty" : data.FirstLine();
 
             public JsonString() { }
 
@@ -120,7 +120,7 @@ namespace QuizCanners.Utils
                     if (dataOnly)
                         pegi.Edit(ref data);
                     else
-                        pegi.EditBig(ref data);
+                        pegi.Edit_Big(ref data);
                 }
 
                 if (changed)
@@ -335,7 +335,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        protected class JsonProperty : JsonBase, IGotReadOnlyName
+        protected class JsonProperty : JsonBase
         {
 
             public string name;
@@ -361,7 +361,7 @@ namespace QuizCanners.Utils
 
             public static JsonProperty inspected;
 
-            public string GetReadOnlyName() => name + (data.HasNestedData ? "{}" : data.GetNameForInspector());
+            public override string ToString() => name + (data.HasNestedData ? "{}" : data.GetNameForInspector());
 
            public override void Inspect()
             {
@@ -376,7 +376,7 @@ namespace QuizCanners.Utils
                     if (data.HasNestedData)
                         (name + " " + data.GetNameForInspector()).PegiLabel().IsFoldout(ref foldedOut);
 
-                    using (new PathAdd(GetReadOnlyName()))
+                    using (new PathAdd(ToString()))
                     {
                         DecodeOrInspectJson(ref data, foldedOut, name);
                     }
@@ -390,7 +390,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        protected class JsonList : JsonBase, IGotReadOnlyName
+        protected class JsonList : JsonBase
         {
 
             private readonly List<JsonBase> values;
@@ -401,12 +401,12 @@ namespace QuizCanners.Utils
 
             public override int GetCount() => values.Count;
 
-            public string GetReadOnlyName() => "[{0}]".F(values.Count);
+            public override string ToString() => "[{0}]".F(values.Count);
 
            public override void Inspect()
             {
 
-                using (new PathAdd(GetReadOnlyName()))
+                using (new PathAdd(ToString()))
                 {
                     if (values.Count > 0)
                     {
@@ -520,7 +520,7 @@ namespace QuizCanners.Utils
             public JsonList(List<JsonString> values) { this.values = values.ToList<JsonBase>(); }
         }
 
-        protected class JsonClass : JsonBase, IGotReadOnlyName
+        protected class JsonClass : JsonBase
         {
             public List<JsonProperty> properties;
 
@@ -535,7 +535,7 @@ namespace QuizCanners.Utils
                 return null;
             }
 
-            public string GetReadOnlyName() => JsonProperty.inspected == null ? "  " :
+            public override string ToString() => JsonProperty.inspected == null ? "  " :
                 (JsonProperty.inspected.foldedOut ? "{" : (" {" + GetCount() + "} "));
 
             public override int GetCount() => properties.Count;
@@ -545,7 +545,7 @@ namespace QuizCanners.Utils
 
                 pegi.Indent();
 
-                using (new PathAdd(GetReadOnlyName()))
+                using (new PathAdd(ToString()))
                 {
                     for (int i = 0; i < properties.Count; i++)
                         properties[i].Nested_Inspect();

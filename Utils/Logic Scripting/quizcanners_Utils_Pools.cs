@@ -1,24 +1,20 @@
 using QuizCanners.Inspect;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 namespace QuizCanners.Utils
 {
-    public static class Pool
+    public static partial class Pool
     {
         public abstract class Base : IGotCount
         {
-
-
             public int GetCount() => Count;
 
             public abstract int Count { get; }
         }
-
-        public abstract class Generic<T> : Base, IPEGI, IGotReadOnlyName, IEnumerable<T> where T : Component
+        
+        public abstract class Generic<T> : Base, IPEGI, IEnumerable<T> where T : Component
         {
             protected List<T> pool = new List<T>();
             [SerializeField] protected List<T> instances = new List<T>();
@@ -120,7 +116,7 @@ namespace QuizCanners.Utils
 
             public virtual void Inspect()
             {
-                "Active {0}".F(GetReadOnlyName()).PegiLabel().Edit_List(instances).Nl();
+                "Active {0}".F(ToString()).PegiLabel().Edit_List(instances).Nl();
 
                 if (Application.isPlaying)
                 {
@@ -134,7 +130,7 @@ namespace QuizCanners.Utils
             }
 
 
-            public virtual string GetReadOnlyName() => "Pool of {0}".F(typeof(T).Name);
+            public override string ToString() => "Pool of {0}".F(typeof(T).Name);
 
             #endregion
 

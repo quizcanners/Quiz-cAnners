@@ -18,7 +18,7 @@ namespace QuizCanners.Inspect
             internal static string popUpText = "";
             internal static string relatedLink = "";
             internal static string relatedLinkName = "";
-            internal static Func<bool> inspectDocumentationDelegate;
+            internal static Action inspectDocumentationDelegate;
             internal static Action areYouSureFunk;
 
 
@@ -130,20 +130,26 @@ namespace QuizCanners.Inspect
                 int buttonSize = 20) => DocumentationClickOpen(text, toolTip, buttonSize, Icon.Warning);
             public static ChangesToken WarningDocumentationClickOpen(string text, string toolTip = "What is this?",
                 int buttonSize = 20) => DocumentationClickOpen(text, toolTip, buttonSize, Icon.Warning);
-            public static ChangesToken DocumentationClickOpen(Func<bool> inspectFunction, string toolTip = "", int buttonSize = 20, Icon clickIcon = Icon.Question)
+            public static ChangesToken DocumentationClickOpen(Action inspectFunction, string toolTip = "", int buttonSize = 20, Icon clickIcon = Icon.Question)
             {
                 if (toolTip.IsNullOrEmpty())
                     toolTip = clickIcon.GetDescription();
 
                 if (DocumentationClickInternal(toolTip, buttonSize))
                 {
-                    inspectDocumentationDelegate = inspectFunction;
-                    InitiatePopUp();
+                    OpenDocumentation(inspectFunction);
                     return ChangesToken.True;
                 }
 
                 return ChangesToken.False;
             }
+
+            public static void OpenDocumentation(Action inspectFunction) 
+            {
+                inspectDocumentationDelegate = inspectFunction;
+                InitiatePopUp();
+            }
+
             public static ChangesToken DocumentationClickOpen(Func<string> text, string toolTip = "", int buttonSize = 20, Icon clickIcon = Icon.Question)
             {
 

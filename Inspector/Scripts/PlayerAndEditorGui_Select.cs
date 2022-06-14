@@ -132,7 +132,7 @@ namespace QuizCanners.Inspect
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return from.IsNullOrEmpty() ? "Selecting from null:".PegiLabel(90).Write().Edit(ref no) : PegiEditorOnly.Select(ref no, from.ToArray());
+                return from.IsNullOrEmpty() ? "Selecting from null:".PegiLabel(90).Edit(ref no) : PegiEditorOnly.Select(ref no, from.ToArray());
 #endif
 
             if (from.IsNullOrEmpty()) return ChangesToken.False;
@@ -329,7 +329,7 @@ namespace QuizCanners.Inspect
             if (label.ApproxWidth().Select(ref o, objects))
                 obj = o as T;
 
-            o.ClickHighlight();
+            ClickHighlight(o);
 
             if (Icon.Refresh.Click("Refresh List"))
                 objectsInScene.Remove(typeof(T)); 
@@ -377,7 +377,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Select<T>(this TextLabel text, ref T value, List<T> list, bool showIndex = false, bool stripSlashes = false, bool allowInsert = true)
         {
-
+            text.FallbackWidthFraction = 0.25f;
              Write(text);
             return Select(ref value, list, showIndex, stripSlashes, allowInsert);
         }
@@ -890,7 +890,7 @@ namespace QuizCanners.Inspect
 
             Select(ref obj, list, showIndex, stripSlahes, allowInsert);
 
-            obj.ClickHighlight();
+            ClickHighlight(obj);
 
             return changed;
         }
@@ -1006,7 +1006,7 @@ namespace QuizCanners.Inspect
 
         #region Select IGotName
 
-        public static ChangesToken Select_iGotDisplayName<T>(this TextLabel label, ref string name, List<T> lst) where T : IGotReadOnlyName
+        public static ChangesToken Select_iGotDisplayName<T>(this TextLabel label, ref string name, List<T> lst) 
         {
             Write(label);
             return Select_iGotDisplayName(ref name, lst);
@@ -1053,7 +1053,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken Select_iGotDisplayName<T>(ref string val, List<T> lst) where T : IGotReadOnlyName
+        public static ChangesToken Select_iGotDisplayName<T>(ref string val, List<T> lst)
         {
 
             if (lst == null)
@@ -1066,7 +1066,7 @@ namespace QuizCanners.Inspect
             foreach (var el in lst)
                 if (!el.IsNullOrDestroyed_Obj())
                 {
-                    var name = el.GetReadOnlyName();
+                    var name = el.ToString();
 
                     if (name == null) continue;
 

@@ -28,7 +28,7 @@ namespace QuizCanners.Lerp
 
         #region Abstract Base
 
-        public abstract class BaseLerp : ICfg, ILinkedLerping, IPEGI, IPEGI_ListInspect, IGotReadOnlyName
+        public abstract class BaseLerp : ICfg, ILinkedLerping, IPEGI, IPEGI_ListInspect
         {
 
             public LerpSpeedMode lerpMode = LerpSpeedMode.SpeedThreshold;
@@ -39,7 +39,7 @@ namespace QuizCanners.Lerp
             public virtual bool UsingLinkedThreshold =>
                 (lerpMode == LerpSpeedMode.SpeedThreshold && Application.isPlaying);
             public virtual bool Enabled => lerpMode != LerpSpeedMode.LerpDisabled;
-            public virtual string GetReadOnlyName() => Name_Internal;
+            public override string ToString() => Name_Internal;
 
             protected abstract string Name_Internal { get; }
          
@@ -85,7 +85,7 @@ namespace QuizCanners.Lerp
                         portion = 1;
 
                         if (Application.isPlaying)
-                            Portion(ref portion);
+                            Portion(ref portion, unscaledTime: ld._unscaledTime);
 
                         if (canSkipLerp)
                             portion = 1;
@@ -108,19 +108,19 @@ namespace QuizCanners.Lerp
             {
                 var lp = ld.MinPortion;
 
-                if (UsingLinkedThreshold && Portion(ref lp))
+                if (UsingLinkedThreshold && Portion(ref lp, unscaledTime: ld._unscaledTime))
                 {
                     ld.AddPortion(lp, this);
                 }
                 else if (lerpMode == LerpSpeedMode.UnlinkedSpeed)
                 {
                     float portion = 1;
-                    Portion(ref portion);
+                    Portion(ref portion, unscaledTime: ld._unscaledTime);
                     ld.AddPortion(portion, this);
                 }
             }
 
-            protected abstract bool Portion(ref float linkedPortion);
+            protected abstract bool Portion(ref float linkedPortion, bool unscaledTime);
 
             #region Inspector
 
@@ -150,7 +150,7 @@ namespace QuizCanners.Lerp
             public virtual void Inspect()
             {
 
-                GetReadOnlyName().PegiLabel().Write_ForCopy().Nl();
+                ToString().PegiLabel().Write_ForCopy().Nl();
 
                 "Lerp Speed Mode ".PegiLabel(110).Edit_Enum(ref lerpMode).Nl();
 
@@ -224,7 +224,7 @@ namespace QuizCanners.Lerp
                 return true;
             }
 
-            protected override bool Portion(ref float linkedPortion)
+            protected override bool Portion(ref float linkedPortion, bool unscaledTime)
             {
 
                 var magnitude = (CurrentValue - targetValue).magnitude;
@@ -237,7 +237,7 @@ namespace QuizCanners.Lerp
                      modSpeed *= _easePortion;
                  }*/
 
-                return LerpUtils.SpeedToMinPortion(modSpeed, magnitude, ref linkedPortion);
+                return LerpUtils.SpeedToMinPortion(modSpeed, magnitude, ref linkedPortion, unscaledTime: unscaledTime);
             }
 
             #region Inspector
@@ -322,12 +322,12 @@ namespace QuizCanners.Lerp
                 return true;
             }
 
-            protected override bool Portion(ref float linkedPortion)
+            protected override bool Portion(ref float linkedPortion, bool unscaledTime)
             {
 
                 var magnitude = Quaternion.Angle(CurrentValue, targetValue);
 
-                return  LerpUtils.SpeedToMinPortion(SpeedLimit, magnitude, ref linkedPortion);
+                return  LerpUtils.SpeedToMinPortion(SpeedLimit, magnitude, ref linkedPortion, unscaledTime: unscaledTime);
             }
 
             #region Inspector
@@ -400,8 +400,8 @@ namespace QuizCanners.Lerp
                 return true;
             }
 
-            protected override bool Portion(ref float linkedPortion) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, CurrentValue - TargetValue, ref linkedPortion);
+            protected override bool Portion(ref float linkedPortion, bool unscaledTime) =>
+                 LerpUtils.SpeedToMinPortion(SpeedLimit, CurrentValue - TargetValue, ref linkedPortion, unscaledTime: unscaledTime);
 
             #region Inspect
 
@@ -772,8 +772,8 @@ namespace QuizCanners.Lerp
                 set { targetValue = value; }
             }
 
-            protected override bool Portion(ref float linkedPortion) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, LerpUtils.DistanceRgba(CurrentValue, targetValue), ref linkedPortion);
+            protected override bool Portion(ref float linkedPortion, bool unscaledTime) =>
+                 LerpUtils.SpeedToMinPortion(SpeedLimit, LerpUtils.DistanceRgba(CurrentValue, targetValue), ref linkedPortion, unscaledTime: unscaledTime);
 
             protected sealed override bool LerpInternal(float linkedPortion)
             {
@@ -1003,14 +1003,14 @@ namespace QuizCanners.Lerp
                 return true;
             }
 
-            protected override bool Portion(ref float linkedPortion)
+            protected override bool Portion(ref float linkedPortion, bool unscaledTime)
             {
 
                 var magnitude = (CurrentValue - targetValue).magnitude;
 
                 var modSpeed = SpeedLimit;
 
-                return  LerpUtils.SpeedToMinPortion(modSpeed, magnitude, ref linkedPortion);
+                return  LerpUtils.SpeedToMinPortion(modSpeed, magnitude, ref linkedPortion, unscaledTime: unscaledTime);
             }
 
             #region Inspector
@@ -1224,8 +1224,8 @@ namespace QuizCanners.Lerp
                 return true;
             }
 
-            protected override bool Portion(ref float portion) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, Quaternion.Angle(CurrentValue, TargetValue), ref portion);
+            protected override bool Portion(ref float portion, bool unscaledTime) =>
+                 LerpUtils.SpeedToMinPortion(SpeedLimit, Quaternion.Angle(CurrentValue, TargetValue), ref portion, unscaledTime: unscaledTime);
         }
 
         public abstract class TransformVector3Base : BaseLerpGeneric<Vector3>
@@ -1254,8 +1254,8 @@ namespace QuizCanners.Lerp
                 return true;
             }
 
-            protected override bool Portion(ref float portion) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, (CurrentValue - targetValue).magnitude, ref portion);
+            protected override bool Portion(ref float portion, bool unscaledTime) =>
+                 LerpUtils.SpeedToMinPortion(SpeedLimit, (CurrentValue - targetValue).magnitude, ref portion, unscaledTime: unscaledTime);
         }
 
         public class TransformLocalScale : TransformVector3Base
@@ -1340,7 +1340,7 @@ namespace QuizCanners.Lerp
             public override ShaderProperty.IndexGeneric<float> Property => _property;
 
             protected override string Name_Internal =>
-                _property != null ? _property.GetReadOnlyName() : "Material Float";
+                _property != null ? _property.ToString() : "Material Float";
 
             public override float TargetValue
             {
@@ -1384,8 +1384,8 @@ namespace QuizCanners.Lerp
                 CurrentValue = initialValue;
             }
 
-            protected override bool Portion(ref float linkedPortion) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, CurrentValue - targetValue, ref linkedPortion);
+            protected override bool Portion(ref float linkedPortion, bool unscaledTime) =>
+                 LerpUtils.SpeedToMinPortion(SpeedLimit, CurrentValue - targetValue, ref linkedPortion, unscaledTime: unscaledTime);
 
             protected override bool LerpSubInternal(float portion)
             {
@@ -1441,7 +1441,7 @@ namespace QuizCanners.Lerp
             private readonly ShaderProperty.IndexGeneric<Color> _property;
 
             public override ShaderProperty.IndexGeneric<Color> Property => _property;
-            protected override string Name_Internal => _property != null ? _property.GetReadOnlyName() : "Material Float";
+            protected override string Name_Internal => _property != null ? _property.ToString() : "Material Float";
 
             public override Color TargetValue { get; set; }
 
@@ -1488,8 +1488,8 @@ namespace QuizCanners.Lerp
                 return false;
             }
 
-            protected override bool Portion(ref float portion) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit,  LerpUtils.DistanceRgba(CurrentValue, TargetValue), ref portion);
+            protected override bool Portion(ref float portion, bool unscaledTime) =>
+                 LerpUtils.SpeedToMinPortion(SpeedLimit,  LerpUtils.DistanceRgba(CurrentValue, TargetValue), ref portion, unscaledTime: unscaledTime);
 
             #region Encode & Decode
 
@@ -1521,7 +1521,7 @@ namespace QuizCanners.Lerp
             private readonly ShaderProperty.IndexGeneric<Vector4> _property;
 
             public override ShaderProperty.IndexGeneric<Vector4> Property => _property;
-            protected override string Name_Internal => _property != null ? _property.GetReadOnlyName() : "Material Float4";
+            protected override string Name_Internal => _property != null ? _property.ToString() : "Material Float4";
 
             public override Vector4 TargetValue
             {
@@ -1566,8 +1566,8 @@ namespace QuizCanners.Lerp
                 return false;
             }
 
-            protected override bool Portion(ref float portion) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, (CurrentValue - TargetValue).magnitude, ref portion);
+            protected override bool Portion(ref float portion, bool unscaledTime) =>
+                 LerpUtils.SpeedToMinPortion(SpeedLimit, (CurrentValue - TargetValue).magnitude, ref portion, unscaledTime: unscaledTime);
 
             #region Encode & Decode
 
@@ -1764,6 +1764,7 @@ namespace QuizCanners.Lerp
     {
         private int _lerpChangeVersion = -1;
         private float _linkedPortion = 1;
+        internal bool _unscaledTime;
         public string dominantParameter = "None";
 
         public ChangesToken StartChangeTrack() => new ChangesToken(this);
@@ -1793,6 +1794,11 @@ namespace QuizCanners.Lerp
         {
             _linkedPortion = 1;
             _resets++;
+        }
+
+        public LerpData (bool unscaledTime) 
+        {
+            _unscaledTime = unscaledTime;
         }
 
         #region Inspector
@@ -1845,8 +1851,4 @@ namespace QuizCanners.Lerp
         }
 
     }
-
-
-
-
 }

@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace QuizCanners.Inspect
 {
-#pragma warning disable IDE1006 // Naming Styles
 #pragma warning disable IDE0019 // Use pattern matching
 #pragma warning disable IDE0011 // Add braces
 #pragma warning disable IDE0008 // Use explicit type
@@ -15,6 +14,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(this TextLabel label,  ref AudioClip field)
         {
+            label.FallbackWidthFraction = 0.25f;
             label.Write();
             return Edit(ref field);
         }
@@ -79,6 +79,8 @@ namespace QuizCanners.Inspect
             if (component)
                 return ChangesToken.False;
 
+            label.FallbackWidthFraction = 0.33f;
+
             label.Write();
             return Edit_IfNull(ref component, parent);
         }
@@ -119,7 +121,7 @@ namespace QuizCanners.Inspect
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
             {
-                Write(label);
+                Write(label, defaultWidthFraction: 0.33f);
                 return Edit(ref field, allowSceneObjects);
             }
 #endif
@@ -227,15 +229,19 @@ namespace QuizCanners.Inspect
                     }
                     else
                     {
-                        var pgi = QcUnity.TryGetInterfaceFrom<IPEGI>(obj);
-
-                        if (Context.Internal_isConditionally_Entered(label, pgi != null, showLabelIfTrue: showLabelIfEntered))
+                        if (Context.Internal_isEntered(label, showLabelIfEntered))
                         {
                             Nl();
-                            pgi.Nested_Inspect();
+                            var pgi = QcUnity.TryGetInterfaceFrom<IPEGI>(obj);
+                            if (pgi != null)
+                                pgi.Nested_Inspect();
+                            else
+                                pegi.TryDefaultInspect(obj as Object);
                         }
                         else
-                            obj.ClickHighlight();
+                        {
+                            ClickHighlight(obj);
+                        }
                     }
 
                     if (!Context.IsEnteredCurrent && Icon.Clear.ClickConfirm(confirmationTag: "Del " + label + obj.GetHashCode(), Msg.MakeElementNull.GetText()))
@@ -272,7 +278,7 @@ namespace QuizCanners.Inspect
                     if (EnterInternal.IsConditionally_Entered(label, pgi != null, ref entered, thisOne, showLabelIfEntered: showLabelIfEntered).Nl_ifEntered())
                         pgi.Nested_Inspect();
                     else
-                        obj.ClickHighlight();
+                        pegi.ClickHighlight(obj);
                 }
 
                 if ((entered == -1) && Icon.Clear.ClickConfirm(confirmationTag: "Del " + label + thisOne, Msg.MakeElementNull.GetText()))
@@ -350,7 +356,7 @@ namespace QuizCanners.Inspect
                 var val = mat.Get(property);
 
                 if (name.IsNullOrEmpty())
-                    name = property.GetReadOnlyName();
+                    name = property.ToString();
 
                 if (name.PegiLabel(name.Length * letterSizeInPixels).Edit(ref val))
                 {
@@ -367,7 +373,7 @@ namespace QuizCanners.Inspect
                 var val = mat.Get(property);
 
                 if (name.IsNullOrEmpty())
-                    name = property.GetReadOnlyName();
+                    name = property.ToString();
 
                 if (name.PegiLabel().ApproxWidth().Edit(ref val, min, max))
                 {
@@ -384,7 +390,7 @@ namespace QuizCanners.Inspect
                 var val = mat.Get(property);
 
                 if (name.IsNullOrEmpty())
-                    name = property.GetReadOnlyName();
+                    name = property.ToString();
 
                 if (name.PegiLabel(width: name.Length * letterSizeInPixels).Edit(ref val))
                 {
@@ -401,7 +407,7 @@ namespace QuizCanners.Inspect
                 var val = mat.Get(property);
 
                 if (name.IsNullOrEmpty())
-                    name = property.GetReadOnlyName();
+                    name = property.ToString();
 
                 if (name.PegiLabel().Edit(ref val))
                 {
@@ -418,7 +424,7 @@ namespace QuizCanners.Inspect
                 var val = mat.Get(property);
 
                 if (name.IsNullOrEmpty())
-                    name = property.GetReadOnlyName();
+                    name = property.ToString();
 
                 if (name.PegiLabel(name.Length * letterSizeInPixels).Edit(ref val))
                 {

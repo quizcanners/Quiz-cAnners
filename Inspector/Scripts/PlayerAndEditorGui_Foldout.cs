@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Xml.Linq;
 using QuizCanners.Migration;
 using QuizCanners.Utils;
 using UnityEngine;
@@ -86,7 +87,7 @@ namespace QuizCanners.Inspect
             }
             else
             {
-                if (tex.Click(text).IgnoreChanges(LatestInteractionEvent.Enter))
+                if (pegi.Click(tex, text).IgnoreChanges(LatestInteractionEvent.Enter))
                     state = true;
             }
             return new StateToken(state);

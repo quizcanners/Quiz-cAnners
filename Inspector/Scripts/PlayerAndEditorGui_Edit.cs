@@ -94,11 +94,11 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken Edit(this TextToken label, ref Quaternion qt)
+       /* public static ChangesToken Edit(this TextLabel label, ref Quaternion qt)
         {
-            label.Write();
+            Write(label, 0.33f);
             return Edit(ref qt);
-        }
+        }*/
 
         public static ChangesToken Edit(ref Quaternion qt)
         {
@@ -127,7 +127,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit_01(this TextLabel label, ref float val)
         {
-            label.ApproxWidth().Write();
+            Write(label, 0.33f);
             return Edit(ref val, 0, 1);
         }
 
@@ -153,7 +153,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit_01(this TextLabel label, ref Vector2 val)
         {
-            label.ApproxWidth().Nl();
+            Write(label, 0.33f);
             return Edit_01(ref val);
         }
 
@@ -224,7 +224,7 @@ namespace QuizCanners.Inspect
                 return PegiEditorOnly.Edit(label, ref val);
 #endif
 
-            label.TryWrite();
+            Write(label, 0.33f);
             return
                 Edit(ref val.x) |
                 Edit(ref val.y) |
@@ -240,10 +240,18 @@ namespace QuizCanners.Inspect
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
+            {
+                if (label.GotWidth) 
+                {
+                    Write(label);
+                    return Edit(ref val);
+                }
+
                 return PegiEditorOnly.Edit(label, ref val);
+            }
 #endif
 
-            Write(label);
+            Write(label, 0.33f);
             Nl();
             return Edit(ref val);
         }
@@ -256,7 +264,7 @@ namespace QuizCanners.Inspect
                 return PegiEditorOnly.Edit(label, ref val);
 
 #endif
-            label.TryWrite();
+            Write(label, 0.33f);
             return Edit(ref val.x) | Edit(ref val.y);
         }
 
@@ -278,7 +286,7 @@ namespace QuizCanners.Inspect
                 return PegiEditorOnly.Edit(label, ref val);
 
 #endif
-            label.ApproxWidth().Write();
+            Write(label, 0.33f);
             return Edit(ref val);
         }
 
@@ -388,7 +396,7 @@ namespace QuizCanners.Inspect
             }
             else
             {
-                Write(label);
+                Write(label, 0.33f);
                 return Edit(ref col);
             }
 
@@ -406,25 +414,25 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit_Enum<T>(this TextLabel label, ref T current, int valueWidth)
         {
-            label.TryWrite();
+            Write(label, defaultWidthFraction: 0.33f);
             return Edit_Enum(ref current, width: valueWidth);
         }
 
-        public static ChangesToken Edit_Enum<T>(this TextLabel label, ref T current, System.Func<T, object> nameGetter, int width = -1)
+        public static ChangesToken Edit_Enum<T>(this TextLabel label, ref T current, System.Func<T, object> nameGetter, int valueWidth = -1)
         {
-            label.Write();
-            return EditEnum_Internal(ref current, typeof(T), nameGetter, width: width);
+            Write(label, defaultWidthFraction: 0.33f);
+            return EditEnum_Internal(ref current, typeof(T), nameGetter, width: valueWidth);
         }
 
         public static ChangesToken Edit_Enum<T>(this TextLabel text, ref T eval)
         {
-            text.Write();
+            Write(text, defaultWidthFraction: 0.33f);
             return Edit_Enum(ref eval);
         }
 
         public static ChangesToken Edit_Enum<T>(this TextLabel label, ref int current, List<int> options)
         {
-            label.TryWrite();
+            Write(label, defaultWidthFraction: 0.33f);
             return EditEnum_Internal<T>(ref current, options);
         }
 
@@ -467,7 +475,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit_Enum<T>(this TextLabel label, ref int current, int valueWidth = -1)
         {
-            label.Write();
+            Write(label, 0.33f);
             return EditEnum_Internal(ref current, typeof(T), width: valueWidth);
         }
 

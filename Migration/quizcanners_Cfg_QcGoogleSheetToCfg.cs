@@ -22,7 +22,7 @@ namespace QuizCanners.Migration
         {
             get
             {
-                ReadIfDirty();
+                CheckWebRequest();
                 return _columns;
             }
         }
@@ -65,7 +65,7 @@ namespace QuizCanners.Migration
         }
 
         [Serializable]
-        public class SheetPage : IGotReadOnlyName, IPEGI_ListInspect
+        public class SheetPage : IPEGI_ListInspect
         {
             public string pageName;
             public int pageIndex;
@@ -76,7 +76,7 @@ namespace QuizCanners.Migration
                 "#gid=".PegiLabel(40).Edit(ref pageIndex);
             }
 
-            public string GetReadOnlyName() => pageName;
+            public override string ToString() => pageName;
         }
 
         [NonSerialized] private UnityEngine.Networking.UnityWebRequest request;
@@ -119,7 +119,7 @@ namespace QuizCanners.Migration
 
         public void ToListOverride<T>(ref List<T> list, bool ignoreErrors = true) where T : ICfgDecode, new()
         {
-            ReadIfDirty();
+            CheckWebRequest();
 
             list.ForceSetCount(rows.Count);
 
@@ -160,13 +160,14 @@ namespace QuizCanners.Migration
 
         }
 
-        private void ReadIfDirty()
+        private void CheckWebRequest()
         {
             if (IsDownloaded)
             {
                 var tmp = request;
                 request = null;
                 Read(tmp);
+                tmp.Dispose();
             }
         }
 

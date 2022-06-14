@@ -44,7 +44,7 @@ namespace QuizCanners.Inspect
 
             var changed = InspectValueInCollection(ref el, index, ref inspected, listMeta);
 
-            if (changed && typeof(T).IsValueType)
+            if (changed && (typeof(T).IsValueType || typeof(Object).IsAssignableFrom(typeof(T))))
                 list[index] = el;
 
             return changed;
@@ -58,10 +58,13 @@ namespace QuizCanners.Inspect
             var tmp = el;
             var changed = InspectValueInCollection(ref tmp, index, ref inspected, listMeta);
 
-            if (changed && typeof(T).IsValueType)
+            if (changed) 
             {
-                list.Remove(el);
-                list.Add(tmp);
+                if (typeof(T).IsValueType || typeof(Object).IsAssignableFrom(typeof(T)))
+                {
+                    list.Remove(el);
+                    list.Add(tmp);
+                }
             }
 
             return changed;
@@ -107,6 +110,20 @@ namespace QuizCanners.Inspect
             }
             else
             {
+                bool isShown = false;
+
+
+                var uo = el as Object;
+
+                if (el is Object)
+                {
+                    isShown = true;
+
+                    if (Edit(ref uo, typeof(T), width: (int)(Screen.width * 0.25f)))
+                        el = (T)(object)uo;
+                }
+
+
                 var pl = el as IPEGI_ListInspect;
 
                 if (pl != null)
@@ -129,8 +146,7 @@ namespace QuizCanners.Inspect
                 }
                 else
                 {
-                    var uo = el as Object;
-
+                  
                     var pg = el as IPEGI;
 
                     var need = el as INeedAttention;
@@ -139,17 +155,6 @@ namespace QuizCanners.Inspect
                     if (warningText != null)
                         SetBgColor(AttentionColor);
 
-                    var clickHighlightHandled = false;
-
-                    bool isShown = false;
-
-                    if (el is Object)
-                    {
-                        isShown = true;
-
-                        if (Edit(ref uo, typeof(T), 200))
-                            el = (T)(object)uo;
-                    }
 
                     var named = el as IGotName;
                     if (named != null)
@@ -158,7 +163,7 @@ namespace QuizCanners.Inspect
 
                         if (el is Object)
                         {
-                            if (EditDelayed(ref n))
+                            if (Edit_Delayed(ref n))
                             {
                                 named.NameForInspector = n;
 
@@ -167,7 +172,7 @@ namespace QuizCanners.Inspect
                         }
                         else
                         {
-                            if (EditDelayed(ref n))
+                            if (Edit_Delayed(ref n))
                             {
                                 named.NameForInspector = n;
                                 if (typeof(T).IsValueType)
@@ -211,10 +216,9 @@ namespace QuizCanners.Inspect
 
                                 if (tex)
                                 {
-                                    if (uo.ClickHighlight(tex))
+                                    if (ClickHighlight(uo, tex))
                                         isPrevious = true;
 
-                                    clickHighlightHandled = true;
                                 }
                             }
                             else if (el.GetNameForInspector().PegiLabel("Inspect", RemainingLength(defaultButtonSize * 2 + 10)).ClickLabel())
@@ -234,8 +238,8 @@ namespace QuizCanners.Inspect
                         isPrevious = true;
                     }
 
-                    if (!clickHighlightHandled && uo.ClickHighlight())
-                        isPrevious = true;
+                  //  if (!clickHighlightHandled && ClickHighlight(uo))
+                    //    isPrevious = true;
 
                     if (listMeta != null && listMeta[CollectionInspectParams.showCopyPasteOptions])
                         CopyPaste.InspectOptionsFor(ref el);
@@ -260,10 +264,27 @@ namespace QuizCanners.Inspect
         }
 
         #endregion
-        
+
         #region LISTS
 
         #region List of Unity Objects
+
+        public static ChangesToken Edit_List_UObj<T>(this CollectionInspectorMeta listMeta, List<T> list) where T : Object
+        {
+            var changed = ChangeTrackStart();
+            using (collectionInspector.Write_Search_ListLabel(listMeta, list))
+            {
+                if (listMeta == null)
+                {
+                    "List MEta is Null".PegiLabel().WriteWarning(); Nl();
+                }
+                else
+                    Edit_or_select_List_UObj(list, ref listMeta.inspectedElement_Internal, listMeta).OnChanged(listMeta.OnChanged);
+            }
+
+            return changed;
+        }
+
 
         public static ChangesToken Edit_List_UObj<T>(this TextLabel label, List<T> list, ref int inspected) where T : Object
         {
@@ -465,7 +486,7 @@ namespace QuizCanners.Inspect
                 else
                     Edit_List(list, ref listMeta.inspectedElement_Internal, out _, listMeta).OnChanged(listMeta.OnChanged);
             }
-            collectionInspector.End();
+
             return changed;
         }
 
@@ -512,12 +533,18 @@ namespace QuizCanners.Inspect
 
                         if (el.IsNullOrDestroyed_Obj())
                         {
+                            var us = el as Object;
+
+                            if (Edit(ref us, typeof(T)))
+                                list[i] = (T)((object)us);
+
+                            /*
                             if (!Utils.IsMonoType(list, i))
                             {
-                                Write(typeof(T).IsSubclassOf(typeof(Object))
+                                (typeof(T).IsSubclassOf(typeof(Object))
                                     ? "use edit_List_UObj"
-                                    : "is NUll");
-                            }
+                                    : "is NUll").PegiLabel().Write();
+                            }*/
                         }
                         else
                         {
@@ -603,9 +630,9 @@ namespace QuizCanners.Inspect
                         {
                             if (!Utils.IsMonoType(list, i))
                             {
-                                Write(typeof(T).IsSubclassOf(typeof(Object))
+                                (typeof(T).IsSubclassOf(typeof(Object))
                                     ? "use edit_List_UObj"
-                                    : "is NUll");
+                                    : "is NUll").PegiLabel().Write();
                             }
                         }
                         else
@@ -819,9 +846,9 @@ namespace QuizCanners.Inspect
                             
                             //if (!collectionInspector.IsMonoType(list, i))
                             //{
-                                Write(typeof(T).IsSubclassOf(typeof(Object))
+                                (typeof(T).IsSubclassOf(typeof(Object))
                                     ? "need to create edit_HashSetFor_UObj"
-                                    : "is NUll");
+                                    : "is NUll").PegiLabel().Write();
                             //}
                         }
                         else
@@ -852,7 +879,7 @@ namespace QuizCanners.Inspect
             void Set(T val);
         }
 
-        internal class KeyValuePairInspector<T,G> : iCollectionInspector<KeyValuePair<T,G>>, IGotReadOnlyName, ISearchable, INeedAttention
+        internal class KeyValuePairInspector<T,G> : iCollectionInspector<KeyValuePair<T,G>>, ISearchable, INeedAttention
         {
             private KeyValuePair<T, G> _pair;
 
@@ -860,11 +887,10 @@ namespace QuizCanners.Inspect
             {
                 _pair = pair;
             }
-          
-            public string GetReadOnlyName()
-            {
-                return _pair.Value == null ? _pair.Key.GetNameForInspector() : _pair.Value.GetNameForInspector();
-            }
+
+            public override string ToString() =>
+                 _pair.Value == null ? _pair.Key.GetNameForInspector() : _pair.Value.GetNameForInspector();
+            
 
             public string NeedAttention()
             {
@@ -1154,9 +1180,13 @@ namespace QuizCanners.Inspect
             {
                 string keyToReplace = null;
                 string keyToReplaceWith = null;
+                bool nameIsKey = true;
 
                 if (listMeta != null)
+                {
                     showKey = listMeta[CollectionInspectParams.showDictionaryKey];
+                    nameIsKey = listMeta[CollectionInspectParams.nameIsDictionaryKey];
+                }
 
                 KeyValuePair<TKey, TValue> modifiedElement = new KeyValuePair<TKey, TValue>();
                 bool modified = false;
@@ -1185,7 +1215,7 @@ namespace QuizCanners.Inspect
 
                                 try
                                 {
-                                    if (iGotName != null)
+                                    if (nameIsKey && iGotName != null)
                                     {
                                         keyHandled = true;
 
@@ -1222,7 +1252,7 @@ namespace QuizCanners.Inspect
                                 }
                                 string tmp = strKey;
 
-                                if (!keyHandled && EditDelayed(ref tmp)) 
+                                if (!keyHandled && Edit_Delayed(ref tmp)) 
                                 {
                                     keyToReplace = strKey;
                                     keyToReplaceWith = tmp;
@@ -1410,7 +1440,6 @@ namespace QuizCanners.Inspect
                 {
                     return
                     Internal_ByGotName(go.GetComponent<IGotName>(), text, ref matched) ||
-                    Internal_ReadOnlyName(go.GetComponent<IGotReadOnlyName>(), text, ref matched) ||
                     Internal_String(go.name, text, ref matched) ||
                     Internal_ByISearchable(go.GetComponent<ISearchable>(), text, ref matched) ||
                     Internal_ByAttention(go.GetComponent<INeedAttention>(), text, ref matched);
@@ -1423,9 +1452,6 @@ namespace QuizCanners.Inspect
             {
                
                 if (Internal_ByGotName(QcUnity.TryGetInterfaceFrom<IGotName>(obj), text, ref matched))
-                    return true;
-
-                if (Internal_ReadOnlyName(QcUnity.TryGetInterfaceFrom<IGotReadOnlyName>(obj), text, ref matched))
                     return true;
 
                 if (Internal_ByISearchable(QcUnity.TryGetInterfaceFrom<ISearchable>(obj), text, ref matched))
@@ -1445,9 +1471,6 @@ namespace QuizCanners.Inspect
 
             private static bool Internal_ByGotName(IGotName gotName, string[] text, ref bool[] matched)
                 => Internal_String(gotName?.NameForInspector, text, ref matched);
-
-            private static bool Internal_ReadOnlyName(IGotReadOnlyName gotDisplayName, string[] text, ref bool[] matched) =>
-                 Internal_String(gotDisplayName?.GetReadOnlyName(), text, ref matched);
 
             public static bool Internal_GotIndex(IGotIndex gotIndex, int[] indexes) => gotIndex != null && indexes.Any(t => gotIndex.IndexForInspector == t);
 

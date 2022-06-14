@@ -160,7 +160,11 @@ namespace QuizCanners.Utils
                 }
             }
 
+#       if UNITY_2021_1_OR_NEWER
             var gotDot = result.Contains('.') || result.Contains(',');
+#       else
+            var gotDot = result.Contains(".") || result.Contains(",");
+#       endif
 
             if (gotDot)
                 maxNumbers += 1;

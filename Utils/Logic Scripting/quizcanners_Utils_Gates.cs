@@ -63,7 +63,7 @@ namespace QuizCanners.Utils
         public class Frame : GateBase
         {
             private int _frameIndex;
-            private readonly Time _editorGateTime = new Time();
+            private readonly SystemTime _editorGateTime = new SystemTime();
             private int _editorFrames;
 
             public bool TryEnter()
@@ -86,12 +86,12 @@ namespace QuizCanners.Utils
                 get
                 {
                     if (!Application.isEditor)
-                        return UnityEngine.Time.frameCount;
+                        return Time.frameCount;
 
                     if (_editorGateTime.TryUpdateIfTimePassed(0.01f))
                         _editorFrames++;
                         
-                    return UnityEngine.Time.frameCount + _editorFrames;
+                    return Time.frameCount + _editorFrames;
                 }
             }
 
@@ -116,20 +116,22 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class Time : GateBase, IPEGI
+
+        public enum InitialValue
         {
-            private DateTime _lastTime = new DateTime();
-            private double _delta;
+            Uninitialized, InitializeOnCreate, StartArmed
+        }
 
-            public double GetSecondsDeltaAndUpdate()
-            {
-                _delta = GetDeltaWithoutUpdate();
-                _lastTime = DateTime.Now;
 
-                return _delta;
-            }
+        public abstract class TimeBase<T> : GateBase, IPEGI
+        {
+            protected T _lastTime;
+            protected double _delta;
+            private bool _startArmed;
 
-            public DateTime LastTime
+            protected abstract T GetCurrent { get; }
+
+            public T LastTime
             {
                 get
                 {
@@ -143,6 +145,19 @@ namespace QuizCanners.Utils
                 }
             }
 
+            public double GetSecondsDeltaAndUpdate()
+            {
+                _delta = GetDeltaWithoutUpdate();
+                Update();
+
+                return _delta;
+            }
+
+            public void Update()
+            {
+                ValueIsDefined = true;
+                _lastTime = GetCurrent;
+            }
             public bool TryUpdateIfTimePassed(double secondsPassed, out bool wasInitialized)
             {
                 wasInitialized = ValueIsDefined;
@@ -152,12 +167,12 @@ namespace QuizCanners.Utils
             public bool TryUpdateIfTimePassed(double secondsPassed)
             {
                 if (!WasInitialized())
-                    return false;
+                    return _startArmed;
 
                 var delta = GetDeltaWithoutUpdate();
                 if (delta >= secondsPassed)
                 {
-                    _lastTime = DateTime.Now;
+                    Update();
                     return true;
                 }
 
@@ -169,28 +184,77 @@ namespace QuizCanners.Utils
                 if (!WasInitialized())
                     return 0;
 
-                _delta = Math.Max(0, (DateTime.Now - _lastTime).TotalSeconds);
-                
+                _delta = GetDeltaSeconds_Internal();
+
                 return _delta;
             }
 
-            private bool WasInitialized()
+            protected abstract double GetDeltaSeconds_Internal();
+
+            protected bool WasInitialized()
             {
                 if (ValueIsDefined)
                     return true;
 
-                ValueIsDefined = true;
-                _lastTime = DateTime.Now;
+                Update();
                 return false;
-
             }
 
             public void Inspect()
             {
-
                 "Delta: ".F(TimeSpan.FromSeconds(GetDeltaWithoutUpdate()).ToShortDisplayString()).PegiLabel().Write();
             }
+
+            public TimeBase(InitialValue initialValue = InitialValue.Uninitialized)
+            {
+                switch (initialValue) 
+                {
+                    case InitialValue.StartArmed: _startArmed = true; break;
+                    case InitialValue.InitializeOnCreate: Update(); break;
+                }
+            }
+
+         
         }
+
+        public class SystemTime : TimeBase<DateTime>
+        {
+            protected override DateTime GetCurrent => DateTime.Now;
+            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime).TotalSeconds;
+
+            public SystemTime (InitialValue initialValue = InitialValue.Uninitialized) 
+                : base (initialValue){}
+
+        }
+
+        public class UnityTimeScaled : TimeBase<float>, IPEGI
+        {
+            protected override float GetCurrent => Time.time;
+            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
+
+            public UnityTimeScaled(InitialValue initialValue = InitialValue.Uninitialized)
+               : base(initialValue) { }
+        }
+
+        public class UnityTimeUnScaled : TimeBase<float>, IPEGI
+        {
+            protected override float GetCurrent => Time.unscaledTime;
+            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
+
+            public UnityTimeUnScaled(InitialValue initialValue = InitialValue.Uninitialized)
+                : base(initialValue) { }
+        }
+
+        public class UnityTimeSinceStartup : TimeBase<double>, IPEGI
+        {
+            protected override double GetCurrent => QcUnity.TimeSinceStartup();
+            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
+
+            public UnityTimeSinceStartup(InitialValue initialValue = InitialValue.Uninitialized)
+                : base(initialValue) { }
+        }
+
+      
 
         public class Bool : GateGenericBase<bool>
         {
@@ -204,7 +268,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class Integer : GateGenericBase<int>, IGotReadOnlyName
+        public class Integer : GateGenericBase<int>
         {
             protected override bool DifferentFromPrevious(int newValue) => newValue != previousValue;
 
@@ -214,7 +278,7 @@ namespace QuizCanners.Utils
                 SetValue(initialValue);
             }
 
-            public string GetReadOnlyName() => ValueIsDefined ? previousValue.ToString() : "NOT INIT";
+            public override string ToString() => ValueIsDefined ? previousValue.ToString() : "NOT INIT";
         }
 
         public class Double : GateGenericBase<double>
@@ -295,7 +359,34 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class ColorValue : GateGenericBase<Color>, IGotReadOnlyName
+        public class String : GateGenericBase<string>
+        {
+            protected override bool DifferentFromPrevious(string newValue)
+            {
+                var newIsNull = newValue == null;
+                var oldIsNull = previousValue == null;
+
+                if (newIsNull != oldIsNull)
+                    return true;
+
+                if (newIsNull)
+                    return false;
+
+                return !newValue.Equals(previousValue);
+            }
+            public String()
+            {
+
+            }
+
+            public String(string initialValue)
+            {
+                SetValue(initialValue);
+            }
+        }
+
+
+        public class ColorValue : GateGenericBase<Color>
         {
             protected override bool DifferentFromPrevious(Color newValue) => !newValue.Equals(previousValue);
 
@@ -317,7 +408,7 @@ namespace QuizCanners.Utils
                 SetValue(initialValue);
             }
 
-            public string GetReadOnlyName() => ValueIsDefined ? previousValue.ToString() : "NOT INIT";
+            public override string ToString() => ValueIsDefined ? previousValue.ToString() : "NOT INIT";
         }
 
         public class Vector2Value : GateGenericBase<Vector2>

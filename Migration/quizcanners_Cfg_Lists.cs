@@ -54,10 +54,8 @@ namespace QuizCanners.Migration
 
         #region Inspector
 
-        public bool InspectShortcut()
+        public void InspectShortcut()
         {
-            var changes = pegi.ChangeTrackStart();
-
             if (configurations.Count == 0)
             {
                 if ("New {0}".F(typeof(T).ToPegiStringType()).PegiLabel().Click())
@@ -74,8 +72,6 @@ namespace QuizCanners.Migration
                 if (active != null && Icon.Save.Click())
                     active.SaveCurrentState();
             }
-
-            return changes;
         }
 
         public override void Inspect() => "Configurations".PegiLabel().Edit_List(configurations);
