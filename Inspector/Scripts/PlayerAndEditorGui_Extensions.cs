@@ -184,6 +184,15 @@ namespace QuizCanners.Inspect
 
         }
 
+        internal static bool IsExitGUIException(Exception exception)
+        {
+            while (exception is System.Reflection.TargetInvocationException && exception.InnerException != null)
+            {
+                exception = exception.InnerException;
+            }
+            return exception is ExitGUIException;
+        }
+
         private static ChangesToken Nested_Inspect_Internal<T>(ref T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : IPEGI
         {
             if (fromNewLine)
@@ -209,6 +218,11 @@ namespace QuizCanners.Inspect
                 }
                 catch (Exception ex)
                 {
+                    if (IsExitGUIException(ex))
+                    {
+                        throw;
+                    }
+
                     QcLog.ChillLogger.LogExceptionExpOnly(ex, key: "InspEx" + typeof(T));
 
                     Nl();
@@ -567,7 +581,7 @@ namespace QuizCanners.Inspect
                 if (obj.ToPegiStringInterfacePart(out tmp))
                     return tmp;
 
-                string typeName = obj.ToString().SimplifyTypeName();
+                string typeName = QcSharp.AddSpacesToSentence(obj.ToString().SimplifyTypeName(), preserveAcronyms: true);
 
                 var cnt = obj as IGotCount;
 
