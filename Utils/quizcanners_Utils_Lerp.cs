@@ -10,12 +10,17 @@ namespace QuizCanners.Lerp
     {
         #region Float
 
-        private static float SpeedToPortion(float speed, float dist, bool unscaledTime) =>
-            Mathf.Approximately(dist , 0) ? 1 : Mathf.Clamp01(Mathf.Abs(speed) * 
-                (unscaledTime ? Time.unscaledDeltaTime : Time.deltaTime)
-                / Mathf.Abs(dist));
+        private static float SpeedToPortion(float speed, float dist, bool unscaledTime)
+        {
+            if (dist == 0)
+                return 1;
 
-        public static bool SpeedToMinPortion(float speed, float dist, ref float portion, bool unscaledTime = false)
+            dist = Mathf.Abs(dist);
+
+            return Mathf.Clamp01(speed * (unscaledTime ? Time.unscaledDeltaTime : Time.deltaTime) / dist);
+        }
+
+        public static bool SpeedToMinPortion(float speed, float dist, ref float portion, bool unscaledTime)
         {
             var nPortion = SpeedToPortion(speed, dist, unscaledTime: unscaledTime);
             if (!(nPortion < portion))
@@ -24,7 +29,7 @@ namespace QuizCanners.Lerp
             return true;
         }
 
-        public static bool IsLerpingBySpeed(ref float from, float to, float speed, bool unscaledTime = false)
+        public static bool IsLerpingBySpeed(ref float from, float to, float speed, bool unscaledTime)
         {
             if (Mathf.Approximately(from, to))
                 return false;
@@ -33,10 +38,10 @@ namespace QuizCanners.Lerp
             return true;
         }
 
-        public static float LerpBySpeed(float from, float to, float speed, bool unscaledTime = false)
+        public static float LerpBySpeed(float from, float to, float speed, bool unscaledTime)
             => Mathf.LerpUnclamped(from, to, SpeedToPortion(speed, Mathf.Abs(from - to), unscaledTime: unscaledTime));
 
-        public static float LerpBySpeed(float from, float to, float speed, out float portion, bool unscaledTime = false)
+        public static float LerpBySpeed(float from, float to, float speed, out float portion, bool unscaledTime)
         {
             portion = SpeedToPortion(speed, Mathf.Abs(from - to), unscaledTime: unscaledTime);
             return Mathf.LerpUnclamped(from, to, portion);
@@ -77,7 +82,7 @@ namespace QuizCanners.Lerp
 
         #region Vectors & Color
 
-        public static bool IsLerpingBySpeed(ref Vector2 from, Vector2 to, float speed, bool unscaledTime = false)
+        public static bool IsLerpingBySpeed(ref Vector2 from, Vector2 to, float speed, bool unscaledTime)
         {
             if (from == to)
                 return false;
@@ -86,7 +91,7 @@ namespace QuizCanners.Lerp
             return true;
         }
 
-        public static Vector2 LerpBySpeed(Vector2 from, Vector2 to, float speed, bool unscaledTime = false) =>
+        public static Vector2 LerpBySpeed(Vector2 from, Vector2 to, float speed, bool unscaledTime) =>
             Vector2.LerpUnclamped(from, to, SpeedToPortion(speed, Vector2.Distance(from, to), unscaledTime: unscaledTime));
 
         public static Vector2 LerpBySpeed(Vector2 from, Vector2 to, float speed, out float portion, bool unscaledTime = false)
@@ -95,10 +100,10 @@ namespace QuizCanners.Lerp
             return Vector2.LerpUnclamped(from, to, portion);
         }
 
-        public static Vector3 LerpBySpeed(Vector3 from, Vector3 to, float speed, bool unscaledTime = false) =>
+        public static Vector3 LerpBySpeed(Vector3 from, Vector3 to, float speed, bool unscaledTime) =>
             Vector3.LerpUnclamped(from, to, SpeedToPortion(speed, Vector3.Distance(from, to), unscaledTime: unscaledTime));
 
-        public static bool IsLerpingBySpeed(ref Vector3 from, Vector3 to, float speed, bool unscaledTime = false)
+        public static bool IsLerpingBySpeed(ref Vector3 from, Vector3 to, float speed, bool unscaledTime)
         {
             if (from == to)
                 return false;
@@ -107,13 +112,13 @@ namespace QuizCanners.Lerp
             return true;
         }
 
-        public static Vector3 LerpBySpeed(Vector3 from, Vector3 to, float speed, out float portion, bool unscaledTime = false)
+        public static Vector3 LerpBySpeed(Vector3 from, Vector3 to, float speed, out float portion, bool unscaledTime)
         {
             portion = SpeedToPortion(speed, Vector3.Distance(from, to), unscaledTime: unscaledTime);
             return Vector3.LerpUnclamped(from, to, portion);
         }
 
-        public static Vector3 LerpBySpeed_DirectionFirst(Vector3 from, Vector3 to, float speed)
+        public static Vector3 LerpBySpeed_DirectionFirst(Vector3 from, Vector3 to, float speed, bool unscaledTime)
         {
 
             const float precision = float.Epsilon * 10;
@@ -129,7 +134,7 @@ namespace QuizCanners.Lerp
                 return to;
 
             if (fromMagn * toMagn < precision)
-                return LerpBySpeed(from, to, speed);
+                return LerpBySpeed(from, to, speed, unscaledTime: unscaledTime);
 
             var toNormalized = to.normalized;
 
@@ -158,19 +163,19 @@ namespace QuizCanners.Lerp
             return from;
         }
 
-        public static Vector4 LerpBySpeed(Vector4 from, Vector4 to, float speed, bool unscaledTime = false) =>
+        public static Vector4 LerpBySpeed(Vector4 from, Vector4 to, float speed, bool unscaledTime) =>
             Vector4.LerpUnclamped(from, to, SpeedToPortion(speed, Vector4.Distance(from, to), unscaledTime: unscaledTime));
 
-        public static Vector4 LerpBySpeed(Vector4 from, Vector4 to, float speed, out float portion, bool unscaledTime = false)
+        public static Vector4 LerpBySpeed(Vector4 from, Vector4 to, float speed, out float portion, bool unscaledTime)
         {
             portion = SpeedToPortion(speed, Vector4.Distance(from, to), unscaledTime: unscaledTime);
             return Vector4.LerpUnclamped(from, to, portion);
         }
 
-        public static Quaternion LerpBySpeed(Quaternion from, Quaternion to, float speedInDegrees, bool unscaledTime = false) =>
+        public static Quaternion LerpBySpeed(Quaternion from, Quaternion to, float speedInDegrees, bool unscaledTime) =>
             Quaternion.LerpUnclamped(from, to, SpeedToPortion(speedInDegrees, Quaternion.Angle(from, to), unscaledTime: unscaledTime));
 
-        public static Quaternion LerpBySpeed(Quaternion from, Quaternion to, float speedInDegrees, out float portion, bool unscaledTime = false)
+        public static Quaternion LerpBySpeed(Quaternion from, Quaternion to, float speedInDegrees, out float portion, bool unscaledTime)
         {
             portion = SpeedToPortion(speedInDegrees, Quaternion.Angle(from, to), unscaledTime: unscaledTime);
             return Quaternion.LerpUnclamped(from, to, portion);
@@ -190,17 +195,17 @@ namespace QuizCanners.Lerp
              (mask.HasFlag(ColorMask.B) ? Mathf.Abs(col.b - other.b) : 0) +
              (mask.HasFlag(ColorMask.A) ? Mathf.Abs(col.a - other.a) : 0);
 
-        public static Color LerpBySpeed(this Color from, Color to, float speed, bool unscaledTime = false) =>
+        public static Color LerpBySpeed(this Color from, Color to, float speed, bool unscaledTime) =>
             Color.LerpUnclamped(from, to, SpeedToPortion(speed, DistanceRgb(from, to), unscaledTime: unscaledTime));
 
-        public static Color LerpRgb(this Color from, Color to, float speed, out float portion, bool unscaledTime = false)
+        public static Color LerpRgb(this Color from, Color to, float speed, out float portion, bool unscaledTime)
         {
             portion = SpeedToPortion(speed, DistanceRgb(from, to), unscaledTime: unscaledTime);
             to.a = from.a;
             return Color.LerpUnclamped(from, to, portion);
         }
 
-        public static Color LerpRgba(this Color from, Color to, float speed, out float portion, bool unscaledTime = false)
+        public static Color LerpRgba(this Color from, Color to, float speed, out float portion, bool unscaledTime)
         {
             portion = SpeedToPortion(speed, DistanceRgba(from, to), unscaledTime: unscaledTime);
             return Color.LerpUnclamped(from, to, portion);
@@ -216,7 +221,7 @@ namespace QuizCanners.Lerp
 
             var current = grp.alpha;
 
-            if (IsLerpingBySpeed(ref current, alpha, speed))
+            if (IsLerpingBySpeed(ref current, alpha, speed, unscaledTime: true))
             {
                 grp.alpha = current;
                 return true;
@@ -245,10 +250,10 @@ namespace QuizCanners.Lerp
             var changing = false;
 
             var col = img.color;
-            col.a = LerpBySpeed(col.a, alpha, speed);
+            col.a = LerpBySpeed(col.a, alpha, speed, unscaledTime: true);
 
             img.color = col;
-            changing |= Mathf.Approximately(col.a, alpha) == false;
+            changing |= !Mathf.Approximately(col.a, alpha);
 
             return changing;
         }
@@ -259,7 +264,7 @@ namespace QuizCanners.Lerp
 
             if (img)
             {
-                img.color = img.color.LerpRgb(target, speed, out float portion);
+                img.color = img.color.LerpRgb(target, speed, out float portion, unscaledTime: true);
 
                 changing = portion < 1;
             }
@@ -274,7 +279,7 @@ namespace QuizCanners.Lerp
 
             var vol = src.volume;
 
-            if (IsLerpingBySpeed(ref vol, target, speed))
+            if (IsLerpingBySpeed(ref vol, target, speed, unscaledTime: true))
             {
                 src.volume = vol;
                 return true;
@@ -302,7 +307,7 @@ namespace QuizCanners.Lerp
 
         public static void SkipLerp<T>(this T obj) where T : ILinkedLerping
         {
-            var ld = new LerpData();
+            var ld = new LerpData(unscaledTime: true);
             obj.Portion(ld);
             ld.MinPortion = 1;
             obj.Lerp(ld, true);
