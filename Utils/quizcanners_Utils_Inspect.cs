@@ -68,10 +68,10 @@ namespace QuizCanners.Utils
                     if (UpScale > 4)
                     {
                         if ("Take Very large ScreenShot".PegiLabel("This will try to take a very large screen shot. Are we sure?").ClickConfirm("tbss"))
-                            RenderToTextureManually();
+                            RenderToCameraAndSave();
                     }
                     else if (Icon.ScreenGrab.Click("Render Screenshoot from camera").Nl())
-                        RenderToTextureManually();
+                        RenderToCameraAndSave();
                 }
 
                 pegi.FullWindow.DocumentationClickOpen("To Capture UI with this method, use Canvas-> Render Mode-> Screen Space - Camera. " +
@@ -97,7 +97,7 @@ namespace QuizCanners.Utils
                     pegi.Nl();
 
                     if ("ScreenCapture.CaptureScreenshot".PegiLabel().Click())
-                        CaptureScreenShot();
+                        CaptureByScreenCaptureUtility();
 
 
                     if (Icon.Folder.Click())
@@ -120,15 +120,20 @@ namespace QuizCanners.Utils
             [NonSerialized] private RenderTexture forScreenRenderTexture;
             [NonSerialized] private Texture2D screenShotTexture2D;
 
-            public void CaptureScreenShot()
+            public void CaptureByScreenCaptureUtility()
             {
                 ScreenCapture.CaptureScreenshot("{0}".F(System.IO.Path.Combine(folderName, GetScreenShotName()) + ".png"), UpScale);
             }
 
-            public void RenderToTextureManually()
+            public void RenderToCameraAndSave()
             {
+                var tex = RenderToCamera(cameraToTakeScreenShotFrom);
+                QcFile.Save.TextureOutsideAssetsFolder(folderName, GetScreenShotName(), ".png", tex);
+            }
 
-                var cam = cameraToTakeScreenShotFrom;
+            public Texture2D RenderToCamera(Camera camera)
+            {
+                var cam = camera;
                 var w = cam.pixelWidth * UpScale;
                 var h = cam.pixelHeight * UpScale;
 
@@ -165,8 +170,9 @@ namespace QuizCanners.Utils
                 RenderTexture.active = null;
                 cam.clearFlags = clearFlags;
 
-                QcFile.Save.TextureOutsideAssetsFolder(folderName, GetScreenShotName(), ".png", screenShotTexture2D);
+                return screenShotTexture2D;
             }
+
 
             private void MakeOpaque(Texture2D tex)
             {
