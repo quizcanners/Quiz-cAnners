@@ -293,6 +293,14 @@ namespace QuizCanners.Inspect
                 }
             }
 
+            public static void DrawWireCube(Vector3 position, Vector3 size)
+            {
+                if (!IsDrawingHandles)
+                {
+                    DrawRotatedCube(position, Quaternion.identity, size, (va, vb) => Gizmos.DrawLine(va, vb));
+                }
+            }
+
             public static void DrawWireCube(Vector3 position, Quaternion rotation, Vector3 size)
             {
                 if (!IsDrawingHandles)

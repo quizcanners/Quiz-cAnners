@@ -119,7 +119,7 @@ namespace QuizCanners.Inspect
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
             {
-                Write(label);
+                Write(label, defaultWidth: 0.33f);
                 return Edit(ref field, allowSceneObjects);
             }
 #endif

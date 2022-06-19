@@ -338,7 +338,7 @@ namespace QuizCanners.Inspect
 
                                 if (searchString == null || typeName.Contains(searchString))
                                 {
-                                    Write(typeName);
+                                    typeName.PegiLabel().Write();
                                     if (Icon.Create.ClickUnFocus().Nl())
                                     {
                                         added = (T)System.Activator.CreateInstance(t);
@@ -361,7 +361,7 @@ namespace QuizCanners.Inspect
                                 {
                                     availableOptions++;
 
-                                    Write(tagTypes.DisplayNames[i]);
+                                    tagTypes.DisplayNames[i].PegiLabel().Write();
                                     if (Icon.Create.ClickUnFocus().Nl())
                                     {
                                         added = (T)System.Activator.CreateInstance(tagTypes.TaggedTypes.TryGet(k[i]));
@@ -423,7 +423,7 @@ namespace QuizCanners.Inspect
                         for (var i = 0; i < k.Count; i++)
                         {
 
-                            Write(types.DisplayNames[i]);
+                            types.DisplayNames[i].PegiLabel().Write();
                             if (Icon.Create.ClickUnFocus().Nl())
                             {
                                 changed = true;
@@ -913,7 +913,7 @@ namespace QuizCanners.Inspect
                     }
 
                     if (!isNull)
-                        Write(el.GetNameForInspector());
+                        el.GetNameForInspector().PegiLabel().Write();
                     else
                         "{0} {1}".F(Icon.Empty.GetText(), typeof(T).ToPegiStringType()).PegiLabel().Write();
 
@@ -1009,7 +1009,7 @@ namespace QuizCanners.Inspect
                         }
 
                         if (!isNull)
-                            Write(el.GetNameForInspector());
+                            el.GetNameForInspector().PegiLabel().Write();
                         else
                             "{0} {1}".F(Icon.Empty.GetText(), typeof(T).ToPegiStringType()).PegiLabel().Write();
 

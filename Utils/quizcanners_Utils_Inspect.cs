@@ -57,7 +57,7 @@ namespace QuizCanners.Utils
 
                 pegi.Nl();
 
-                "Up Scale".PegiLabel("Resolution of the texture will be multiplied by a given value", 60).Write().Edit( ref UpScale);
+                "Up Scale".PegiLabel("Resolution of the texture will be multiplied by a given value", 60).Edit( ref UpScale);
 
                 if (UpScale <= 0)
                     "Scale value needs to be positive".PegiLabel().WriteWarning();

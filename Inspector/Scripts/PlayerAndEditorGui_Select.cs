@@ -132,7 +132,7 @@ namespace QuizCanners.Inspect
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return from.IsNullOrEmpty() ? "Selecting from null:".PegiLabel(90).Write().Edit(ref no) : PegiEditorOnly.Select(ref no, from.ToArray());
+                return from.IsNullOrEmpty() ? "Selecting from null:".PegiLabel(90).Edit(ref no) : PegiEditorOnly.Select(ref no, from.ToArray());
 #endif
 
             if (from.IsNullOrEmpty()) return ChangesToken.False;

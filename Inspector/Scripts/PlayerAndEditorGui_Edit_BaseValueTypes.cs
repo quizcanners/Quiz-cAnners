@@ -270,7 +270,7 @@ namespace QuizCanners.Inspect
             return EditDelayed(ref val, width: valueWidth);
         }
 
-        public static ChangesToken Edit(this IPegiText label, ref int val)
+        public static ChangesToken Edit(this TextLabel label, ref int val)
         {
             Write(label);
             return Edit(ref val);
@@ -296,7 +296,7 @@ namespace QuizCanners.Inspect
             if (EditDelayed(ref from))
                 to = Mathf.Max(from, to);
 
-            Write("-", 10);
+            "-".PegiLabel(10).Write();
 
             if (EditDelayed(ref to))
                 from = Mathf.Min(from, to);
@@ -488,14 +488,14 @@ namespace QuizCanners.Inspect
             return edit(ref val);
         }*/
 
-        public static ChangesToken Edit_Range(this IPegiText label, ref float from, ref float to)
+        public static ChangesToken Edit_Range(this TextLabel label, ref float from, ref float to)
         {
             label.TryWrite();
             var changed = ChangeTrackStart();
             if (EditDelayed(ref from))
                 to = Mathf.Max(from, to);
 
-            Write("-", 10);
+            "-".PegiLabel(10).Write(); 
 
             if (EditDelayed(ref to))
                 from = Mathf.Min(from, to);
@@ -664,7 +664,7 @@ namespace QuizCanners.Inspect
                 return SetChangedTrue_Internal();
             }
 
-            void SetValue(ref double value)
+            static void SetValue(ref double value)
             {
                 double newValue;
                 if (double.TryParse(editedDouble, out newValue))
@@ -882,13 +882,13 @@ namespace QuizCanners.Inspect
             return Edit(ref val);
         }
 
-        public static ChangesToken Edit(this IPegiText label, ref string val, int valueWidth)
+        public static ChangesToken Edit(this TextLabel label, ref string val, int valueWidth)
         {
             Write(label);
             return Edit(ref val, width: valueWidth);
         }
 
-        public static ChangesToken EditBig(this IPegiText label, ref string val, int height = 100)
+        public static ChangesToken EditBig(this TextLabel label, ref string val, int height = 100)
         {
             Write(label);
             return EditBig(ref val, height: height);

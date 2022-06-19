@@ -452,12 +452,14 @@ namespace QuizCanners.Inspect
             return value;
         }
 
-        public static void Nl(this IPegiText value)
+        public static void Nl(this TextLabel value)
         {
             Write(value);
             Nl();
         }
 
+        public static void Nl(this TextToken value) => Nl();
+        
         public static void Nl(this Icon icon, int size = defaultButtonSize)
         {
             icon.Draw(size);

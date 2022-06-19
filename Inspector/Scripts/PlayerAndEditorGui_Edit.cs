@@ -94,11 +94,11 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken Edit(this TextToken label, ref Quaternion qt)
+       /* public static ChangesToken Edit(this TextLabel label, ref Quaternion qt)
         {
-            label.Write();
+            Write(label, 0.33f);
             return Edit(ref qt);
-        }
+        }*/
 
         public static ChangesToken Edit(ref Quaternion qt)
         {
@@ -243,7 +243,7 @@ namespace QuizCanners.Inspect
                 return PegiEditorOnly.Edit(label, ref val);
 #endif
 
-            Write(label);
+            Write(label, 0.33f);
             Nl();
             return Edit(ref val);
         }
@@ -388,7 +388,7 @@ namespace QuizCanners.Inspect
             }
             else
             {
-                Write(label);
+                Write(label, 0.33f);
                 return Edit(ref col);
             }
 

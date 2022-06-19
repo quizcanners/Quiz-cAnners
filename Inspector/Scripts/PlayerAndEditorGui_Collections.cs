@@ -514,9 +514,9 @@ namespace QuizCanners.Inspect
                         {
                             if (!Utils.IsMonoType(list, i))
                             {
-                                Write(typeof(T).IsSubclassOf(typeof(Object))
+                                (typeof(T).IsSubclassOf(typeof(Object))
                                     ? "use edit_List_UObj"
-                                    : "is NUll");
+                                    : "is NUll").PegiLabel().Write();
                             }
                         }
                         else
@@ -603,9 +603,9 @@ namespace QuizCanners.Inspect
                         {
                             if (!Utils.IsMonoType(list, i))
                             {
-                                Write(typeof(T).IsSubclassOf(typeof(Object))
+                                (typeof(T).IsSubclassOf(typeof(Object))
                                     ? "use edit_List_UObj"
-                                    : "is NUll");
+                                    : "is NUll").PegiLabel().Write();
                             }
                         }
                         else
@@ -819,9 +819,9 @@ namespace QuizCanners.Inspect
                             
                             //if (!collectionInspector.IsMonoType(list, i))
                             //{
-                                Write(typeof(T).IsSubclassOf(typeof(Object))
+                                (typeof(T).IsSubclassOf(typeof(Object))
                                     ? "need to create edit_HashSetFor_UObj"
-                                    : "is NUll");
+                                    : "is NUll").PegiLabel().Write();
                             //}
                         }
                         else

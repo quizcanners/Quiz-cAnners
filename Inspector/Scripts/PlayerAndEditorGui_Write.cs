@@ -5,7 +5,6 @@ using  UnityEditor;
 #endif
 
 // ReSharper disable InconsistentNaming
-#pragma warning disable IDE1006 // Naming Styles
 #pragma warning disable IDE0011 // Add braces
 #pragma warning disable IDE0008 // Use explicit type
 
@@ -15,14 +14,6 @@ namespace QuizCanners.Inspect
     {
         private static readonly TextToken TEXT_TOK = new TextToken();
 
-        public interface IPegiText 
-        {
-            TextToken TryWrite();
-            bool TryGetLabel(out string label);
-        }
-
-
-
         public static TextLabel PegiLabel(this string label, float widthFraction) => new TextLabel(label, null, Mathf.FloorToInt(widthFraction * Screen.width), null);
         public static TextLabel PegiLabel(this string label, int width) => new TextLabel(label, null, width, null);
         public static TextLabel PegiLabel(this string label, Styles.PegiGuiStyle style) => new TextLabel(label, null, -1, style);
@@ -30,9 +21,15 @@ namespace QuizCanners.Inspect
         public static TextLabel PegiLabel(this string label, string toolTip, float widthFraction, Styles.PegiGuiStyle style = null) => new TextLabel(label, toolTip, Mathf.FloorToInt(widthFraction * Screen.width), style);
         public static TextLabel PegiLabel(this string label, string toolTip = null, int width = -1, Styles.PegiGuiStyle style = null) => new TextLabel(label, toolTip, width, style);
 
-        public static TextToken Write(this IPegiText label) => label == null ? TEXT_TOK : label.TryWrite();
+        public static TextToken Write(this TextLabel label) => label.TryWrite();
 
-        public struct TextLabel : IPegiText
+        internal static TextToken Write(TextLabel label, float defaultWidth)
+        {
+            label.FallbackWidthFraction = defaultWidth;
+            return label.TryWrite();
+        }
+
+        public struct TextLabel
         {
             internal string label;
            
@@ -51,14 +48,30 @@ namespace QuizCanners.Inspect
                 } 
             }
 
+            internal int FallbackWidth
+            {
+                set
+                {
+                    if (!GotWidth)
+                        width = value;
+                }
+            }
+
+            internal float FallbackWidthFraction
+            {
+                set 
+                {
+                    if (!GotWidth)
+                        width = Mathf.FloorToInt(value * Screen.width);
+                }
+            }
+
             public TextLabel ApproxWidth() 
             {
                 if (GotWidth == false)
                     width = Utils.GuiMaxWidthFrom(label);
                 return this;
             }
-
-            internal GUILayoutOption WidthOrApprox => GotWidth ? GUILayout.MaxWidth(width) : Utils.GuiMaxWidthOptionFrom(label);
 
             internal bool IsInitialized => !label.IsNullOrEmpty();
             internal bool GotWidth => width > 0;
@@ -124,19 +137,148 @@ namespace QuizCanners.Inspect
                 this.width = width;
                 this.style = style;
             }
+
+
+
+            private static TextToken Write(string text)
+            {
+                var cnt = TextAndTip(text);
+
+#if UNITY_EDITOR
+                if (!PaintingGameViewUI)
+                    PegiEditorOnly.Write(cnt);
+                else
+#endif
+                {
+                    CheckLine();
+                    GUILayout.Label(cnt, Utils.GuiMaxWidthOption);
+                }
+
+                return TEXT_TOK;
+            }
+
+            private static TextToken Write(string text, Styles.PegiGuiStyle style)
+            {
+                var cnt = TextAndTip(text);
+
+#if UNITY_EDITOR
+                if (!PaintingGameViewUI)
+                    PegiEditorOnly.Write(cnt, style.Current);
+                else
+#endif
+                {
+                    CheckLine();
+                    GUILayout.Label(cnt, style.Current, Utils.GuiMaxWidthOption);
+                }
+
+                return TEXT_TOK;
+            }
+
+            private static TextToken Write(string text, int width, Styles.PegiGuiStyle style)
+            {
+                textAndTip.text = text;
+                textAndTip.tooltip = text;
+
+#if UNITY_EDITOR
+                if (!PaintingGameViewUI)
+                {
+                    PegiEditorOnly.Write(textAndTip, width, style.Current);
+                    return TEXT_TOK;
+                }
+#endif
+
+                CheckLine();
+                GUILayout.Label(textAndTip, style.Current, GUILayout.MaxWidth(width));
+                return TEXT_TOK;
+
+            }
+
+            private static TextToken Write(string text, string toolTip, int width, Styles.PegiGuiStyle style)
+            {
+
+                textAndTip.text = text;
+                textAndTip.tooltip = toolTip;
+
+#if UNITY_EDITOR
+                if (!PaintingGameViewUI)
+                {
+                    PegiEditorOnly.Write(textAndTip, width, style.Current);
+                    return TEXT_TOK;
+                }
+#endif
+
+                CheckLine();
+                GUILayout.Label(textAndTip, style.Current, GUILayout.MaxWidth(width));
+                return TEXT_TOK;
+
+            }
+
+            private static TextToken Write(string text, string toolTip, Styles.PegiGuiStyle style)
+            {
+
+                textAndTip.text = text;
+                textAndTip.tooltip = toolTip;
+
+#if UNITY_EDITOR
+                if (!PaintingGameViewUI)
+                {
+                    PegiEditorOnly.Write(textAndTip, style.Current);
+                    return TEXT_TOK;
+                }
+#endif
+
+                CheckLine();
+                GUILayout.Label(textAndTip, style.Current);
+                return TEXT_TOK;
+
+            }
+
+            private static TextToken Write(string text, int width) => Write(text, text, width);
+
+            private static TextToken Write(string text, string toolTip)
+            {
+
+                textAndTip.text = text;
+                textAndTip.tooltip = toolTip;
+
+#if UNITY_EDITOR
+                if (!PaintingGameViewUI)
+                {
+                    PegiEditorOnly.Write(textAndTip);
+                    return TEXT_TOK;
+                }
+#endif
+
+                CheckLine();
+                GUILayout.Label(textAndTip, Utils.GuiMaxWidthOption);
+                return TEXT_TOK;
+            }
+
+            private static TextToken Write(string text, string toolTip, int width)
+            {
+
+                textAndTip.text = text;
+                textAndTip.tooltip = toolTip;
+
+#if UNITY_EDITOR
+                if (!PaintingGameViewUI)
+                {
+                    PegiEditorOnly.Write(textAndTip, width);
+                    return TEXT_TOK;
+                }
+#endif
+
+                CheckLine();
+                GUILayout.Label(textAndTip, GUILayout.MaxWidth(width));
+                return TEXT_TOK;
+            }
+
+
         }
 
-        public struct TextToken : IPegiText
+        public class TextToken 
         {
-            public TextToken TryWrite() => this;
-
-            public override string ToString() => "";
-
-            public bool TryGetLabel(out string label)
-            {
-                label = null;
-                return false;
-            }
+            internal TextToken() { }
         }
 
         #region GUI Contents
@@ -148,13 +290,6 @@ namespace QuizCanners.Inspect
             imageAndTip.tooltip = toolTip;
             return imageAndTip;
         }
-
-      /*  private static GUIContent ImageAndTip(Texture tex)
-        {
-            imageAndTip.image = tex;
-            imageAndTip.tooltip = tex ? tex.name : "Null Image";
-            return imageAndTip;
-        }*/
 
         private static readonly GUIContent textAndTip = new GUIContent();
 
@@ -171,14 +306,6 @@ namespace QuizCanners.Inspect
             textAndTip.tooltip = text.GotToolTip ? text.toolTip : text.label;
             return textAndTip;
         }
-
-       // private static GUIContent tipOnlyContent = new GUIContent();
-
-      /*  private static GUIContent TipOnlyContent(string text)
-        {
-            tipOnlyContent.tooltip = text;
-            return tipOnlyContent;
-        }*/
 
         #endregion
 
@@ -319,139 +446,6 @@ namespace QuizCanners.Inspect
 
         #region String
 
-        private static TextToken Write(string text)
-        {
-            var cnt = TextAndTip(text);
-
-#if UNITY_EDITOR
-            if (!PaintingGameViewUI)
-                PegiEditorOnly.Write(cnt);
-            else
-#endif
-            {
-                CheckLine();
-                GUILayout.Label(cnt, Utils.GuiMaxWidthOption);
-            }
-
-            return TEXT_TOK;
-        }
-
-        private static TextToken Write(string text, Styles.PegiGuiStyle style)
-        {
-            var cnt = TextAndTip(text);
-
-#if UNITY_EDITOR
-            if (!PaintingGameViewUI)
-                PegiEditorOnly.Write(cnt, style.Current);
-            else
-#endif
-            {
-                CheckLine();
-                GUILayout.Label(cnt, style.Current, Utils.GuiMaxWidthOption);
-            }
-
-            return TEXT_TOK;
-        }
-
-        private static TextToken Write(string text, int width, Styles.PegiGuiStyle style)
-        {
-            textAndTip.text = text;
-            textAndTip.tooltip = text;
-
-#if UNITY_EDITOR
-            if (!PaintingGameViewUI)
-            {
-                PegiEditorOnly.Write(textAndTip, width, style.Current);
-                return TEXT_TOK;
-            }
-#endif
-
-            CheckLine();
-            GUILayout.Label(textAndTip, style.Current, GUILayout.MaxWidth(width));
-            return TEXT_TOK;
-
-        }
-
-        private static TextToken Write(string text, string toolTip, int width, Styles.PegiGuiStyle style)
-        {
-
-            textAndTip.text = text;
-            textAndTip.tooltip = toolTip;
-
-#if UNITY_EDITOR
-            if (!PaintingGameViewUI)
-            {
-                PegiEditorOnly.Write(textAndTip, width, style.Current);
-                return TEXT_TOK;
-            }
-#endif
-
-            CheckLine();
-            GUILayout.Label(textAndTip, style.Current, GUILayout.MaxWidth(width));
-            return TEXT_TOK;
-
-        }
-
-        private static TextToken Write(string text, string toolTip, Styles.PegiGuiStyle style)
-        {
-
-            textAndTip.text = text;
-            textAndTip.tooltip = toolTip;
-
-#if UNITY_EDITOR
-            if (!PaintingGameViewUI)
-            {
-                PegiEditorOnly.Write(textAndTip, style.Current);
-                return TEXT_TOK;
-            }
-#endif
-
-            CheckLine();
-            GUILayout.Label(textAndTip, style.Current);
-            return TEXT_TOK;
-
-        }
-
-        private static TextToken Write(string text, int width) => Write(text, text, width);
-
-        private static TextToken Write(string text, string toolTip)
-        {
-
-            textAndTip.text = text;
-            textAndTip.tooltip = toolTip;
-
-#if UNITY_EDITOR
-            if (!PaintingGameViewUI)
-            {
-                PegiEditorOnly.Write(textAndTip);
-                return TEXT_TOK;
-            }
-#endif
-
-            CheckLine();
-            GUILayout.Label(textAndTip, Utils.GuiMaxWidthOption);
-            return TEXT_TOK;
-        }
-
-        private static TextToken Write(string text, string toolTip, int width)
-        {
-
-            textAndTip.text = text;
-            textAndTip.tooltip = toolTip;
-
-#if UNITY_EDITOR
-            if (!PaintingGameViewUI)
-            {
-                PegiEditorOnly.Write(textAndTip, width);
-                return TEXT_TOK;
-            }
-#endif
-
-            CheckLine();
-            GUILayout.Label(textAndTip, GUILayout.MaxWidth(width));
-            return TEXT_TOK;
-        }
-        
         public static TextToken WriteBig(this TextLabel text, TextLabel contents)
         {
             text.Nl();
