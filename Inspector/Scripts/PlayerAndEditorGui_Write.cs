@@ -123,7 +123,7 @@ namespace QuizCanners.Inspect
                         if (GotStyle)
                             Write(label, style);
                         else
-                            Write(label);
+                            Write_Internal(label);
                     }
                 }
 
@@ -140,7 +140,7 @@ namespace QuizCanners.Inspect
 
 
 
-            private static TextToken Write(string text)
+            private static TextToken Write_Internal(string text)
             {
                 var cnt = TextAndTip(text);
 

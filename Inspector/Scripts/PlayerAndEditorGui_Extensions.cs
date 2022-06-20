@@ -566,7 +566,7 @@ namespace QuizCanners.Inspect
 
             if (type.IsEnum)
             {
-                return QcSharp.AddSpacesToSentence(obj.ToString());
+                return QcSharp.AddSpacesToSentence(obj.ToString(), preserveAcronyms: true);
             }
 
             if (!type.IsPrimitive)

@@ -1702,8 +1702,6 @@ namespace QuizCanners.Utils {
 
             var needsReimport = false;
 
-
-
             if (importer.isReadable == false)
             {
                 importer.isReadable = true;
@@ -1857,11 +1855,22 @@ namespace QuizCanners.Utils {
         }
 
 
+        public static bool WasWrong_TextureImporterType(this TextureImporter importer, TextureImporterType targetType)
+        {
+            if (importer.textureType != targetType)
+            {
+                importer.textureType = targetType;
+                return true;
+            }
+
+            return false;
+        }
+
 #endif
 
-#endregion
+        #endregion
 
-#region Texture Saving
+        #region Texture Saving
 
         private static string GetPathWithout_Assets_Word(Object tex)
         {

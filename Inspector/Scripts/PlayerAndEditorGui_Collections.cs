@@ -1154,9 +1154,13 @@ namespace QuizCanners.Inspect
             {
                 string keyToReplace = null;
                 string keyToReplaceWith = null;
+                bool nameIsKey = true;
 
                 if (listMeta != null)
+                {
                     showKey = listMeta[CollectionInspectParams.showDictionaryKey];
+                    nameIsKey = listMeta[CollectionInspectParams.nameIsDictionaryKey];
+                }
 
                 KeyValuePair<TKey, TValue> modifiedElement = new KeyValuePair<TKey, TValue>();
                 bool modified = false;
@@ -1185,7 +1189,7 @@ namespace QuizCanners.Inspect
 
                                 try
                                 {
-                                    if (iGotName != null)
+                                    if (nameIsKey && iGotName != null)
                                     {
                                         keyHandled = true;
 

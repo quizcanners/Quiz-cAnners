@@ -188,7 +188,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class TaskResultWaiter<T> : IPEGI, IPEGI_ListInspect, IGotName
+        public class TaskResultWaiter<T> : IPEGI, IPEGI_ListInspect, IGotName, IGotReadOnlyName
         {
             private string _name;
             private Task<T> _task;
@@ -200,16 +200,28 @@ namespace QuizCanners.Utils
             {
                 get
                 {
-                    if (TryGetValue(out _))
-                        return "Result Ready";
-                    else if (_task == null)
-                        return "Not Started";
-                    else if (_task.Status == TaskStatus.WaitingForActivation)
-                        return "Yielding";
-                    else
-                        return _task.Status.ToString();
+                    var stat = GetStatusEnum();
+                    switch (stat) 
+                    {
+                        case StatusEnum.Other: return _task.Status.ToString();
+                        default: return stat.ToString();
+                    }
                 }
             }
+
+            public StatusEnum GetStatusEnum() 
+            {
+                if (TryGetValue(out _))
+                    return StatusEnum.Ready;
+                else if (_task == null)
+                    return StatusEnum.NotStarted;
+                else if (_task.Status == TaskStatus.WaitingForActivation)
+                    return StatusEnum.Yielding;
+                else
+                    return StatusEnum.Other;
+            }
+
+            public enum StatusEnum { Ready, NotStarted, Yielding, Other }
 
             public string NameForInspector { get => _name; set => _name = value; }
 
@@ -257,6 +269,15 @@ namespace QuizCanners.Utils
 
             public void InspectInList(ref int edited, int index)
             {
+                var enm = GetStatusEnum();
+                switch (enm) 
+                {
+                    case StatusEnum.Ready: Icon.Done.Draw(); break;
+                    case StatusEnum.Yielding: Icon.Wait.Draw(); break;
+                    case StatusEnum.NotStarted: Icon.InActive.Draw(); break;
+                    case StatusEnum.Other: Icon.Warning.Draw(enm.ToString()); break;
+                }
+
                 if (result != null)
                 {
                     var asIls = result as IPEGI_ListInspect;
@@ -267,9 +288,12 @@ namespace QuizCanners.Utils
                     }
                 }
 
-                if ("{0}: {1}".F(_name, Status).PegiLabel().ClickLabel() | Icon.Enter.Click())
+                if (GetReadOnlyName().PegiLabel().ClickLabel() | Icon.Enter.Click())
                     edited = index;
             }
+
+            public string GetReadOnlyName() => "{0}".F(_name.IsNullOrEmpty() ? typeof(T).ToPegiStringType() : _name);
+
 
             #endregion
 

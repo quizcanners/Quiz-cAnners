@@ -878,7 +878,7 @@ namespace QuizCanners.Utils
 
         #endregion
 
-        public static string AddSpacesToSentence(string text, bool preserveAcronyms = false)
+        public static string AddSpacesToSentence(string text, bool preserveAcronyms = true)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return string.Empty;

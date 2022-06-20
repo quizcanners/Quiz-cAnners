@@ -41,7 +41,7 @@ namespace QuizCanners.Utils
         {
             private bool _subscribedToLogs;
             private bool _subscribedToQuit;
-            private int _maxLogs;
+            private readonly int _maxLogs;
 
             public bool SavingLogs
             {
@@ -272,6 +272,12 @@ namespace QuizCanners.Utils
 
             public static void LogErrorOnce(string msg, string key, Object target = null)
             {
+                if (key.IsNullOrEmpty()) 
+                {
+                    Debug.LogError("Chill Key is Null: " + msg);
+                    return;
+                }
+
                 int count = loggedErrors.GetOrCreate(key);
                 loggedErrors[key]++;
 
@@ -286,6 +292,12 @@ namespace QuizCanners.Utils
 
             public static void LogErrorOnce(Func<string> action, string key, Object target = null)
             {
+                if (key.IsNullOrEmpty())
+                {
+                    Debug.LogError("Chill Key is Null: " + action?.Invoke());
+                    return;
+                }
+
                 int count = loggedErrors.GetOrCreate(key);
                 loggedErrors[key]++;
 
@@ -300,6 +312,11 @@ namespace QuizCanners.Utils
 
             public static void LogWarningOnce(string msg, string key, Object target = null)
             {
+                if (key.IsNullOrEmpty())
+                {
+                    Debug.LogError("Chill Key is Null: " + msg);
+                    return;
+                }
 
                 int count = loggedWarnings.GetOrCreate(key);
                 loggedWarnings[key]++;
@@ -315,6 +332,12 @@ namespace QuizCanners.Utils
 
             public static void LogErrosExpOnly(Func<string> action, string key, Object target = null)
             {
+                if (key.IsNullOrEmpty())
+                {
+                    Debug.LogError("Chill Key is Null: " + action?.Invoke());
+                    return;
+                }
+
                 int count = loggedErrors.GetOrCreate(key);
                 loggedErrors[key]++;
 
@@ -331,6 +354,12 @@ namespace QuizCanners.Utils
 
             public static void LogExceptionExpOnly(Exception ex, string key, Object target = null)
             {
+                if (key.IsNullOrEmpty())
+                {
+                    Debug.LogException(ex);
+                    return;
+                }
+
                 int count = loggedErrors.GetOrCreate(key);
                 loggedErrors[key]++;
 
