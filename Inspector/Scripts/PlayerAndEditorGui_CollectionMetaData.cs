@@ -38,9 +38,9 @@ namespace QuizCanners.Inspect
             [NonSerialized] internal int itemsToShow = 10;
             [NonSerialized] internal UnNullable<ElementData> elementDatas = new UnNullable<ElementData>();
             [NonSerialized] internal bool inspectListMeta = false;
-            [NonSerialized] private PlayerPrefValue.Int _playerPref = null;
             [NonSerialized] private CollectionInspectParams _config;
 
+            private readonly PlayerPrefValue.Int _playerPref = null;
 
             internal int InspectedElement 
             {

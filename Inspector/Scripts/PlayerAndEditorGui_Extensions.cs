@@ -540,6 +540,29 @@ namespace QuizCanners.Inspect
             return cmp ? "{0} on {1}".F(cmp.GetType().ToPegiStringType(), cmp.gameObject.name) : obj.name;
         }
 
+        private static bool TryProcessKeyValuePair(object value, Action<object, object> ifPairAction) 
+        {
+            if (value != null)
+            {
+                Type valueType = value.GetType();
+                if (valueType.IsGenericType)
+                {
+                    Type baseType = valueType.GetGenericTypeDefinition();
+                    if (baseType == typeof(KeyValuePair<,>))
+                    {
+                        Type[] argTypes = baseType.GetGenericArguments();
+                        object kvpKey = valueType.GetProperty("Key").GetValue(value, null);
+                        object kvpValue = valueType.GetProperty("Value").GetValue(value, null);
+
+                        ifPairAction.Invoke(kvpKey, kvpValue);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public static string GetNameForInspector<T>(this T obj)
         {
             if (obj.IsNullOrDestroyed_Obj())
@@ -563,6 +586,19 @@ namespace QuizCanners.Inspect
                 //string tmp;
                 return DefaultName();// (obj.ToPegiStringInterfacePart(out tmp)) ? tmp : obj.ToString().SimplifyTypeName();
             }
+
+            string pairName = null;
+            if (TryProcessKeyValuePair(obj, (key, val) => 
+            {
+                string keyName = key.GetNameForInspector();
+                string valName = val.GetNameForInspector();
+
+                if (valName.Contains(keyName))
+                    pairName = valName;
+                else 
+                    pairName = "({0}: {1})".F(keyName, valName);
+            }))
+                return pairName;
 
             if (type.IsEnum)
             {

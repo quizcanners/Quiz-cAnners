@@ -509,7 +509,7 @@ namespace QuizCanners.Inspect
             if (!label.TryGetLabel(out var hint))
                 hint = "Unlabeled buffer";
 
-            Write(label);
+            Write(label, 0.33f);
             var ret = Edit(ref value);
 
             if (showCopyButton && Icon.Copy.Click("Copy {0} to clipboard".F(label)))
@@ -543,7 +543,7 @@ namespace QuizCanners.Inspect
             if (!label.TryGetLabel(out var hint))
                 hint = "Unlabeled buffer";
 
-            label.Write();
+            Write(label, 0.33f);
 
             if (showCopyButton && Icon.Copy.Click("Copy text to clipboard"))
                 SetCopyPasteBuffer(value, hint);

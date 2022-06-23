@@ -35,6 +35,7 @@ namespace QuizCanners.Inspect
 
                     if (match)
                     {
+#if UNITY_2021_1_OR_NEWER
                         if (sourceEvent.GetPersistentListenerState(i) == UnityEventCallState.Off)
                         {
                             Icon.Warning.Draw("Listener is off");
@@ -42,6 +43,7 @@ namespace QuizCanners.Inspect
                                 sourceEvent.SetPersistentListenerState(i, UnityEventCallState.RuntimeOnly);
                         } else 
                             Icon.Done.Draw();
+#endif
                     }
 
                     "{0} on {1}".F(n.IsNullOrEmpty() ? "NULL" : n, t ? t.name : "NULL").PegiLabel().Nl();
