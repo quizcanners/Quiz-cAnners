@@ -63,7 +63,7 @@ namespace QuizCanners.Utils
         public class Frame : GateBase
         {
             private int _frameIndex;
-            private readonly Time _editorGateTime = new Time();
+            private readonly SystemTime _editorGateTime = new SystemTime();
             private int _editorFrames;
 
             public bool TryEnter()
@@ -116,20 +116,14 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class Time : GateBase, IPEGI
+        public abstract class TimeBase<T> : GateBase, IPEGI
         {
-            private DateTime _lastTime = new DateTime();
-            private double _delta;
+            protected T _lastTime;
+            protected double _delta;
 
-            public double GetSecondsDeltaAndUpdate()
-            {
-                _delta = GetDeltaWithoutUpdate();
-                _lastTime = DateTime.Now;
+            protected abstract T GetCurrent { get; }
 
-                return _delta;
-            }
-
-            public DateTime LastTime
+            public T LastTime
             {
                 get
                 {
@@ -142,6 +136,16 @@ namespace QuizCanners.Utils
                     _lastTime = value;
                 }
             }
+
+            public double GetSecondsDeltaAndUpdate()
+            {
+                _delta = GetDeltaWithoutUpdate();
+                Update();
+
+                return _delta;
+            }
+
+            public void Update() => _lastTime = GetCurrent;
 
             public bool TryUpdateIfTimePassed(double secondsPassed, out bool wasInitialized)
             {
@@ -157,7 +161,7 @@ namespace QuizCanners.Utils
                 var delta = GetDeltaWithoutUpdate();
                 if (delta >= secondsPassed)
                 {
-                    _lastTime = DateTime.Now;
+                    Update();
                     return true;
                 }
 
@@ -169,27 +173,45 @@ namespace QuizCanners.Utils
                 if (!WasInitialized())
                     return 0;
 
-                _delta = Math.Max(0, (DateTime.Now - _lastTime).TotalSeconds);
-                
+                _delta = GetDeltaSeconds_Internal();
+
                 return _delta;
             }
 
-            private bool WasInitialized()
+            protected abstract double GetDeltaSeconds_Internal();
+            
+            protected bool WasInitialized()
             {
                 if (ValueIsDefined)
                     return true;
 
                 ValueIsDefined = true;
-                _lastTime = DateTime.Now;
+                Update();
                 return false;
-
             }
 
             public void Inspect()
             {
-
                 "Delta: ".F(TimeSpan.FromSeconds(GetDeltaWithoutUpdate()).ToShortDisplayString()).PegiLabel().Write();
             }
+        }
+
+        public class SystemTime : TimeBase<DateTime>
+        {
+            protected override DateTime GetCurrent => DateTime.Now;
+            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime).TotalSeconds;
+        }
+
+        public class UnityTimeScaled : TimeBase<float>, IPEGI
+        {
+            protected override float GetCurrent => Time.time;
+            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
+        }
+
+        public class UnityTimeUnScaled : TimeBase<float>, IPEGI
+        {
+            protected override float GetCurrent => Time.unscaledTime;
+            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
         }
 
         public class Bool : GateGenericBase<bool>
