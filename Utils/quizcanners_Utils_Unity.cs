@@ -1931,11 +1931,11 @@ namespace QuizCanners.Utils {
 
             var bytes = tex.EncodeToPNG();
 
-            File.WriteAllBytes(Application.dataPath + dest, bytes);
+            File.WriteAllBytes(Path.Combine(Application.dataPath, dest), bytes);
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceUncompressedImport);
 
-            var result = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets" + dest, typeof(Texture2D));
+            var result = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/" + dest, typeof(Texture2D));
 
             result.CopyImportSettingFrom(tex);
 

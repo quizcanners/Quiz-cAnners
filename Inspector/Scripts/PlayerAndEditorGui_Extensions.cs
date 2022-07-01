@@ -139,6 +139,11 @@ namespace QuizCanners.Inspect
             }
             catch (Exception ex)
             {
+                if (IsExitGUIException(ex))
+                {
+                    throw;
+                }
+
                 QcLog.ChillLogger.LogExceptionExpOnly(ex, key: function.GetNameForInspector());
                 Write(ex);
             }
@@ -243,6 +248,11 @@ namespace QuizCanners.Inspect
                     }
                     catch (Exception ex)
                     {
+                        if (IsExitGUIException(ex))
+                        {
+                            throw;
+                        }
+
                         QcLog.ChillLogger.LogExceptionExpOnly(ex, key: "IndAtt" + typeof(T));
                         Nl();
                         ex.StackTrace.PegiLabel().Write_ForCopy_Big(showCopyButton: true, lines: 10).Nl();
