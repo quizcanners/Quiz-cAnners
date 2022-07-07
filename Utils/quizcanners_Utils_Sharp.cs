@@ -370,6 +370,16 @@ namespace QuizCanners.Utils
 
         public static T GetRandomByWeight<T>(this List<T> sequence, Func<T, float> weightSelector)
         {
+            if (sequence.IsNullOrEmpty())
+            {
+                var typeName = typeof(T).Name;
+                QcLog.ChillLogger.LogErrorOnce("{0}: List<{1}> is {2}".F(nameof(GetRandomByWeight), typeName, sequence == null ? "NULL" : "Empty"), key: "{0} grnd".F(typeName));
+                return default(T);
+            }
+
+            if (sequence.Count == 1)
+                return sequence[0];
+
             float TotalWeight = 0;
 
             foreach (var el in sequence)
