@@ -240,7 +240,15 @@ namespace QuizCanners.Inspect
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
+            {
+                if (label.GotWidth) 
+                {
+                    Write(label);
+                    return Edit(ref val);
+                }
+
                 return PegiEditorOnly.Edit(label, ref val);
+            }
 #endif
 
             Write(label, 0.33f);

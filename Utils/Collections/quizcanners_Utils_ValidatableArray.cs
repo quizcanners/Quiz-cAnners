@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace QuizCanners.Utils
 {
-    public abstract class ValidatabeArrayGeneric<T> : IPEGI, IGotReadOnlyName, IGotCount, IEnumerable<T> 
+    public abstract class ValidatabeArrayGeneric<T> : IPEGI, IGotReadOnlyName, IGotCount, IEnumerable<T> where T: struct
     {
         [SerializeField] protected T[] _array;
         [SerializeField] private bool[] _valid = new bool[0];

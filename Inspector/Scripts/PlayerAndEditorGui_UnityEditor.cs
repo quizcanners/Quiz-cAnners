@@ -745,11 +745,16 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(TextLabel label, ref float val)
         {
+            if (label.GotWidth)
+            {
+                Write(label);
+                return Edit(ref val);
+            }
+
             _START();
-            if (label.TryGetLabel(out var txt))
-                val = EditorGUILayout.FloatField(txt, val);
-            else
-                val = EditorGUILayout.FloatField(val);
+
+            val = EditorGUILayout.FloatField(label.label, val);
+              //  val = EditorGUILayout.FloatField(val);
             return _END();
         }
 
@@ -845,7 +850,6 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(TextLabel label, ref Vector3 vec)
         {
-
             _START();
             if (label.TryGetLabel(out var txt))
                 vec = EditorGUILayout.Vector3Field(txt, vec);

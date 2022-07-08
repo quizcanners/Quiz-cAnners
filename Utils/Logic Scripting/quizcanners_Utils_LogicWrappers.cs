@@ -309,5 +309,40 @@ namespace QuizCanners.Utils
             }
         }
 
+        public class DeltaPositionSegments 
+        {
+            Vector3 _previousPosition;
+
+            public bool TryGetSegments(Vector3 newPosition, float delta, out Vector3[] points) 
+            {
+                var segment = (newPosition - _previousPosition);
+
+                float totalDistance = segment.magnitude;
+
+                int count = Mathf.FloorToInt(totalDistance / delta);
+                points = new Vector3[count];
+
+                if (count == 0) 
+                    return false;
+                
+                float fraction = (delta * count) / totalDistance;
+
+                var direction = segment.normalized;
+
+                for (int i = 0; i < count; i++)
+                    points[i] = _previousPosition + direction * delta * (i + 1);
+
+                _previousPosition = Vector3.Lerp(_previousPosition, newPosition, fraction);
+
+                return true;
+            }
+
+            public void Reset(Vector3 position) 
+            {
+                _previousPosition = position;
+            }
+
+        }
+
     }
 }

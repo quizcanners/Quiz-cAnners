@@ -354,7 +354,7 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        public static ChangesToken Inspect_AsInList_Value<T>(ref T obj) where T : struct, IPEGI_ListInspect
+        public static ChangesToken Inspect_AsInList_Value<T>(ref T obj) where T : IPEGI_ListInspect
         {
             var pgi = obj as IPEGI_ListInspect;
             var ch = ChangeTrackStart();
