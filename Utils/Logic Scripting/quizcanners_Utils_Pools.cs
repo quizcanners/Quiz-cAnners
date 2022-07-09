@@ -1,5 +1,4 @@
 using QuizCanners.Inspect;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,12 +6,10 @@ using UnityEngine;
 
 namespace QuizCanners.Utils
 {
-    public static class Pool
+    public  static partial class Pool
     {
         public abstract class Base : IGotCount
         {
-
-
             public int GetCount() => Count;
 
             public abstract int Count { get; }

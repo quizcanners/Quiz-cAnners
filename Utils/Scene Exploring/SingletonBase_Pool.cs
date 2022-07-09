@@ -151,7 +151,6 @@ namespace QuizCanners.Utils
 
         protected virtual void OnInstanciated(T inst) {}
 
-  
         protected override void OnBeforeOnDisableOrEnterPlayMode(bool _afterEnableCalled)
         {
             base.OnBeforeOnDisableOrEnterPlayMode(_afterEnableCalled);
@@ -233,5 +232,56 @@ namespace QuizCanners.Utils
         }
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();//instances.GetEnumerator();
         #endregion
+
+        protected override void OnRegisterServiceInterfaces()
+        {
+            base.OnRegisterServiceInterfaces();
+            RegisterServiceAs<PoolSingletonBase<T>>();
+        }
     }
+
+    public static partial class Pool
+    {
+        public static bool TrySpawn<T>(Vector3 position, out T instance) where T : Component
+        {
+            T result = null;
+
+            Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawn(position, out result));
+
+            instance = result;
+
+            return instance;
+        }
+
+        public static bool TrySpawnIfVisible<T>(Vector3 position, out T instance) where T : Component
+        {
+            T result = null;
+
+            Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawnIfVisible(position, out result));
+
+            instance = result;
+
+            return instance;
+        }
+
+        public static void TrySpawnIfVisible<T>(Vector3 position, int preferedCount, Action<T> onInstanciate) where T : Component
+        {
+            Singleton.Try<PoolSingletonBase<T>>(pool =>
+            {
+                if (Camera.main.IsInCameraViewArea(position))
+                {
+                    int count = (int)Math.Max(1, preferedCount * pool.VacancyPortion);
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (!pool.TrySpawn(worldPosition: position, out var instance))
+                            break;
+
+                        onInstanciate.Invoke(instance);
+                    }
+                };
+            });
+        }
+    }
+
 }
