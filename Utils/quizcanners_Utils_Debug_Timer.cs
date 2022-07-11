@@ -15,7 +15,7 @@ namespace QuizCanners.Utils
             public class DisposableTimer : IDisposable
             {
                 private Action _onDispose;
-                private TimerCollectionElements.Base _element;
+                private readonly TimerCollectionElements.Base _element;
 
                 public string Description 
                 {
@@ -201,7 +201,7 @@ namespace QuizCanners.Utils
 
                 public void InspectInList(ref int edited, int index)
                 {
-                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PegiLabel(90).Write();
+                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PegiLabel().Write();
 
                     if (Icon.Enter.Click())
                         edited = index;
@@ -389,7 +389,7 @@ namespace QuizCanners.Utils
 
                 public void InspectInList(ref int edited, int index)
                 {
-                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PegiLabel(90).Write();
+                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PegiLabel().Write();
 
                     if (Icon.Enter.Click())
                         edited = index;
@@ -504,9 +504,9 @@ namespace QuizCanners.Utils
                         return val;
                     }
 
-                        #endregion
+                    #endregion
 
-                        protected ValueBase (string key) 
+                    protected ValueBase (string key) 
                     {
                         Key = key;
                     }
@@ -637,7 +637,7 @@ namespace QuizCanners.Utils
                         if (QcSharp.AddSpacesToSentence(Name).PegiLabel().ClickLabel())
                             edited = index;
 
-                        "{0} %".F(Percentage).PegiLabel(0.25f).Write();
+                        "{0} %".F(Percentage).PegiLabel(65).Write();
 
                         collection.InspectInList(ref edited, index);
                     }
@@ -670,7 +670,7 @@ namespace QuizCanners.Utils
                         if (QcSharp.AddSpacesToSentence(Name).PegiLabel().ClickLabel())
                             edited = index;
 
-                        "{0} %".F(Percentage).PegiLabel(0.25f).Write();
+                        "{0} %".F(Percentage).PegiLabel(65).Write();
 
                         collection.InspectInList(ref edited, index);
                     }
