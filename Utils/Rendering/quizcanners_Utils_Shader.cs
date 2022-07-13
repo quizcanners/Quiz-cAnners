@@ -304,6 +304,8 @@ namespace QuizCanners.Utils
 
         #region Int
 
+#if UNITY_2021_1_OR_NEWER 
+
         [Serializable]
         public class IntValue : IndexGeneric<int>
         {
@@ -355,7 +357,9 @@ namespace QuizCanners.Utils
             }
         }
 
-        #endregion
+#endif
+
+#endregion
 
         #region Color
 
