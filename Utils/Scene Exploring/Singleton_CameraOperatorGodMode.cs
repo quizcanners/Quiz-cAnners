@@ -33,7 +33,6 @@ namespace QuizCanners.Utils
         [SerializeField] protected Camera _mainCam;
         [NonSerialized] public IGodModeCameraController controller;
 
-
         public override string InspectedCategory => Utils.Singleton.Categories.SCENE_MGMT;
 
         public Camera MainCam
@@ -53,7 +52,6 @@ namespace QuizCanners.Utils
 
             if (Input.GetMouseButtonDown(2))
             {
-
                 var ray = MainCam.ScreenPointToRay(Input.mousePosition);
 
                 RaycastHit hit;
@@ -159,6 +157,8 @@ namespace QuizCanners.Utils
                 transform.position = trg + controller.GetCameraOffsetPosition();
                 camTf.LookAt(trg, Vector3.up);
             }
+
+            camTf.localPosition = Vector3.zero;
         }
 
         public void Update()
