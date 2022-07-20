@@ -214,6 +214,14 @@ namespace QuizCanners.Utils
             protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
         }
 
+        public class UnityTimeSinceStartup : TimeBase<double>, IPEGI
+        {
+            protected override double GetCurrent => QcUnity.TimeSinceStartup();
+            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
+        }
+
+      
+
         public class Bool : GateGenericBase<bool>
         {
             protected override bool DifferentFromPrevious(bool newValue) => newValue != previousValue;

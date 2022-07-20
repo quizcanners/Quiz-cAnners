@@ -207,11 +207,10 @@ namespace QuizCanners.Utils {
 
         public static double TimeSinceStartup() =>
 #if UNITY_EDITOR
-            (!Application.isPlaying)
-                ? EditorApplication.timeSinceStartup
-                :
+            EditorApplication.timeSinceStartup;
+#else
+            Time.realtimeSinceStartup;
 #endif
-                Time.realtimeSinceStartup;
 
         #endregion
 
