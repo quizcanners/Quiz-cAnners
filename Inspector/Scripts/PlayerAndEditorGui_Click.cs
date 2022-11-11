@@ -1,4 +1,5 @@
 ﻿using QuizCanners.Utils;
+using System;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -111,6 +112,48 @@ namespace QuizCanners.Inspect
             }
 
             Nl();
+
+            return ChangesToken.False;
+        }
+
+        public static ChangesToken ClickConfirm(this TextLabel label, Action action)
+        {
+            string confirmationTag = "{0}()".F(action.Method.Name);
+
+            if (ConfirmationDialogue.IsRequestedFor(confirmationTag))
+            {
+                if (ConfirmClick())
+                {
+                    action.Invoke();
+                    return ChangesToken.True;
+                }
+
+                return ChangesToken.False;
+            }
+
+            if (label.ClickUnFocus())
+                ConfirmationDialogue.Request(tag: confirmationTag, details: label.toolTip);
+
+            return ChangesToken.False;
+        }
+
+        public static ChangesToken ClickConfirm(Action action)
+        {
+            string confirmationTag = "{0}()".F(action.Method.Name);
+
+            if (ConfirmationDialogue.IsRequestedFor(confirmationTag))
+            {
+                if (ConfirmClick()) 
+                {
+                    action.Invoke();
+                    return ChangesToken.True;
+                }
+
+                return ChangesToken.False;
+            }
+
+            if (confirmationTag.PegiLabel().ClickUnFocus())
+                ConfirmationDialogue.Request(tag: confirmationTag, "Execute {0}".F(confirmationTag));
 
             return ChangesToken.False;
         }
