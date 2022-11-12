@@ -768,7 +768,8 @@ namespace QuizCanners.Inspect
                 return "Destroyed UObj {0}".F(typeof(T).ToPegiStringType());
 
             string tmp;
-            if (obj.ToPegiStringInterfacePart(out tmp)) return tmp;
+            if (obj.ToPegiStringInterfacePart(out tmp)) 
+                return tmp;
 
             var cmp = obj as Component;
             return cmp ? "{0} ({1})".F(cmp.gameObject.name, cmp.GetType().ToPegiStringType()) : obj.name;
