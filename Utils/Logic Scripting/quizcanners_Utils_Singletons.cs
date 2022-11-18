@@ -389,7 +389,7 @@ namespace QuizCanners.Utils
             //[SerializeField] 
             private bool _afterEnableCalled;
 
-            protected virtual void AfterEnable() 
+            protected virtual void OnAfterEnable() 
             { 
 
             }
@@ -398,7 +398,7 @@ namespace QuizCanners.Utils
             {
                 yield return null;
                 _afterEnableCalled = true;
-                AfterEnable();
+                OnAfterEnable();
             }
 
             protected virtual void OnBeforeOnDisableOrEnterPlayMode(bool afterEnableCalled) 

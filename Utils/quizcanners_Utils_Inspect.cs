@@ -50,7 +50,8 @@ namespace QuizCanners.Utils
 
                 pegi.Nl();
 
-                "Img Name".PegiLabel(90).Edit(ref screenShotName);
+                var ssName = _screenShotName.GetValue();
+                "Img Name".PegiLabel(90).Edit(ref ssName).OnChanged(()=> _screenShotName.SetValue(ssName));
                 var path = System.IO.Path.Combine(QcFile.OutsideOfAssetsFolder, folderName);
                 if (Icon.Folder.Click("Open Screen Shots Folder : {0}".F(path)))
                     QcFile.Explorer.OpenPath(path);
@@ -234,11 +235,13 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public string screenShotName;
+            private readonly PlayerPrefValue.String _screenShotName = new PlayerPrefValue.String("qc_ScreenShotName", defaultValue: "Screen Shot");
+
+           // public string screenShotName;
 
             private string GetScreenShotName()
             {
-                var name = screenShotName;
+                var name = _screenShotName.GetValue();
 
                 if (name.IsNullOrEmpty())
                     name = "SS-" + DateTime.Now.ToString("yyyy.MM.dd.HH.mm.ss");
