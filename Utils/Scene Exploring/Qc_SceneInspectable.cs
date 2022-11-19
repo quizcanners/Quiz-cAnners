@@ -1,7 +1,9 @@
 using QuizCanners.Inspect;
 using System.Collections.Generic;
+#if UNITY_EDITOR
 using UnityEditor.SceneManagement;
 using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
@@ -19,7 +21,9 @@ namespace QuizCanners.Utils
         private readonly Gate.Frame _onLoadedInitializationOneFrameDelay = new();
         private int _framesSinceLoaded;
 
-        public bool IsValid => SceneReference != null;
+        public bool LoadingFailed { get; private set; } 
+
+        public bool IsValid => SceneReference != null && SceneReference.IsValid;
 
         public string ScenePath => IsValid ? SceneReference.ScenePath : "";
 
@@ -91,8 +95,15 @@ namespace QuizCanners.Utils
                 {
                     if (!IsLoaded)
                     {
-                        LoadOperation = SceneManager.LoadSceneAsync(ScenePath, mode);
-                        _framesSinceLoaded = 0;
+                        try
+                        {
+                            LoadOperation = SceneManager.LoadSceneAsync(ScenePath, mode);
+                            _framesSinceLoaded = 0;
+                        } catch (Exception ex) 
+                        {
+                            LoadingFailed = true;
+                            Debug.LogException(ex);
+                        }
                     }
                 }
             }
@@ -209,6 +220,9 @@ namespace QuizCanners.Utils
         {
             if (SceneReference == null)
                 return "Scene Reference is null";
+
+            if (LoadingFailed)
+                return "Loading failed";
 
             return SceneReference.NeedAttention();
         }

@@ -1958,6 +1958,42 @@ namespace QuizCanners.Utils {
 #endif
         }
 
+        public static bool TrySaveTexture(ref Texture2D tex)
+        {
+#if UNITY_EDITOR
+
+            if (!tex)
+            {
+                Debug.LogError("Texture is NULL. Can't save.");
+            }
+
+            var dest = GetPathWithout_Assets_Word(tex);
+
+            if (dest.IsNullOrEmpty())
+            {
+                Debug.LogError("Destination path for {0} is Empty".F(tex.ToString()));
+                return false;
+            }
+
+            var bytes = tex.EncodeToPNG();
+
+            File.WriteAllBytes(Path.Combine(Application.dataPath, dest), bytes);
+
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUncompressedImport);
+
+            var result = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/" + dest, typeof(Texture2D));
+
+            result.CopyImportSettingFrom(tex);
+
+            tex = result;
+
+            return true;
+#else
+return false;
+#endif
+        }
+
+
 #if UNITY_EDITOR
         public static void SaveChangesToPixels(Texture2D tex)
         {
@@ -2005,36 +2041,7 @@ namespace QuizCanners.Utils {
             return true;
         }
 
-        public static bool TrySaveTexture(ref Texture2D tex)
-        {
-            if (!tex)
-            {
-                Debug.LogError("Texture is NULL. Can't save.");
-            }
-
-            var dest = GetPathWithout_Assets_Word(tex);
-
-            if (dest.IsNullOrEmpty())
-            {
-                Debug.LogError("Destination path for {0} is Empty".F(tex.ToString()));
-                return false;
-            }
-
-            var bytes = tex.EncodeToPNG();
-
-            File.WriteAllBytes(Path.Combine(Application.dataPath, dest), bytes);
-
-            AssetDatabase.Refresh(ImportAssetOptions.ForceUncompressedImport);
-
-            var result = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/" + dest, typeof(Texture2D));
-
-            result.CopyImportSettingFrom(tex);
-
-            tex = result;
-
-            return true;
-        }
-
+   
         public static Texture2D SaveTextureAsAsset(Texture2D tex, string folderName, ref string textureName, bool saveAsNew)
         {
             var bytes = tex.EncodeToPNG();
@@ -2123,11 +2130,11 @@ namespace QuizCanners.Utils {
 
 #endif
 
-        #endregion
+#endregion
 
-        #endregion
+#endregion
 
-        #region Shaders
+#region Shaders
 
         public static void SetShaderKeyword(this Material mat, string keyword, bool isTrue)
         {
@@ -2160,7 +2167,7 @@ namespace QuizCanners.Utils {
 
 #endregion
 
-        #region Meshes
+#region Meshes
 
         public static float CalculateVolume(this Mesh mesh) 
         {
@@ -2297,9 +2304,9 @@ namespace QuizCanners.Utils {
             c.sharedMesh = mesh;
         }
 
-        #endregion
+#endregion
 
-        #region Layer Masks
+#region Layer Masks
 
         public static bool GetLayerMaskForSceneView(int layerIndex, bool value)
         {
@@ -2349,7 +2356,7 @@ namespace QuizCanners.Utils {
       
         }
 
-        #endregion
+#endregion
 
     }
 

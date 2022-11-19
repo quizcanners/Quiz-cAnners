@@ -11,7 +11,14 @@ namespace QuizCanners.Utils
     
         #if UNITY_EDITOR
             [SerializeField] private UnityEditor.SceneAsset _asset;
-        #endif
+#endif
+
+        public bool IsValid =>
+            ScenePath.IsNullOrEmpty() == false
+#if UNITY_EDITOR
+            && _asset
+#endif
+            ;
 
         private string GetAssetPath() =>
         #if UNITY_EDITOR
