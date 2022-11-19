@@ -387,7 +387,7 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        public static ChangesToken Edit(this TextLabel label, ref Color col)
+        public static ChangesToken Edit(this TextLabel label, ref Color col, bool showEyeDropper = true, bool showAlpha = true, bool hdr = false)
         {
             if (PaintingGameViewUI)
             {
@@ -396,8 +396,8 @@ namespace QuizCanners.Inspect
             }
             else
             {
-                Write(label, 0.33f);
-                return Edit(ref col);
+                //Write(label, 0.33f);
+                return PegiEditorOnly.Edit(label, ref col, showEyeDropper: showEyeDropper, showAlpha: showAlpha, hdr: hdr);
             }
 
             return ChangesToken.False;

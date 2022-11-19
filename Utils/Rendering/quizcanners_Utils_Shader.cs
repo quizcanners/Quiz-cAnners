@@ -460,6 +460,13 @@ namespace QuizCanners.Utils
                 #endif
             }
 
+            public override void Inspect()
+            {
+               //base.Inspect();
+                if (name.PegiLabel().Edit(ref latestValue, hdr: true).Nl() && globalValueSet)
+                    GlobalValue = latestValue;
+            }
+
             public ColorFloat4Value()
             {
                 latestValue = Color.grey;

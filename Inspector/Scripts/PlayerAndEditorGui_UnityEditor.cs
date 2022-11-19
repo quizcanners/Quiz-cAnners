@@ -878,6 +878,14 @@ namespace QuizCanners.Inspect
 
         }
 
+        public static ChangesToken Edit(TextLabel label, ref Color col, bool showEyeDropper, bool showAlpha, bool hdr)
+        {
+            _START();
+             col = EditorGUILayout.ColorField(TextAndTip(label), col, showEyedropper: showEyeDropper, showAlpha: showAlpha, hdr: hdr);
+            return _END();
+
+        }
+
         public static ChangesToken Edit(TextLabel label, ref Vector3 vec)
         {
             _START();

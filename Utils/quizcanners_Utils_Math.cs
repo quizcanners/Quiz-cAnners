@@ -449,6 +449,11 @@ namespace QuizCanners.Utils
 
         public static Vector4 ToVector4(this Quaternion q) => new Vector4(q.x, q.y, q.z, q.w);
 
+        public static Vector4 X(this Vector4 vec, float x) => new Vector4(x, vec.y, vec.z, vec.w);
+        public static Vector4 Y(this Vector4 vec, float y) => new Vector4(vec.x, y, vec.z, vec.w);
+        public static Vector4 Z(this Vector4 vec, float z) => new Vector4(vec.x, vec.y, z, vec.w);
+        public static Vector4 W(this Vector4 vec, float w) => new Vector4(vec.x, vec.y, vec.z, w);
+
         public static Rect ToRect(this Vector4 v4, bool usingMinMax)
             => usingMinMax ? Rect.MinMaxRect(v4.x, v4.y, v4.z, v4.w) : new Rect(v4.x, v4.y, v4.z, v4.w);
 
