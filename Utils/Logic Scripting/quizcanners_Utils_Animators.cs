@@ -120,5 +120,33 @@ namespace QuizCanners.Utils
 
             public Integer(string name, int defaultValue = 0) : base(name, defaultValue) { }
         }
+
+
+
+
+        public static Animator Set(this Animator animator, Trigger trig)
+        {
+            trig.SetOn(animator);
+            return animator;
+        }
+
+        public static Animator Set(this Animator animator, Float param, float value)
+        {
+            param.SetOn(value, animator);
+            return animator;
+        }
+
+        public static Animator Set(this Animator animator, Integer param, int value)
+        {
+            param.SetOn(value, animator);
+            return animator;
+        }
+
+        public static Animator Set(this Animator animator, Bool param, bool value)
+        {
+            param.SetOn(value, animator);
+            return animator;
+        }
+
     }
 }
