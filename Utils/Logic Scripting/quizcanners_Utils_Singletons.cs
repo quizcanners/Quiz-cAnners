@@ -457,8 +457,11 @@ namespace QuizCanners.Utils
                             var deprecated = useNew ? previousObj : this;
                             var current = useNew ? this : previousObj;
 
-                            if (destroy)
+                            if (destroy && deprecated)
+                            {
+                                Debug.Log("Destroying Old {0}".F(deprecated.gameObject.name));
                                 Destroy(deprecated.gameObject);
+                            }
 
                             if (!useNew)
                             {
