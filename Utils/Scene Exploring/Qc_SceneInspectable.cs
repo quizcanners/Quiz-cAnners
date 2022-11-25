@@ -214,8 +214,19 @@ namespace QuizCanners.Utils
 #endif
         }
 
-        public override string ToString() =>  ScenePath;
+        public override string ToString()
+        {
+            if (ScenePath.IsNullOrEmpty())
+                return "NO SCENE PATH";
+            var separator = ScenePath.LastIndexOfAny(new char[] { '/', '\\' });
 
+            string result = ScenePath;
+
+            if (separator > 0)
+                result = result.Substring(separator + 1);
+
+            return result.Replace(".unity", "");
+        }
         public string NeedAttention()
         {
             if (SceneReference == null)
@@ -227,9 +238,6 @@ namespace QuizCanners.Utils
             return SceneReference.NeedAttention();
         }
 
-
         #endregion
-
     }
-
 }
