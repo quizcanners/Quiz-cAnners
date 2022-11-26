@@ -428,6 +428,20 @@ namespace QuizCanners.Utils
 
         #region Inspect Debug Options 
 
+        public static pegi.ChangesToken Inspect_TimeScaleOption()
+        {
+            
+            var tScale = Time.timeScale;
+            if ("Time.timescale".PegiLabel(toolTip: "For convenience will also modify Fixed Delta Time", 100).Edit(ref tScale, 0f, 4f))
+            {
+                Time.timeScale = tScale;
+                Time.fixedDeltaTime = Mathf.Clamp(Time.timeScale / 60, min: 0.001f, max: 0.02f);
+                return pegi.ChangesToken.True;
+            }
+
+            return pegi.ChangesToken.False;
+        }
+
         private static readonly pegi.EnterExitContext _enteredIndex = new pegi.EnterExitContext(playerPrefId: "inspEnt");
         private static readonly pegi.EnterExitContext _enteredData = new pegi.EnterExitContext(playerPrefId: "inspEntDta");
    
@@ -538,14 +552,21 @@ namespace QuizCanners.Utils
 
                     "Time.frameCount: {0}".F(Time.frameCount).PegiLabel().Nl();
 
-                    var tScale = Time.timeScale;
-                    if ("Time.timescale".PegiLabel().Edit(ref tScale, 0f, 4f))
-                        Time.timeScale = tScale;
 
-                    if (Mathf.Approximately(tScale, 1) == false && Icon.Refresh.Click())
+                    Inspect_TimeScaleOption();
+
+                    if (Mathf.Approximately(Time.timeScale, 1) == false && Icon.Refresh.Click())
                         Time.timeScale = 1;
 
                     pegi.Nl();
+
+                    var fTScale = Time.fixedDeltaTime;
+                    if ("Time.fixedDeltaTime".PegiLabel(120).Edit(ref fTScale, 0, 0.5f))
+                        Time.fixedDeltaTime = fTScale;
+
+                    pegi.Nl();
+
+                  
 
                     "Time.deltaTime: {0}".F(QcSharp.SecondsToReadableString(Time.deltaTime)).PegiLabel().Nl();
 
