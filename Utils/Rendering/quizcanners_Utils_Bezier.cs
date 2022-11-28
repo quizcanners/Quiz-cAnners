@@ -81,7 +81,7 @@ namespace QuizCanners.Utils
             {
                 normalVectors = new List<Vector3>();
 
-                Debug.Log("Recalculating Normals");
+              //  Debug.Log("Recalculating Normals");
 
                 for (int i=0; i< points.Count-1; i++) 
                 {
