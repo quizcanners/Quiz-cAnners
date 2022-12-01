@@ -13,7 +13,6 @@ namespace QuizCanners.Utils
     {
         Vector3 GetTargetPosition();
         Vector3 GetCameraOffsetPosition();
-
         bool TryGetCameraHeight(out float height);
     }
 
