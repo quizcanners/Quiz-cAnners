@@ -7,9 +7,11 @@ using Graphic = UnityEngine.UI.Graphic;
 using Object = UnityEngine.Object;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using UnityEngine.SceneManagement;
 
 #if UNITY_EDITOR
 using  UnityEditor;
+
 #endif
 
 namespace QuizCanners.Utils {
@@ -233,6 +235,27 @@ namespace QuizCanners.Utils {
             refresh.SetActive(false);
             refresh.SetActive(true);
         }
+
+        #region Scenes 
+
+        public static bool TryGetActiveScenePath(out string path) 
+        {
+#if UNITY_EDITOR
+            path = SceneManager.GetActiveScene().path;
+
+            var namePart = path.LastIndexOfAny(new char[] {'/', '\\'});
+
+            if (namePart > 0)
+                path = path.Substring(0, namePart);
+
+            return true;
+#else
+            path = "";
+            return false;
+#endif
+        }
+
+        #endregion
 
         #region Rendering
 

@@ -84,7 +84,8 @@ namespace QuizCanners.Utils
 #if UNITY_EDITOR
                 if (IsValid && !IsLoaded)
                 {
-                    EditorSceneManager.OpenScene(SceneReference.ScenePath, OpenSceneMode.Additive);
+                    var scene = EditorSceneManager.OpenScene(SceneReference.ScenePath, OpenSceneMode.Additive);
+                    SceneManager.SetActiveScene(scene); // In Editor Scenes are usually opened to editing
                 }
 #endif
 
