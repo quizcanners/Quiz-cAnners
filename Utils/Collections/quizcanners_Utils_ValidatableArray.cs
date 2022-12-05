@@ -209,8 +209,10 @@ namespace QuizCanners.Utils
                 _lastValid = parent._lastValidElement;
             }
         }
-        public IEnumerator<T> GetEnumerator() => new Enumerator(this);
-        IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
+        public virtual IEnumerator<T> GetEnumerator() => Get_Enumerator_Internal();
+        IEnumerator IEnumerable.GetEnumerator() => Get_Enumerator_Internal();
+
+        protected virtual IEnumerator<T> Get_Enumerator_Internal() => new Enumerator(this);
         #endregion
 
     }
