@@ -161,7 +161,7 @@ namespace QuizCanners.Utils
                 {
                     if (_timings.IsNullOrEmpty())
                     {
-                        "No timings".PegiLabel().WriteHint();
+                        "No timings".PegiLabel().Write_Hint();
                         return;
                     }
 
@@ -350,7 +350,7 @@ namespace QuizCanners.Utils
                 {
                     if (_timings.IsNullOrEmpty())
                     {
-                        "No timings".PegiLabel().WriteHint();
+                        "No timings".PegiLabel().Write_Hint();
                         return;
                     }
 

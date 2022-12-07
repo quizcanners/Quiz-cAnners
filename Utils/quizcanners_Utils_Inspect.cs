@@ -92,7 +92,7 @@ namespace QuizCanners.Utils
                     else
                         ("To grab screen-shot from Post-Render, OnPostRender() of this class should be called from OnPostRender() of the script attached to a camera." +
                          " Refer to Unity documentation to learn more about OnPostRender() call").PegiLabel()
-                            .WriteHint();
+                            .Write_Hint();
 
 
                     pegi.Nl();
@@ -353,7 +353,7 @@ namespace QuizCanners.Utils
 
                     pegi.Nl();
 
-                    "Tap Enter to apply Range change in the field (will Clamp current value)".PegiLabel().WriteHint();
+                    "Tap Enter to apply Range change in the field (will Clamp current value)".PegiLabel().Write_Hint();
 
 
 
@@ -544,9 +544,9 @@ namespace QuizCanners.Utils
 
                     "AudioSettings.dspTime: {0}".F(QcSharp.SecondsToReadableString(AudioSettings.dspTime)).PegiLabel().Nl();
 
-                    "Use it to schedule Audio Clips: audioSource.PlayScheduled(AudioSettings.dspTime + 0.5);".PegiLabel().WriteHint();
+                    "Use it to schedule Audio Clips: audioSource.PlayScheduled(AudioSettings.dspTime + 0.5);".PegiLabel().Write_Hint();
 
-                    "Clip Duration: double duration = (double)AudioClip.samples / AudioClip.frequency;".PegiLabel().WriteHint();
+                    "Clip Duration: double duration = (double)AudioClip.samples / AudioClip.frequency;".PegiLabel().Write_Hint();
 
                     "Time.unscaled time: {0}".F(QcSharp.SecondsToReadableString(Time.unscaledTime)).PegiLabel().Nl();
 
@@ -588,7 +588,7 @@ namespace QuizCanners.Utils
                     {
 
                         Sprite sa = null;
-                        "To extract a Texture from Sprite, Set Read/Write Enabled to True and make sure it's format is Uncompressed (RGBA32 should do it)".PegiLabel().WriteHint();
+                        "To extract a Texture from Sprite, Set Read/Write Enabled to True and make sure it's format is Uncompressed (RGBA32 should do it)".PegiLabel().Write_Hint();
 
                         if ("Extract Sprite Atlas Texture".PegiLabel().Edit(ref sa) && sa)
                         {

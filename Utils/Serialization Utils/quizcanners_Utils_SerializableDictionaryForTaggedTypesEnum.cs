@@ -163,7 +163,7 @@ namespace QuizCanners.Utils
                 if (type != null)
                 {
                     if (ContainsKey(_selectedTag))
-                        "Type {0} is already in the Dictionary".F(type).PegiLabel().WriteHint();
+                        "Type {0} is already in the Dictionary".F(type).PegiLabel().Write_Hint();
                     else if ("Create {0}".F(type.ToPegiStringType()).PegiLabel().Click())
                         this[_selectedTag] = (T)Activator.CreateInstance(type);
                 }

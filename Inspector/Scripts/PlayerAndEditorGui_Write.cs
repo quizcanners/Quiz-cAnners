@@ -626,7 +626,7 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static TextToken WriteHint(this TextLabel text, bool startNewLineAfter = true)
+        public static TextToken Write_Hint(this TextLabel text, bool startNewLineAfter = true)
         {
 
 #if UNITY_EDITOR

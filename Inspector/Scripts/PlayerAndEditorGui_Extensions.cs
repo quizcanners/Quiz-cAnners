@@ -604,7 +604,7 @@ namespace QuizCanners.Inspect
                                     counter--;
                                     if (counter <= 0)
                                     {
-                                        "+ {0} elements".F(col.Count - MAX_ELEMENTS_TO_SHOW).PegiLabel().WriteHint().Nl();
+                                        "+ {0} elements".F(col.Count - MAX_ELEMENTS_TO_SHOW).PegiLabel().Write_Hint().Nl();
                                         break;
                                     }
                                 }

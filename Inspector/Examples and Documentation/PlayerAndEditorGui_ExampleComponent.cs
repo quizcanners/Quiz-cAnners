@@ -35,7 +35,7 @@ namespace QuizCanners.Inspect.Examples
                         {
                             Icon.Debug.Draw();
                             " - this icon at the top switches to Default Unity inspector".PegiLabel().Nl();
-                            "Open this script to learn how what code to use to display the elements.".PegiLabel().WriteHint().Nl();
+                            "Open this script to learn how what code to use to display the elements.".PegiLabel().Write_Hint().Nl();
                         }
 
                         "GameView OnGUI Inspector".PegiLabel().IsEntered().Nl().If_Entered(() =>

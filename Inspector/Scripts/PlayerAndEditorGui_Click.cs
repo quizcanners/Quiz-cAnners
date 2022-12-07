@@ -102,7 +102,7 @@ namespace QuizCanners.Inspect
                 if (Icon.Close.Click(Msg.No.GetText(), 30))
                     ConfirmationDialogue.Close();
 
-                ConfirmationDialogue.ConfirmationText.PegiLabel().WriteHint(false);
+                ConfirmationDialogue.ConfirmationText.PegiLabel().Write_Hint(false);
 
                 if (Icon.Done.Click(Msg.Yes.GetText(), 30))
                 {

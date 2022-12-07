@@ -334,7 +334,7 @@ namespace QuizCanners.Utils
 
         public static float VacancyFraction<T>(float defaultValue = 1f) where T : Component => Singleton.TryGetValue<PoolSingletonBase<T>, float>(s => s.VacancyPortion, defaultValue: defaultValue);
 
-        public static void Return<T>(T instance) where T : Component => Singleton.Try<PoolSingletonBase<T>>(s => s.ReturnToPool(instance)); 
+        public static void Return<T>(T instance) where T : Component => Singleton.Try<PoolSingletonBase<T>>(onFound: s => s.ReturnToPool(instance), logOnServiceMissing: false); 
 
         public static void TrySpawnIfVisible<T>(Vector3 position, int preferedCount, Action<T> onInstanciate) where T : Component
         {

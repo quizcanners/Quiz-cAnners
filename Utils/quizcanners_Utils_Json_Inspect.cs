@@ -106,7 +106,7 @@ namespace QuizCanners.Utils
 
                 if (data.Length > 500)
                 {
-                    "String is too long to show: {0} chars".F(data.Length).PegiLabel().WriteHint();
+                    "String is too long to show: {0} chars".F(data.Length).PegiLabel().Write_Hint();
 
                     if (Icon.Copy.Click("TO Copy Paste Buffer"))
                     {

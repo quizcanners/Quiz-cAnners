@@ -99,9 +99,9 @@ namespace QuizCanners.Utils
                 {
                     ("Managed Timed coroutines can run in Editor, but need an object to send an update call to them every frame: QcAsync.UpdateManagedCoroutines()." +
                      " Alternatively a TimedEnumerator can be started with Unity's " +
-                     "StartCoroutine(new TimedEnumeration(enumerator)). It will in turn call yield on it multiple times with care for performance.").PegiLabel().WriteHint();
+                     "StartCoroutine(new TimedEnumeration(enumerator)). It will in turn call yield on it multiple times with care for performance.").PegiLabel().Write_Hint();
 
-                    ("Examples are in QcAsync.cs class").PegiLabel().WriteHint();
+                    ("Examples are in QcAsync.cs class").PegiLabel().Write_Hint();
                 }
             }
 

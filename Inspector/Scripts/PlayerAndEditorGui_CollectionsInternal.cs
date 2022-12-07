@@ -375,7 +375,7 @@ namespace QuizCanners.Inspect
 
                             if (availableOptions == 0)
                                 (k.Count == 0 ? "There no types derrived from {0}".F(typeof(T).ToString()) :
-                                    "Existing types are restricted to one instance per list").PegiLabel().WriteHint();
+                                    "Existing types are restricted to one instance per list").PegiLabel().Write_Hint();
 
                         }
 

@@ -112,7 +112,7 @@ namespace QuizCanners.Inspect.Examples
 
             public override void Inspect_About()
             {
-                "{0} extension creates a structure that includes text with optional: width, tooltip & GuiStyle. As arguments you can add tooltip, width and GuiStyle. Most other pegi functions are extensions on top of this fucntions.".F(nameof(pegi.PegiLabel)).PegiLabel().WriteHint().Nl();
+                "{0} extension creates a structure that includes text with optional: width, tooltip & GuiStyle. As arguments you can add tooltip, width and GuiStyle. Most other pegi functions are extensions on top of this fucntions.".F(nameof(pegi.PegiLabel)).PegiLabel().Write_Hint().Nl();
                 "SomeText.PegiLabel(toolTip, width, stype);".PegiLabel(toolTip: "tip", width: 310, style: pegi.Styles.BaldText).Nl();
 
                 DrawExample(() => "label".PegiLabel().Write(), 
@@ -194,7 +194,7 @@ namespace QuizCanners.Inspect.Examples
 
             public override void Inspect_About()
             {
-                "nl() is short for New Line. By default all the elements are placed in a single line.{0} Use nl() to make following elements drawn from a new line. {0}".F(nameof(pegi.EnvironmentNl)).PegiLabel().WriteHint().Nl();
+                "nl() is short for New Line. By default all the elements are placed in a single line.{0} Use nl() to make following elements drawn from a new line. {0}".F(nameof(pegi.EnvironmentNl)).PegiLabel().Write_Hint().Nl();
             }
 
             protected override List<FunctionData> GetFunctions() => functions;
@@ -238,7 +238,7 @@ namespace QuizCanners.Inspect.Examples
             {
                 ("A field to edit most common value types, such as: double, float, long, int, string, Vector2, Vector3, Vector4, Quaternion, Color, Color32, Rect {0}" +
                     "To edit bool and enum use toggle & editEnum respectively. {0}" +
-                    "To edit Lists, Arrays and Dictionaries go to Collections entry").F(pegi.EnvironmentNl).PegiLabel().WriteHint().Nl();
+                    "To edit Lists, Arrays and Dictionaries go to Collections entry").F(pegi.EnvironmentNl).PegiLabel().Write_Hint().Nl();
             }
 
             protected override List<FunctionData> GetFunctions() => functions;

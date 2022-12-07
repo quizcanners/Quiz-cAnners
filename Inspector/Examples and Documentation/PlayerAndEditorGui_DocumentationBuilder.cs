@@ -102,18 +102,18 @@ namespace QuizCanners.Inspect.Examples
                     switch (ReturnType)
                     {
                         case ReturnType.State:
-                            "Returns {0} which can be cast to bool. True every time if {1} is being entered or folded out.".F(nameof(pegi.StateToken), FunctionName).PegiLabel().WriteHint().Nl(); break;
+                            "Returns {0} which can be cast to bool. True every time if {1} is being entered or folded out.".F(nameof(pegi.StateToken), FunctionName).PegiLabel().Write_Hint().Nl(); break;
                         case ReturnType.Click:
-                            "Returns {0} which can be cast to bool. True if user clicked on the {1}.".F(nameof(pegi.ChangesToken), FunctionName).PegiLabel().WriteHint().Nl(); break;
+                            "Returns {0} which can be cast to bool. True if user clicked on the {1}.".F(nameof(pegi.ChangesToken), FunctionName).PegiLabel().Write_Hint().Nl(); break;
                         case ReturnType.Changes:
-                            "Returns {0} which can be cast to bool. True if user modified the value {1}.".F(nameof(pegi.ChangesToken), FunctionName).PegiLabel().WriteHint().Nl(); break;
+                            "Returns {0} which can be cast to bool. True if user modified the value {1}.".F(nameof(pegi.ChangesToken), FunctionName).PegiLabel().Write_Hint().Nl(); break;
                         case ReturnType.ChangesTracker:
-                            "Returns {0} which casts to True if any changes were made between the moment it was Started to the moment of the case.".F(nameof(pegi.ChangesTracker), FunctionName).PegiLabel().WriteHint().Nl(); break;
+                            "Returns {0} which casts to True if any changes were made between the moment it was Started to the moment of the case.".F(nameof(pegi.ChangesTracker), FunctionName).PegiLabel().Write_Hint().Nl(); break;
                         case ReturnType.SameReturnType:
-                            "{0} can work as an extension on top of {1}, {2} and {3}. Will return the same type and value as extended.".F(FunctionName, nameof(pegi.ChangesToken), nameof(pegi.StateToken), nameof(pegi.TextToken)).PegiLabel().WriteHint().Nl(); break;
+                            "{0} can work as an extension on top of {1}, {2} and {3}. Will return the same type and value as extended.".F(FunctionName, nameof(pegi.ChangesToken), nameof(pegi.StateToken), nameof(pegi.TextToken)).PegiLabel().Write_Hint().Nl(); break;
                         case ReturnType.TextToken:
-                            "Text token is returned by write functions. Main purpouse is to allow writing .nl() extension at the end of the text.".PegiLabel().WriteHint().Nl(); break;
-                        default: "Undocumented {0}".F(ReturnType).PegiLabel().WriteHint().Nl(); break;
+                            "Text token is returned by write functions. Main purpouse is to allow writing .nl() extension at the end of the text.".PegiLabel().Write_Hint().Nl(); break;
+                        default: "Undocumented {0}".F(ReturnType).PegiLabel().Write_Hint().Nl(); break;
                     }
 
                     foreach (var v in Parameters)
