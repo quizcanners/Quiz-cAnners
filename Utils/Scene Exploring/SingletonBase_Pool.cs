@@ -78,28 +78,22 @@ namespace QuizCanners.Utils
             return Vector3.Distance(Camera.main.transform.position, pos);
         }
         
-        protected virtual void OnReturn(T element) { }
 
-        public void ReturnToPool(T effect)
+        public bool ReturnToPool(T effect)
         {
-            instances.Remove(effect);
-
-            try 
-            {
-                OnReturn(effect);
-            } catch (Exception ex) 
-            {
-                Debug.LogException(ex);
-            }
+            if (!instances.Remove(effect))
+                return false;
 
             if (DisablePooling)
             {
                 effect.gameObject.DestroyWhatever();
-                return;
+                return true;
             }
 
             pool.Add(effect);
             effect.gameObject.SetActive(false);
+
+            return true;
             
         }
 
