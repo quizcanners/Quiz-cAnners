@@ -12,7 +12,7 @@ namespace QuizCanners.Utils
     public enum ColorMask { R = 1, G = 2, B = 4, A = 8, Color = 7, All = 15 }
 
 
-    public static class QcMath
+    public static partial class QcMath
     {
         public static float SmoothStep(float edge0, float edge1, float x)
         {
@@ -382,6 +382,17 @@ namespace QuizCanners.Utils
             return v4;
         }
 
+        public static Vector3 DivideBy(this Vector3 a, Vector3 b)
+        {
+            return new Vector3(a.x / b.x, a.y / b.y, a.z / b.z);
+        }
+
+        public static Vector3 MultiplyBy(this Vector3 a, Vector3 b)
+        {
+            a.Scale(b);
+            return a;
+        }
+
         public static Vector2 Rotate(this Vector2 v, float degrees)
         {
             float sin = Mathf.Sin(degrees * Mathf.Deg2Rad);
@@ -453,6 +464,8 @@ namespace QuizCanners.Utils
         public static Vector4 Y(this Vector4 vec, float y) => new Vector4(vec.x, y, vec.z, vec.w);
         public static Vector4 Z(this Vector4 vec, float z) => new Vector4(vec.x, vec.y, z, vec.w);
         public static Vector4 W(this Vector4 vec, float w) => new Vector4(vec.x, vec.y, vec.z, w);
+
+        public static Vector3 XYZ(this Quaternion q) => new Vector3(q.x, q.y, q.z);
 
         public static Rect ToRect(this Vector4 v4, bool usingMinMax)
             => usingMinMax ? Rect.MinMaxRect(v4.x, v4.y, v4.z, v4.w) : new Rect(v4.x, v4.y, v4.z, v4.w);
@@ -673,6 +686,8 @@ namespace QuizCanners.Utils
             return resultPercentages;
         }
 
+
+     
     }
 }
 
