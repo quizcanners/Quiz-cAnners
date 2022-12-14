@@ -358,6 +358,13 @@ namespace QuizCanners.Utils
             return v4;
         }
 
+        public static Vector3 AbsY(this Vector3 v3)
+        {
+            v3.y = Mathf.Abs(v3.y);
+            return v3;
+        }
+
+
         public static Vector2 Abs(this Vector2 v2)
         {
             v2.x = Mathf.Abs(v2.x);

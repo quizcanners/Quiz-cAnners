@@ -208,6 +208,12 @@ namespace QuizCanners.Inspect
 
         private static ChangesToken Nested_Inspect_Internal<T>(ref T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : IPEGI
         {
+            if (pgi == null) 
+            {
+                "NULL".PegiLabel().WriteWarning().Nl();
+                return ChangesToken.False;
+            }
+
             if (fromNewLine)
                 Nl();
 
