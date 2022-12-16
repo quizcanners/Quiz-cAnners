@@ -52,15 +52,15 @@ namespace QuizCanners.Inspect
 
             internal class TabCollector : IDisposable
             {
-                private TabContext _token;
+                private readonly TabContext _token;
 
-                private List<string> tabs = new List<string>();
-                private List<Action> actions = new List<Action>();
+                private readonly List<string> _tabs = new List<string>();
+                private readonly List<Action<ChangesToken>> _actions = new List<Action<ChangesToken>>();
 
-                public void Add(string name, Action action)
+                public void Add(string name, Action<ChangesToken> action)
                 {
-                    tabs.Add(name);
-                    actions.Add(action);
+                    _tabs.Add(name);
+                    _actions.Add(action);
                 }
 
                 internal TabCollector(TabContext token)
@@ -70,24 +70,24 @@ namespace QuizCanners.Inspect
 
                 public void Dispose()
                 {
-                    Tabs(ref _token.tab, tabs.ToArray()).Nl();
+                    var changed = Tabs(ref _token.tab, _tabs.ToArray()).Nl();
 
-                    for (int i = 0; i < tabs.Count; i++)
+                    for (int i = 0; i < _tabs.Count; i++)
                     {
-                        if (tabs[i].Equals(_token.tab))
+                        if (_tabs[i].Equals(_token.tab))
                         {
-                            actions[i].Invoke();
+                            _actions[i].Invoke(changed);
                             return;
                         }
                     }
 
-                    actions.Clear();
-                    tabs.Clear();
+                    _actions.Clear();
+                    _tabs.Clear();
                 }
             }
         }
 
-        public static void AddTab(string tabName, Action inspect) 
+        public static void AddTab(string tabName, Action<ChangesToken> inspect) 
         {
             if (TabContext.s_tabs.Count == 0)
             {
@@ -97,7 +97,7 @@ namespace QuizCanners.Inspect
 
             TabContext.s_tabs[TabContext.s_tabs.Count - 1].Add(tabName, inspect);
         }
-        public static void AddTab(IPEGI ipegi) => AddTab(ipegi.GetNameForInspector(), () => ipegi.Nested_Inspect());
-        public static void AddTab(string tabName, IPEGI ipegi) => AddTab(tabName, () => ipegi.Nested_Inspect());
+        public static void AddTab(IPEGI ipegi) => AddTab(ipegi.GetNameForInspector(), change => ipegi.Nested_Inspect());
+        public static void AddTab(string tabName, IPEGI ipegi) => AddTab(tabName, change => ipegi.Nested_Inspect());
     }
 }

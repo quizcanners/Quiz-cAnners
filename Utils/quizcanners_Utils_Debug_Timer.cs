@@ -9,7 +9,45 @@ namespace QuizCanners.Utils
 {
     public static partial class QcDebug
     {
-      
+        public static class FrameRate
+        {
+            private static bool _initialized;
+            private static int _framesAtStart = 0;
+            private static float _timeAtStart = 0.0f;
+
+            public static int GetTotalFrames => Time.frameCount - _framesAtStart;
+
+            public static float FrameRatePerSecond
+            {
+                get
+                {
+                    if (!_initialized) 
+                    {
+                        ResetTimer();
+                        return 1;
+                    }
+
+                   return GetTotalFrames
+                    / (0.0001f + Time.realtimeSinceStartup - _timeAtStart);
+                }
+            }
+
+            public static void ResetTimer()
+            {
+                _initialized = true;
+                _framesAtStart = Time.frameCount;
+                _timeAtStart = Time.realtimeSinceStartup;
+            }
+
+            public static void Inspect() 
+            {
+                "Framerate: {0}".F(Mathf.RoundToInt(FrameRatePerSecond)).PegiLabel().Write();
+
+                if (Icon.Refresh.Click())
+                    ResetTimer();
+            }
+        }
+
         public static class TimeProfiler 
         {
             public class DisposableTimer : IDisposable

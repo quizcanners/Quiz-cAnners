@@ -259,13 +259,13 @@ namespace QuizCanners.Utils
 
             using (_tab.StartContext()) 
             {
-                pegi.AddTab("Prefabs", () => 
+                pegi.AddTab("Prefabs", changes => 
                 {
                     "Prefabs".PegiLabel(60).Edit_List_UObj(prefabs).Nl();
                     "Capacity: {0}/{1}".F(pool.Count + instances.Count, MAX_INSTANCES).PegiLabel().Nl();
                 });
 
-                pegi.AddTab("Instance", () => 
+                pegi.AddTab("Instance", changes => 
                 {
                     _active.Edit_List(instances).Nl();
                 });

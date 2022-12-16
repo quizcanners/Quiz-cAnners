@@ -6,6 +6,7 @@ using UnityEngine;
 
 using Profiler = UnityEngine.Profiling.Profiler;
 using QuizCanners.Inspect.Examples;
+using static QuizCanners.Utils.QcDebug;
 
 #if UNITY_EDITOR
 using UnityEditor.Sprites;
@@ -442,15 +443,22 @@ namespace QuizCanners.Utils
             return pegi.ChangesToken.False;
         }
 
-        private static readonly pegi.EnterExitContext _enteredIndex = new pegi.EnterExitContext(playerPrefId: "inspEnt");
+        private static readonly pegi.EnterExitContext _context = new pegi.EnterExitContext(playerPrefId: "inspEnt");
         private static readonly pegi.EnterExitContext _enteredData = new pegi.EnterExitContext(playerPrefId: "inspEntDta");
    
         public static void InspectAllUtils()
         {
             pegi.Nl();
 
-            using (_enteredIndex.StartContext())
+            using (_context.StartContext())
             {
+                if (!_context.IsAnyEntered && Application.isPlaying) 
+                {
+                    pegi.Nl();
+                    FrameRate.Inspect();
+                    pegi.Nl();
+                }
+
                 "Singletons".PegiLabel().IsEntered().Nl().If_Entered(Singleton.Collector.Inspect);
 
                 "PEGI Documentation".PegiLabel().IsEntered(showLabelIfTrue: false).Nl_ifNotEntered().If_Entered(PlayerAndEditorGui_Documentation.Inspect);

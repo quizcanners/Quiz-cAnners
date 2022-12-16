@@ -24,7 +24,7 @@ namespace QuizCanners.Utils
         {
             var state = UnityEngine.Random.state;
             UnityEngine.Random.InitState(seed);
-            return QcSharp.DisposableAction(() => UnityEngine.Random.state = state );
+            return QcSharp.DisposableAction(() => UnityEngine.Random.state = state);
         }
 
         #region Double
@@ -99,7 +99,7 @@ namespace QuizCanners.Utils
         {
             value.Clamp(new Vector2Int(from, from), new Vector2Int(to, to));
         }
-        public static float BezierCurveLength(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, int pointCount = 30) 
+        public static float BezierCurveLength(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, int pointCount = 30)
         {
             //The default 30 
             float length = 0.0f;
@@ -134,7 +134,7 @@ namespace QuizCanners.Utils
             var adjustedPoints = new List<Vector3>();
 
             adjustedPoints.Add(p0);
-            float segmentLength = length / (pointCount-1); // Because X points translates into X-1 segments
+            float segmentLength = length / (pointCount - 1); // Because X points translates into X-1 segments
             float forNextAdjustedSegment = segmentLength;
             int rawIndex = 1;
             bool rawSegmentValid = false;
@@ -142,7 +142,7 @@ namespace QuizCanners.Utils
             Vector3 rawPointA = Vector3.zero;
             Vector3 rawPointB = Vector3.zero;
 
-            while (adjustedPoints.Count < pointCount-1) 
+            while (adjustedPoints.Count < pointCount - 1)
             {
                 if (!rawSegmentValid)
                 {
@@ -155,18 +155,18 @@ namespace QuizCanners.Utils
                 {
                     adjustedPoints.Add(Vector3.Lerp(rawPointA, rawPointB, forNextAdjustedSegment / rawSegmentLength));
                     forNextAdjustedSegment += segmentLength;
-                } else 
+                } else
                 {
                     forNextAdjustedSegment -= rawSegmentLength;
                     rawSegmentValid = false;
                     rawIndex++;
-                    if (rawIndex >= rawPoints.Count) 
+                    if (rawIndex >= rawPoints.Count)
                     {
                         Debug.LogError("Outside of Raw Indexes. Breaking");
                         break;
                     }
                 }
-                
+
             }
 
             adjustedPoints.Add(p3);
@@ -219,7 +219,7 @@ namespace QuizCanners.Utils
 
         }
 
-        public static float DistanceFromPointToALine (Vector3 point, Vector3 startp, Vector3 endp) 
+        public static float DistanceFromPointToALine(Vector3 point, Vector3 startp, Vector3 endp)
         {
             var a = Vector3.Distance(startp, endp);
             var b = Vector3.Distance(startp, point);
@@ -228,13 +228,13 @@ namespace QuizCanners.Utils
             return 2 * Mathf.Sqrt(s * (s - a) * (s - b) * (s - c)) / a;
         }
 
-        public static Vector3 GetClosestPointOnALine(Vector3 lineA, Vector3 lineB, Vector3 point) 
+        public static Vector3 GetClosestPointOnALine(Vector3 lineA, Vector3 lineB, Vector3 point)
         {
             Vector3 a_to_p = point - lineA;
             Vector3 a_to_b = lineB - lineA;
 
-            float atb2 = Vector3.Scale(a_to_b, a_to_b).magnitude; 
-            
+            float atb2 = Vector3.Scale(a_to_b, a_to_b).magnitude;
+
             var atp_dot_atb = Vector3.Dot(a_to_p, a_to_b);
 
             float t = atp_dot_atb / atb2; // new Vector3(atp_dot_atb.x/ atb2.x, atp_dot_atb.y / atb2.y, atp_dot_atb.z / atb2.z) ;
@@ -364,7 +364,6 @@ namespace QuizCanners.Utils
             return v3;
         }
 
-
         public static Vector2 Abs(this Vector2 v2)
         {
             v2.x = Mathf.Abs(v2.x);
@@ -438,9 +437,15 @@ namespace QuizCanners.Utils
 
         public static Vector3 Z(this Vector3 vec, float z) => new Vector3(vec.x, vec.y, z);
 
-        public static Vector3 Y(this Vector3 vec, float y) => new Vector3(vec.x, y ,vec.z);
+        public static Vector3 Y(this Vector3 vec, float y) => new Vector3(vec.x, y, vec.z);
 
         public static Vector3 XYZ(this Vector4 vec) => new Vector3(vec.x, vec.y, vec.z);
+
+        public static float MaxAbs(this Vector3 vec)
+        {
+            vec = vec.Abs();
+            return Mathf.Max(Mathf.Max(vec.x, vec.y), vec.z);
+        }
 
         public static Vector2 ZW(this Vector4 vec) => new Vector2(vec.z, vec.w);
 
@@ -473,6 +478,8 @@ namespace QuizCanners.Utils
         public static Vector4 W(this Vector4 vec, float w) => new Vector4(vec.x, vec.y, vec.z, w);
 
         public static Vector3 XYZ(this Quaternion q) => new Vector3(q.x, q.y, q.z);
+
+        
 
         public static Rect ToRect(this Vector4 v4, bool usingMinMax)
             => usingMinMax ? Rect.MinMaxRect(v4.x, v4.y, v4.z, v4.w) : new Rect(v4.x, v4.y, v4.z, v4.w);
