@@ -441,6 +441,8 @@ namespace QuizCanners.Utils
 
         public static Vector3 XYZ(this Vector4 vec) => new Vector3(vec.x, vec.y, vec.z);
 
+        public static Vector3 Round(this Vector3 vec) => new Vector3(Mathf.Round(vec.x), Mathf.Round(vec.y), Mathf.Round(vec.z));
+        
         public static float MaxAbs(this Vector3 vec)
         {
             vec = vec.Abs();

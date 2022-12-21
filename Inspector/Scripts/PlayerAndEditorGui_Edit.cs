@@ -397,7 +397,9 @@ namespace QuizCanners.Inspect
             else
             {
                 //Write(label, 0.33f);
+#if UNITY_EDITOR
                 return PegiEditorOnly.Edit(label, ref col, showEyeDropper: showEyeDropper, showAlpha: showAlpha, hdr: hdr);
+#endif
             }
 
             return ChangesToken.False;
