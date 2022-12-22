@@ -6,101 +6,110 @@ namespace QuizCanners.Utils
 {
     public static partial class QcMath 
     {
-       /* public struct QcRay
+        /* public struct QcRay
+         {
+             public Vector3 origin;
+             public Vector3 direction;
+
+             const float MIN_DIST = 0.001f;
+             const float MAX_DIST = float.MaxValue * 0.5f;
+
+
+
+
+             public struct ApproximatedCast 
+             {
+                 public Ray ray;
+                 public float upscaleByDistance;
+                 public Vector3 origin;
+
+
+                 public ApproximatedCast (Camera cam, Vector3 uv, float thickness = 0.06f) 
+                 {
+                     upscaleByDistance = cam.fieldOfView / 90;
+                     upscaleByDistance = MathF.Pow(upscaleByDistance, 3) * thickness;
+                     origin = cam.transform.position;
+                     ray = cam.GetMousePosRay();
+                 }
+
+                 public bool TryHit(Sphere sphere, out RaycastHit hit) 
+                 {
+                     float distance = Vector3.Distance(origin, sphere.position);
+                     float upscaledRadius = sphere.radius + distance * upscaleByDistance;
+
+                     return ray.TryHit(new Sphere() { position = origin, radius = upscaledRadius }, out hit);
+                 }
+
+
+                 using (pegi.SceneDraw.SetColorDisposible(color: UnityEngine.Color.blue))
+                 {
+                     _gameECS.GetWorld().WithAll<ClickTargetSphere, Position>()
+                     .Run((ClickTargetSphere sp, Position pos) =>
+                     {
+                     float distance = Vector3.Distance(cameraOrigin, pos.vector);
+                     float upscaledRadius = sp.Radius + distance * upscaleFromFov * UPSCALE_THICKNESS;
+
+                     if (ray.TryHit(new Ray.Sphere() { position = pos.vector, radius = upscaledRadius }, out var hit))
+                     {
+                         pegi.Gizmo.DrawWireCube(pos.vector.ToUnity(), Quaternion.Identity.ToUnity(), (Vector3.One * 2 * upscaledRadius).ToUnity());
+                     }
+                 });
+                 }
+
+             }
+         }*/
+
+        public static class Primitive
         {
-            public Vector3 origin;
-            public Vector3 direction;
-
-            const float MIN_DIST = 0.001f;
-            const float MAX_DIST = float.MaxValue * 0.5f;
-
-       
-          
-
-            public struct ApproximatedCast 
+            public struct Plane
             {
-                public Ray ray;
-                public float upscaleByDistance;
-                public Vector3 origin;
+                public Vector3 point;
+                public Vector3 normal;
 
-
-                public ApproximatedCast (Camera cam, Vector3 uv, float thickness = 0.06f) 
+                public Plane(Vector3 point, Vector3 normal) 
                 {
-                    upscaleByDistance = cam.fieldOfView / 90;
-                    upscaleByDistance = MathF.Pow(upscaleByDistance, 3) * thickness;
-                    origin = cam.transform.position;
-                    ray = cam.GetMousePosRay();
+                    this.point = point;
+                    this.normal = normal;
                 }
-                
-                public bool TryHit(Sphere sphere, out RaycastHit hit) 
-                {
-                    float distance = Vector3.Distance(origin, sphere.position);
-                    float upscaledRadius = sphere.radius + distance * upscaleByDistance;
-
-                    return ray.TryHit(new Sphere() { position = origin, radius = upscaledRadius }, out hit);
-                }
-
-                
-                using (pegi.SceneDraw.SetColorDisposible(color: UnityEngine.Color.blue))
-                {
-                    _gameECS.GetWorld().WithAll<ClickTargetSphere, Position>()
-                    .Run((ClickTargetSphere sp, Position pos) =>
-                    {
-                    float distance = Vector3.Distance(cameraOrigin, pos.vector);
-                    float upscaledRadius = sp.Radius + distance * upscaleFromFov * UPSCALE_THICKNESS;
-
-                    if (ray.TryHit(new Ray.Sphere() { position = pos.vector, radius = upscaledRadius }, out var hit))
-                    {
-                        pegi.Gizmo.DrawWireCube(pos.vector.ToUnity(), Quaternion.Identity.ToUnity(), (Vector3.One * 2 * upscaledRadius).ToUnity());
-                    }
-                });
-                }
-
             }
-        }*/
 
-        public struct Sphere
-        {
-            public Vector3 position;
-            public float radius;
+            public struct Sphere
+            {
+                public Vector3 position;
+                public float radius;
+            }
+
+            public struct Box
+            {
+                public Vector3 position;
+                public Quaternion rotation;
+                public Vector3 boxSize;
+
+                public Box(Vector3 position)
+                {
+                    this.position = position;
+                    this.rotation = Quaternion.identity;
+                    this.boxSize = Vector3.one;
+                }
+
+                public Box(Vector3 position, Vector3 boxSize)
+                {
+                    this.position = position;
+                    this.rotation = Quaternion.identity;
+                    this.boxSize = boxSize;
+                }
+
+                public Box(Vector3 position, Quaternion rotation, Vector3 boxSize)
+                {
+                    this.position = position;
+                    this.rotation = rotation;
+                    this.boxSize = boxSize;
+                }
+            }
         }
 
-        public struct Box
-        {
-            public Vector3 position;
-            public Quaternion rotation;
-            public Vector3 boxSize;
 
-            public Box(Vector3 position)
-            {
-                this.position = position;
-                this.rotation = Quaternion.identity;
-                this.boxSize = Vector3.one;
-            }
-
-            public Box(Vector3 position, Vector3 boxSize)
-            {
-                this.position = position;
-                this.rotation = Quaternion.identity;
-                this.boxSize = boxSize;
-            }
-
-            public Box(Vector3 position, Quaternion rotation, Vector3 boxSize) 
-            {
-                this.position = position;
-                this.rotation = rotation;
-                this.boxSize = boxSize;
-            }
-        }
-
-        public struct RayHit
-        {
-            public double dist;
-            public Vector3 hitPoint;
-            public Vector3 normal;
-        }
-
-        public static Vector3 Rotate(Vector3 vec, Quaternion q)
+        public static Vector3 Rotate(this Vector3 vec, Quaternion q)
         {
             var xyz = -q.XYZ();
             Vector3 crossA = Vector3.Cross(xyz, vec) + q.w * vec;
@@ -109,19 +118,18 @@ namespace QuizCanners.Utils
             return vec;
         }
 
-        public static bool TryHitYPlane(this Ray ray, Vector3 planePoint, Vector3 normal, out Vector3 hipPoint)
+        public static bool TryHit(this Ray ray, Primitive.Plane plane, out Vector3 hipPoint)
         {
-            var diff = ray.origin - planePoint;
-            var prod1 = Vector3.Dot(diff, normal);
-            var prod2 = Vector3.Dot(ray.direction, normal);
+            var diff = ray.origin - plane.point;
+            var prod1 = Vector3.Dot(diff, plane.normal);
+            var prod2 = Vector3.Dot(ray.direction, plane.normal);
             var prod3 = prod1 / prod2;
             hipPoint = ray.origin - ray.direction * prod3;
 
             return prod3 < 0;
         }
 
-
-        public static bool TryHit(this Ray ray, Sphere sphere, out RaycastHit hit)
+        public static bool TryHit(this Ray ray, Primitive.Sphere sphere, out RaycastHit hit)
         {
             Vector3 ro = ray.origin - sphere.position;
 
@@ -158,7 +166,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        public static bool TryHit(this Ray ray, Box box, out RayHit hit)
+        public static bool TryHit(this Ray ray, Primitive.Box box, out RaycastHit hit)
         {
             Vector3 ro = ray.origin - box.position;
 
@@ -173,7 +181,7 @@ namespace QuizCanners.Utils
 
             Vector3 n = m.MultiplyBy(ro);
 
-            Vector3 k = m.Abs().MultiplyBy(box.boxSize);
+            Vector3 k = m.Abs().MultiplyBy(box.boxSize * 0.5f);
 
             Vector3 t1 = -n - k;
             Vector3 t2 = -n + k;
@@ -181,7 +189,7 @@ namespace QuizCanners.Utils
             float tN = MathF.Max(MathF.Max(t1.x, t1.y), t1.z);
             float tF = MathF.Min(MathF.Min(t2.x, t2.y), t2.z);
 
-            hit = new RayHit();
+            hit = new RaycastHit();
 
             if (tN > tF || tF <= 0.0)
             {
@@ -193,14 +201,14 @@ namespace QuizCanners.Utils
                 {
                     // hit.normal = -signRd * step(t1.YZX(), t1) * step(t1.zxy, t1.xyz);
                     // hit.normal = Rotate(hit.normal, new Quaternion(q.X, q.Y, q.Z, q.W));
-                    hit.hitPoint = ray.origin + ray.direction * tN;
+                    hit.point = ray.origin + ray.direction * tN;
                     return true;//tN;
                 }
                 else if (tF >= 0.00001f && tF <= 10000)
                 {
                     //normal = -signRd * step(t2.xyz, t2.yzx) * step(t2.xyz, t2.zxy);
                     // normal = Rotate(normal, float4(q.x, q.y, q.z, q.w));
-                    hit.hitPoint = ray.origin + ray.direction * tF;
+                    hit.point = ray.origin + ray.direction * tF;
                     return true; //tF;
                 }
 
