@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using QuizCanners.Utils;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,7 +11,14 @@ namespace QuizCanners.Lerp
 {
     public static class LerpUtils
     {
+        const MethodImplOptions INLINE = MethodImplOptions.AggressiveInlining;
+
         #region Float
+
+        [MethodImpl(INLINE)]
+        public static float ExpLerp(float from, float to, float portion) => Mathf.Pow(from, 1 - portion) * Mathf.Pow(to, portion);
+        
+        private static float GetTime(bool unscaledTime) => unscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
 
         private static float SpeedToPortion(float speed, float dist, bool unscaledTime)
         {
@@ -19,7 +27,11 @@ namespace QuizCanners.Lerp
 
             dist = Mathf.Abs(dist);
 
-            return Mathf.Clamp01(speed * (unscaledTime ? Time.unscaledDeltaTime : Time.deltaTime) / dist);
+            var time = GetTime(unscaledTime);
+
+            float portion = Mathf.Clamp01(speed * time / dist);
+
+            return portion;
         }
 
         public static bool SpeedToMinPortion(float speed, float dist, ref float portion, bool unscaledTime)
@@ -53,7 +65,7 @@ namespace QuizCanners.Lerp
 
         #region Double
 
-        public static bool IsLerpingBySpeed(ref double from, double to, double speed)
+        public static bool IsLerpingBySpeed(ref double from, double to, double speed, bool unscaledTime)
         {
             if (System.Math.Abs(from - to) < double.Epsilon * 10)
             {
@@ -64,7 +76,7 @@ namespace QuizCanners.Lerp
 
             double dist = System.Math.Abs(diff);
 
-            from += diff * QcMath.Clamp01(speed * Time.deltaTime / dist);
+            from += diff * QcMath.Clamp01(speed * GetTime(unscaledTime) / dist);
             return true;
         }
 
@@ -77,7 +89,7 @@ namespace QuizCanners.Lerp
 
             double dist = System.Math.Abs(diff);
 
-            return from + diff * QcMath.Clamp01(speed * (unscaledTime ? Time.unscaledDeltaTime : Time.deltaTime) / dist);
+            return from + diff * QcMath.Clamp01(speed * GetTime(unscaledTime) / dist);
         }
 
         #endregion
@@ -93,9 +105,13 @@ namespace QuizCanners.Lerp
             return true;
         }
 
-        public static Vector2 LerpBySpeed(Vector2 from, Vector2 to, float speed, bool unscaledTime) =>
-            Vector2.LerpUnclamped(from, to, SpeedToPortion(speed, Vector2.Distance(from, to), unscaledTime: unscaledTime));
+        public static Vector2 LerpBySpeed(Vector2 from, Vector2 to, float speed, bool unscaledTime)
+        {
+            float distance = Vector2.Distance(from, to);
+            float portion = SpeedToPortion(speed, dist: distance, unscaledTime: unscaledTime);
 
+            return Vector2.LerpUnclamped(from, to, portion);
+        }
         public static Vector2 LerpBySpeed(Vector2 from, Vector2 to, float speed, out float portion, bool unscaledTime = false)
         {
             portion = SpeedToPortion(speed, Vector2.Distance(from, to), unscaledTime: unscaledTime);
@@ -117,6 +133,21 @@ namespace QuizCanners.Lerp
         public static Vector3 LerpBySpeed(Vector3 from, Vector3 to, float speed, out float portion, bool unscaledTime)
         {
             portion = SpeedToPortion(speed, Vector3.Distance(from, to), unscaledTime: unscaledTime);
+            return Vector3.LerpUnclamped(from, to, portion);
+        }
+
+        public static Vector3 LerpByDistance(Vector3 from, Vector3 to, float moveDistance, out float portion)
+        {
+            float totalDistance = Vector3.Distance(from, to);
+
+            if (totalDistance < moveDistance) 
+            {
+                portion = 1;
+                return to;
+            }
+
+            portion = moveDistance / totalDistance;
+
             return Vector3.LerpUnclamped(from, to, portion);
         }
 
@@ -219,7 +250,8 @@ namespace QuizCanners.Lerp
 
         public static bool IsLerpingAlphaBySpeed(this CanvasGroup grp, float alpha, float speed)
         {
-            if (!grp) return false;
+            if (!grp) 
+                return false;
 
             var current = grp.alpha;
 
@@ -331,8 +363,7 @@ namespace QuizCanners.Lerp
             else for (int i = list.Length - 1; i >= 0; i--)
                 {
                     var e = list[i];
-                    if (e != null)
-                        e.Portion(ld);
+                    e?.Portion(ld);
                 }
         }
 
@@ -352,8 +383,7 @@ namespace QuizCanners.Lerp
             else for (int i = list.Count - 1; i >= 0; i--)
                 {
                     var e = list[i];
-                    if (e != null)
-                        e.Portion(ld);
+                    e?.Portion(ld);
                 }
 
         }
@@ -374,8 +404,7 @@ namespace QuizCanners.Lerp
             else for (int i = array.Length - 1; i >= 0; i--)
                 {
                     var e = array[i];
-                    if (e != null)
-                        e.Lerp(ld, canSkipLerp: canSkipLerp);
+                    e?.Lerp(ld, canSkipLerp: canSkipLerp);
                 }
         }
 
@@ -395,8 +424,7 @@ namespace QuizCanners.Lerp
             else for (int i = list.Count - 1; i >= 0; i--)
                 {
                     var e = list[i];
-                    if (e != null)
-                        e.Lerp(ld, canSkipLerp: canSkipLerp);
+                    e?.Lerp(ld, canSkipLerp: canSkipLerp);
                 }
 
         }
@@ -410,7 +438,7 @@ namespace QuizCanners.Lerp
                 private readonly float _speed = 1;
                 private float _totalFraction;
                 private float _deltaFraction;
-                private readonly Gate.Frame _frameGate = new Gate.Frame();
+                private readonly Gate.Frame _frameGate = new();
 
                 public bool IsDone => _totalFraction >= 1f;
 

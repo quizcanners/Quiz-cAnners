@@ -1,5 +1,9 @@
 using QuizCanners.Utils;
 using System;
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.IMGUI.Controls;
+#endif
 using UnityEngine;
 using static QuizCanners.Inspect.pegi.SceneDraw;
 
@@ -25,25 +29,147 @@ namespace QuizCanners.Inspect
 
         public static class Handle
         {
+            public class PlaneHandleState : IPEGI, IPEGI_Handles
+            {
+                public PlaneProjection _projection;
+                public Vector3 worldPosition;
+
+                public void Inspect()
+                {
+
+                }
+
+                public void OnSceneDraw()
+                {
+
+                }
+
+                public enum PlaneProjection { x,y,z}
+            }
+
             //UnityEditor.Handles.Disc
             //UnityEditor.Handles.DrawLine
             //UnityEditor.Handles.PositionHandle
             //UnityEditor.Handles.RotationHandle
+
+            public static void SceneSetDirty(UnityEngine.Object obj) 
+            {
+                #if UNITY_EDITOR
+                     EditorUtility.SetDirty(obj);
+                #endif
+            }
+
+
+            public static bool TryGetLeftMouseClickPosition(out Vector3 position) 
+            {
+                if (IsLeftMouseButtonDown() &&
+                    TryGetRayFromMouse(out var ray) &&
+                    Physics.Raycast(ray, out RaycastHit hit))
+                {
+                    position = hit.point;
+                    return true;
+                }
+
+                position = Vector3.zero;
+
+                return false;
+            }
+
+
+            private static readonly Gate.SystemTime _clickGate = new(Gate.InitialValue.StartArmed); // Event comes trough twice
+
+            private static ChangesToken EndClickCheck()
+            {
+#if UNITY_EDITOR
+                if (EditorOnly_EndChangeCheck())
+                {
+                    _clickGate.Update();
+                    return ChangesToken.True;
+                }
+#endif
+
+                return ChangesToken.False;
+            }
+
+            public static bool IsAlt() 
+            {
+#if UNITY_EDITOR
+                if (IsDrawingHandles)
+                {
+                    return Event.current.alt;
+                }
+#endif
+
+                return Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+            }
+
+            public static bool IsLeftMouseButtonDown()
+            {
+                if (globChanged)
+                    return false;
+
+#if UNITY_EDITOR
+                if (IsDrawingHandles)
+                {
+                    return Event.current.isMouse 
+                        && Event.current.type == EventType.MouseDown
+                        //&& Event.current.clickCount == 1
+                        && Event.current.button == 0
+                        && _clickGate.TryUpdateIfTimePassed(secondsPassed: 0.01f);
+                }
+#endif
+
+                return Input.GetMouseButtonDown(0);
+            }
+
+            public static bool TryGetRayFromMouse(out Ray ray) 
+            {
+#if UNITY_EDITOR
+                if (IsDrawingHandles)
+                {
+                    Vector3 mousePosition = Event.current.mousePosition;
+                    ray = UnityEditor.HandleUtility.GUIPointToWorldRay(mousePosition);
+                    return true;
+                }
+#endif
+
+                if (Camera.main)
+                {
+                    ray = Camera.main.GetMousePosRay();
+                    return true;
+                }
+
+                ray = new Ray();
+                return false;
+            }
+
+            public static void Arrow(Vector3 from, Vector3 to, Color color, int handleId) 
+            {
+#if UNITY_EDITOR
+                if (IsDrawingHandles)
+                {
+                    using (SetColorDisposible(color))
+                    {
+                        Handles.ArrowHandleCap(handleId, from, Quaternion.LookRotation(to-from), 3, EventType.Repaint);
+                    }
+                }
+#endif
+            }
 
             public static void Line(Vector3 from, Vector3 to, Color color, float thickness = -1)
             {
 #if UNITY_EDITOR
                 if (IsDrawingHandles)
                 {
-                    using (SceneDraw.SetColorDisposible(color))
+                    using (SetColorDisposible(color))
                     {
                         if (thickness <= 0)
                         {
-                            UnityEditor.Handles.DrawLine(from, to);
+                            Handles.DrawLine(from, to);
                         }
                         else
                         {
-                            UnityEditor.Handles.DrawLine(from, to, thickness: thickness);
+                            Handles.DrawLine(from, to, thickness: thickness);
                         }
                     }
                 }
@@ -70,7 +196,7 @@ namespace QuizCanners.Inspect
 
                     var rotation = direction == default ? CameraRotation : Quaternion.LookRotation(direction);
 
-                    if (UnityEditor.Handles.Button(pos, rotation, size, pickSize: size, ToFunction(shape)))
+                    if (Handles.Button(pos, rotation, size, pickSize: size, ToFunction(shape)))
                         return ChangesToken.True;
                 }
                 #endif
@@ -83,12 +209,12 @@ namespace QuizCanners.Inspect
                 #if UNITY_EDITOR
                 if (IsDrawingHandles)
                 {
-                    UnityEditor.EditorGUI.BeginChangeCheck();
+                    EditorGUI.BeginChangeCheck();
 
-                    be.StartVector = (UnityEditor.Handles.PositionHandle(startPoint + be.StartVector, Quaternion.identity) - startPoint);
-                    be.EndVector = (UnityEditor.Handles.PositionHandle(endPoint + be.EndVector, Quaternion.identity) - endPoint);
+                    be.StartVector = (Handles.PositionHandle(startPoint + be.StartVector, Quaternion.identity) - startPoint);
+                    be.EndVector = (Handles.PositionHandle(endPoint + be.EndVector, Quaternion.identity) - endPoint);
 
-                    UnityEditor.Handles.DrawBezier(
+                    Handles.DrawBezier(
                         startPosition: startPoint, 
                         endPosition: endPoint, 
                         startTangent: startPoint + be.StartVector, 
@@ -97,8 +223,8 @@ namespace QuizCanners.Inspect
                         texture: texture, 
                         width: width);
 
-                    
-                    return EndChangeCheck();
+
+                    return EndClickCheck();
                 }
                 #endif
  
@@ -110,10 +236,10 @@ namespace QuizCanners.Inspect
 #if UNITY_EDITOR
                 if (IsDrawingHandles)
                 {
-                    UnityEditor.EditorGUI.BeginChangeCheck();
-                    newPosition = UnityEditor.Handles.PositionHandle(position, Quaternion.identity);
-                 
-                    return EndChangeCheck();
+                    EditorGUI.BeginChangeCheck();
+                    newPosition = Handles.PositionHandle(position, Quaternion.identity);
+
+                    return EndClickCheck();
                 }
                 else
 #endif
@@ -122,7 +248,70 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
-            public static ChangesToken FreeMove(Vector3 position, out Vector3 newPosition, HandleCap shape = HandleCap.Sphere, Scaling scaling = Scaling.RotateOnly, float size = 1, Vector3 snapSize = default(Vector3))
+
+
+
+            public static ChangesToken BoxBoundsHandle(Transform transfrom, Color color)
+            {
+                var pos = transfrom.position;
+                var size = transfrom.localScale;
+
+                if (BoxBoundsHandle(ref pos, ref size, color)) 
+                {
+                    transfrom.position = pos;
+                    transfrom.localScale = size;
+                    return ChangesToken.True;
+                }
+
+                return ChangesToken.False;
+            }
+
+            public static ChangesToken BoxBoundsHandle(ref Vector3 center, ref Vector3 size, Color color)
+            {
+                var bnds = new Bounds(center, size);
+
+                if (BoxBoundsHandle(ref bnds, color)) 
+                {
+                    center = bnds.center;
+                    size = bnds.size;
+
+                    return ChangesToken.True;
+                }
+
+                return ChangesToken.False;
+            }
+
+#if UNITY_EDITOR
+            private static readonly BoxBoundsHandle m_BoundsHandle = new();
+
+#endif
+
+            public static ChangesToken BoxBoundsHandle(ref Bounds bounds, Color color) 
+            {
+        
+#if UNITY_EDITOR
+                if (IsDrawingHandles)
+                {
+                    m_BoundsHandle.center = bounds.center;
+                    m_BoundsHandle.size = bounds.size;
+                    m_BoundsHandle.wireframeColor = color;
+                    
+                    EditorGUI.BeginChangeCheck();
+                    m_BoundsHandle.DrawHandle();
+                    if (EndClickCheck()) 
+                    {
+                        bounds.center = m_BoundsHandle.center;
+                        bounds.size = m_BoundsHandle.size;
+
+                        return ChangesToken.True;
+                    }
+                }
+#endif
+
+                return ChangesToken.False;
+            }
+
+            public static ChangesToken FreeMove(Vector3 position, out Vector3 newPosition, HandleCap shape = HandleCap.Sphere, Scaling scaling = Scaling.RotateOnly, float size = 1, Vector3 snapSize = default)
             {
 #if UNITY_EDITOR
                 if (IsDrawingHandles)
@@ -132,10 +321,10 @@ namespace QuizCanners.Inspect
                         case Scaling.RotateAndScale: size *= UnityEditor.HandleUtility.GetHandleSize(position) * 0.5f; break;
                     }
 
-                    UnityEditor.EditorGUI.BeginChangeCheck();
-                    newPosition = UnityEditor.Handles.FreeMoveHandle(position, Quaternion.identity, size, snapSize, ToFunction(shape));
+                    EditorGUI.BeginChangeCheck();
+                    newPosition = Handles.FreeMoveHandle(position, size, snapSize, ToFunction(shape));
                     
-                    return EndChangeCheck();
+                    return EndClickCheck();
 
                 } else
 #endif
@@ -150,7 +339,7 @@ namespace QuizCanners.Inspect
 #if UNITY_EDITOR
                 if (IsDrawingHandles)
                 {
-                    DrawRotatedCube(position, rotation, size, (va, vb) => UnityEditor.Handles.DrawLine(va, vb));
+                    DrawRotatedWireCube(position, rotation, size, (va, vb) => UnityEditor.Handles.DrawLine(va, vb));
                     return;
                 }
 #endif
@@ -172,7 +361,7 @@ namespace QuizCanners.Inspect
 #if UNITY_EDITOR
                 if (IsDrawingHandles)
                 {
-                    UnityEditor.Handles.DrawWireDisc(position, normal: normal, radius: radius);
+                    Handles.DrawWireDisc(position, normal: normal, radius: radius);
                     return;
                 }
 #endif
@@ -293,11 +482,22 @@ namespace QuizCanners.Inspect
                 }
             }
 
+            public static void DrawCube(Vector3 position, Vector3 size, Color col)
+            {
+                if (!IsDrawingHandles)
+                {
+                    using (SetColorDisposible(col))
+                    {
+                        Gizmos.DrawCube(position, size);
+                    }
+                }
+            }
+
             public static void DrawWireCube(Vector3 position, Vector3 size)
             {
                 if (!IsDrawingHandles)
                 {
-                    DrawRotatedCube(position, Quaternion.identity, size, (va, vb) => Gizmos.DrawLine(va, vb));
+                    DrawRotatedWireCube(position, Quaternion.identity, size, (va, vb) => Gizmos.DrawLine(va, vb));
                 }
             }
 
@@ -305,7 +505,7 @@ namespace QuizCanners.Inspect
             {
                 if (!IsDrawingHandles)
                 {
-                    DrawRotatedCube(position, rotation, size, (va, vb) => Gizmos.DrawLine(va, vb)); 
+                    DrawRotatedWireCube(position, rotation, size, (va, vb) => Gizmos.DrawLine(va, vb)); 
                 }
             }
 
@@ -358,8 +558,7 @@ namespace QuizCanners.Inspect
             }
 #endif
 
-
-            internal static void DrawRotatedCube(Vector3 position, Quaternion rotation, Vector3 size, Action<Vector3, Vector3> draw)
+            internal static void DrawRotatedWireCube(Vector3 position, Quaternion rotation, Vector3 size, Action<Vector3, Vector3> draw)
             {
 
                 size *= 0.5f;
@@ -392,6 +591,7 @@ namespace QuizCanners.Inspect
                 }
 
             }
+
 
         }
 

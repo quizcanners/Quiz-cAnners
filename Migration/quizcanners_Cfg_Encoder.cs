@@ -62,7 +62,7 @@ namespace QuizCanners.Migration
             else*/
             foreach (var v in arr) {
                 if (!QcUnity.IsNullOrDestroyed_Obj(v))
-                    cody.Add(CfgDecoder.ListElementTag, v.Encode());
+                    cody.Add(CfgDecoder.ListElementTag, v.Encode().CfgData);
                 else
                     cody.Add_String(CfgEncoder.NullTag, "");
             }
@@ -221,7 +221,7 @@ namespace QuizCanners.Migration
 
         private readonly System.Text.StringBuilder _builder = new System.Text.StringBuilder();
 
-        public CfgData CfgData => new CfgData(_builder.ToString());
+        public CfgData CfgData => new(_builder.ToString());
 
         public override string ToString() 
         {

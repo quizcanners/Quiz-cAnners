@@ -71,39 +71,38 @@ namespace QuizCanners.Inspect {
     {
         public override void OnInspectorGUI()
         {
-            PegiEditorOnly.ResetInspectionTarget(target);
-
-            if (target != PegiEditorOnly.DrawDefaultInspector)
+            using (PegiEditorOnly.StartInspector(target))
             {
-                if (target is MonoBehaviour)
+                if (target != PegiEditorOnly.DrawDefaultInspector)
                 {
-                    PegiEditorOnly.Inspect_MB(this);
-                    pegi.RestoreBGColor();
-                    return;
+                    if (target is MonoBehaviour)
+                    {
+                        PegiEditorOnly.Inspect_MB(this);
+                        pegi.RestoreBGColor();
+                        return;
+                    }
+                    else if (target is ScriptableObject)
+                    {
+                        PegiEditorOnly.Inspect_SO(this);
+                        pegi.RestoreBGColor();
+                        return;
+                    }
                 }
-                else if (target is ScriptableObject)
+           
+                pegi.Toggle_DefaultInspector(target);
+
+                EditorGUI.BeginChangeCheck();
+                DrawDefaultInspector();
+                if (EditorGUI.EndChangeCheck())
                 {
-                    PegiEditorOnly.Inspect_SO(this);
-                    pegi.RestoreBGColor();
-                    return;
+                    target.SetToDirty();
                 }
-            }
-
-            pegi.Toggle_DefaultInspector(target);
-
-            EditorGUI.BeginChangeCheck();
-            DrawDefaultInspector();
-            if (EditorGUI.EndChangeCheck())
-            {
-                target.SetToDirty();
             }
         }
 
         public void OnSceneGUI()
         {
-            var trg = target as IPEGI_Handles;
-
-            if (trg != null)
+            if (target is IPEGI_Handles trg)
             {
                 pegi.IsDrawingHandles = true;
                 try

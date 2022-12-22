@@ -12,7 +12,7 @@ namespace QuizCanners.Inspect.Examples
         private bool isDay = true;
 
 
-        [SerializeField] private pegi.EnterExitContext _context = new pegi.EnterExitContext();
+        [SerializeField] private pegi.EnterExitContext _context = new();
 
         public void Inspect()
         {

@@ -42,9 +42,6 @@ namespace QuizCanners.Inspect.Examples
                         {
                             "Inspector visible in the game view".PegiLabel().Toggle(ref showInspectorInTheGameView);
                             pegi.Nl();
-
-                            if (showInspectorInTheGameView)
-                                "Inspector size".PegiLabel(70).Edit(ref OnGUIWindow.Upscale, min: 1, max: 3).Nl();
                         });
 
                         if ("Nested Inspect".PegiLabel().IsEntered().Nl())

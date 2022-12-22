@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace QuizCanners.Utils
 {
-    public class LogicWrappers
+    public static class LogicWrappers
     {
         public class Request
         {
@@ -49,7 +49,7 @@ namespace QuizCanners.Utils
                 _endTime = Time.time + seconds;
             }
 
-            public void SetMax(float seconds)
+            public void SetIfBigger(float seconds)
             {
                 IsInitialized = true;
                 _endTime = Mathf.Max(Time.time + seconds, _endTime);
@@ -109,6 +109,9 @@ namespace QuizCanners.Utils
             [NonSerialized] private int _count;
 
             public int Count => _count;
+            public int MaxCount => _maxCount;
+
+            public int CompletedCount => _maxCount - _count;
 
             public bool IsFinished
             {
@@ -118,6 +121,8 @@ namespace QuizCanners.Utils
                     _count = value ? 0 : _maxCount;
                 }
             }
+
+            public float Remaining01 => _maxCount > 0 ? ((float)_count / _maxCount) : 1;
 
             public void RemoveOne() => _count--;
 
@@ -148,12 +153,24 @@ namespace QuizCanners.Utils
 
         public class TimeFixedSegmenter 
         {
-            private bool _unscaledTime;
+            private readonly bool _unscaledTime;
             private bool _timeSet;
             private float _lastTime;
-            private readonly float _defaultSegment = 1;
+            private float _defaultSegment = 1;
             private readonly int _returnOnFirstRequest;
             private bool _defaultSegmentSet;
+
+            
+
+            public float SegmentDuration
+            {
+                get => _defaultSegment;
+                set 
+                { 
+                    _defaultSegment = value;
+                    _defaultSegmentSet = true;
+                }
+            }
 
             float CurrentTime => _unscaledTime ? Time.unscaledTime : Time.time;
             public int GetSegmentsWithouUpdate() => GetSegmentsWithouUpdate(_defaultSegment);
@@ -163,7 +180,7 @@ namespace QuizCanners.Utils
                 _timeSet = false;
             }
 
-            public void Update()
+            public void Update_KeepFraction()
             {
 #if UNITY_EDITOR
                 CheckDefaultSegment();
@@ -172,7 +189,12 @@ namespace QuizCanners.Utils
                 GetSegmentsAndUpdate(_defaultSegment);
             }
 
-            public void Update(float segment) => GetSegmentsAndUpdate(segment);
+            public void Update_KeepFraction(float segment) => GetSegmentsAndUpdate(segment);
+
+            public void ClearDeltaTime() 
+            {
+                _lastTime = CurrentTime;
+            }
 
             public int GetSegmentsWithouUpdate(float segment) 
             {
@@ -232,11 +254,11 @@ namespace QuizCanners.Utils
                 get
                 {
                     var stat = GetStatusEnum();
-                    switch (stat) 
+                    return stat switch
                     {
-                        case StatusEnum.Other: return _task.Status.ToString();
-                        default: return stat.ToString();
-                    }
+                        StatusEnum.Other => _task.Status.ToString(),
+                        _ => stat.ToString(),
+                    };
                 }
             }
 
@@ -277,7 +299,7 @@ namespace QuizCanners.Utils
 
             public void Set(Task<T> task, string name = null)
             {
-                result = default(T);
+                result = default;
                 _task = task;
                 if (name.IsNullOrEmpty())
                     _name = QcSharp.AddSpacesInsteadOfCapitals(typeof(T).ToPegiStringType());
@@ -311,8 +333,7 @@ namespace QuizCanners.Utils
 
                 if (result != null)
                 {
-                    var asIls = result as IPEGI_ListInspect;
-                    if (asIls != null)
+                    if (result is IPEGI_ListInspect asIls)
                     {
                         asIls.InspectInList_Nested(ref edited, index);
                         return;
@@ -361,7 +382,7 @@ namespace QuizCanners.Utils
                 var direction = segment.normalized;
 
                 for (int i = 0; i < count; i++)
-                    points[i] = _previousPosition + direction * delta * (i + 1);
+                    points[i] = _previousPosition + (i + 1) * delta * direction;
 
                 _previousPosition = Vector3.Lerp(_previousPosition, newPosition, fraction);
 
@@ -375,5 +396,37 @@ namespace QuizCanners.Utils
 
         }
 
+
+        public class DeltaVector3
+        {
+            public Vector3 Previous;
+            public Vector3 Current;
+
+            public Vector3 Delta => Current - Previous;
+
+            public void Reset(Vector3 value) 
+            {
+                Previous = value;
+                Current = value;
+            }
+
+            public void Update(Vector3 newValue) 
+            {
+                Previous = Current;
+                Current = newValue;
+            }
+
+            public bool TryUpdateIfChanged(Vector3 newValue) 
+            {
+                if (newValue != Current) 
+                {
+                    Update(newValue);
+                    return true;
+                }
+
+                return false;
+            }
+
+        }
     }
 }

@@ -48,7 +48,9 @@ namespace QuizCanners.Utils
             protected T _defaultValue;
             protected T latestValue;
 
-            public T Get() => latestValue;
+            public T GetLatest() => latestValue;
+
+            public abstract T GetFrom(Animator animator);
 
             public bool SetOn(T value, Animator animator)
             {
@@ -88,12 +90,16 @@ namespace QuizCanners.Utils
                     SetOn(latestValue, animator);
             }
 
+            public override float GetFrom(Animator animator) => animator.GetFloat(name);
+
             public Float(string name, float defaultValue = 0) : base(name, defaultValue) { }
         }
 
         public class Bool : ValueGeneric<bool>
         {
             protected override void SetInternal(bool value, Animator animator) => animator.SetBool(name, value);
+
+            public override bool GetFrom(Animator animator) => animator.GetBool(name);
 
             public override void Inspect(Animator animator)
             {
@@ -109,6 +115,8 @@ namespace QuizCanners.Utils
         public class Integer : ValueGeneric<int>
         {
             protected override void SetInternal(int value, Animator animator) => animator.SetInteger(name, value);
+
+            public override int GetFrom(Animator animator) => animator.GetInteger(name);
 
             public override void Inspect(Animator animator)
             {
@@ -147,6 +155,11 @@ namespace QuizCanners.Utils
             param.SetOn(value, animator);
             return animator;
         }
+
+        public static float Get(this Animator animator, Float param) => param.GetFrom(animator);
+        public static int Get(this Animator animator, Integer param) => param.GetFrom(animator);
+        public static bool Get(this Animator animator, Bool param) => param.GetFrom(animator);
+
 
     }
 }

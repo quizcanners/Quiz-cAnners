@@ -12,7 +12,7 @@ namespace QuizCanners.Utils
 {
 
     [Serializable]
-    public class Qc_SceneInspectable : IPEGI_ListInspect, Singleton.ILoadingProgressForInspector, INeedAttention
+    public class SceneReferenceInspectable : IPEGI_ListInspect, Singleton.ILoadingProgressForInspector, INeedAttention
     {
 
         public SerializableSceneReference SceneReference = new();
@@ -31,12 +31,12 @@ namespace QuizCanners.Utils
         {
             get
             {
-                var l = (LoadOperation != null && !LoadOperation.isDone) || IsLoaded;
+                var result = (LoadOperation != null && !LoadOperation.isDone) || IsLoaded;
 
                 if (IsLoaded && _onLoadedInitializationOneFrameDelay.TryEnter())
                     _framesSinceLoaded++;
 
-                return l;
+                return result;
             }
             set
             {
@@ -79,7 +79,7 @@ namespace QuizCanners.Utils
 
         public void Load(LoadSceneMode mode)
         {
-            if (Application.isPlaying == false)
+            if (!Application.isPlaying)
             {
 #if UNITY_EDITOR
                 if (IsValid && !IsLoaded)
@@ -88,25 +88,25 @@ namespace QuizCanners.Utils
                     SceneManager.SetActiveScene(scene); // In Editor Scenes are usually opened to editing
                 }
 #endif
-
+                return;
             }
-            else
+
+
+            if (LoadOperation != null && !LoadOperation.isDone)
+                return;
+
+            if (IsLoaded)
+                return;
+            
+            try
             {
-                if (LoadOperation == null || LoadOperation.isDone)
-                {
-                    if (!IsLoaded)
-                    {
-                        try
-                        {
-                            LoadOperation = SceneManager.LoadSceneAsync(ScenePath, mode);
-                            _framesSinceLoaded = 0;
-                        } catch (Exception ex) 
-                        {
-                            LoadingFailed = true;
-                            Debug.LogException(ex);
-                        }
-                    }
-                }
+                //Debug.Log("Loading " + ToString());
+                LoadOperation = SceneManager.LoadSceneAsync(ScenePath, mode);
+                _framesSinceLoaded = 0;
+            } catch (Exception ex) 
+            {
+                LoadingFailed = true;
+                Debug.LogException(ex);
             }
         }
 
@@ -167,11 +167,16 @@ namespace QuizCanners.Utils
                     if (Application.isPlaying)
                     {
                         Icon.Add.Click(() => IsLoadedOrLoading = true);
-
                         Icon.Load.Click(() => Load(LoadSceneMode.Single));
+
+                        if (pegi.PaintingGameViewUI)
+                        {
+                            ToString().PegiLabel().Write();
+                        }
+
                     }
 #if UNITY_EDITOR
-                    else if (IsValid && "Switch".PegiLabel(toolTip: "Save scene before switching to another. Sure you want to change?").ClickConfirm(
+                    else if (IsValid && !SceneReference.ScenePathDirty && "Switch".PegiLabel(toolTip: "Save scene before switching to another. Sure you want to change?").ClickConfirm(
                         confirmationTag: "SwSc" + ScenePath))
                         EditorSceneManager.OpenScene(ScenePath);
 #endif
@@ -180,7 +185,7 @@ namespace QuizCanners.Utils
             }
 #if UNITY_EDITOR
 
-            if (IsValid)
+            if (IsValid && !SceneReference.ScenePathDirty)
             {
                 bool match = false;
                 var allScenes = EditorBuildSettings.scenes;
@@ -219,14 +224,8 @@ namespace QuizCanners.Utils
         {
             if (ScenePath.IsNullOrEmpty())
                 return "NO SCENE PATH";
-            var separator = ScenePath.LastIndexOfAny(new char[] { '/', '\\' });
 
-            string result = ScenePath;
-
-            if (separator > 0)
-                result = result.Substring(separator + 1);
-
-            return result.Replace(".unity", "");
+            return QcSharp.GetFileNameFromPath(ScenePath);
         }
         public string NeedAttention()
         {

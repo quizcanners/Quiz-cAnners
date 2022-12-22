@@ -47,17 +47,17 @@ namespace QuizCanners.Utils
         public bool Exited { get; private set; }
         public int EnumeratorVersion { get; private set; }
 
-        private List<Action> _onExit = new List<Action>();
-        private List<Action> _onDoneFully = new List<Action>();
+        private List<Action> _onExit = new();
+        private List<Action> _onDoneFully = new();
 
-        private readonly List<IEnumerator> _enumeratorStack = new List<IEnumerator>();
+        private readonly List<IEnumerator> _enumeratorStack = new();
         private Task _task;
         private int _runningVersion;
         private CallAgainRequest _currentCallAgainRequest;
         private object _current;
         private bool _currentIsUncheck;
         protected bool _stopAndCancel;
-        private readonly System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+        private readonly System.Diagnostics.Stopwatch timer = new();
 
         public void Stop() => EnumeratorVersion +=1;
             
@@ -139,14 +139,11 @@ namespace QuizCanners.Utils
             bool wasEnumerator = _currentIsUncheck;
 
             _currentIsUncheck = false;
-
             _yields++;
-
             _current = en.Current;
 
             if (_current == null)
                 return;
-
 
             if (_current is IEnumerator enm)
             {
@@ -190,14 +187,12 @@ namespace QuizCanners.Utils
                 return;
             }
 
-
             if (_current is Task tsk)
             {
                 _task = tsk;
                 _current = null;
                 return;
             }
-
         }
 
         private bool MoveNext_Internal()
@@ -220,7 +215,6 @@ namespace QuizCanners.Utils
 
             try
             {
-               
                 IEnumerator en = _enumeratorStack[_enumeratorStack.Count - 1];
 
                 if (en.MoveNext())
@@ -240,7 +234,6 @@ namespace QuizCanners.Utils
             }
             catch (Exception ex)
             {
-
                 _state = "Error after {0}: {1}".F(_state, ex.ToString());
 
                 Debug.LogError("Managed Exception in Timed Enumerator: " + _state);
@@ -272,7 +265,6 @@ namespace QuizCanners.Utils
                 }
 
                 _frames++;
-
                 return true;
             }
                 

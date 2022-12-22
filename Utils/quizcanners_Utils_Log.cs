@@ -28,12 +28,36 @@ namespace QuizCanners.Utils
                 unimplementedValue.ToString().SimplifyTypeName(),
                 unimplementedValue.GetType().ToPegiStringType());
 
+        public static string CaseNotImplemented<T>(T unimplementedValue, string context)
+        {
+          //  string valueName;
+
+            var type = typeof(T);
+
+            /*
+            if (type.IsEnum)
+            {
+                valueName = Enum.GetName(type, unimplementedValue);
+            }
+            else
+                valueName = unimplementedValue.ToString().SimplifyTypeName();*/
+
+            return "Case [{0}] for [{1}] is not implemented for {2}".F(
+               unimplementedValue.ToString().SimplifyTypeName(),
+               type.ToPegiStringType(),
+               context
+               );
+        }
+
+        /*
         public static string CaseNotImplemented(object unimplementedValue, string context)
-           => "Case [{0}] for [{1}] is not implemented for {2}".F(
+        {
+            return "Case [{0}] for [{1}] is not implemented for {2}".F(
                unimplementedValue.ToString().SimplifyTypeName(),
                unimplementedValue.GetType().ToPegiStringType(),
                context
                );
+        }*/
 
         public static InspectableLogging LogHandler = new InspectableLogging();
 
@@ -134,14 +158,19 @@ namespace QuizCanners.Utils
             public string Stack;
             public LogType type;
 
-            public void Inspect()
+            public override string ToString() => Log;
+
+            public void InspectInList(ref int edited, int ind)
             {
-                "Log:".PegiLabel(50).Write_ForCopy(Log, showCopyButton: true);
-                pegi.Nl();
-                "Stack: ".PegiLabel().Write_ForCopy_Big(Stack, showCopyButton: true);
+                if (this.Click_Enter_Attention() | ToString().PegiLabel().ClickLabel())
+                    edited = ind;
             }
 
-            public override string ToString() => Log;
+            public void Inspect()
+            {
+                "Log:".PegiLabel(50).Write_ForCopy(Log, showCopyButton: true).Nl();
+                "Stack:".PegiLabel().Write_ForCopy_Big(Stack, showCopyButton: true).Nl();
+            }
 
             public string NeedAttention()
             {
@@ -155,15 +184,10 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public void InspectInList(ref int edited, int ind)
-            {
-                if (this.Click_Enter_Attention() | ToString().PegiLabel().ClickLabel())
-                    edited = ind;
-            }
-
             public IEnumerator SearchKeywordsEnumerator()
             {
                 yield return Log;
+                yield return type.ToString();
             }
         }
 
@@ -178,8 +202,8 @@ namespace QuizCanners.Utils
             public override string ToString() => _name + (Disabled ? " Disabled" : " Enabled");
 
             protected bool Disabled => QcDebug.IsRelease && !_logInBuild;
-            private static readonly Dictionary<string, int> loggedErrors = new Dictionary<string, int>();
-            private static readonly Dictionary<string, int> loggedWarnings = new Dictionary<string, int>();
+            private static readonly Dictionary<string, int> loggedErrors = new();
+            private static readonly Dictionary<string, int> loggedWarnings = new();
 
             public ChillLogger(string name, bool logInBuild = false)
             {

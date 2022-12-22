@@ -61,8 +61,15 @@ namespace QuizCanners.Inspect
             wasChangedBefore = GUI.changed;
         }
 
-        private static ChangesToken _END() => new ChangesToken(globChanged |= GUI.changed && !wasChangedBefore);
+        private static ChangesToken _END()
+        {
+            if (!wasChangedBefore) 
+            {
+                globChanged |= GUI.changed;
+            }
 
+            return new ChangesToken(globChanged && !wasChangedBefore);
+        }
         #endregion
 
         #region Edit

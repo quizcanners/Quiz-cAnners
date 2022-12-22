@@ -7,6 +7,44 @@ namespace QuizCanners.Utils
 {
     public static partial class Pool
     {
+        public static class MaxCount
+        {
+            private static float _byFramerateModifier = 1;
+            private static readonly Gate.Frame _byFrameRecalculateGate = new();
+            public static float GetCoefficientFromFramerate()
+            {
+                if (_byFrameRecalculateGate.TryEnter())
+                {
+                    float quality = QcDebug.FrameRate.FrameRatePerSecond / (Application.targetFrameRate > 10 ? Application.targetFrameRate : 60);
+                    _byFramerateModifier = Mathf.Lerp(1, quality, 0.75f);
+                }
+
+               
+
+                return _byFramerateModifier;
+            }
+        }
+
+        public static class Utils 
+        {
+            public static Vector3 GetScaleBasedOnDistance(Vector3 pos, float add = 0) => Vector3.one * (GetScaleFactorFromDistance(pos) + add);
+
+            public static float GetScaleFactorFromDistance(Vector3 pos) => (0.25f + QcMath.SmoothStep(0, 20, GetDistanceToCamera(pos)) * 0.75f);
+
+            public static float GetDistanceToCamera(Vector3 pos)
+            {
+                var cam = Singleton.Get<Singleton_CameraOperatorGodMode>();
+
+                if (cam)
+                {
+                    Vector3.Distance(cam.transform.position, pos);
+                }
+
+                return Vector3.Distance(Camera.main.transform.position, pos);
+            }
+        }
+
+
         public abstract class Base : IGotCount
         {
             public int GetCount() => Count;
@@ -14,12 +52,12 @@ namespace QuizCanners.Utils
             public abstract int Count { get; }
         }
         
-        public abstract class Generic<T> : Base, IPEGI, IEnumerable<T> where T : Component
+        public abstract class Generic<T> : Base, IPEGI, IPEGI_ListInspect, IEnumerable<T> where T : Component
         {
-            protected List<T> pool = new List<T>();
-            [SerializeField] protected List<T> instances = new List<T>();
+            protected List<T> pool = new();
+            [SerializeField] protected List<T> instances = new();
 
-            protected abstract T CreateInternal(Transform transform);
+            protected abstract T CreateInternal(Transform parent);
 
             public T this[int index] => instances.TryGet(index);
 
@@ -37,7 +75,7 @@ namespace QuizCanners.Utils
             {
                 while (instances.Count > targetCount)
                 {
-                    ReturnToPool(instances[instances.Count - 1]);
+                    ReturnToPool(instances[^1]);
                 }
 
                 while (instances.Count < targetCount)
@@ -81,7 +119,7 @@ namespace QuizCanners.Utils
                 effect.gameObject.SetActive(false);
             }
 
-            public void ClearAll()
+            public virtual  void ClearAll()
             {
                 foreach (var e in pool)
                     if (e)
@@ -145,7 +183,7 @@ namespace QuizCanners.Utils
         {
             public virtual int MaxInstances { get; } = 300;
 
-            public virtual float VacancyPortion => (MaxInstances - (float)GetCount()) / MaxInstances;
+            public virtual float VacancyFraction => (MaxInstances - (float)GetCount()) / MaxInstances;
 
             public virtual bool TrySpawnIfVisible(Vector3 worldPosition, out T inst, Transform transform)
             {
@@ -162,7 +200,7 @@ namespace QuizCanners.Utils
                 return TrySpawn(worldPosition, out inst, transform);
             }
 
-            public bool TrySpawn(Vector3 worldPosition, out T inst, Transform transform)
+            public bool TrySpawn(Vector3 worldPosition, out T inst, Transform parent)
             {
                 inst = null;
 
@@ -188,7 +226,7 @@ namespace QuizCanners.Utils
                         return false;
                     }
 
-                    inst = CreateInternal(transform);//UnityEngine.Object.Instantiate(prefab, worldPosition, Quaternion.identity, transform);
+                    inst = CreateInternal(parent);//UnityEngine.Object.Instantiate(prefab, worldPosition, Quaternion.identity, transform);
                     inst.transform.position = worldPosition;
                     instances.Add(inst);
 
@@ -206,7 +244,6 @@ namespace QuizCanners.Utils
             [SerializeField] protected Transform parent;
             [SerializeField] protected T prefab;
           
-
             public T Spawn() => Spawn(parent);
 
             public void SetInstancesTotal(int targetCount) => SetInstancesTotal(targetCount, parent);
@@ -276,11 +313,11 @@ namespace QuizCanners.Utils
             }
 
 
-            protected override T CreateInternal(Transform transform)
+            protected override T CreateInternal(Transform parent)
             {
                 using (QcDebug.TimeProfiler.Instance["Pool Instancers"].Sum(GetType().ToString()).Start())
                 {
-                    return UnityEngine.Object.Instantiate(prefab, transform);
+                    return UnityEngine.Object.Instantiate(prefab, parent);
                 }
             }
 
@@ -326,10 +363,10 @@ namespace QuizCanners.Utils
 
         public class PreceduralWithLimits<T> : GenericWithLimit<T> where T : Component
         {
-            protected override T CreateInternal(Transform transform)
+            protected override T CreateInternal(Transform parent)
             {
                 var go = new GameObject(typeof(T).ToPegiStringType());
-                go.transform.parent = transform;
+                go.transform.parent = parent;
                 var cmp = go.AddComponent<T>();
                 return cmp;
             }

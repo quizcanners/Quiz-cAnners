@@ -83,6 +83,7 @@ namespace QuizCanners.Utils
             
             [SerializeField] public T latestValue;
             protected bool globalValueSet;
+            private bool lastValueSet;
 
             public abstract T Get(Material mat);
             public abstract T Get(MaterialPropertyBlock block);
@@ -91,7 +92,14 @@ namespace QuizCanners.Utils
 
             public T GlobalValue
             {
-                get => latestValue!= null ? latestValue : GlobalValue_Internal;
+                get
+                {
+                    if (lastValueSet) 
+                        return latestValue;
+                    latestValue = GlobalValue_Internal;
+                    lastValueSet = true;
+                    return latestValue;
+                }
                 set
                 {
                     latestValue = value;
@@ -206,7 +214,18 @@ namespace QuizCanners.Utils
         public static Material Set<T>(this Material mat, IndexGeneric<T> property, T value) =>
             property.SetOn(mat, value);
 
+        public static Material Set(this Material mat, MaterialToggle property, bool isOn) =>
+            property.SetOn(mat, isOn);
+
+
         public static T Get<T>(this Material mat, IndexGeneric<T> property) => property.Get(mat);
+
+        public static bool Get(this Material mat, MaterialToggle property) => property.Get(mat);
+
+        public static int Get(this Material mat, KeywordEnum property) => Mathf.RoundToInt(property.Get(mat));
+        
+        public static void Set(this Material mat, KeywordEnum property, int value) => property.Set(mat, value);    
+        
 
         #endregion
 
@@ -284,8 +303,8 @@ namespace QuizCanners.Utils
             public override void InspectInList(ref int edited, int ind) => InspectValue();
             public override void Inspect()
             {
-                base.Inspect();
-                pegi.Nl();
+               // base.Inspect();
+               // pegi.Nl();
                 InspectValue().Nl();
             }
 
@@ -381,7 +400,7 @@ namespace QuizCanners.Utils
 
         public class ColorFeature : IndexWithShaderFeatureGeneric<Color>, IPEGI {
 
-            public static readonly ColorFloat4Value tintColor = new ColorFloat4Value("_TintColor");
+            public static readonly ColorValue tintColor = new ("_TintColor");
 
             public override void SetLatestValueOn(Material material) => material.SetColor(id, latestValue);
             public override Color Get(Material material) => material.GetColor(id);
@@ -413,9 +432,9 @@ namespace QuizCanners.Utils
 
         [Serializable]
 
-        public class ColorFloat4Value : IndexGeneric<Color> {
+        public class ColorValue : IndexGeneric<Color> {
 
-            public static readonly ColorFloat4Value tintColor = new ColorFloat4Value("_TintColor");
+            public static readonly ColorValue tintColor = new("_TintColor");
 
             public bool ConvertToLinear
             {
@@ -467,29 +486,29 @@ namespace QuizCanners.Utils
                     GlobalValue = latestValue;
             }
 
-            public ColorFloat4Value()
+            public ColorValue()
             {
                 latestValue = Color.grey;
             }
 
-            public ColorFloat4Value(string name) : base(name)
+            public ColorValue(string name) : base(name)
             {
                 latestValue = Color.grey;
             }
             
-            public ColorFloat4Value(string name, bool convertToLinear) : base(name)
+            public ColorValue(string name, bool convertToLinear) : base(name)
             {
                 latestValue = Color.grey;
                 ConvertToLinear = convertToLinear;
             }
 
-            public ColorFloat4Value(string name, Color startingColor, bool convertToLinear) : base(name)
+            public ColorValue(string name, Color startingColor, bool convertToLinear) : base(name)
             {
                 latestValue = startingColor;
                 ConvertToLinear = convertToLinear;
             }
 
-            public ColorFloat4Value(string name, Color startingColor) : base(name)
+            public ColorValue(string name, Color startingColor) : base(name)
             {
                 latestValue = startingColor;
             }
@@ -570,7 +589,8 @@ namespace QuizCanners.Utils
         
         public class TextureValue : IndexGeneric<Texture>, IPEGI
         {
-            public static readonly TextureValue mainTexture = new TextureValue("_MainTex");
+            public static readonly TextureValue mainTexture = new("_MainTex");
+            public static readonly TextureValue bumpMap = new("_BumpMap");
 
             public override Texture Get(Material mat) => mat.GetTexture(id);
             public override Texture Get(MaterialPropertyBlock block) => block.GetTexture(id);
@@ -592,7 +612,7 @@ namespace QuizCanners.Utils
             #region Texture Specific
 
             [NonSerialized]
-            private List<string> _usageTags = new List<string>();
+            private List<string> _usageTags = new();
 
             public TextureValue AddUsageTag(string value)
             {
@@ -629,12 +649,10 @@ namespace QuizCanners.Utils
 
             private const string FILL_ASPECT_RATION_SUFFIX = "_ScreenFillAspect";
             private  VectorValue _screenFillAspect;
-            private VectorValue GetScreenFillAspect() {
-            
-                if (_screenFillAspect == null)
-                    _screenFillAspect = new VectorValue(name + FILL_ASPECT_RATION_SUFFIX);
+            private VectorValue GetScreenFillAspect() 
+            {
+                _screenFillAspect ??= new VectorValue(name + FILL_ASPECT_RATION_SUFFIX);
                 return _screenFillAspect;
-                
             }
             public void Set_ScreenFillAspect()
             {
@@ -647,7 +665,7 @@ namespace QuizCanners.Utils
                 float screenAspect = pegi.GameView.AspectRatio;
                 float texAspect = ((float)latestValue.width) / latestValue.height;
 
-                Vector4 aspectCorrection = new Vector4(1,1, 1f/latestValue.width, 1f/latestValue.height);
+                Vector4 aspectCorrection = new(1,1, 1f/latestValue.width, 1f/latestValue.height);
 
                 if (screenAspect > texAspect)
                     aspectCorrection.y = (texAspect / screenAspect);
@@ -738,12 +756,26 @@ namespace QuizCanners.Utils
         [Serializable]
         public class KeywordEnum : IPEGI
         {
+            private readonly int id;
             private readonly string _name;
-            private readonly string[] _enumValues;
+            public readonly string[] EnumValues;
+            public readonly string[] Keywords;
 
             public override string ToString() => _name;
 
             [SerializeField] private string lastValue;
+
+            public float Get(Material material) => material.GetFloat(id);
+
+            public void Set(Material material, int value)
+            {
+                material.SetFloat(id, value);
+                
+                for (int i=0; i< Keywords.Length; i++) 
+                {
+                    material.SetShaderKeyword(Keywords[i] , value == i);
+                }
+            }
 
             public bool this[string key] 
             {
@@ -763,7 +795,15 @@ namespace QuizCanners.Utils
             public KeywordEnum(string name, params string[] values)
             {
                 _name = name;
-                _enumValues = values;
+                id = Shader.PropertyToID(name);
+                EnumValues = values;
+
+                Keywords = new string[EnumValues.Length];
+                for (int i = 0; i < EnumValues.Length; i++)
+                {
+                    Keywords[i] = "{0}_{1}".F(_name, EnumValues[i].ToUpperInvariant());
+                }
+
             }
 
             public void Inspect()
@@ -771,7 +811,7 @@ namespace QuizCanners.Utils
                 _name.PegiLabel().Write_ForCopy();
                 pegi.Nl();
 
-                foreach (var val in _enumValues) 
+                foreach (var val in EnumValues) 
                 {
                     if (this[val])
                         "Remove {0}".F(val).PegiLabel().Click(() => this[val] = false);
@@ -811,31 +851,37 @@ namespace QuizCanners.Utils
         [Serializable]
         public class MaterialToggle : IPEGI
         {
+            private readonly string _floatProperty;
+            private readonly int _floatPropertyId;
             private readonly string _keyword;
-            private readonly int _keywordId;
 
             [SerializeField] public bool LastValue;
             public override string ToString() => _keyword;
 
-            public void SetOn(Material material)
+            public bool Get(Material material) => material.GetFloat(_floatPropertyId) > 0;
+            
+            public Material SetOn(Material material)
             {
-                material.SetFloat(_keywordId, LastValue ? 1 : 0);
+                material.SetFloat(_floatPropertyId, LastValue ? 1 : 0);
                 material.SetShaderKeyword(_keyword, LastValue);
+                return material;
             }
 
-            public void SetOn(Material material, bool value)
+            public Material SetOn(Material material, bool value)
             {
                 LastValue = value;
                 SetOn(material);
+                return material;
             }
 
-            public MaterialToggle(string keywordName)
+            public MaterialToggle(string floatPropertyName, string keyword)
             {
-                _keyword = keywordName;
-                _keywordId = Shader.PropertyToID(keywordName);
+                _floatProperty = floatPropertyName;
+                _floatPropertyId = Shader.PropertyToID(floatPropertyName);
+                _keyword = keyword;
             }
 
-            public void Inspect() => _keyword.PegiLabel().ToggleIcon(ref LastValue);
+            public void Inspect() => _floatProperty.PegiLabel().ToggleIcon(ref LastValue);
         }
 
 
@@ -847,7 +893,7 @@ namespace QuizCanners.Utils
         public class VectorArrayValue : BaseShaderPropertyIndex
         {
             private Vector4[] _vectorArray;
-            private readonly Fallback.Int _arraySize = new Fallback.Int();
+            private readonly Fallback.Int _arraySize = new();
 
             public Vector4[] GlobalValue
             {
@@ -966,16 +1012,16 @@ namespace QuizCanners.Utils
 
     public static class ShaderTags 
     {
-        public static readonly ShaderTag ShaderTip = new ShaderTag("ShaderTip");
-        public static readonly ShaderTag Queue = new ShaderTag("Queue");
+        public static readonly ShaderTag ShaderTip = new("ShaderTip");
+        public static readonly ShaderTag Queue = new("Queue");
 
         public static class Queues 
         {
-            public static readonly ShaderTagValue Background = new ShaderTagValue("Background", Queue);
-            public static readonly ShaderTagValue Geometry = new ShaderTagValue("Geometry", Queue);
-            public static readonly ShaderTagValue AlphaTest = new ShaderTagValue("Geometry", Queue);
-            public static readonly ShaderTagValue Transparent = new ShaderTagValue("Transparent", Queue);
-            public static readonly ShaderTagValue Overlay = new ShaderTagValue("Overlay", Queue);
+            public static readonly ShaderTagValue Background = new("Background", Queue);
+            public static readonly ShaderTagValue Geometry = new("Geometry", Queue);
+            public static readonly ShaderTagValue AlphaTest = new("Geometry", Queue);
+            public static readonly ShaderTagValue Transparent = new("Transparent", Queue);
+            public static readonly ShaderTagValue Overlay = new("Overlay", Queue);
         }
     }
 

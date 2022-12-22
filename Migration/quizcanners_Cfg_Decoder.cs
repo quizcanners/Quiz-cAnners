@@ -25,7 +25,7 @@ namespace QuizCanners.Migration
                 if (cstm == _loopSafe)
                 {
                     new CfgDecoder(data).DecodeTagsFor(obj);
-                    Debug.LogError("Decode Full is probably calld from Decode Custom call");
+                    Debug.LogError("Decode Full is probably calld from Decode Custom call. Use {0}".F(nameof(DecodeTagsFrom)));
                 }
                 else
                 {

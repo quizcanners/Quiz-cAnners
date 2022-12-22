@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using QuizCanners.Utils;
 using UnityEngine;
 
@@ -45,9 +46,9 @@ namespace QuizCanners.Inspect
             set 
             {
                 // Debug Inspector
-                /* 
-                if (value && !_globChanged)
-                    Debug.Log("Glob Changed to true");*/
+                
+              //  if (value) // && !_globChanged)
+                 //   Debug.Log("Glob Changed to true. Was changed: {0}".F(_globChanged));
 
                 _globChanged = value;
             }
@@ -62,13 +63,19 @@ namespace QuizCanners.Inspect
         private static readonly List<Color> _previousBgColors = new List<Color>();
         private static readonly List<Color> _previousGuiColors = new List<Color>();
 
+        public static UnityEngine.Object InspectedUnityObject =>
+        #if UNITY_EDITOR
+            PegiEditorOnly.inspectedUnityObject;
+        #else
+            null;
+        #endif
         public static bool IsFoldedOut => PegiEditorOnly.isFoldedOutOrEntered;
         public static string EnvironmentNl => Environment.NewLine;
 
-        #region GUI Modes & Fitting
+#region GUI Modes & Fitting
 
 #if UNITY_EDITOR
-        private static ChangesToken EndChangeCheck()
+        private static ChangesToken EditorOnly_EndChangeCheck()
         {
             var changed = UnityEditor.EditorGUI.EndChangeCheck();
             if (changed)
@@ -98,13 +105,13 @@ namespace QuizCanners.Inspect
 
         private static int RemainingLength(int otherElements) => PaintingGameViewUI ? PLAYTIME_GUI_WIDTH - otherElements : Screen.width - otherElements;
 
-        #endregion
+#endregion
 
-        #region Inspection Variables
+#region Inspection Variables
 
 
 
-        #region BG Color
+#region BG Color
 
         private static bool BgColorReplaced => !_previousBgColors.IsNullOrEmpty();
 
@@ -189,6 +196,48 @@ namespace QuizCanners.Inspect
             return message != null;
         }
 
+        public static bool NeedsAttention_UObj<T>(IList<T> list, out string message, string listName = "list", bool canBeNull = false) where T : UnityEngine.Object
+        {
+            message = NeedsAttention_UObj(list, listName, canBeNull);
+            return message != null;
+        }
+
+        public static string NeedsAttention_UObj<T>(IList<T> list, string listName = "list", bool canBeNull = false) where T : UnityEngine.Object
+        {
+            string msg = null;
+            if (list == null)
+                msg = canBeNull ? null : "{0} is Null".F(listName);
+            else
+            {
+
+                int i = 0;
+
+                foreach (var el in list)
+                {
+                    if (el)
+                    {
+                        if (NeedsAttention(el, out msg))
+                        {
+                            msg = " {0} on {1}:{2}".F(msg, i, el.GetNameForInspector());
+                            LastNeedAttentionIndex = i;
+                            return msg;
+                        }
+                    }
+                    else if (!canBeNull)
+                    {
+                        msg = "{0} element in {1} is NULL".F(i, listName);
+                        LastNeedAttentionIndex = i;
+                        return msg;
+                    }
+
+                    i++;
+                }
+            }
+
+            return msg;
+        }
+
+
         public static string NeedsAttention(System.Collections.IList list, string listName = "list", bool canBeNull = false)
         {
             string msg = null;
@@ -240,9 +289,9 @@ namespace QuizCanners.Inspect
             }
         }
         
-        #endregion
+#endregion
 
-        #region Focus MGMT
+#region Focus MGMT
 
         private static void RepaintEditor()
         {
@@ -254,11 +303,11 @@ namespace QuizCanners.Inspect
 
         public static void UnFocus()
         {
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (!PaintingGameViewUI)
                 UnityEditor.EditorGUI.FocusTextInControl("_");
             else
-            #endif
+#endif
                 GUI.FocusControl("_");
         }
 
@@ -280,16 +329,13 @@ namespace QuizCanners.Inspect
             }
         }
 
-        #endregion
+#endregion
 
         public class ChangesTracker
         {
             private bool _wasAlreadyChanged;
-            public bool Changed
-            {
-                get => !_wasAlreadyChanged && globChanged;
-            }
-
+            public bool Changed => !_wasAlreadyChanged && globChanged;
+            
             public void Feed(bool isChanged) 
             {
                 if (isChanged)
@@ -301,7 +347,7 @@ namespace QuizCanners.Inspect
 
             public static implicit operator bool(ChangesTracker me) => me.Changed;
 
-            public static implicit operator ChangesToken(ChangesTracker me) => new ChangesToken(me.Changed);
+            public static implicit operator ChangesToken(ChangesTracker me) => new(me.Changed);
 
             internal ChangesTracker()
             {
@@ -345,7 +391,7 @@ namespace QuizCanners.Inspect
             }
         }
 
-        #region New Line
+#region New Line
 
         private static int IndentLevel
         {
@@ -385,10 +431,24 @@ namespace QuizCanners.Inspect
             if (!PaintingGameViewUI)
             {
                 PegiEditorOnly.Indent(width);
+                return new Unindenter(width);
             }
+            else
 #endif
+            {
 
-            return new Unindenter(width);
+                List<IDisposable> disposables = new List<IDisposable>();
+
+                disposables.Add(new GUILayout.HorizontalScope());
+                GUILayout.Space(width);
+                disposables.Add(new GUILayout.VerticalScope());
+
+                return QcSharp.DisposableAction(() =>
+                {
+                    foreach (var d in disposables)
+                        d.Dispose();
+                });
+            }
         }
 
         private class Unindenter : IDisposable

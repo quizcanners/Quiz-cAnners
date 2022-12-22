@@ -60,7 +60,86 @@ namespace QuizCanners.Utils
             pegi.Nl();
         }
 
-      
+        public EncodedJsonInspector() { rootJson = new JsonString(); }
+
+        public EncodedJsonInspector(string data) { rootJson = new JsonString(data); }
+
+        public bool triedToDecodeAll;
+
+        public void TryToDecodeAll()
+        {
+
+            triedToDecodeAll = true;
+
+            var rootAsString = rootJson.AsJsonString;
+
+            if (rootAsString != null && !rootAsString.data.IsNullOrEmpty())
+            {
+
+                rootAsString.dataOnly = false;
+
+                var sb = new StringBuilder();
+
+                int index = 0;
+
+                while (index < rootAsString.data.Length && rootAsString.data[index] != '{' && rootAsString.data[index] != '[')
+                {
+                    sb.Append(rootAsString.data[index]);
+                    index++;
+                }
+
+                jsonDestination = sb.ToString();
+
+                rootAsString.data = rootAsString.data.Substring(index);
+            }
+            
+            do { } while (rootJson.DecodeAll(ref rootJson));
+        }
+
+        #region Inspector
+        private static readonly List<string> inspectedPath = new List<string>();
+
+        public void Inspect()
+        {
+
+            pegi.Nl();
+
+            if (Icon.Delete.Click())
+            {
+                triedToDecodeAll = false;
+                rootJson = new JsonString();
+                jsonDestination = "";
+            }
+
+            if (!triedToDecodeAll && "Decode All".PegiLabel().Click())
+                TryToDecodeAll();
+
+            if (jsonDestination.Length > 5)
+                jsonDestination.PegiLabel().Write();
+
+            pegi.Nl();
+
+            inspectedPath.Clear();
+
+            DecodeOrInspectJson(ref rootJson, true);
+        }
+
+        #endregion
+
+        protected class PathAdd : IDisposable
+        {
+            public PathAdd(string name)
+            {
+                inspectedPath.Add(name);
+            }
+
+            public void Dispose()
+            {
+                inspectedPath.RemoveLast();
+            }
+        }
+
+        #region Json Anatomy
         protected class JsonString : JsonBase
         {
             public bool dataOnly;
@@ -100,7 +179,7 @@ namespace QuizCanners.Utils
 
             public JsonString(string data) { Data = data; }
 
-           public override void Inspect()
+            public override void Inspect()
             {
                 var changed = pegi.ChangeTrackStart();
 
@@ -127,7 +206,7 @@ namespace QuizCanners.Utils
                     dataOnly = false;
             }
 
-           private enum JsonDecodingStage { DataTypeDecision, ExpectingVariableName, ReadingVariableName, ExpectingTwoDots, ReadingData }
+            private enum JsonDecodingStage { DataTypeDecision, ExpectingVariableName, ReadingVariableName, ExpectingTwoDots, ReadingData }
 
             public override bool DecodeAll(ref JsonBase thisJson)
             {
@@ -215,7 +294,7 @@ namespace QuizCanners.Utils
                                     : JsonDecodingStage.ExpectingVariableName;
                             }
                             break;
-                            
+
                         case JsonDecodingStage.ExpectingVariableName:
                             if (c != ' ')
                             {
@@ -363,7 +442,7 @@ namespace QuizCanners.Utils
 
             public override string ToString() => name + (data.HasNestedData ? "{}" : data.GetNameForInspector());
 
-           public override void Inspect()
+            public override void Inspect()
             {
 
                 inspected = this;
@@ -403,7 +482,7 @@ namespace QuizCanners.Utils
 
             public override string ToString() => "[{0}]".F(values.Count);
 
-           public override void Inspect()
+            public override void Inspect()
             {
 
                 using (new PathAdd(ToString()))
@@ -416,7 +495,7 @@ namespace QuizCanners.Utils
 
                             if (!previewFoldout && Icon.Config.Click(15).UnfocusOnChange())
                                 previewFoldout = true;
-                            
+
                             if (previewFoldout)
                             {
                                 "Select value to preview:".PegiLabel().Nl();
@@ -426,7 +505,7 @@ namespace QuizCanners.Utils
                                     previewValue = "";
                                     previewFoldout = false;
                                 }
-                                
+
                                 foreach (var p in cl.properties)
                                 {
                                     if (p.name.Equals(previewValue))
@@ -461,7 +540,7 @@ namespace QuizCanners.Utils
                             nameForElemenet = name.Substring(0, name.Length - 1);
                         }
                     }
-                    
+
                     for (int i = 0; i < values.Count; i++)
                     {
 
@@ -490,7 +569,7 @@ namespace QuizCanners.Utils
                             foldedOut[i] = fo;
                         }
 
-                        pegi.Nested_Inspect(()=> DecodeOrInspectJson(ref val, fo)).Nl();
+                        pegi.Nested_Inspect(() => DecodeOrInspectJson(ref val, fo)).Nl();
                         values[i] = val;
                     }
                 }
@@ -540,7 +619,7 @@ namespace QuizCanners.Utils
 
             public override int GetCount() => properties.Count;
 
-           public override void Inspect()
+            public override void Inspect()
             {
 
                 pegi.Indent();
@@ -593,83 +672,10 @@ namespace QuizCanners.Utils
             public virtual bool HasNestedData => true;
 
             public abstract void Inspect();
-            
+
         }
+        #endregion
 
-        public EncodedJsonInspector() { rootJson = new JsonString(); }
-
-        public EncodedJsonInspector(string data) { rootJson = new JsonString(data); }
-
-        public bool triedToDecodeAll;
-
-        public void TryToDecodeAll()
-        {
-
-            triedToDecodeAll = true;
-
-            var rootAsString = rootJson.AsJsonString;
-
-            if (rootAsString != null && !rootAsString.data.IsNullOrEmpty())
-            {
-
-                rootAsString.dataOnly = false;
-
-                var sb = new StringBuilder();
-
-                int index = 0;
-
-                while (index < rootAsString.data.Length && rootAsString.data[index] != '{' && rootAsString.data[index] != '[')
-                {
-                    sb.Append(rootAsString.data[index]);
-                    index++;
-                }
-
-                jsonDestination = sb.ToString();
-
-                rootAsString.data = rootAsString.data.Substring(index);
-            }
-            
-            do { } while (rootJson.DecodeAll(ref rootJson));
-        }
-
-        private static readonly List<string> inspectedPath = new List<string>();
-
-        protected class PathAdd : IDisposable
-        {
-            public PathAdd(string name)
-            {
-                inspectedPath.Add(name);
-            }
-
-            public void Dispose()
-            {
-                inspectedPath.RemoveLast();
-            }
-        }
-
-        public void Inspect()
-        {
-
-            pegi.Nl();
-
-            if (Icon.Delete.Click())
-            {
-                triedToDecodeAll = false;
-                rootJson = new JsonString();
-                jsonDestination = "";
-            }
-
-            if (!triedToDecodeAll && "Decode All".PegiLabel().Click())
-                TryToDecodeAll();
-
-            if (jsonDestination.Length > 5)
-                jsonDestination.PegiLabel().Write();
-
-            pegi.Nl();
-
-            inspectedPath.Clear();
-
-            DecodeOrInspectJson(ref rootJson, true);
-        }
     }
+
 }

@@ -1,20 +1,18 @@
 ﻿using UnityEngine;
 using QuizCanners.Inspect;
 using QuizCanners.Lerp;
-using System;
-using System.Diagnostics.Contracts;
-
 namespace QuizCanners.Utils
 {
 
 #pragma warning disable IDE0018 // Inline variable declaration
 
-    public interface IGodModeCameraController 
+    /*
+    public interface IGodModeCameraController
     {
         Vector3 GetTargetPosition();
         Vector3 GetCameraOffsetPosition();
         bool TryGetCameraHeight(out float height);
-    }
+    }*/
 
     [ExecuteInEditMode]
     public class Singleton_CameraOperatorGodMode : Singleton.BehaniourBase, IPEGI
@@ -32,33 +30,77 @@ namespace QuizCanners.Utils
         public bool orbitingFocused;
         public float spinStartTime;
 
+
         [SerializeField] protected Camera _mainCam;
-       
+
+        public Quaternion Rotation
+        {
+            get => _mainCam.transform.rotation;
+            set => _mainCam.transform.rotation = value;
+        }
+
+        public Vector3 Position
+        {
+            get => transform.position;
+            set => transform.position = value;
+        }
+
+        private bool mouseOutside = false;
+
+        public float FOV 
+        {
+            get => _mainCam.fieldOfView;
+            set => _mainCam.fieldOfView = value;
+        }
+
         public override string InspectedCategory => Utils.Singleton.Categories.SCENE_MGMT;
+
+        private static bool LEGACY_INPUT =>
+#if ENABLE_LEGACY_INPUT_MANAGER
+            true;
+#else
+    false;
+#endif
 
         public Camera MainCam
         {
             get
             {
-                if (!_mainCam)
-                    _mainCam = Camera.main;
+                if (_mainCam)
+                    return _mainCam;
+                _mainCam = Camera.main;
                 return _mainCam;
             }
         }
 
         private void SpinAround()
         {
-
             var camTr = _mainCam.transform;
 
-            if (Input.GetMouseButtonDown(2))
+            bool downMMB = false;
+            bool upMMB = false;
+            bool pressedMMB = false;
+
+            if (LEGACY_INPUT)
+            {
+                if (!mouseOutside)
+                {
+                    downMMB = Input.GetMouseButtonDown(2);
+                }
+
+                upMMB = Input.GetMouseButtonUp(2);
+                pressedMMB = Input.GetMouseButton(2);
+            }
+
+            if (downMMB)
             {
                 var ray = MainCam.ScreenPointToRay(Input.mousePosition);
 
                 RaycastHit hit;
                 if (Physics.Raycast(ray, out hit))
                     spinCenter = hit.point;
-                else return;
+                else 
+                    return;
 
                 var before = camTr.localRotation;
                 camTr.LookAt(spinCenter);
@@ -72,14 +114,20 @@ namespace QuizCanners.Utils
                 spinStartTime = Time.time;
             }
 
-            if (Input.GetMouseButtonUp(2))
-                _orbitDistance = 0;
+            if (upMMB)
+                _orbitDistance = -1;
 
-            if ((!(_orbitDistance > 0)) || (!Input.GetMouseButton(2)))
+            if (_orbitDistance <= 0 || (!pressedMMB))
                 return;
-            
-            camOrbit.x += Input.GetAxis("Mouse X") * 5;
-            camOrbit.y -= Input.GetAxis("Mouse Y") * 5;
+
+            if (LEGACY_INPUT)
+            {
+                if (!downMMB)
+                {
+                    camOrbit.x += Input.GetAxis("Mouse X") * 5;
+                    camOrbit.y -= Input.GetAxis("Mouse Y") * 5;
+                }
+            }
 
             if (camOrbit.y <= -360)
                 camOrbit.y += 360;
@@ -91,7 +139,10 @@ namespace QuizCanners.Utils
                              (new Vector3(0.0f, 0.0f, -_orbitDistance)) +
                              spinCenter;
 
+            //if (!mouseOutside)
+
             transform.position = campos;
+
             if (!orbitingFocused)
             {
                 camTr.localRotation = LerpUtils.LerpBySpeed(camTr.localRotation, rot2, 200, unscaledTime: true);
@@ -99,10 +150,26 @@ namespace QuizCanners.Utils
                     orbitingFocused = true;
             }
             else camTr.localRotation = rot2;
-            
+
         }
 
-        protected virtual void OnUpdateInternal() 
+
+        bool MouseOutsideOfView
+        {
+            get 
+            {
+                if (!Application.isEditor)
+                    mouseOutside = false;
+                else
+                {
+                    mouseOutside = _mainCam.IsMouseOutsideViewArea(Input.mousePosition);
+                }
+
+                return mouseOutside;
+            }
+        }
+
+        protected virtual void OnUpdateInternal()
         {
             var operatorTf = transform;
             var camTf = _mainCam.transform;
@@ -110,46 +177,79 @@ namespace QuizCanners.Utils
             camTf.localPosition = Vector3.zero;
 
             var add = Vector3.zero;
+            bool SpeedUp = false;
+            bool rightMouseButon = false;
+           
 
-            if (Input.GetKey(KeyCode.W)) add += camTf.forward;
-            if (Input.GetKey(KeyCode.A)) add -= camTf.right;
-            if (Input.GetKey(KeyCode.S)) add -= camTf.forward;
-            if (Input.GetKey(KeyCode.D)) add += camTf.right;
+            if (LEGACY_INPUT)
+            {
+                mouseOutside = _mainCam.IsMouseOutsideViewArea(Input.mousePosition);
+
+                if (Input.GetKey(KeyCode.W)) add += camTf.forward;
+                if (Input.GetKey(KeyCode.A)) add -= camTf.right;
+                if (Input.GetKey(KeyCode.S)) add -= camTf.forward;
+                if (Input.GetKey(KeyCode.D)) add += camTf.right;
+            }
 
             if (!simulateFlying)
                 add.y = 0;
 
-            if (Input.GetKey(KeyCode.Q)) add += Vector3.down;
-            if (Input.GetKey(KeyCode.E)) add += Vector3.up;
+            if (LEGACY_INPUT)
+            {
+                if (Input.GetKey(KeyCode.Q)) add += Vector3.down;
+                if (Input.GetKey(KeyCode.E)) add += Vector3.up;
+                SpeedUp = Input.GetKey(KeyCode.LeftShift);
+            }
 
             add.Normalize();
 
-            var mainCameraVelocity = (Input.GetKey(KeyCode.LeftShift) ? 3f : 1f) * speed * add;
+            var mainCameraVelocity = (SpeedUp ? 3f : 1f) * speed * add;
 
             operatorTf.localPosition += mainCameraVelocity * Time.deltaTime;
 
             operatorTf.localRotation = LerpUtils.LerpBySpeed(operatorTf.localRotation, Quaternion.identity, 160, unscaledTime: true);
 
-            if (!Application.isPlaying || _disableRotation) 
+            if (!Application.isPlaying || _disableRotation)
                 return;
 
-            if (rotateWithoutRmb || Input.GetMouseButton(1))
+            if (LEGACY_INPUT)
             {
-                var eul = camTf.localEulerAngles;
+                rightMouseButon = Input.GetMouseButton(1) && !Input.GetMouseButtonDown(1); // Ignore delta during first frame
+            }
 
-                var rotationX = eul.y;
-                float _rotationY = eul.x;
 
-                rotationX += Input.GetAxis("Mouse X") * sensitivity;
-                _rotationY -= Input.GetAxis("Mouse Y") * sensitivity;
-
-                _rotationY = _rotationY < 120 ? Mathf.Min(_rotationY, 85) : Mathf.Max(_rotationY, 270);
-
-                camTf.localEulerAngles = new Vector3(_rotationY, rotationX, 0);
+            if (rotateWithoutRmb || rightMouseButon)
+            {
+                RatateWithMouse();
             }
 
             SpinAround();
-            
+
+        }
+
+        public void RatateWithMouse() 
+        {
+            if (MouseOutsideOfView)
+                return;
+
+            var camTf = _mainCam.transform;
+
+            var eul = camTf.localEulerAngles;
+
+            var rotationX = eul.y;
+            float _rotationY = eul.x;
+
+            var rotationSpeed = sensitivity * FOV / 90f;
+
+            if (LEGACY_INPUT)
+            {
+                rotationX += Input.GetAxis("Mouse X") * rotationSpeed;
+                _rotationY -= Input.GetAxis("Mouse Y") * rotationSpeed;
+            }
+
+            _rotationY = _rotationY < 120 ? Mathf.Min(_rotationY, 85) : Mathf.Max(_rotationY, 270);
+
+            camTf.localEulerAngles = new Vector3(_rotationY, rotationX, 0);
         }
 
         public void Update()
@@ -162,25 +262,31 @@ namespace QuizCanners.Utils
 
         #region Inspector
 
-        
-
         public override void Inspect()
         {
-         
+
             pegi.Nl();
 
             if (MainCam)
                 "Main Camera".PegiLabel(width: 90).Edit(ref _mainCam).Nl();
-            
+
             if (!_mainCam)
             {
                 "Main Camera".PegiLabel().SelectInScene(ref _mainCam).Nl();
                 "Camera is missing, spin around will not work".PegiLabel().WriteWarning();
-            } else 
+            }
+            else
             {
-                if (_mainCam.transform == transform) 
+                if (_mainCam.transform == transform)
                 {
                     "Camera should be a Child Object of the Camera Operator".PegiLabel().WriteWarning().Nl();
+                } else if (!_mainCam.transform.IsChildOf(transform)) 
+                {
+                    "Camera should be a child of this transform".PegiLabel().WriteWarning().Nl();
+                    if ("Move Camera".PegiLabel().Click().Nl())
+                    {
+                        _mainCam.transform.parent = transform;
+                    }
                 }
             }
 
@@ -196,13 +302,13 @@ namespace QuizCanners.Utils
 
             if (!_disableRotation)
                 "Rotate without RMB".PegiLabel().ToggleIcon(ref rotateWithoutRmb).Nl();
-            
+
 
             pegi.Nl();
 
             "Editor Only".PegiLabel().ToggleIcon(ref _onlyInEditor).Nl();
 
-         
+
 
         }
 
@@ -215,6 +321,6 @@ namespace QuizCanners.Utils
         }
     }
 
-[PEGI_Inspector_Override(typeof(Singleton_CameraOperatorGodMode))] internal class CameraOperatorGodModeDrawer : PEGI_Inspector_Override { }
+    [PEGI_Inspector_Override(typeof(Singleton_CameraOperatorGodMode))] internal class CameraOperatorGodModeDrawer : PEGI_Inspector_Override { }
 
 }

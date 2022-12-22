@@ -1,5 +1,6 @@
 using QuizCanners.Inspect;
 using System;
+using System.IO;
 using UnityEngine;
 
 namespace QuizCanners.Utils
@@ -19,9 +20,17 @@ namespace QuizCanners.Utils
             && _asset
 #endif
             ;
+        public bool ScenePathDirty
+        {
+            get
+            {
+                var path = GetAssetPath();
+                return !path.IsNullOrEmpty() && !path.Equals(ScenePath);
+            }
+        }
 
         private string GetAssetPath() =>
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
             _asset ? UnityEditor.AssetDatabase.GetAssetPath(_asset) : "";
         #else
             "";
@@ -36,9 +45,10 @@ namespace QuizCanners.Utils
                 pegi.Edit(ref _asset);
 #endif
 
-                var path = GetAssetPath();
-                if (!path.IsNullOrEmpty() && !path.Equals(ScenePath))
+               
+                if (ScenePathDirty)
                 {
+                    var path = GetAssetPath();
                     Icon.Warning.Draw("Scene pas has changed");
                     if ("Update Path".PegiLabel(path).Click())
                         ScenePath = path;

@@ -512,6 +512,7 @@ namespace QuizCanners.Inspect
 
         private static void sliderText(this TextLabel label, double val)
         {
+            label.FallbackWidthFraction = 0.33f;
             if (PaintingGameViewUI)
             {
                 label.label = "{0} [{1}]".F(label, val.ToString());
@@ -523,9 +524,9 @@ namespace QuizCanners.Inspect
 
         private static void sliderText(this TextLabel label, int val)
         {
+            label.FallbackWidthFraction = 0.33f;
             if (PaintingGameViewUI)
             {
-
                 label.label = "{0} [{1}]".F(label, val.ToString());
                 label.Write();
             }
@@ -535,10 +536,10 @@ namespace QuizCanners.Inspect
 
         private static void sliderText(this TextLabel label, float val)
         {
+            label.FallbackWidthFraction = 0.33f;
             if (PaintingGameViewUI)
             {
                 label.label = "{0} [{1}]".F(label.label, val.ToString("F3"));
-                label.ApproxWidth();
                 label.Write();
             }
             else
@@ -547,6 +548,8 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(this TextLabel label, ref float val, float min, float max)
         {
+            label.FallbackWidthFraction = 0.3f;
+
             max = Mathf.Max(max, val);
             
             label.sliderText(val);

@@ -6,8 +6,9 @@ using UnityEngine;
 using Graphic = UnityEngine.UI.Graphic;
 using Object = UnityEngine.Object;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using UnityEngine.SceneManagement;
+using QuizCanners.Inspect;
+using UnityEngine.AI;
 
 #if UNITY_EDITOR
 using  UnityEditor;
@@ -98,8 +99,8 @@ namespace QuizCanners.Utils {
             var assetPathAndName =
                 AssetDatabase.GenerateUniqueAssetPath(
                     Path.Combine(
-                        path.Substring(0, path.Length - len),
-                        oldName.Substring(0, len - ScrObjExt.Length) + ScrObjExt));
+                        path[..^len],
+                        oldName[..(len - ScrObjExt.Length)] + ScrObjExt));
 
             AssetDatabase.CreateAsset(added, assetPathAndName);
 
@@ -107,7 +108,7 @@ namespace QuizCanners.Utils {
 
             if (newName != null)
             {
-                added.name = newName.Substring(0, newName.Length - ScrObjExt.Length);
+                added.name = newName[..^ScrObjExt.Length];
             }
 
             if (refreshDatabase)
@@ -157,8 +158,7 @@ namespace QuizCanners.Utils {
             where T : TG where TG : ScriptableObject {
 
 
-            if (optionalList != null)
-                optionalList.Add(asset);
+            optionalList?.Add(asset);
 
 #if UNITY_EDITOR
 
@@ -218,6 +218,20 @@ namespace QuizCanners.Utils {
 
         #endregion
 
+        public static float GetLength(this NavMeshPath path) 
+        {
+            float totalLength = 0;
+            Vector3 from = path.corners[0];
+
+            for (int i=1; i<path.corners.Length; i++) 
+            {
+                var next = path.corners[i];
+                totalLength += Vector3.Distance(from, next);
+                from = next;
+            }
+
+            return totalLength;
+        }
 
         public static void RefreshLayoutHack(MonoBehaviour tf)
         {
@@ -246,7 +260,7 @@ namespace QuizCanners.Utils {
             var namePart = path.LastIndexOfAny(new char[] {'/', '\\'});
 
             if (namePart > 0)
-                path = path.Substring(0, namePart);
+                path = path[..namePart];
 
             return true;
 #else
@@ -259,9 +273,15 @@ namespace QuizCanners.Utils {
 
         #region Rendering
 
-        private static readonly Gate.Frame _cameraCullingCache = new Gate.Frame();
+        private static readonly Gate.Frame _cameraCullingCache = new();
 
-        private static readonly Dictionary<Camera, Dictionary<Vector3, bool>> s_camsCulling = new Dictionary<Camera, Dictionary<Vector3, bool>>();
+        private static readonly Dictionary<Camera, Dictionary<Vector3, bool>> s_camsCulling = new();
+
+        public static bool IsMouseOutsideViewArea(this Camera cam, Vector3 mousePos) 
+        {
+            var view = cam.ScreenToViewportPoint(mousePos);
+            return view.x < 0 || view.x > 1 || view.y < 0 || view.y > 1;
+        }
 
         public static bool IsInCameraViewArea(this Camera cam, Vector3 worldPosition, float objectSize = 1, float maxDistance = -1)
         {
@@ -272,9 +292,11 @@ namespace QuizCanners.Utils {
 
             if (cam)
             {
-                float distanceToCamera = Vector3.Distance(cam.transform.position + cam.transform.forward * cam.nearClipPlane, worldPosition);
+                var camTf = cam.transform;
 
-                if (distanceToCamera < objectSize)
+                float distanceToCamera = Vector3.Distance(camTf.position + camTf.forward * cam.nearClipPlane, worldPosition);
+
+                if (distanceToCamera < objectSize + 10)
                 {
                     return true;
                 }
@@ -291,7 +313,7 @@ namespace QuizCanners.Utils {
 
                 var pos = cam.WorldToViewportPoint(worldPosition);
 
-                bool isVisible = (pos.x >= 0 && pos.x <= 1 && pos.y >= 0 && pos.y <= 1);
+                bool isVisible = (pos.x >= -0.1f && pos.x <= 1.1f && pos.y >= -0.1f && pos.y <= 1.1f);
                 
                 dic[worldPosition] = isVisible;
                 return isVisible;
@@ -432,7 +454,7 @@ namespace QuizCanners.Utils {
         public static List<T> CreateUiElement<T>(GameObject[] targets = null, Action<T> onCreate = null) where T : Component
         {
 
-            List<T> created = new List<T>();
+            List<T> created = new();
 
             bool createdForSelection = false;
 
@@ -565,6 +587,55 @@ namespace QuizCanners.Utils {
         #endregion
 
         #region Components & GameObjects
+
+        public static bool UnitBoundsContainsPoint(this Transform posNSize, Vector3 pos, float expand = 0) 
+        {
+            return UnitBoundsContainsPoint(posNSize.position, posNSize.localScale, pos, expand);
+        }
+
+        public static bool UnitBoundsContainsPoint(Vector3 boundCenter, Vector3 boundSize, Vector3 pos, float expand = 0)
+        {
+            var halfSize = boundSize * 0.5f;
+            var max = boundCenter + halfSize;
+            var min = boundCenter - halfSize;
+
+            if (expand != 0)
+            {
+                var gap = expand * Vector3.one;
+                min -= gap;
+                max += gap;
+            }
+
+            return
+                    pos.x > min.x && pos.y > min.y && pos.z > min.z
+                 && pos.x < max.x && pos.y < max.y && pos.z < max.z;
+        }
+
+        public static T GetNearest<T>(this List<T> elements, Vector3 targetPosition) where T : Component
+        {
+            if (elements.IsNullOrEmpty())
+                return null;
+
+            T nearestElement = elements[0];
+
+            if (elements.Count == 1)
+                return nearestElement;
+
+            var closesDistance = Vector3.Distance(targetPosition, nearestElement.transform.position);
+
+            for (int i = 1; i < elements.Count; i++)
+            {
+                var evaluatedElement = elements[i];
+                var evaluatedDistance = Vector3.Distance(evaluatedElement.transform.position, targetPosition);
+                if (evaluatedDistance < closesDistance)
+                {
+                    closesDistance = evaluatedDistance;
+                    nearestElement = evaluatedElement;
+                }
+            }
+            return nearestElement;
+        }
+
 
         public static T AddOrCopyComponent<T>(this GameObject go, GameObject originalParent) where T : Component 
         {
@@ -750,6 +821,11 @@ namespace QuizCanners.Utils {
 
         private static AudioSource _editorAudioSource;
 
+        public static float Volume01ToDecebels(float volume) 
+        {
+            return Mathf.Log10(volume + 0.0001f) * 20;
+        }
+
         public static void Play(this AudioClip clip, float volume = 1) =>
             Play(clip, Vector3.zero, volume);
 
@@ -841,7 +917,7 @@ namespace QuizCanners.Utils {
             const int headerSize = 44;
             ushort bitDepth = 16;
 
-            MemoryStream stream = new MemoryStream();
+            MemoryStream stream = new();
 
             Write(ref stream, System.Text.Encoding.ASCII.GetBytes("RIFF")); //, "ID");
 
@@ -881,7 +957,7 @@ namespace QuizCanners.Utils {
             float[] data = new float[newClip.samples * newClip.channels];
             newClip.GetData(data, 0);
 
-            MemoryStream dataStream = new MemoryStream();
+            MemoryStream dataStream = new();
             int x = sizeof(short);
             short maxValue = short.MaxValue;
             int i = 0;
@@ -1002,7 +1078,7 @@ namespace QuizCanners.Utils {
                 return s;
 
             //if (start < 2) 
-            return s.Substring(start + len + 1);
+            return s[(start + len + 1)..];
 
             //return s.Substring(start+len + 1);
         }
@@ -1059,10 +1135,11 @@ namespace QuizCanners.Utils {
 #endif
         }
 
-        public static void RepaintViews()
+        public static void RepaintViews(UnityEngine.Object obj)
         {
 #if UNITY_EDITOR
-            SceneView.RepaintAll();
+            pegi.Handle.SceneSetDirty(obj);
+            //SceneView.RepaintAll();
             UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
 #endif
         }
@@ -1166,7 +1243,7 @@ namespace QuizCanners.Utils {
 
         public static List<T> FindAssets<T>(string name, string path = null) where T : Object {
 
-            List<T> assets = new List<T>();
+            List<T> assets = new();
 
 #if UNITY_EDITOR
 
@@ -1193,7 +1270,7 @@ namespace QuizCanners.Utils {
                 return new List<T>(Resources.FindObjectsOfTypeAll(typeof(T)) as T[]);
             }
 
-            List<T> assets = new List<T>();
+            List<T> assets = new();
 #if UNITY_EDITOR
 
             if (typeof(Component).IsAssignableFrom(typeof(T)))
@@ -1296,13 +1373,10 @@ namespace QuizCanners.Utils {
             while (go.transform.parent)
                 go = go.transform.parent.gameObject;
 
-#       if UNITY_2021_1_OR_NEWER
             if (PrefabUtility.IsPartOfAnyPrefab(go)  
                 || (UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() != null))
                 return true;
-#       else
-            return PrefabUtility.GetCorrespondingObjectFromSource(go) && PrefabUtility.GetPrefabInstanceHandle(go);
-#       endif
+
 
 #endif
             return false;
@@ -1319,8 +1393,8 @@ namespace QuizCanners.Utils {
 #else
             Path.Combine(folderName,  name) + extension;
 #endif
-            name = fullPath.Substring(folderName.Length);
-            name = name.Substring(0, name.Length - extension.Length);
+            name = fullPath[folderName.Length..];
+            name = name[..^extension.Length];
             obj.name = name;
 
             return fullPath;
@@ -1341,7 +1415,7 @@ namespace QuizCanners.Utils {
             var ind = path.LastIndexOf("/", StringComparison.Ordinal);
 
             if (ind > 0)
-                path = path.Substring(0, ind);
+                path = path[..ind];
 
             return path;
 
@@ -1629,19 +1703,18 @@ namespace QuizCanners.Utils {
 
             if (!tex) return false;
 
-            switch (tex.format) {
-                case TextureFormat.ARGB32: return true;
-                case TextureFormat.RGBA32: return true;
-                case TextureFormat.ARGB4444: return true;
-                case TextureFormat.BGRA32: return true;
-                case TextureFormat.PVRTC_RGBA4: return true;
-                case TextureFormat.RGBAFloat: return true;
-                case TextureFormat.RGBAHalf: return true;
-                case TextureFormat.Alpha8: return true;
-            }
-
-            return false;
-
+            return tex.format switch
+            {
+                TextureFormat.ARGB32 => true,
+                TextureFormat.RGBA32 => true,
+                TextureFormat.ARGB4444 => true,
+                TextureFormat.BGRA32 => true,
+                TextureFormat.PVRTC_RGBA4 => true,
+                TextureFormat.RGBAFloat => true,
+                TextureFormat.RGBAHalf => true,
+                TextureFormat.Alpha8 => true,
+                _ => false,
+            };
         }
 
         public static Texture2D TryGeTexture(this UnityEngine.U2D.SpriteAtlas atlas)
@@ -2047,11 +2120,14 @@ return false;
                 return false;
             }
 
-            File.WriteAllBytes(Application.dataPath + dest, bytes);
+
+            var savePath = Path.Combine(Application.dataPath, dest);
+            File.WriteAllBytes(savePath, bytes);
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceUncompressedImport);
 
-            var result = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets" + dest, typeof(Texture2D));
+
+            var result = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/" + dest, typeof(Texture2D));
 
             result.CopyImportSettingFrom(tex);
 
@@ -2082,7 +2158,7 @@ return false;
             if (saveAsNew)
                 relativePath = AssetDatabase.GenerateUniqueAssetPath(relativePath);
 
-            var fullPath = Application.dataPath.Substring(0, Application.dataPath.Length - 6) + relativePath;
+            var fullPath = Application.dataPath[..^6] + relativePath;
 
             File.WriteAllBytes(fullPath, bytes);
 
@@ -2097,31 +2173,31 @@ return false;
             return result;
         }
 
-        public static Texture2D CreatePngSameDirectory(Texture2D diffuse, string newName) =>
-            CreatePngSameDirectory(diffuse, newName, diffuse.width, diffuse.height);
+        public static Texture2D CreatePngSameDirectory(Texture2D original, string newName) =>
+            CreatePngSameDirectory(original, newName, original.width, original.height);
 
-        public static Texture2D CreatePngSameDirectory(Texture2D diffuse, string newName, int width, int height)
+        public static Texture2D CreatePngSameDirectory(Texture2D original, string newName, int width, int height, bool linear = false)
         {
-            if (!diffuse) 
+            if (!original) 
                 return null;
 
-            var result = new Texture2D(width, height, TextureFormat.RGBA32, true, false);
+            var result = new Texture2D(width, height, TextureFormat.RGBA32, true, linear: linear);
 
-            diffuse.Reimport_IfNotReadale_Editor();
+            original.Reimport_IfNotReadale_Editor();
 
-            var pixels = diffuse.GetPixels32(width, height);
+            var pixels = original.GetPixels32(width, height);
             pixels[0].a = 128;
 
             result.SetPixels32(pixels);
             var bytes = result.EncodeToPNG();
 
-            var dest = QcSharp.ReplaceFirst(text: AssetDatabase.GetAssetPath(diffuse), search: "Assets", replace: ""); // AssetDatabase.GetAssetPath(diffuse).Replace("Assets", "", 1);// AssetDatabase.GetAssetPath(diffuse).Replace("Assets", "");
+            var dest = QcSharp.ReplaceFirst(text: AssetDatabase.GetAssetPath(original), search: "Assets", replace: ""); // AssetDatabase.GetAssetPath(diffuse).Replace("Assets", "", 1);// AssetDatabase.GetAssetPath(diffuse).Replace("Assets", "");
 
-            var extension = dest.Substring(dest.LastIndexOf(".", StringComparison.Ordinal) + 1);
+            var extension = dest[(dest.LastIndexOf(".", StringComparison.Ordinal) + 1)..];
 
-            dest = dest.Substring(0, dest.Length - extension.Length) + "png";
+            dest = dest[..^extension.Length] + "png";
 
-            dest = ReplaceLastOccurrence(dest, diffuse.name, newName);
+            dest = ReplaceLastOccurrence(dest, original.name, newName);
 
             File.WriteAllBytes(Application.dataPath + dest, bytes);
 
@@ -2132,7 +2208,7 @@ return false;
             var imp = tex.GetTextureImporter_Editor();
             bool needReimport = imp.WasNotReadable_Editor();
             needReimport |= imp.WasClamped_Editor();
-            needReimport |= imp.WasWrongIsColor_Editor(diffuse.IsColorTexture());
+            needReimport |= imp.WasWrongIsColor_Editor(original.IsColorTexture());
             if (needReimport)
                 imp.SaveAndReimport();
 
@@ -2244,7 +2320,7 @@ return false;
             
             var m = mf.mesh;
 
-            List<Color> colors = new List<Color>();
+            List<Color> colors = new();
 
             m.GetColors(colors);
 
@@ -2285,8 +2361,77 @@ return false;
 
             mf.mesh.colors = cols;
         }
+        public static bool TryGetSubMeshIndex_MAlloc(this RaycastHit hit, out int subMeshIndex)
+        {
+            subMeshIndex = 0;
 
-        public static int GetSubMeshNumber(this Mesh m, int triangleIndex)
+            var meshCol = hit.collider as MeshCollider;
+
+            if (!meshCol)
+                return false;
+
+            var mesh = meshCol.sharedMesh;
+
+            if (!mesh)
+                return false;
+
+            if (mesh.isReadable == false)
+            {
+                QcLog.ChillLogger.LogWarningOnce("Mesh {0} is not readable".F(mesh.name), mesh.name, hit.transform);
+                return false;
+            }
+
+            if (mesh.subMeshCount <= 1)
+                return true;
+
+            var triangleIndex = hit.triangleIndex;
+
+            int triangleCount = 0;
+            for (int i = 0; i < mesh.subMeshCount; ++i)
+            {
+                var triangles = mesh.GetTriangles(i);
+                triangleCount += triangles.Length / 3;
+                if (triangleIndex < triangleCount)
+                {
+                    subMeshIndex = i;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /*
+        public static bool TryGetSubMeshIndex(this Mesh mesh, int triangleIndex, out int subMeshIndex)
+        { 
+            subMeshIndex = 0;
+
+            if (!mesh)
+                return false;
+
+            if (mesh.isReadable == false)
+            {
+                QcLog.ChillLogger.LogWarningOnce("Mesh {0} is not readable".F(mesh.name), mesh.name, mesh);
+                return false;
+            }
+
+            int triangleCount = 0;
+            for (int i = 0; i < mesh.subMeshCount; ++i)
+            {
+                var triangles = mesh.GetTriangles(i);
+                triangleCount += triangles.Length / 3;
+                if (triangleIndex < triangleCount)
+                {
+                    subMeshIndex = i;
+                    return true;
+                }
+            }
+
+            return false;
+        }*/
+
+        /*
+        public static int GetSubMeshNumber_CheckAllTriangles(this Mesh m, int triangleIndex)
         {
             if (!m)
                 return 0;
@@ -2320,7 +2465,7 @@ return false;
 
             return 0;
         }
-
+        */
         public static void AssignMeshAsCollider(this MeshCollider c, Mesh mesh) {
             // One version of Unity had a bug so this is to counter it, may be not needed anymore
             c.sharedMesh = null;

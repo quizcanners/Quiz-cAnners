@@ -1,5 +1,4 @@
 using QuizCanners.Inspect;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -79,10 +78,12 @@ namespace QuizCanners.Utils
 
         public class DoubleBuffer : RenderTextureBufferBase, IPEGI
         {
-            private string _name;
-            private int _size;
+            private readonly string _name;
+            private readonly int _size;
+            private readonly bool _floatBuffer;
+
             private bool _latestIsZero;
-            private bool _floatBuffer;
+           
             public void Swap() => _latestIsZero = !_latestIsZero;
 
             private bool IsTargetSet => OriginalSource != null && OriginalSource.Version == _OriginalTexturesVersion;
@@ -155,24 +156,42 @@ namespace QuizCanners.Utils
 
             public override RenderTexture GetOrCreateTexture => Target;
 
-            private static ShaderProperty.TextureValue _PREVIOUS_TEXTURE = new ShaderProperty.TextureValue("_PreviousTex");
+            private static readonly ShaderProperty.TextureValue _PREVIOUS_TEXTURE = new("_PreviousTex");
 
-            public void ReuseAndSwapPrevious(ref RenderTexture tex, Shader shader)
+            public void Blit(Shader shader)
             {
-                var toReturn = Previous;
-                Graphics.Blit(tex, toReturn, RenderTextureBlit.MaterialReuse(shader));
-                Previous = tex;
-                tex = toReturn;
+                Swap();
+                var mat = RenderTextureBlit.MaterialReuse(shader);
+                mat.Set(_PREVIOUS_TEXTURE, Previous);
+
+                Graphics.Blit(Previous, Target, mat);
+
+                if (IsTargetSet)
+                {
+                    ValueToUpdate.GlobalValue = Target;
+                }
             }
 
-            public void BlitTargetWithPreviousAndSwap(ref RenderTexture previousToCurrentTexture, Shader shader)
+            public RenderTexture RenderFromAndSwapIn(RenderTexture previous, Shader shader)
+            {
+                var result = Previous;
+                Previous = previous;
+
+                var mat = RenderTextureBlit.MaterialReuse(shader);
+                mat.Set(_PREVIOUS_TEXTURE, previous);
+
+                Graphics.Blit(previous, result, mat);
+               
+               return result;
+            }
+
+            public void BlitTargetWithPreviousAndSwap(ref RenderTexture previousResult, Shader shader)
             {
                 var mat = RenderTextureBlit.MaterialReuse(shader);
-                mat.Set(_PREVIOUS_TEXTURE, previousToCurrentTexture);
+                mat.Set(_PREVIOUS_TEXTURE, previousResult);
+
                 Graphics.Blit(Target, Previous, mat);
-                var toReturn = Previous;
-                Previous = previousToCurrentTexture;
-                previousToCurrentTexture = toReturn;
+                (previousResult, Previous) = (Previous, previousResult);
             }
 
 
@@ -196,17 +215,14 @@ namespace QuizCanners.Utils
                 Set(shaderTexture, sourceAndTarget);
             }
 
-            public void BlitToTarget(Shader shader)
-            {
-                Swap();
-                Graphics.Blit(Previous, Target, RenderTextureBlit.MaterialReuse(shader));
+       
 
-                if (IsTargetSet)
-                {
-                    ValueToUpdate.GlobalValue = Target;
-                }
+            public void BlitTo(RenderTexture newTarget, Shader shader)
+            {
+                Graphics.Blit(Target, newTarget, RenderTextureBlit.MaterialReuse(shader));
             }
 
+            #region Inspector
             public void Inspect()
             {
                 if (!_renderTextures.IsNullOrEmpty())
@@ -216,8 +232,8 @@ namespace QuizCanners.Utils
 
                 pegi.Click(Swap).Nl();
             }
-
             public override string ToString() => _name;
+            #endregion
 
             public DoubleBuffer(string name, int size, bool isFloat)
             {

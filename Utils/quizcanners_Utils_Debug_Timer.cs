@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using QuizCanners.Inspect;
 using System;
 using System.Collections.Generic;
@@ -14,8 +15,11 @@ namespace QuizCanners.Utils
             private static bool _initialized;
             private static int _framesAtStart = 0;
             private static float _timeAtStart = 0.0f;
+            private static float _resetInterval = 1f;
 
-            public static int GetTotalFrames => Time.frameCount - _framesAtStart;
+            public static int GetTotalFrames() => Time.frameCount - _framesAtStart;
+
+            public static float GetTotalTime() => (0.00001f + Time.realtimeSinceStartup - _timeAtStart);
 
             public static float FrameRatePerSecond
             {
@@ -27,14 +31,23 @@ namespace QuizCanners.Utils
                         return 1;
                     }
 
-                   return GetTotalFrames
-                    / (0.0001f + Time.realtimeSinceStartup - _timeAtStart);
+                    var totalTime = GetTotalTime();
+
+                    var result = GetTotalFrames() / totalTime;
+
+                    if (totalTime > _resetInterval) 
+                    {
+                        ResetTimer();
+                    }
+
+                   return result;
                 }
             }
 
-            public static void ResetTimer()
+            public static void ResetTimer(float resetInterval = 1)
             {
                 _initialized = true;
+                _resetInterval = resetInterval;
                 _framesAtStart = Time.frameCount;
                 _timeAtStart = Time.realtimeSinceStartup;
             }
@@ -53,7 +66,10 @@ namespace QuizCanners.Utils
             public class DisposableTimer : IDisposable
             {
                 private Action _onDispose;
+                private readonly Stopwatch _timer;
                 private readonly TimerCollectionElements.Base _element;
+
+                public double ElapsedMiliseconds => _timer.ElapsedMilliseconds;
 
                 public string Description 
                 {
@@ -76,20 +92,21 @@ namespace QuizCanners.Utils
                     _onDispose = null;
                 }
 
-                internal DisposableTimer(TimerCollectionElements.Base element, Action onDone) 
+                internal DisposableTimer(TimerCollectionElements.Base element, Stopwatch timer, Action onDone) 
                 {
                     _onDispose = onDone;
                     _element = element;
+                    _timer = timer;
                 }
             }
 
             public static Timer Start(string measurementName) => new Timer().Start(measurementName);
 
-            public static DictionaryOfParallelTimers Instance = new DictionaryOfParallelTimers();
+            public static DictionaryOfParallelTimers Instance = new();
 
             public class Timer : IDisposable
             {
-                protected readonly System.Diagnostics.Stopwatch StopWatch = new System.Diagnostics.Stopwatch();
+                protected readonly Stopwatch StopWatch = new();
                 protected string _timerStartLabel;
                 public float LogTreshold;
 
@@ -110,8 +127,7 @@ namespace QuizCanners.Utils
                 {
                     StopWatch.Stop();
 
-                    if (label == null)
-                        label = _timerStartLabel;
+                    label ??= _timerStartLabel;
 
                     _timerStartLabel = null;
 
@@ -142,11 +158,11 @@ namespace QuizCanners.Utils
             
             public class ListOfTimers : IPEGI, IPEGI_ListInspect
             {
-                private List<TimerCollectionElements.Base> _timings = new List<TimerCollectionElements.Base>();
-                private List<TimerCollectionElements.Base> _sortedTimings = new List<TimerCollectionElements.Base>();
-                protected readonly Stopwatch StopWatch = new Stopwatch();
+                private List<TimerCollectionElements.Base> _timings = new();
+                private List<TimerCollectionElements.Base> _sortedTimings = new();
+                protected readonly Stopwatch StopWatch = new();
 
-                private readonly Gate.Frame _tickRecalculateGate = new Gate.Frame();
+                private readonly Gate.Frame _tickRecalculateGate = new();
                 private long _totalTicks;
 
                 internal long TotalTicks()
@@ -192,7 +208,7 @@ namespace QuizCanners.Utils
 
                 public override string ToString() => "List";
 
-                private readonly pegi.CollectionInspectorMeta collectionMeta = new pegi.CollectionInspectorMeta("Timings");
+                private readonly pegi.CollectionInspectorMeta collectionMeta = new("Timings");
                 private bool _sortByDuration;
 
                 public void Inspect()
@@ -258,10 +274,10 @@ namespace QuizCanners.Utils
 
             public class DictionaryOfParallelTimers : IPEGI, IPEGI_ListInspect
             {
-                private Dictionary<string, TimerCollectionElements.Base> _timings = new Dictionary<string, TimerCollectionElements.Base>();
-                private List<TimerCollectionElements.Base> _sortedTimings = new List<TimerCollectionElements.Base>();
+                private Dictionary<string, TimerCollectionElements.Base> _timings = new();
+                private List<TimerCollectionElements.Base> _sortedTimings = new();
 
-                private readonly Gate.Frame _tickRecalculateGate = new Gate.Frame();
+                private readonly Gate.Frame _tickRecalculateGate = new();
                 private long _totalTicks;
 
                 internal long TotalTicks()
@@ -382,7 +398,7 @@ namespace QuizCanners.Utils
                 public override string ToString() => "Dictionary";
 
                 private bool _sortByDuration;
-                private readonly pegi.CollectionInspectorMeta _listMeta = new pegi.CollectionInspectorMeta("Timings", showDictionaryKey: false);
+                private readonly pegi.CollectionInspectorMeta _listMeta = new("Timings", showDictionaryKey: false);
 
                 public void Inspect()
                 {
@@ -460,7 +476,7 @@ namespace QuizCanners.Utils
                     public double OperationsCount = -1;
                     protected int totalRuns;
 
-                    protected List<Stopwatch> activeRuns = new List<Stopwatch>();
+                    protected List<Stopwatch> activeRuns = new();
 
                     public sealed override long GetTotalTicksDuration()
                     {
@@ -491,23 +507,31 @@ namespace QuizCanners.Utils
 
                     public DisposableTimer Start(string details = "", int operationsCount = -1)
                     {
-                        Stopwatch stopWatch = new Stopwatch();
+                        Stopwatch stopWatch = new();
                         stopWatch.Start();
 
                         activeRuns.Add(stopWatch);
+
+                        if (activeRuns.Count > 128) 
+                        {
+                            UnityEngine.Debug.LogError("You are not disposing of the Stop Watches: {0} : {1} ".F(Key, details));
+                        }
+
                         totalRuns++;
 
-                        return new DisposableTimer(this, ()=>
+                        return new DisposableTimer(this, stopWatch, ()=>
                         {
                             try
                             {
                                 OnComplete(stopWatch.ElapsedTicks, details, operationsCount);
+                              
                             }
                             catch (Exception ex)
                             {
                                 UnityEngine.Debug.LogException(ex);
                             }
                             stopWatch.Stop();
+                            activeRuns.Remove(stopWatch);
                         });
                     }
 
@@ -668,7 +692,7 @@ namespace QuizCanners.Utils
                 {
                     public string Name;
 
-                    public ListOfTimers collection = new ListOfTimers();
+                    public ListOfTimers collection = new();
 
                     public override long GetTotalTicksDuration() => collection.TotalTicks();
 
@@ -701,7 +725,7 @@ namespace QuizCanners.Utils
                 {
                     public string Name;
 
-                    public DictionaryOfParallelTimers collection = new DictionaryOfParallelTimers();
+                    public DictionaryOfParallelTimers collection = new();
 
                     public override long GetTotalTicksDuration() => collection.TotalTicks();
 

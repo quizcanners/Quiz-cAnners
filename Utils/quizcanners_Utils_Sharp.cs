@@ -177,7 +177,7 @@ namespace QuizCanners.Utils
             if (obj == null || list == null)
                 return false;
 
-            if (!(obj is T t))
+            if (obj is not T t)
             {
 
                 GameObject go = null;
@@ -223,14 +223,14 @@ namespace QuizCanners.Utils
 
         private static void AssignUniqueIndex<T>(IList<T> list, T el)
         {
-            var ind = el as IGotIndex;
-            if (ind == null) return;
+            if (el is not IGotIndex ind) 
+                return;
+            
             var maxIndex = ind.IndexForInspector;
             foreach (var o in list)
                 if (!el.Equals(o))
                 {
-                    var oInd = o as IGotIndex;
-                    if (oInd != null)
+                    if (o is IGotIndex oInd)
                         maxIndex = Mathf.Max(maxIndex, oInd.IndexForInspector + 1);
                 }
             ind.IndexForInspector = maxIndex;
@@ -246,8 +246,8 @@ namespace QuizCanners.Utils
         {
             AssignUniqueIndex(list, e);
             list.Add(e);
-            var named = e as IGotName;
-            if (named != null)
+
+            if (e is IGotName named)
             {
                 bool duplicate = false;
 
@@ -264,8 +264,7 @@ namespace QuizCanners.Utils
                         var el = list[i];
                         if (el != null)
                         {
-                            var existingName = el as IGotName;
-                            if (existingName != null)
+                            if (el is IGotName existingName)
                             {
                                 if (oldName.Equals(existingName.NameForInspector))
                                 {
@@ -289,8 +288,8 @@ namespace QuizCanners.Utils
 
         private static void AssignUniqueNameIn<T>(T el, IList<T> list)
         {
-            var namedNewElement = el as IGotName;
-            if (namedNewElement == null) return;
+            if (el is not IGotName namedNewElement) 
+                return;
 
             var newName = namedNewElement.NameForInspector;
             var duplicate = true;
@@ -302,15 +301,12 @@ namespace QuizCanners.Utils
 
                 foreach (var e in list)
                 {
-                    var currentName = e as IGotName;
-
-                    if (currentName == null)
+                    if (e is not IGotName currentName)
                         continue;
 
                     var otherName = currentName.NameForInspector;
 
-                    if (otherName == null)
-                        otherName = "";
+                    otherName ??= "";
 
                     if (e.Equals(el) || !newName.Equals(otherName))
                         continue;
@@ -375,7 +371,7 @@ namespace QuizCanners.Utils
             {
                 var typeName = typeof(T).Name;
                 QcLog.ChillLogger.LogErrorOnce("{0}: List<{1}> is {2}".F(nameof(GetRandomByWeight), typeName, sequence == null ? "NULL" : "Empty"), key: "{0} grnd".F(typeName));
-                return default(T);
+                return default;
             }
 
             if (sequence.Count == 1)
@@ -459,7 +455,7 @@ namespace QuizCanners.Utils
                 return list[index];
 
             while (list.Count < (index + 1))
-                list.Add(default(T));
+                list.Add(default);
 
             val = defaultValue;
             list[index] = val;
@@ -571,16 +567,12 @@ namespace QuizCanners.Utils
 
         public static void Swap<T>(this List<T> list, int indexOfFirst)
         {
-            var tmp = list[indexOfFirst];
-            list[indexOfFirst] = list[indexOfFirst + 1];
-            list[indexOfFirst + 1] = tmp;
+            (list[indexOfFirst + 1], list[indexOfFirst]) = (list[indexOfFirst], list[indexOfFirst + 1]);
         }
 
         public static void Swap<T>(this IList<T> list, int indexA, int indexB)
         {
-            var tmp = list[indexA];
-            list[indexA] = list[indexB];
-            list[indexB] = tmp;
+            (list[indexB], list[indexA]) = (list[indexA], list[indexB]);
         }
 
         public static bool IsNullOrEmpty(this ICollection list) => list == null || list.Count == 0;
@@ -596,7 +588,7 @@ namespace QuizCanners.Utils
             if (array.IsNullOrEmpty())
                 return default;
 
-            return array[array.Length - 1];
+            return array[^1];
 
         }
 
@@ -604,7 +596,7 @@ namespace QuizCanners.Utils
         {
             if (array == null || array.Length <= index || index < 0)
             {
-                value = default(T);
+                value = default;
                 return false;
             }
 
@@ -612,7 +604,7 @@ namespace QuizCanners.Utils
             return true;
         }
 
-        public static T TryGet<T>(this T[] array, int index, T defaultValue = default(T))
+        public static T TryGet<T>(this T[] array, int index, T defaultValue = default)
         {
             if (array == null || array.Length <= index || index < 0)
                 return defaultValue;
@@ -631,9 +623,7 @@ namespace QuizCanners.Utils
         {
             if (array == null || a >= array.Length || b >= array.Length || a == b) return;
 
-            var tmp = array[a];
-            array[a] = array[b];
-            array[b] = tmp;
+            (array[b], array[a]) = (array[a], array[b]);
         }
 
         public static void Resize<T>(ref T[] args, int to)
@@ -702,9 +692,15 @@ namespace QuizCanners.Utils
 
         public static TValue GetOrCreate<TKey, TValue>(this IDictionary<TKey, TValue> dic, TKey key) where TValue : new()
         {
-            if (dic == null || key == null)
+            if (dic == null)
             {
-                Debug.LogError("Dictionary of {0}{1} {2} for key {3}".F(nameof(TKey), nameof(TValue), (dic == null ? "IS NULL" : ""), key.GetNameForInspector()));
+                Debug.LogError("Dictionary of {0}-{1} is null".F(typeof(TKey).ToPegiStringType(), typeof(TValue).ToPegiStringType()));
+                return default;
+            }
+
+            if (key == null)
+            {
+                Debug.LogError("Key is NULL for Dictionary of {0}-{1}".F(typeof(TKey).ToPegiStringType(), typeof(TValue).ToPegiStringType()));
                 return default;
             }
 
@@ -889,18 +885,39 @@ namespace QuizCanners.Utils
 
         #endregion
 
+        public static string GetFileNameFromPath(string text) 
+        {
+            if (text.IsNullOrEmpty())
+                return "";
+
+            int lastBack = text.LastIndexOf('/');
+            int lastFront = text.LastIndexOf('\\');
+
+            var maxSlash = Math.Max(lastBack, lastFront);
+
+            if (maxSlash >= 0) 
+            {
+                text = text[(maxSlash + 1)..];
+            }
+
+            var dot = text.IndexOf('.');
+            if (dot >= 0) 
+            {
+                text = text[..dot];
+            }
+
+            return text;
+        }
+
         public static string FixDecimalSeparator(string text)
         {
             var separator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
 
-            switch (separator)
+            return separator switch
             {
-                case ".":
-                    return text.Replace(",", ".");
-                case ",":
-                default:
-                    return text.Replace(".", ",");
-            }
+                "." => text.Replace(",", "."),
+                _ => text.Replace(".", ","),
+            };
         }
 
         public static string ReplaceFirst(string text, string search, string replace)
@@ -910,14 +927,14 @@ namespace QuizCanners.Utils
             {
                 return text;
             }
-            return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
+            return text[..pos] + replace + text[(pos + search.Length)..];
         }
 
         public static string AddSpacesToSentence(string text, bool preserveAcronyms = true)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return string.Empty;
-            StringBuilder newText = new StringBuilder(text.Length * 2);
+            StringBuilder newText = new(text.Length * 2);
             newText.Append(text[0]);
             char previousCharacter = text[0];
             bool wasUnderscore = false;
@@ -961,7 +978,7 @@ namespace QuizCanners.Utils
         {
             if (string.IsNullOrWhiteSpace(text))
                 return "";
-            StringBuilder newText = new StringBuilder(text.Length * 2);
+            StringBuilder newText = new(text.Length * 2);
             newText.Append(text[0]);
 
             if (keepCatipals)
@@ -1009,7 +1026,7 @@ namespace QuizCanners.Utils
                 string genericArguments = type.GetGenericArguments()
                                     .Select(x => x.Name)
                                     .Aggregate((x1, x2) => $"{x1}, {x2}");
-                return $"{type.Name.Substring(0, ind)}"
+                return $"{type.Name[..ind]}"
                      + $"<{genericArguments}>";
             }
 
@@ -1023,13 +1040,13 @@ namespace QuizCanners.Utils
                 return "TYPE IS EMPTY STRING";
 
             var ind = Mathf.Max(name.LastIndexOf(".", StringComparison.Ordinal), name.LastIndexOf("+", StringComparison.Ordinal));
-            return (ind == -1 || ind == name.Length -1) ? name : name.Substring(ind + 1);
+            return (ind == -1 || ind == name.Length -1) ? name : name[(ind + 1)..];
         }
 
         public static string SimplifyDirectory(this string name)
         {
             var ind = name.LastIndexOf("/", StringComparison.Ordinal);
-            return (ind == -1 || ind > name.Length - 2) ? name : name.Substring(ind + 1);
+            return (ind == -1 || ind > name.Length - 2) ? name : name[(ind + 1)..];
         }
 
         public static string KeyToReadablaString(string label) 
@@ -1037,7 +1054,7 @@ namespace QuizCanners.Utils
             if (label.IsNullOrEmpty())
                 return label;
 
-            StringBuilder sb = new StringBuilder(label.Length + 5);
+            StringBuilder sb = new(label.Length + 5);
 
             for (int i=0; i<label.Length; i++)
             {
@@ -1064,12 +1081,12 @@ namespace QuizCanners.Utils
             int index = text.IndexOf(Environment.NewLine, StringComparison.Ordinal);
 
             if (index > 10)
-                text = text.Substring(0, index);
+                text = text[..index];
 
             if (text.Length < (maxLength + 3))
                 return text;
 
-            return text.Substring(0, maxLength) + "…";
+            return text[..maxLength] + "…";
 
         }
 

@@ -20,8 +20,6 @@ namespace QuizCanners.Utils
     {
         public const string QUIZ_cANNERS = "Quiz c'Anners";
 
-        #region Various Managers Classes
-    
         [Serializable]
         public class ScreenShootTaker : IPEGI
         {
@@ -236,7 +234,7 @@ namespace QuizCanners.Utils
                 }
             }
 
-            private readonly PlayerPrefValue.String _screenShotName = new PlayerPrefValue.String("qc_ScreenShotName", defaultValue: "Screen Shot");
+            private readonly PlayerPrefValue.String _screenShotName = new("qc_ScreenShotName", defaultValue: "Screen Shot");
 
            // public string screenShotName;
 
@@ -252,182 +250,11 @@ namespace QuizCanners.Utils
 
         }
 
-        [Serializable]
-        public struct DynamicRangeFloat : ICfgCustom, IPEGI
-        {
-
-            [SerializeField] public float min;
-            [SerializeField] public float max;
-
-            [SerializeField] private float _value;
-
-            public float Value
-            {
-                get { return _value; }
-
-                set
-                {
-                    _value = value;
-                    min = Mathf.Min(min, value);
-                    max = Mathf.Max(max, value);
-                    UpdateRange();
-                }
-            }
-
-            #region Inspector
-
-            private float dynamicMin;
-            private float dynamicMax;
-
-            private void UpdateRange(float by = 1)
-            {
-
-                float width = dynamicMax - dynamicMin;
-
-                width *= by * 0.5f;
-
-                dynamicMin = Mathf.Max(min, _value - width);
-                dynamicMax = Mathf.Min(max, _value + width);
-            }
-
-            private bool _showRange;
-
-            public void Inspect()
-            {
-                var rangeChanged = false;
-
-                if ("><".PegiLabel().Click())
-                    UpdateRange(0.3f);
-
-                pegi.Edit(ref _value, dynamicMin, dynamicMax);
-                //    Value = _value;
-
-                if ("<>".PegiLabel().Click())
-                    UpdateRange(3f);
-             
-
-                if (!_showRange && Icon.Edit.ClickUnFocus("Edit Range", 20))
-                    _showRange = true;
-
-                if (_showRange)
-                {
-                  
-
-                    if (Icon.FoldedOut.ClickUnFocus("Hide Range"))
-                        _showRange = false;
-
-                    pegi.Nl();
-
-                    "[{0} : {1}] - {2}".F(dynamicMin, dynamicMax, "Focused Range").PegiLabel().Nl();
-
-                    "Range: [".PegiLabel(60).Write();
-
-                    var before = min;
-
-
-                    if (pegi.Edit_Delayed(ref min, 40))
-                    {
-                        rangeChanged = true;
-
-                        if (min >= max)
-                            max = min + (max - before);
-                    }
-
-                    "-".PegiLabel(10).Write();
-
-                    if (pegi.Edit_Delayed(ref max, 40))
-                    {
-                        rangeChanged = true;
-                        min = Mathf.Min(min, max);
-                    }
-
-                    "]".PegiLabel(10).Write();
-
-                    pegi.FullWindow.DocumentationClickOpen("Use >< to shrink range around current value for more precision. And <> to expand range.", "About <> & ><");
-
-                    if (Icon.Refresh.Click())
-                    {
-                        dynamicMin = min;
-                        dynamicMax = max;
-
-                    }
-
-                    pegi.Nl();
-
-                    "Tap Enter to apply Range change in the field (will Clamp current value)".PegiLabel().Write_Hint();
-
-
-
-                    pegi.Nl();
-
-                    if (rangeChanged)
-                    {
-                        Value = Mathf.Clamp(_value, min, max);
-
-                        if (Mathf.Abs(dynamicMin - dynamicMax) < (float.Epsilon * 10))
-                        {
-                            dynamicMin = Mathf.Clamp(dynamicMin - float.Epsilon * 10, min, max);
-                            dynamicMax = Mathf.Clamp(dynamicMax + float.Epsilon * 10, min, max);
-                        }
-                    }
-
-
-                }
-            }
-
-            #endregion
-
-            #region Encode & Decode
-
-            public CfgEncoder Encode() => new CfgEncoder()
-                .Add_IfNotEpsilon("m", min)
-                .Add_IfNotEpsilon("v", Value)
-                .Add_IfNotEpsilon("x", max);
-
-            public void DecodeInternal(CfgData data)
-            {
-              
-                new CfgDecoder(data).DecodeTagsFor(ref this);
-                dynamicMin = min;
-                dynamicMax = max;
-            }
-
-            public void DecodeTag(string key, CfgData data)
-            {
-                switch (key)
-                {
-                    case "m":
-                        min = data.ToFloat();
-                        break;
-                    case "v":
-                        Value = data.ToFloat();
-                        break;
-                    case "x":
-                        max = data.ToFloat();
-                        break;
-                }
-            }
-
-            #endregion
-
-            public DynamicRangeFloat(float min = 0, float max = 1, float value = 0.5f)
-            {
-                this.min = min;
-                this.max = max;
-                dynamicMin = min;
-                dynamicMax = max;
-                _value = value;
-
-                _showRange = false;
-
-            }
-        }
-
-        private static readonly ScreenShootTaker screenShots = new ScreenShootTaker();
-
-        #endregion
+        private static readonly ScreenShootTaker screenShots = new();
 
         #region Inspect Debug Options 
+
+        public static IPEGI CurrentProjectInspector;
 
         public static pegi.ChangesToken Inspect_TimeScaleOption()
         {
@@ -443,13 +270,23 @@ namespace QuizCanners.Utils
             return pegi.ChangesToken.False;
         }
 
-        private static readonly pegi.EnterExitContext _context = new pegi.EnterExitContext(playerPrefId: "inspEnt");
-        private static readonly pegi.EnterExitContext _enteredData = new pegi.EnterExitContext(playerPrefId: "inspEntDta");
-   
+        private static readonly pegi.EnterExitContext _context = new(playerPrefId: "inspEnt");
+        private static readonly pegi.EnterExitContext _enteredData = new(playerPrefId: "inspEntDta");
+        private static readonly LoopLock _inspectionLoopLock = new();
+
+
         public static void InspectAllUtils()
-        {
+        {   
+            if (!_inspectionLoopLock.Unlocked) 
+            {
+                "Recursively entered".PegiLabel().WriteWarning().Nl();
+                return;
+            }
+
             pegi.Nl();
 
+
+            using (_inspectionLoopLock.Lock())
             using (_context.StartContext())
             {
                 if (!_context.IsAnyEntered && Application.isPlaying) 
@@ -457,6 +294,19 @@ namespace QuizCanners.Utils
                     pegi.Nl();
                     FrameRate.Inspect();
                     pegi.Nl();
+                }
+
+                var valid = !QcUnity.IsNullOrDestroyed_Obj(CurrentProjectInspector);
+
+                var current = valid ? CurrentProjectInspector.ToString() : "";
+
+                try
+                {
+                    pegi.Conditionally_Enter_Inspect(current.PegiLabel(), valid, CurrentProjectInspector).Nl();
+
+                } catch (Exception ex) 
+                {
+                    pegi.Write_Exception(ex);
                 }
 
                 "Singletons".PegiLabel().IsEntered().Nl().If_Entered(Singleton.Collector.Inspect);
@@ -477,7 +327,7 @@ namespace QuizCanners.Utils
                                     pegi.GameView.ShowNotification("ERROR: Bundles are being used");
                             }
 
-                            List<string> lst = new List<string>();
+                            List<string> lst = new();
 
                             Caching.GetAllCachePaths(lst);
 
@@ -538,7 +388,7 @@ namespace QuizCanners.Utils
 
                 "Logs".PegiLabel().IsEntered().Nl().If_Entered(() => QcLog.LogHandler.Nested_Inspect());
 
-                "Profiler".PegiLabel().Enter_Inspect(QcDebug.TimeProfiler.Instance).Nl();
+                "Profiler".PegiLabel().Enter_Inspect(TimeProfiler.Instance).Nl();
     
                 if ("Time & Audio".PegiLabel().IsEntered().Nl())
                 {
@@ -560,6 +410,9 @@ namespace QuizCanners.Utils
 
                     "Time.frameCount: {0}".F(Time.frameCount).PegiLabel().Nl();
 
+                    var phA = Physics.autoSyncTransforms;
+
+                    "Physics Auto Sync Transforms".PegiLabel().ToggleIcon(ref phA).Nl(()=> Physics.autoSyncTransforms = phA);
 
                     Inspect_TimeScaleOption();
 
@@ -574,17 +427,40 @@ namespace QuizCanners.Utils
 
                     pegi.Nl();
 
-                  
-
                     "Time.deltaTime: {0}".F(QcSharp.SecondsToReadableString(Time.deltaTime)).PegiLabel().Nl();
 
                     "Time.realtimeSinceStartup {0}".F(QcSharp.SecondsToReadableString(Time.realtimeSinceStartup)).PegiLabel().Nl();
 
+                    
+                }
+
+                if ("Graphics".PegiLabel().IsEntered().Nl()) 
+                {
                     var fr = Application.targetFrameRate;
                     if ("Frame-Rate".PegiLabel().Edit(ref fr).Nl() && fr > 0)
                     {
                         Application.targetFrameRate = fr;
                     }
+
+                    var res = Screen.currentResolution;
+
+                    int width = res.width;
+                    int height = res.height;
+
+                    "Screen: {0}x{1}".F(Screen.width, Screen.height).PegiLabel().Nl();
+
+                    "Display: {0}x{1}".F(Display.main.renderingWidth, Display.main.renderingHeight).PegiLabel().Nl();
+
+                    "Resolution: {0}x{1}".F(width, height).PegiLabel().Nl();
+
+                    var changes = pegi.ChangeTrackStart();
+
+                    "Width".PegiLabel(60).Edit(ref width, 8, Display.main.renderingWidth).Nl();
+                    "Height".PegiLabel(60).Edit(ref height, 8, Display.main.renderingHeight).Nl();
+
+                    if (changes)
+                        Screen.SetResolution(width, height, fullscreen: true);
+
                 }
 
                 if ("Screen Shots".PegiLabel().IsEntered().Nl())

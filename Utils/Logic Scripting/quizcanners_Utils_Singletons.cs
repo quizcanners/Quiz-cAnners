@@ -7,11 +7,24 @@ namespace QuizCanners.Utils
 {
     public static class Singleton
     {
+        public static TSingleton GetOrCreate<TSingleton>() where TSingleton : ClassBase, new()
+        {
+            var inst = Get<TSingleton>();
+
+            if (inst == null) 
+            {
+                inst = new TSingleton();
+                Debug.Log("Creating "+nameof(TSingleton));
+            }
+
+            return inst;
+        }
+
         public static TSingleton Get<TSingleton>() where TSingleton : IQcSingleton => SingletonGeneric<TSingleton>.Instance;
 
         public static List<TInterface> GetAll<TInterface>() => CollectionSingleton<TInterface>.Instances;
 
-        public static TValue TryGetValue<TService, TValue>(Func<TService,TValue> valueGetter, TValue defaultValue = default(TValue), bool logOnServiceMissing = true) where TService : IQcSingleton
+        public static TValue GetValue<TService, TValue>(Func<TService,TValue> valueGetter, TValue defaultValue = default, bool logOnServiceMissing = true) where TService : IQcSingleton
         {
             Try<TService>(onFound: s => defaultValue = valueGetter(s), logOnServiceMissing: logOnServiceMissing);
             return defaultValue;
@@ -20,11 +33,14 @@ namespace QuizCanners.Utils
         public static bool Try<TSingleton>(Action<TSingleton> onFound, bool logOnServiceMissing = true) where TSingleton : IQcSingleton =>
             Try(onFound: onFound, onFailed: null, logOnServiceMissing: logOnServiceMissing);
 
+        public static bool Try<TServiceA, TServiceB>(Action<TServiceA, TServiceB> onFound, bool logOnServiceMissing = true) where TServiceA : IQcSingleton where TServiceB : IQcSingleton =>
+            Try(onFound: onFound, onFailed: null, logOnServiceMissing: logOnServiceMissing);
+
         public static bool Try<TService>(Action<TService> onFound, Action onFailed, bool logOnServiceMissing = false) where TService : IQcSingleton
         {
             var inst = SingletonGeneric<TService>.Instance;
 
-            if (!QcUnity.IsNullOrDestroyed_Obj(inst) && inst.IsSingletonActive())
+            if (IsValid(inst, logOnServiceMissing)) //!QcUnity.IsNullOrDestroyed_Obj(inst) && inst.IsSingletonActive)
             {
                 try
                 {
@@ -33,11 +49,14 @@ namespace QuizCanners.Utils
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogException(ex);
+                    if (pegi.IsExitGUIException(ex))
+                        throw ex;
+                    else
+                        Debug.LogException(ex);
                 }
             } else if (logOnServiceMissing) 
             {
-                QcLog.ChillLogger.LogErrorOnce("Service {0} is missing".F(typeof(TService).ToPegiStringType()), "SngMsng" + typeof(TService).ToString());
+                QcLog.ChillLogger.LogWarningOnce("Service {0} is missing".F(typeof(TService).ToPegiStringType()), "SngMsng" + typeof(TService).ToString());
             }
          
 
@@ -56,10 +75,78 @@ namespace QuizCanners.Utils
             return false;
         }
 
+        public static bool Try<TServiceA, TServiceB>(Action<TServiceA, TServiceB> onFound, Action onFailed, bool logOnServiceMissing = false) where TServiceA : IQcSingleton where TServiceB : IQcSingleton
+        {
+            var instA = SingletonGeneric<TServiceA>.Instance;
+            var instB = SingletonGeneric<TServiceB>.Instance;
+
+            if (IsValid(instA, logOnServiceMissing) && IsValid(instB, logOnServiceMissing))
+            {
+                try
+                {
+                    onFound.Invoke(instA, instB);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    if (pegi.IsExitGUIException(ex))
+                        throw ex;
+                    else
+                        Debug.LogException(ex);
+                }
+            }
+            else if (logOnServiceMissing)
+            {
+                QcLog.ChillLogger.LogWarningOnce("Service {0} is missing".F(typeof(TServiceA).ToPegiStringType()), "SngMsng" + typeof(TServiceA).ToString());
+            }
+
+
+            if (onFailed != null)
+            {
+                try
+                {
+                    onFailed.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsValid<T>(T srv, bool logWarning) where T : IQcSingleton
+        {
+            if (QcUnity.IsNullOrDestroyed_Obj(srv))
+            {
+                if (logWarning)
+                {
+                    var srvNm = typeof(T).ToPegiStringType();
+                    QcLog.ChillLogger.LogWarningOnce("Service {0} is missing".F(srvNm), "SngMsng" + srvNm);
+                }
+
+                return false;
+            }
+
+            if (!srv.IsSingletonActive)
+            {
+                if (logWarning)
+                {
+                    var srvNm = typeof(T).ToPegiStringType();
+                    QcLog.ChillLogger.LogWarningOnce("Service {0} is deactivated".F(srvNm), "SngInAct" + srvNm);
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
         private static class SingletonGeneric<T>
         {
             private static T instance;
-            private static readonly Gate.Integer _versionGate = new Gate.Integer();
+            private static readonly Gate.Integer _versionGate = new();
             public static T Instance
             {
                 get
@@ -82,7 +169,7 @@ namespace QuizCanners.Utils
         private static class CollectionSingleton<T>
         {
             private static List<T> instances;
-            private static readonly Gate.Integer _versionGate = new Gate.Integer();
+            private static readonly Gate.Integer _versionGate = new();
             public static List<T> Instances
             {
                 get
@@ -114,7 +201,7 @@ namespace QuizCanners.Utils
 
             internal static int Version;
 
-            private static readonly Dictionary<Type, object> _services = new Dictionary<Type, object>();
+            private static readonly Dictionary<Type, object> _services = new();
 
             internal static List<T> GetAll<T>() 
             {
@@ -158,10 +245,10 @@ namespace QuizCanners.Utils
                 Version++;
             }
 
-            private static readonly PlayerPrefValue.Int _prsstInspectedIndex = new PlayerPrefValue.Int("qc_SrvInsp", -1);
-            private static readonly PlayerPrefValue.String _prsstInspectedCategory = new PlayerPrefValue.String("qc_SrvCat", "");
+            private static readonly PlayerPrefValue.Int _prsstInspectedIndex = new("qc_SrvInsp", -1);
+            private static readonly PlayerPrefValue.String _prsstInspectedCategory = new("qc_SrvCat", "");
 
-            private static readonly LoopLock _singletonLoop = new LoopLock();
+            private static readonly LoopLock _singletonLoop = new();
 
             private static string _searchText = "";
 
@@ -182,8 +269,8 @@ namespace QuizCanners.Utils
 
                     pegi.Nl();
 
-                    HashSet<Type> processedTypes = new HashSet<Type>();
-                    HashSet<string> processedCategories = new HashSet<string>();
+                    HashSet<Type> processedTypes = new();
+                    HashSet<string> processedCategories = new();
 
                     if (_prsstInspectedCategory.GetValue().IsNullOrEmpty() == false)
                     {
@@ -229,9 +316,8 @@ namespace QuizCanners.Utils
                             {
                                 KeyValuePair<Type, object> el = _services.GetElementAt(i);
 
-                                var srv = el.Value as IQcSingleton;
 
-                                string myCategory = srv == null ? Categories.DEFAULT : srv.InspectedCategory;
+                                string myCategory = el.Value is not IQcSingleton srv ? Categories.DEFAULT : srv.InspectedCategory;
 
                                 bool show = false;
 
@@ -296,9 +382,7 @@ namespace QuizCanners.Utils
 
                     void InspectServiceInList(object service, int index)
                     {
-                        var lst = service as IPEGI_ListInspect;
-
-                        if (lst != null)
+                        if (service is IPEGI_ListInspect lst)
                         {
                             int entered = -1;
                             if (lst.InspectInList_Nested(ref entered, index))
@@ -333,12 +417,10 @@ namespace QuizCanners.Utils
                     {
                         if (s.Value != null)
                         {
-                            var load = s.Value as ILoadingProgressForInspector;
-
                             string state = "";
                             float progress01 = 0.5f;
 
-                            if (load != null && load.IsLoading(ref state, ref progress01))
+                            if (s.Value is ILoadingProgressForInspector load && load.IsLoading(ref state, ref progress01))
                             {
                                "{0} {1}%  ({2})".F(s.Key, Mathf.FloorToInt(progress01 * 100), state).PegiLabel().DrawProgressBar(progress01);
                             }
@@ -359,6 +441,7 @@ namespace QuizCanners.Utils
         {
             public const string DEFAULT = "Other";
             public const string SCENE_MGMT = "Unity Systems";
+            public const string AUDIO = "Audio";
             public const string RENDERING = "Rendering";
             public const string TEST = "Test";
             public const string GAME_LOGIC = "Game Logic";
@@ -374,11 +457,11 @@ namespace QuizCanners.Utils
 
             public virtual string InspectedCategory => Categories.DEFAULT;
 
-            public virtual bool IsSingletonActive ()=> gameObject.activeInHierarchy;
+            public virtual bool IsSingletonActive { get => gameObject.activeInHierarchy; set { gameObject.SetActive(value); } } 
 
             protected virtual void OnRegisterServiceInterfaces() { }
 
-            private readonly List<Type> _typesToRemove = new List<Type>();
+            private readonly List<Type> _typesToRemove = new();
 
             protected void RegisterServiceAs<T>() 
             {
@@ -459,7 +542,7 @@ namespace QuizCanners.Utils
 
                             if (destroy && deprecated)
                             {
-                                Debug.Log("Destroying Old {0}".F(deprecated.gameObject.name));
+                                Debug.Log("{0}: {1} ({2})".F(SingletonCollisionSolution.ToString().SimplifyTypeName(), deprecated.gameObject.name, GetType().ToPegiStringType()), gameObject);
                                 Destroy(deprecated.gameObject);
                             }
 
@@ -522,8 +605,8 @@ namespace QuizCanners.Utils
             {
                 if (gameObject.activeSelf && !gameObject.activeInHierarchy)
                     Icon.Warning.Draw("Object is disabled in hierarchy");
-                else if ((IsSingletonActive() ? Icon.Active : Icon.InActive).Click(toolTip: gameObject.activeSelf ? "Make Inactive" : "Make Active")) 
-                    gameObject.SetActive(!gameObject.activeSelf);
+                else if ((IsSingletonActive ? Icon.Active : Icon.InActive).Click(toolTip: gameObject.activeSelf ? "Make Inactive" : "Make Active"))
+                    IsSingletonActive = !IsSingletonActive; 
                 
                 if (ToString().PegiLabel().ClickLabel() | this.Click_Enter_Attention())
                     edited = ind;
@@ -550,7 +633,7 @@ namespace QuizCanners.Utils
         {
             public virtual string InspectedCategory => Categories.DEFAULT;
 
-            public virtual bool IsSingletonActive() => true;
+            public virtual bool IsSingletonActive { get => true; set { } }
 
             public ClassBase()
             {
@@ -560,11 +643,11 @@ namespace QuizCanners.Utils
             public string NameForDisplayPEGI() => QcSharp.AddSpacesInsteadOfCapitals(GetType().ToString().SimplifyTypeName(), keepCatipals: false);
         }
 
-        public interface IQcSingleton 
+        public interface IQcSingleton
         {
             string InspectedCategory { get; }
 
-            bool IsSingletonActive();
+            bool IsSingletonActive { get; set; }
         }
 
         public interface ILoadingProgressForInspector 

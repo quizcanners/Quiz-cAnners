@@ -29,7 +29,7 @@ namespace QuizCanners.Utils
                     if (!first)
                         return null;
 
-                    if (!Application.isPlaying)
+                    if (!Application.isPlaying || QcUnity.IsPartOfAPrefab(first.gameObject))
                         return first.material;
 
                     _materialInstance = UnityEngine.Object.Instantiate(first.material);
@@ -169,7 +169,9 @@ namespace QuizCanners.Utils
                     instance = new Material(shader);
                 }
                 else
+                {
                     instance.shader = shader;
+                }
 
                 return instance;
             }

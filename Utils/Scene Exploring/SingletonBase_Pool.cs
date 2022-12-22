@@ -1,3 +1,4 @@
+using Codice.Client.BaseCommands.Merge;
 using QuizCanners.Inspect;
 using System;
 using System.Collections;
@@ -6,40 +7,206 @@ using UnityEngine;
 
 namespace QuizCanners.Utils
 {
-    public abstract class PoolSingletonBase<T> : Singleton.BehaniourBase, IEnumerable<T>, IGotCount where T: Component
+
+    public abstract class PoolBehaviourCore<T> : Singleton.BehaniourBase, IEnumerable<T>, IGotCount where T : Component
     {
-        [SerializeField] protected List<T> prefabs = new List<T>();
+        [SerializeField] protected List<T> prefabs = new();
+        protected int lastInstancePrefab;
+
+        protected virtual int MAX_INSTANCES => 50;
+        protected int RECOMMENDED_INSTANCES => 1 + (int)((MAX_INSTANCES * Math.Clamp(8 - Pool.GetFrameMiliseconds(), 0, 1)) * Pool.MaxCount.GetCoefficientFromFramerate());
+        public virtual float VacancyPortion => Mathf.Clamp01((RECOMMENDED_INSTANCES - (float)GetCount()) / RECOMMENDED_INSTANCES);
+
+        protected readonly LoopLock _clearAllLock = new();
+
+        public abstract int InstancesCount { get; }
+      
+        public abstract IEnumerator<T> GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public virtual bool CanSpawn_ByPerformance()
+        {
+            if (!IsSingletonActive) //!gameObject.activeInHierarchy)
+                return false;
+
+            if (GetCount() >= RECOMMENDED_INSTANCES)
+                return false;
+
+            return true;
+        }
+
+        protected virtual bool CanSpawn_AtPosition(Vector3 position) => Camera.main.IsInCameraViewArea(position);
+
+        public bool CanSpawn(Vector3 pos)
+        {
+            if (!CanSpawn_AtPosition(pos))
+                return false;
+
+            return CanSpawn_ByPerformance();
+        }
+
+
+        protected abstract void Spawn_Internal(Vector3 worldPosition, out T inst);
+
+
+        public bool TrySpawnIfVisible(Vector3 worldPosition, Action<T> onInstanciate = null)
+        {
+            if (!CanSpawn(worldPosition))
+                return false;
+
+            Spawn_Internal(worldPosition, out var inst);
+
+            try
+            {
+                onInstanciate?.Invoke(inst);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex, this);
+            }
+
+            return true;
+        }
+
+        public bool TrySpawnIfVisible(Vector3 worldPosition, out T inst)
+        {
+            inst = null;
+
+            if (!CanSpawn(worldPosition))
+                return false;
+
+            Spawn_Internal(worldPosition, out inst);
+
+            return true;
+        }
+
+        public bool TrySpawn(Vector3 worldPosition = default, Action<T> onInstanciate = null)
+        {
+            if (!CanSpawn_ByPerformance())
+                return false;
+
+            Spawn_Internal(worldPosition, out var inst);
+
+            try
+            {
+                onInstanciate?.Invoke(inst);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex, this);
+            }
+
+            return true;
+        }
+
+        public bool TrySpawn(Vector3 worldPosition, out T inst)
+        {
+            if (!CanSpawn_ByPerformance())
+            {
+                inst = null;
+                return false;
+            }
+
+            Spawn_Internal(worldPosition, out inst);
+
+            return true;
+        }
+
+        public T SpawnNow(Vector3 worldPosition) 
+        {
+            Spawn_Internal(worldPosition, out var inst);
+            return inst;
+        }
+
+        protected void ClearAll() 
+        {
+            if (!_clearAllLock.Unlocked)
+                return;
+
+            using (_clearAllLock.Lock())
+            {
+                ClearAll_Internal();
+            }
+        }
+
+        protected abstract void ClearAll_Internal();
+
+        protected abstract bool ReturnToPool_Internal(T effect);
+
+        public bool ReturnToPool(T effect)
+        {
+            if (!_clearAllLock.Unlocked)
+                return false;
+
+            effect.gameObject.SetActive(false);
+
+            return ReturnToPool_Internal(effect);
+        }
+
+
+        protected override void OnBeforeOnDisableOrEnterPlayMode(bool _afterEnableCalled)
+        {
+            base.OnBeforeOnDisableOrEnterPlayMode(_afterEnableCalled);
+            ClearAll();
+        }
+
+        #region Inspector
+
+        public virtual int GetCount() => InstancesCount;
+
+        public override string InspectedCategory => Singleton.Categories.POOL;
+
+        public override void InspectInList(ref int edited, int ind)
+        {
+            if (InstancesCount > 0)
+            {
+                Icon.Clear.Click().OnChanged(ClearAll_Internal);
+
+                "{0}/{1}".F(InstancesCount, RECOMMENDED_INSTANCES).PegiLabel(60).Write();
+            }
+
+
+            base.InspectInList(ref edited, ind);
+        }
+
+        #endregion
+
+        protected override void OnRegisterServiceInterfaces()
+        {
+            base.OnRegisterServiceInterfaces();
+            RegisterServiceAs<PoolBehaviourCore<T>>();
+        }
+    }
+
+
+    public abstract class PoolSingleton_Sorted<T> : PoolBehaviourCore<T> where T : Component
+    {
         [SerializeField] private bool _disablePooling;
 
-        public bool DisablePooling 
+        public bool DisablePooling
         {
             get => _disablePooling;
-            set 
+            set
             {
                 _disablePooling = value;
                 if (value)
                 {
                     ClearPool();
-                }    
+                }
             }
         }
 
-        protected int lastInstancePrefab;
+        protected Stack<T> pool = new();
+        protected List<T> instances = new();
 
-        protected virtual int MAX_INSTANCES => 50;
-
-        public virtual float VacancyPortion => (MAX_INSTANCES - (float)instances.Count) / MAX_INSTANCES;
-
-        protected List<T> pool = new List<T>();
-        protected List<T> instances = new List<T>();
-
-        public int InstancesCount => instances.Count;
+        public override int InstancesCount => instances.Count;
 
         public int TotalCount => instances.Count + pool.Count;
 
-        public bool CanSpawn() 
+        public override bool CanSpawn_ByPerformance()
         {
-            if (!IsSingletonActive()) //!gameObject.activeInHierarchy)
+            if (!base.CanSpawn_ByPerformance())
                 return false;
 
             if (prefabs.Count == 0)
@@ -48,38 +215,43 @@ namespace QuizCanners.Utils
                 return false;
             }
 
-            if (instances.Count >= MAX_INSTANCES)
-                return false;
-
             return true;
         }
 
-        public bool CanSpawnIfVisible(Vector3 pos)
+        public bool TryIterate_Randomly(ref int index, out T current)
         {
-            if (!Camera.main.IsInCameraViewArea(pos))
-                return false;
+            int cnt = instances.Count;
 
-            return CanSpawn();
-        }
-
-        protected Vector3 GetScaleBasedOnDistance(Vector3 pos) => Vector3.one * GetScaleFactorFromDistance(pos);
-
-        protected float GetScaleFactorFromDistance(Vector3 pos) => (0.25f + QcMath.SmoothStep(0, 5, GetDistanceToCamera(pos)) * 0.75f);
-
-        protected float GetDistanceToCamera(Vector3 pos)
-        {
-            var cam = Singleton.Get<Singleton_CameraOperatorGodMode>();
-
-            if (cam) 
+            if (cnt == 0)
             {
-                Vector3.Distance(cam.transform.position, pos);
+                current = null;
+                return false;
             }
 
-            return Vector3.Distance(Camera.main.transform.position, pos);
+            index = (index + Mathf.FloorToInt(cnt / 10) + 1) % cnt;
+            current = instances[index];
+            return true;
         }
-        
 
-        public bool ReturnToPool(T effect)
+        public bool TryGetNearest(Vector3 myPosition, out T data)
+        {
+            float nearest = float.MaxValue;
+            data = null;
+
+            foreach (var m in this)
+            {
+                var dist = Vector3.Distance(myPosition, m.transform.position);
+                if (dist < nearest)
+                {
+                    nearest = dist;
+                    data = m;
+                }
+            }
+
+            return data;
+        }
+
+        protected override bool ReturnToPool_Internal(T effect) 
         {
             if (!instances.Remove(effect))
                 return false;
@@ -90,83 +262,16 @@ namespace QuizCanners.Utils
                 return true;
             }
 
-            pool.Add(effect);
-            effect.gameObject.SetActive(false);
+            pool.Push(effect);
 
             return true;
-            
         }
 
-        public bool TrySpawnIfVisible(Vector3 worldPosition, Action<T> onInstanciate = null)
-        {
-            if (!CanSpawnIfVisible(worldPosition))
-                return false;
-
-            if (Spawn_Internal(worldPosition, out var inst))
-            {
-                try
-                {
-                    onInstanciate?.Invoke(inst);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogException(ex, this);
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
-        public bool TrySpawnIfVisible(Vector3 worldPosition, out T inst)
-        {
-            inst = null;
-
-            if (!CanSpawnIfVisible(worldPosition))
-                return false;
-
-            return Spawn_Internal(worldPosition, out inst);
-        }
-
-        public bool TrySpawn(Vector3 worldPosition = default(Vector3), Action<T> onInstanciate = null)
-        {
-            if (!CanSpawn())
-                return false;
-
-            if (Spawn_Internal(worldPosition, out var inst))
-            {
-                try
-                {
-                    onInstanciate?.Invoke(inst);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogException(ex, this);
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
-        public bool TrySpawn(Vector3 worldPosition, out T inst)
-        {
-            if (!CanSpawn())
-            {
-                inst = null;
-                return false;
-            }
-
-            return Spawn_Internal(worldPosition, out inst);
-        }
-
-        private bool Spawn_Internal(Vector3 worldPosition, out T inst) 
+        protected override void Spawn_Internal(Vector3 worldPosition, out T inst)
         {
             if (pool.Count > 0)
             {
-                inst = pool.TryTake(0);
+                inst = pool.Pop();
                 instances.Add(inst);
                 inst.transform.position = worldPosition;
                 inst.gameObject.SetActive(true);
@@ -184,24 +289,12 @@ namespace QuizCanners.Utils
                 inst.name += "({0})".F(TotalCount);
             }
 
-            inst.transform.SetSiblingIndex(0);
-
             OnInstanciated(inst);
-
-          
-
-            return true;
         }
 
-        protected virtual void OnInstanciated(T inst) {}
+        protected virtual void OnInstanciated(T inst) { }
 
-        protected override void OnBeforeOnDisableOrEnterPlayMode(bool _afterEnableCalled)
-        {
-            base.OnBeforeOnDisableOrEnterPlayMode(_afterEnableCalled);
-            ClearAll();
-        }
-
-        protected void ClearAll()
+        protected override void ClearAll_Internal()
         {
             ClearPool();
 
@@ -210,38 +303,29 @@ namespace QuizCanners.Utils
                     e.gameObject.DestroyWhatever();
 
             instances.Clear();
+            
         }
 
-        private void ClearPool() 
+        private void ClearPool()
         {
-            foreach (var e in pool)
-                if (e)
-                    e.gameObject.DestroyWhatever();
+            if (!_clearAllLock.Unlocked)
+                return;
 
-            pool.Clear();
+            using (_clearAllLock.Lock())
+            {
+                foreach (var e in pool)
+                    if (e)
+                        e.gameObject.DestroyWhatever();
+
+                pool.Clear();
+            }
         }
 
         #region Inspector
 
-        private readonly pegi.CollectionInspectorMeta _active = new pegi.CollectionInspectorMeta(labelName: "Active Instances", showAddButton: false, showCopyPasteOptions: false, showEditListButton: false);
+        private readonly pegi.CollectionInspectorMeta _active = new(labelName: "Active Instances", showAddButton: false, showCopyPasteOptions: false, showEditListButton: false);
 
-        public override void InspectInList(ref int edited, int ind)
-        {
-            if (InstancesCount > 0)
-            {
-                Icon.Clear.Click().OnChanged(ClearAll);
-
-                "{0}/{1}".F(InstancesCount, MAX_INSTANCES).PegiLabel(60).Write();
-            }
-            
-
-            base.InspectInList(ref edited, ind);
-        }
-
-        public override string InspectedCategory => Singleton.Categories.POOL;
-        public int GetCount() => instances.Count;
-
-        private readonly pegi.TabContext _tab = new pegi.TabContext();
+        private readonly pegi.TabContext _tab = new();
         public override void Inspect()
         {
             "Pool of {0}".F(typeof(T).Name).PegiLabel(pegi.Styles.ListLabel).Write();
@@ -250,22 +334,22 @@ namespace QuizCanners.Utils
                 TrySpawn(Vector3.zero, out _);
 
             if (pool.Count > 0 || instances.Count > 0)
-                Icon.Delete.Click().OnChanged(ClearAll);
+                Icon.Delete.Click().OnChanged(ClearAll_Internal);
 
             pegi.Nl();
 
             bool isPooling = !DisablePooling;
-            "Pooling".PegiLabel().ToggleIcon(ref isPooling).OnChanged(()=> DisablePooling = !isPooling).Nl();
+            "Pooling".PegiLabel().ToggleIcon(ref isPooling).OnChanged(() => DisablePooling = !isPooling).Nl();
 
-            using (_tab.StartContext()) 
+            using (_tab.StartContext())
             {
-                pegi.AddTab("Prefabs", changes => 
+                pegi.AddTab("Prefabs", changes =>
                 {
                     "Prefabs".PegiLabel(60).Edit_List_UObj(prefabs).Nl();
                     "Capacity: {0}/{1}".F(pool.Count + instances.Count, MAX_INSTANCES).PegiLabel().Nl();
                 });
 
-                pegi.AddTab("Instance", changes => 
+                pegi.AddTab("Instance", changes =>
                 {
                     _active.Edit_List(instances).Nl();
                 });
@@ -274,80 +358,216 @@ namespace QuizCanners.Utils
 
         #endregion
 
-        #region Enumeration
-        public IEnumerator<T> GetEnumerator()
+        public override IEnumerator<T> GetEnumerator()
         {
             for (int i = instances.Count - 1; i >= 0; i--)
             {
                 yield return instances[i];
             }
         }
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();//instances.GetEnumerator();
+    }
+
+
+    public abstract class PoolSingleton_Indexed<T> : PoolBehaviourCore<T> where T : PoolableElement
+    {
+        private readonly List<T> allInstances = new();
+
+        private int _activeInstancesCount;
+        private int _firstInactiveIndex;
+        private int _maxActiveIndex = -1;
+
+        public override int InstancesCount => _activeInstancesCount;
+
+        #region Iteration
+
+        public override IEnumerator<T> GetEnumerator() => new PoolIterator(this);
+
+        private class PoolIterator : IEnumerator<T>
+        {
+            private readonly PoolSingleton_Indexed<T> _pool;
+            private int index = -1;
+
+            public T Current => _pool.allInstances[index];
+
+            object IEnumerator.Current => _pool.allInstances[index];
+
+            public void Dispose()
+            {
+                index = -1;
+            }
+
+            public bool MoveNext()
+            {
+                index++;
+
+                try
+                {
+                    while (index <= _pool._maxActiveIndex && !_pool.allInstances[index].IsActive)
+                    {
+                        index++;
+                    }
+                } catch 
+                {
+                    Debug.LogError("Getting {0}, maxActive - {1}, Count: {2}".F(index, _pool._maxActiveIndex, _pool.allInstances.Count));
+                }
+
+                return index < _pool.allInstances.Count;
+
+            }
+
+            public void Reset()
+            {
+                index = -1;
+            }
+
+            public PoolIterator(PoolSingleton_Indexed<T> pool)
+            {
+                this._pool = pool;
+                index = -1;
+            }
+        }
+
+        public bool TryIterate_Randomly(ref int index, out T current)
+        {
+            int cnt = _activeInstancesCount;
+
+            if (cnt == 0)
+            {
+                current = null;
+                return false;
+            }
+
+            index = (index + Mathf.FloorToInt(cnt / 10) + 1) % cnt;
+            current = allInstances[index];
+            return current.IsActive;
+        }
+
         #endregion
 
-        protected override void OnRegisterServiceInterfaces()
+        #region Inspector
+
+        private readonly pegi.CollectionInspectorMeta _prefabsMeta = new("Prefabs");
+        private readonly pegi.CollectionInspectorMeta _instancesMeta = new("Instances");
+
+        private readonly pegi.TabContext _tab = new();
+
+        public override void Inspect()
         {
-            base.OnRegisterServiceInterfaces();
-            RegisterServiceAs<PoolSingletonBase<T>>();
-        }
-    }
+            base.Inspect();
 
-    public static partial class Pool
-    {
-        public static bool TrySpawn<T>(Vector3 position) where T : Component => Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawn(position, out var result));
-        
-        public static bool TrySpawn<T>(Vector3 position, out T instance) where T : Component
-        {
-            T result = null;
+            if (InstancesCount > 0)
+                Icon.Delete.Click().OnChanged(ClearAll_Internal);
 
-            Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawn(position, out result));
+            "Pool of {0}".F(typeof(T).Name).PegiLabel(pegi.Styles.ListLabel).Write();
 
-            instance = result;
+            pegi.Nl();
 
-            return instance;
-        }
-
-        public static bool TrySpawn<T>(Vector3 position, Action<T> onInstanciated) where T : Component 
-            => Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawn(position, onInstanciated));
-
-        public static bool TrySpawnIfVisible<T>(Vector3 position) where T : Component => Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawnIfVisible(position, out var result));
-
-        public static bool TrySpawnIfVisible<T>(Vector3 position, out T instance) where T : Component
-        {
-            T result = null;
-
-            Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawnIfVisible(position, out result));
-
-            instance = result;
-
-            return instance;
-        }
-
-        public static bool TrySpawnIfVisible<T>(Vector3 position, Action<T> onInstanciated) where T : Component 
-            => Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawnIfVisible(position, onInstanciated));
-
-        public static float VacancyFraction<T>(float defaultValue = 1f) where T : Component => Singleton.TryGetValue<PoolSingletonBase<T>, float>(s => s.VacancyPortion, defaultValue: defaultValue);
-
-        public static void Return<T>(T instance) where T : Component => Singleton.Try<PoolSingletonBase<T>>(onFound: s => s.ReturnToPool(instance), logOnServiceMissing: false); 
-
-        public static void TrySpawnIfVisible<T>(Vector3 position, int preferedCount, Action<T> onInstanciate) where T : Component
-        {
-            Singleton.Try<PoolSingletonBase<T>>(pool =>
+            using (_tab.StartContext())
             {
-                if (Camera.main.IsInCameraViewArea(position))
+                pegi.AddTab("Prefabs", changes =>
                 {
-                    int count = (int)Math.Max(1, preferedCount * pool.VacancyPortion);
+                    _prefabsMeta.Edit_List(prefabs).Nl();
+                    "Capacity: {0}/{1} ({2})".F(InstancesCount, RECOMMENDED_INSTANCES, MAX_INSTANCES).PegiLabel().Nl();
+                });
 
-                    for (int i = 0; i < count; i++)
-                    {
-                        if (!pool.TrySpawn(worldPosition: position, out var instance))
-                            break;
+                pegi.AddTab("Instance", changes =>
+                {
+                    _instancesMeta.Edit_List(allInstances).Nl();
+                });
 
-                        onInstanciate.Invoke(instance);
-                    }
-                };
-            });
+                pegi.AddTab("Debug", changes => 
+                {
+                    if (Application.isPlaying && Icon.Play.Click())
+                        TrySpawn(Vector3.zero, out _);
+
+                    "First Inactive:{0}".F(_firstInactiveIndex).PegiLabel().Nl();
+                    "Last Active: {0}".F(_maxActiveIndex).PegiLabel().Nl();
+                });
+            }
         }
+
+        #endregion
+
+        protected override void ClearAll_Internal()
+        {
+            allInstances.DestroyAndClear();
+            _activeInstancesCount = 0;
+            _maxActiveIndex = -1;
+        }
+
+        protected override bool ReturnToPool_Internal(T element)
+        {
+            if (!element || !element.IsActive)
+                return false;
+
+            if (_maxActiveIndex == element.PoolIndex) 
+            {
+                _maxActiveIndex--;
+                while (_maxActiveIndex >= 0 && !allInstances[_maxActiveIndex].IsActive)
+                    _maxActiveIndex--;
+            }
+
+            _activeInstancesCount--;
+            _firstInactiveIndex = Mathf.Min(_firstInactiveIndex, element.PoolIndex);
+            element.PoolIndex = -1;
+            element.gameObject.SetActive(false);
+
+            return true;
+        }
+
+        protected override void Spawn_Internal(Vector3 worldPosition, out T inst)
+        {
+            while (_firstInactiveIndex < allInstances.Count && allInstances[_firstInactiveIndex].IsActive)
+                _firstInactiveIndex++;
+            
+            if (_firstInactiveIndex < allInstances.Count)
+            {
+                inst = allInstances[_firstInactiveIndex];
+                inst.transform.position = worldPosition;
+                ProcessInstance(inst, index: _firstInactiveIndex);
+                _firstInactiveIndex++;
+                return;
+            }
+
+#if UNITY_EDITOR
+            using (QcDebug.TimeProfiler.Instance["Pool Instancers"].Sum(typeof(T).ToPegiStringType()).Start())
+            {
+#endif
+                lastInstancePrefab = (lastInstancePrefab + 1) % prefabs.Count;
+                inst = Instantiate(prefabs[lastInstancePrefab], worldPosition, Quaternion.identity, transform);
+#if UNITY_EDITOR
+            }
+#endif
+
+            allInstances.Add(inst);
+
+            ProcessInstance(inst, index: allInstances.Count-1);
+
+            void ProcessInstance(T newInst, int index) 
+            {
+                newInst.PoolIndex = index;
+                _activeInstancesCount++;
+                newInst.gameObject.SetActive(true);
+                try
+                {
+                    OnInstanciated(newInst);
+                } catch (Exception ex) 
+                {
+                    Debug.LogException(ex);
+                }
+
+                _maxActiveIndex = Mathf.Max(_maxActiveIndex, index);
+            }
+        }
+
+        protected virtual void OnInstanciated(T inst) { }
     }
 
+    public abstract class PoolableElement : MonoBehaviour
+    {
+        public int PoolIndex = -1;
+        public bool IsActive => PoolIndex >= 0;
+
+        public override string ToString() => IsActive ? "Active [{0}]".F(PoolIndex) : "Inactive";
+    }
 }

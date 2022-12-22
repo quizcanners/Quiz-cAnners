@@ -3,6 +3,8 @@ using QuizCanners.Migration;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using static UnityEngine.EventSystems.EventTrigger;
 
 namespace QuizCanners.Utils
 {
@@ -16,13 +18,19 @@ namespace QuizCanners.Utils
 
     public abstract class SmartStringIdGeneric<TValue> : SmartId, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable where TValue : IGotName//, new()
     {
-        public string Id;
+        private string _id;
+
+        public virtual string Id 
+        {
+            get => _id;
+            set => _id = value;
+        }
 
         protected abstract Dictionary<string, TValue> GetEnities();
 
         public virtual bool TryGetEntity(out TValue entity)
         {
-            if (Id.IsNullOrEmpty() == false)
+            if (Id != null)
             {
                 var prots = GetEnities();
 
@@ -44,29 +52,37 @@ namespace QuizCanners.Utils
             return default(TValue);
         }
 
+        public bool Equals(SmartStringIdGeneric<TValue> other)
+        {
+            if (other == null)
+                return false;
+
+            if (Id.IsNullOrEmpty())
+                return false;
+
+            return Id.Equals(other.Id);
+        }
+
         public override bool Equals(SmartId other) 
         {
             if (other == null)
                 return false;
 
-            if (GetType() != other.GetType())
-                return false;
-            
             if (Id.IsNullOrEmpty())
                 return false;
 
+            if (GetType() != other.GetType())
+                return false;
+            
             var asId = other as SmartStringIdGeneric<TValue>;
 
             return Id.Equals(asId.Id);
         }
 
         public override bool Equals(object obj) => Equals(obj as SmartId);
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Id);
-        }
-
-        public void SetEntity(SmartStringIdGeneric<TValue> value) => Id = value.Id;
+        public override int GetHashCode() => HashCode.Combine(Id);
+        
+        public void SetEntityId(SmartStringIdGeneric<TValue> value) => Id = value.Id;
         public void SetEntity(TValue value) => Id = value.NameForInspector;
         
         #region Encode & Decode
@@ -112,7 +128,8 @@ namespace QuizCanners.Utils
             if (prots == null)
                 "NO PROTS".PegiLabel().Write();
 
-            pegi.Select(ref Id, prots);
+            var id = Id;
+            pegi.Select(ref id, prots).OnChanged(()=> Id = id);
 
             return changes;
         }
@@ -161,10 +178,54 @@ namespace QuizCanners.Utils
         #endregion
     }
 
+    public abstract class SmartStringIdGeneric_Cached<TValue> : SmartStringIdGeneric<TValue> where TValue : IGotName
+    {
+        private bool cached;
+        private TValue cachedValue;
+
+
+        public override string Id
+        {
+            get => base.Id;
+            set {
+                base.Id = value;
+                cached = false;
+            }
+        }
+
+        public override bool TryGetEntity(out TValue entity)
+        {
+            if (cached)
+            {
+                entity = cachedValue;
+                return entity != null;
+            }
+
+            cached = base.TryGetEntity(out entity);
+            cachedValue = entity;
+
+            return entity != null;
+           
+        }
+
+        public override TValue GetEntity()
+        {
+            if (cached)
+            {
+                return cachedValue;
+            }
+
+            cached = base.TryGetEntity(out cachedValue);
+
+            return cachedValue;
+        }
+    }
 
     public abstract class SmartIntIdGeneric<TValue> : SmartId, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable
     {
         public int Id = -1;
+
+        public bool IsValid => Id >= 0;
 
         protected abstract List<TValue> GetEnities();
 

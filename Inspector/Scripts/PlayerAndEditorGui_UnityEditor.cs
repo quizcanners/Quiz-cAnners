@@ -1,13 +1,13 @@
 ﻿#if UNITY_EDITOR
-using UnityEngine;
-using UnityEditor;
-using System.Collections.Generic;
-using QuizCanners.Utils;
-using System.Linq.Expressions;
-using Type = System.Type;
-using ReorderableList = UnityEditorInternal.ReorderableList;
-using SceneManager = UnityEngine.SceneManagement.SceneManager;
-using System;
+    using UnityEngine;
+    using UnityEditor;
+    using System.Collections.Generic;
+    using QuizCanners.Utils;
+    using System.Linq.Expressions;
+    using Type = System.Type;
+    using ReorderableList = UnityEditorInternal.ReorderableList;
+    using SceneManager = UnityEngine.SceneManagement.SceneManager;
+    using System;
 #endif
 
 using static QuizCanners.Inspect.pegi;
@@ -22,9 +22,7 @@ using Object = UnityEngine.Object;
 
 namespace QuizCanners.Inspect
 {
-
     internal static partial class PegiEditorOnly {
-
 
         internal static Styles.Background.BackgroundStyle nextBgStyle;
         internal static Object inspectedUnityObject;
@@ -33,28 +31,37 @@ namespace QuizCanners.Inspect
       
         internal static bool IsNextFoldedOut => selectedFold == _elementIndex - 1;
 
-        public static void ResetInspectionTarget(object target)
-        {
-            inspectedTarget = target;
-            inspectedUnityObject = target as Object;
-            ResetInspectedChain();
-        }
-
         public static bool IsFoldedOutOrEntered 
         {
             get => isFoldedOutOrEntered;
             set => isFoldedOutOrEntered = new StateToken(value);
         }
 
-        internal static void StartObject()
+        internal static bool InspectorStarted;
+
+        internal static IDisposable StartInspector(object obj)
         {
+            if (InspectorStarted)
+                Debug.LogError("Inspector was aleady started");
+
+            InspectorStarted = true;
+
             _elementIndex = 0;
             _horizontalStarted = false;
             globChanged = false;
+
+            inspectedTarget = obj;
+            inspectedUnityObject = obj as Object;
+            ResetInspectedChain();
+
+            return QcSharp.DisposableAction(() => EndInspector());
         }
 
-        internal static void EndObject(Object obj)
+        private static void EndInspector()
         {
+
+            InspectorStarted = false;
+
             if (globChanged)
             {
 #if UNITY_EDITOR
@@ -62,11 +69,15 @@ namespace QuizCanners.Inspect
                 if (!Application.isPlaying)
                     UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
 
-                ClearFromPooledSerializedObjects(obj);
-
-                EditorUtility.SetDirty(obj);
+                if (inspectedUnityObject)
+                {
+                    ClearFromPooledSerializedObjects(inspectedUnityObject);
+                    EditorUtility.SetDirty(inspectedUnityObject);
+                }
 #endif
             }
+            inspectedTarget = null;
+            inspectedUnityObject = null;
             Nl();
         }
 
@@ -87,8 +98,7 @@ namespace QuizCanners.Inspect
         public static void RepaintEditor() {
             if (_editor)
                 _editor.Repaint();
-            if (_materialEditor!= null)
-                _materialEditor.unityMaterialEditor.Repaint();
+            _materialEditor?.unityMaterialEditor.Repaint();
         }
 
         public static void Inspect_MB(Editor editor) 
@@ -107,7 +117,7 @@ namespace QuizCanners.Inspect
 
             if (pgi != null)
             {
-                StartObject();
+               
                 SerObj = so;
                 if (!FullWindow.ShowingPopup())
                 {
@@ -118,9 +128,13 @@ namespace QuizCanners.Inspect
                     try
                     {
                         pgi.Inspect();
-                    } catch (Exception ex) 
+                    }
+                    catch (Exception ex)
                     {
-                        Write_Exception(ex);
+                        if (IsExitGUIException(ex))
+                            throw ex;
+                        else
+                            Write_Exception(ex);
                     }
 
                     try
@@ -138,7 +152,7 @@ namespace QuizCanners.Inspect
                     if (globChanged && o)
                         PrefabUtility.RecordPrefabInstancePropertyModifications(o);
                 }
-
+                
                 Nl();
                 paintedPegi = true;
             }
@@ -172,14 +186,8 @@ namespace QuizCanners.Inspect
 
             if (!scrObj)
             {
-                StartObject();
-
                 "Target is not Scriptable Object. Check your PEGI_Inspector_OS.".PegiLabel().WriteWarning();
-                
-                EndObject(editor.target);
-
                 editor.DrawDefaultInspector();
-
                 return;
             }
 
@@ -189,31 +197,28 @@ namespace QuizCanners.Inspect
             var pgi = scrObj as IPEGI;
             if (pgi != null)
             {
-                if (!FullWindow.ShowingPopup())
+                if (FullWindow.ShowingPopup())
+                    return;
+
+                SerObj = so;
+                Toggle_DefaultInspector(scrObj);
+
+                try
                 {
-                    StartObject();
-                    SerObj = so;
-                    Toggle_DefaultInspector(scrObj);
+                    pgi.Inspect();
+                }
+                catch (Exception ex)
+                {
+                    Write_Exception(ex);
+                }
 
-                    try 
-                    { 
-                        pgi.Inspect();
-                    }
-                    catch (Exception ex)
-                    {
-                        Write_Exception(ex);
-                    }
-
-                    try
-                    {
-                        Nested_Inspect_Attention_MessageOnly(pgi);
-                    }
-                    catch (Exception ex)
-                    {
-                        Write_Exception(ex);
-                    }
-
-                    EndObject(scrObj);
+                try
+                {
+                    Nested_Inspect_Attention_MessageOnly(pgi);
+                }
+                catch (Exception ex)
+                {
+                    Write_Exception(ex);
                 }
                 
                 return;
@@ -230,16 +235,13 @@ namespace QuizCanners.Inspect
         public static ChangesToken Inspect_Material(PEGI_Inspector_Material editor) {
             
             _materialEditor = editor;
-
-            ResetInspectionTarget(editor.unityMaterialEditor.target);
-
             var mat = editor.unityMaterialEditor.target as Material;
+            var changed = false;
 
-            StartObject();
-
-            var changed = !FullWindow.ShowingPopup() && editor.Inspect(mat);
-
-            EndObject(mat);
+            using (StartInspector(editor.unityMaterialEditor.target))
+            {
+                changed = !FullWindow.ShowingPopup() && editor.Inspect(mat);
+            }
 
             return new ChangesToken(globChanged || changed);
         }
@@ -284,7 +286,7 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        public static Object ClearFromPooledSerializedObjects(Object obj) //where T : Object
+        public static Object ClearFromPooledSerializedObjects(Object obj)
         {
             if (obj && SerializedObjects.ContainsKey(obj))
                 SerializedObjects.Remove(obj);
@@ -340,7 +342,7 @@ namespace QuizCanners.Inspect
         
         public static void UnIndent(int amount = 1) => EditorGUI.indentLevel = Mathf.Max(0, EditorGUI.indentLevel - amount);
         
-        private static readonly GUIContent _textAndToolTip = new GUIContent();
+        private static readonly GUIContent _textAndToolTip = new();
 
         //TextLabel
         private static GUIContent TextAndTip(TextLabel text)
@@ -349,9 +351,8 @@ namespace QuizCanners.Inspect
             _textAndToolTip.tooltip = text.toolTip;
             return _textAndToolTip;
         }
+        
         #region Foldout
-
-
         private static StateToken StylizedFoldOut(bool foldedOut, TextLabel txt, string hint = "FoldIn/FoldOut")
         {
             txt.FallbackHint = () => hint;
@@ -1244,8 +1245,7 @@ namespace QuizCanners.Inspect
 
             EditorGUI.BeginChangeCheck();
 
-            if (cnt == null)
-                cnt = GUIContent.none;
+            cnt ??= GUIContent.none;
 
             if (width < 1)
                 EditorGUILayout.PropertyField(property, cnt, includeChildren);
@@ -1271,7 +1271,7 @@ namespace QuizCanners.Inspect
             switch (member.MemberType)
             {
                 case System.Reflection.MemberTypes.Field: name = member.Name; break;
-                case System.Reflection.MemberTypes.Property: name = "m_{0}{1}".F(char.ToUpper(member.Name[0]), member.Name.Substring(1)); break;
+                case System.Reflection.MemberTypes.Property: name = "m_{0}{1}".F(char.ToUpper(member.Name[0]), member.Name[1..]); break;
                 default: "Not Impl {0}".F(member.MemberType.ToString().SimplifyTypeName()).PegiLabel(90).Write(); return null;
             }
 
@@ -1279,7 +1279,7 @@ namespace QuizCanners.Inspect
         }
 
 
-        private static readonly Dictionary<Object, SerializedObject> SerializedObjects = new Dictionary<Object, SerializedObject>();
+        private static readonly Dictionary<Object, SerializedObject> SerializedObjects = new();
 
         private static SerializedObject GetSerObj(Object obj)
         {
@@ -1351,8 +1351,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Click(Texture image, int width, GUIStyle style = null)
         {
-            if (style == null)
-                style = Styles.ImageButton.Current;
+            style ??= Styles.ImageButton.Current;
 
             CheckLine_Editor();
             return GUILayout.Button(image, style, GUILayout.MaxHeight(width), GUILayout.MaxWidth(width + 10)).FeedChanges_Internal();
@@ -1362,8 +1361,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken ClickImage(GUIContent cnt, int width, int height, GUIStyle style = null)
         {
-            if (style == null)
-                style = Styles.ImageButton.Current;
+            style ??= Styles.ImageButton.Current;
 
             CheckLine_Editor();
 
@@ -1374,7 +1372,7 @@ namespace QuizCanners.Inspect
 
         #region write
 
-        private static readonly GUIContent imageAndTip = new GUIContent();
+        private static readonly GUIContent imageAndTip = new();
 /*
         private static GUIContent ImageAndTip(Texture tex) => ImageAndTip(tex, tex.GetNameForInspector_Uobj());
        */
@@ -1405,6 +1403,10 @@ namespace QuizCanners.Inspect
 
         public static void ProgressBar(TextLabel text, float value) {
             CheckLine_Editor();
+
+            if (text.label.IsNullOrEmpty())
+                text.label = "Unnamed";
+
             EditorGUI.ProgressBar(GetRect(height: 25), Mathf.Clamp01(value), text.label);
         }
 
@@ -1473,7 +1475,7 @@ namespace QuizCanners.Inspect
         }
         #endregion
 
-        private static bool _searchInChildren;
+       // private static bool _searchInChildren;
 
         public static IEnumerable<T> DropAreaGUI<T>() where T : Object
         {
@@ -1482,15 +1484,7 @@ namespace QuizCanners.Inspect
             var evt = Event.current;
             var drop_area = GUILayoutUtility.GetRect(0.0f, 50.0f, GUILayout.ExpandWidth(true));
 
-            bool isComponent = typeof(Component).IsAssignableFrom(typeof(T));
-
-            if (isComponent) 
-            {
-                GUILayout.Box("Drag & Drop area for Game Object with {0} is above".F(collectionInspector.GetCurrentListLabel<T>(null)));
-                "Search in children".PegiLabel(120).Toggle(ref _searchInChildren).Nl();
-            }
-            else
-                GUILayout.Box("Drag & Drop area for {0} is above".F(collectionInspector.GetCurrentListLabel<T>(null)));
+            GUILayout.Box("Drag & Drop {0}[] above".F(collectionInspector.GetCurrentListLabel<T>(null)));
 
             switch (evt.type)
             {
@@ -1512,10 +1506,14 @@ namespace QuizCanners.Inspect
                             else {
                                 var go = o as GameObject;
 
-                                if (!go) continue;
-                                foreach (var c in (_searchInChildren
-                                    ? go.GetComponentsInChildren(typeof(T))
-                                    : go.GetComponents(typeof(T)))) {
+                                if (!go) 
+                                    continue;
+
+                                foreach (var c in 
+                                    //_searchInChildren
+                                    //? go.GetComponentsInChildren(typeof(T))
+                                    //: 
+                                    go.GetComponents(typeof(T))) {
 
                                     yield return c as T;
                                 }
@@ -1528,7 +1526,7 @@ namespace QuizCanners.Inspect
 
         #region Reordable List
 
-        private static readonly Dictionary<System.Collections.IList, ReorderableList> _reorderableLists = new Dictionary<System.Collections.IList, ReorderableList>();
+        private static readonly Dictionary<System.Collections.IList, ReorderableList> _reorderableLists = new();
 
         private static ReorderableList GetReordable<T>(this List<T> list, CollectionInspectorMeta metaDatas)
         {
@@ -1566,11 +1564,12 @@ namespace QuizCanners.Inspect
                 collectionInspector.selectedEls[ind] = val; //SetSelected(ind, val);
         }
 
-        public static bool Reorder_List<T>(List<T> l, CollectionInspectorMeta metas)
+        public static ChangesToken Reorder_List<T>(List<T> l, CollectionInspectorMeta metas)
         {
             _listMetaData = metas;
 
-            EditorGUI.BeginChangeCheck();
+            _START();
+            //EditorGUI.BeginChangeCheck();
 
             if (_currentReorderedList != l)
             {
@@ -1595,7 +1594,7 @@ namespace QuizCanners.Inspect
             }
 
             l.GetReordable(metas).DoLayoutList();
-            return EditorGUI.EndChangeCheck();
+            return _END(); //EditorGUI.EndChangeCheck();
         }
 
         private static void DrawHeader(Rect rect) => GUI.Label(rect, "Ordering {0} {1}s".F(_currentReorderedList.Count.ToString(), _currentReorderedType.ToPegiStringType()));

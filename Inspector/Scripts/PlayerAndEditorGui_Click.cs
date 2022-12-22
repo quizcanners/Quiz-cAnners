@@ -14,7 +14,7 @@ namespace QuizCanners.Inspect
     {
         public const int defaultButtonSize = 26;
 
-        public static class EditorViewPegi
+        public static class EditorView
         {
             public static void RefocusIfLocked(Object current, Object target)
             {
@@ -168,6 +168,8 @@ namespace QuizCanners.Inspect
 
             return ChangesToken.False;
         }
+
+        public static ChangesToken ClickConfirm(this TextLabel label) => label.ClickConfirm(confirmationTag: label.label);
 
         public static ChangesToken ClickConfirm(this Icon icon, string confirmationTag, string toolTip = "", int width = defaultButtonSize)
         {

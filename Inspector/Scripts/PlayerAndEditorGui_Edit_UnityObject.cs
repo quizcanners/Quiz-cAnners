@@ -288,7 +288,7 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        public static ChangesToken Edit_Inspect<T>(this TextLabel label, ref T obj, bool showLabelIfEntered = true) where T : Object
+        public static ChangesToken Edit_Inspect<T>(this TextLabel label, ref T obj) where T : Object
         {
             var changed = ChangeTrackStart();
 
@@ -335,32 +335,29 @@ namespace QuizCanners.Inspect
 
             public ChangesToken Edit(string keyword)
             {
-                var mat = material;
-
-                var val = System.Array.IndexOf(mat.shaderKeywords, keyword) != -1;
+                var val = System.Array.IndexOf(material.shaderKeywords, keyword) != -1;
 
                 if (!keyword.PegiLabel().ToggleIcon(ref val))
                     return ChangesToken.False;
 
                 if (val)
-                    mat.EnableKeyword(keyword);
+                    material.EnableKeyword(keyword);
                 else
-                    mat.DisableKeyword(keyword);
+                    material.DisableKeyword(keyword);
 
                 return ChangesToken.True;
             }
 
             public ChangesToken Edit(ShaderProperty.FloatValue property, string name = null)
             {
-                var mat = material;
-                var val = mat.Get(property);
+                var val = material.Get(property);
 
                 if (name.IsNullOrEmpty())
                     name = property.ToString();
 
                 if (name.PegiLabel(name.Length * letterSizeInPixels).Edit(ref val))
                 {
-                    mat.Set(property, val);
+                    material.Set(property, val);
                     return ChangesToken.True;
                 }
 
@@ -384,7 +381,10 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
-            public ChangesToken Edit(ShaderProperty.ColorFloat4Value property, string name = null)
+            public ChangesToken Edit(ShaderProperty.FloatValue property, float min, float max) =>
+                Edit(property, property.ToString(), min, max);
+            
+            public ChangesToken Edit(ShaderProperty.ColorValue property, string name = null)
             {
                 var mat = material;
                 var val = mat.Get(property);
@@ -392,7 +392,7 @@ namespace QuizCanners.Inspect
                 if (name.IsNullOrEmpty())
                     name = property.ToString();
 
-                if (name.PegiLabel(width: name.Length * letterSizeInPixels).Edit(ref val))
+                if (name.PegiLabel(0.3f).Edit(ref val))
                 {
                     mat.Set(property, val);
                     return ChangesToken.True;
@@ -434,6 +434,56 @@ namespace QuizCanners.Inspect
 
                 return ChangesToken.False;
             }
+
+            public ChangesToken Edit_Enum(ShaderProperty.KeywordEnum property)
+            {
+                var changes = ChangeTrackStart();
+
+                int val = Mathf.RoundToInt(material.Get(property));
+
+                if (property.ToString().PegiLabel(0.3f).Select(ref val, property.Keywords))
+                {
+                    material.Set(property, val);
+                }
+
+                return changes;
+            }
+
+
+            public ChangesToken Toggle(ShaderProperty.MaterialToggle property, string name = null)
+            {
+                var val = property.Get(material);
+
+                if (name.IsNullOrEmpty())
+                    name = property.ToString();
+
+                if (name.PegiLabel().ToggleIcon(ref val))
+                {
+                    property.SetOn(material, val);
+
+                    return ChangesToken.True;
+                }
+
+                return ChangesToken.False;
+            }
+
+            public ChangesToken Toggle(ShaderProperty.FloatValue property, string name = null)
+            {
+                var val = material.Get(property) > 0;
+
+                if (name.IsNullOrEmpty())
+                    name = property.ToString();
+
+                if (name.PegiLabel().ToggleIcon(ref val))
+                {
+                    material.Set(property, val ? 1 : 0);
+                    return ChangesToken.True;
+                }
+
+                return ChangesToken.False;
+            }
+
+
         }
 
         #endregion
