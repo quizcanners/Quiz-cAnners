@@ -134,14 +134,19 @@ namespace QuizCanners.Utils
             public string Stack;
             public LogType type;
 
-            public void Inspect()
+            public override string ToString() => Log;
+
+            public void InspectInList(ref int edited, int ind)
             {
-                "Log:".PegiLabel(50).Write_ForCopy(Log, showCopyButton: true);
-                pegi.Nl();
-                "Stack: ".PegiLabel().Write_ForCopy_Big(Stack, showCopyButton: true);
+                if (this.Click_Enter_Attention() | ToString().PegiLabel().ClickLabel())
+                    edited = ind;
             }
 
-            public override string ToString() => Log;
+            public void Inspect()
+            {
+                "Log:".PegiLabel(50).Write_ForCopy(Log, showCopyButton: true).Nl();
+                "Stack:".PegiLabel().Write_ForCopy_Big(Stack, showCopyButton: true).Nl();
+            }
 
             public string NeedAttention()
             {
@@ -155,15 +160,10 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public void InspectInList(ref int edited, int ind)
-            {
-                if (this.Click_Enter_Attention() | ToString().PegiLabel().ClickLabel())
-                    edited = ind;
-            }
-
             public IEnumerator SearchKeywordsEnumerator()
             {
                 yield return Log;
+                yield return type.ToString();
             }
         }
 

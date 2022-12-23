@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using QuizCanners.Inspect;
 using System;
 using System.Collections.Generic;
@@ -14,8 +15,11 @@ namespace QuizCanners.Utils
             private static bool _initialized;
             private static int _framesAtStart = 0;
             private static float _timeAtStart = 0.0f;
+            private static float _resetInterval = 5f;
 
-            public static int GetTotalFrames => Time.frameCount - _framesAtStart;
+            public static int GetTotalFrames() => Time.frameCount - _framesAtStart;
+
+            public static float GetTotalTime() => (0.00001f + Time.realtimeSinceStartup - _timeAtStart);
 
             public static float FrameRatePerSecond
             {
@@ -27,14 +31,23 @@ namespace QuizCanners.Utils
                         return 1;
                     }
 
-                   return GetTotalFrames
-                    / (0.0001f + Time.realtimeSinceStartup - _timeAtStart);
+                    var totalTime = GetTotalTime();
+
+                    var result = GetTotalFrames() / totalTime;
+
+                    if (totalTime > _resetInterval) 
+                    {
+                        ResetTimer();
+                    }
+
+                   return result;
                 }
             }
 
-            public static void ResetTimer()
+            public static void ResetTimer(float resetInterval = 5)
             {
                 _initialized = true;
+                _resetInterval = resetInterval;
                 _framesAtStart = Time.frameCount;
                 _timeAtStart = Time.realtimeSinceStartup;
             }

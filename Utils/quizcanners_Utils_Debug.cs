@@ -27,35 +27,13 @@ namespace QuizCanners.Utils
         private static readonly JsonTest jsonTest = new JsonTest();
         private static int _testSeed = 42;
 
-        private static readonly pegi.EnterExitContext enterExitContext = new pegi.EnterExitContext(playerPrefId: "utlsDbCtx");
+        private static readonly pegi.EnterExitContext _context = new pegi.EnterExitContext(playerPrefId: "utlsDbCtx");
+        private static readonly pegi.EnterExitContext _testsContext = new pegi.EnterExitContext(playerPrefId: "qcDbgTst");
 
         public static void Inspect() 
         {
-            using (enterExitContext.StartContext())
+            using (_context.StartContext())
             {
-                if ("Probability Calculator".PegiLabel().IsEntered().Nl())
-                {
-                    Percentages = QcMath.NormalizeToPercentage(probabilities, prob => prob.Chances);
-                    "Probabilities".PegiLabel().Edit_List(probabilities).Nl();
-                }
-
-                if ("Random Seed Test".PegiLabel().IsEntered().Nl())
-                {
-                    "Seed".PegiLabel().Edit(ref _testSeed).Nl();
-
-                    using (QcMath.RandomBySeedDisposable(_testSeed))
-                    {
-                        for (int i = 0; i < 4; i++)
-                            "Value {0}: {1}".F(i, UnityEngine.Random.value * 100).PegiLabel().Nl();
-                    }
-
-                    using (QcMath.RandomBySeedDisposable(_testSeed))
-                    {
-                        for (int i = 0; i < 4; i++)
-                            "B Value {0}: {1}".F(i, UnityEngine.Random.value * 100).PegiLabel().Nl();
-                    }
-                }
-
                 "Json Inspector".PegiLabel().Enter_Inspect(jsonInspector).Nl();
 
                 if ("ICfg Inspector".PegiLabel().IsEntered().Nl())
@@ -64,15 +42,44 @@ namespace QuizCanners.Utils
                 if ("Managed Coroutines [{0}]".F(QcAsync.DefaultCoroutineManager.GetActiveCoroutinesCount).PegiLabel().IsEntered().Nl())
                     QcAsync.DefaultCoroutineManager.Nested_Inspect();
 
-                if ("Gui Styles".PegiLabel().IsEntered().Nl())
+                if ("Tests".PegiLabel().IsEntered().Nl()) 
                 {
-                    pegi.Styles.Inspect();
-                    pegi.Nl();
+                    using (_testsContext.StartContext()) 
+                    {
+                        "Json Parcing".PegiLabel().Enter_Inspect(jsonTest).Nl();
+
+                        if ("Gui Styles".PegiLabel().IsEntered().Nl())
+                        {
+                            pegi.Styles.Inspect();
+                            pegi.Nl();
+                        }
+
+                        if ("Random Seed Test".PegiLabel().IsEntered().Nl())
+                        {
+                            "Seed".PegiLabel().Edit(ref _testSeed).Nl();
+
+                            using (QcMath.RandomBySeedDisposable(_testSeed))
+                            {
+                                for (int i = 0; i < 4; i++)
+                                    "Value {0}: {1}".F(i, UnityEngine.Random.value * 100).PegiLabel().Nl();
+                            }
+
+                            using (QcMath.RandomBySeedDisposable(_testSeed))
+                            {
+                                for (int i = 0; i < 4; i++)
+                                    "B Value {0}: {1}".F(i, UnityEngine.Random.value * 100).PegiLabel().Nl();
+                            }
+                        }
+
+                        if ("Probability Calculator".PegiLabel().IsEntered().Nl())
+                        {
+                            Percentages = QcMath.NormalizeToPercentage(probabilities, prob => prob.Chances);
+                            "Probabilities".PegiLabel().Edit_List(probabilities).Nl();
+                        }
+                    }
                 }
 
-                "Json Parcing".PegiLabel().Enter_Inspect(jsonTest).Nl();
-                
-                if (enterExitContext.IsAnyEntered == false)
+                if (_context.IsAnyEntered == false)
                 {
                     var release = IsRelease;
                     if ("Release".PegiLabel().ToggleIcon(ref release).Nl())
@@ -100,6 +107,8 @@ namespace QuizCanners.Utils
                 [SerializeField] int Age;
                 //[SerializeReference] 
                 [SerializeField] private TestFactory Logic;
+
+                public override string ToString() => "Unity Json With Typed Test";
 
                 public void Inspect()
                 {
