@@ -39,10 +39,10 @@ namespace QuizCanners.Migration
 
         public T ActiveConfiguration
         {
-            get => configurations.Count == 0 ? null : (configurations[0].ActiveConfiguration as T);
+            get => configurations.IsNullOrEmpty() ? null : (configurations[0].ActiveConfiguration as T);
             set
             {
-                if (configurations.Count == 0)
+                if (configurations.IsNullOrEmpty())
                     return;
 
                 if (value == null)

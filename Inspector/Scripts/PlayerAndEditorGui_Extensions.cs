@@ -970,10 +970,17 @@ namespace QuizCanners.Inspect
             }
             else
             {
-                warningMsg = attention.NeedAttention();
+                try
+                {
+                    warningMsg = attention.NeedAttention();
+                } catch (Exception ex) 
+                {
+                    Debug.LogException(ex);
+                } 
 
                 if (!warningMsg.IsNullOrEmpty())
                     warningMsg = "{0}: {1}".F(attention.GetNameForInspector(), warningMsg);
+                
             }
 
             return !warningMsg.IsNullOrEmpty();

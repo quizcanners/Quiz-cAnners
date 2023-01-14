@@ -77,7 +77,37 @@ namespace QuizCanners.Utils
 
             return Vector3.Distance(Camera.main.transform.position, pos);
         }
-        
+
+        public bool TryIterate (ref int index, out T current) 
+        {
+            if (instances.Count == 0)
+            {
+                current = null;
+                return false;
+            }
+
+            index = (index +1) % instances.Count;
+            current = instances[index];
+            return true;
+        }
+
+        public bool TryGetNearest(Vector3 myPosition, out T data, float nearDistance = 4)
+        {
+            float nearest = float.MaxValue;
+            data = null;
+
+            foreach (var m in this)
+            {
+                var dist = Vector3.Distance(myPosition, m.transform.position);
+                if (dist < nearest)
+                {
+                    nearest = dist;
+                    data = m;
+                }
+            }
+
+            return data;
+        }
 
         public bool ReturnToPool(T effect)
         {

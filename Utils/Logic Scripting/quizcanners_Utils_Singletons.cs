@@ -37,7 +37,7 @@ namespace QuizCanners.Utils
                 }
             } else if (logOnServiceMissing) 
             {
-                QcLog.ChillLogger.LogErrorOnce("Service {0} is missing".F(typeof(TService).ToPegiStringType()), "SngMsng" + typeof(TService).ToString());
+                QcLog.ChillLogger.LogWarningOnce("Service {0} is missing".F(typeof(TService).ToPegiStringType()), "SngMsng" + typeof(TService).ToString());
             }
          
 
