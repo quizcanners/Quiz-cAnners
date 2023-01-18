@@ -385,10 +385,24 @@ namespace QuizCanners.Inspect
             if (!PaintingGameViewUI)
             {
                 PegiEditorOnly.Indent(width);
+                return new Unindenter(width);
             }
+            else
 #endif
+            {
 
-            return new Unindenter(width);
+                List<IDisposable> disposables = new List<IDisposable>();
+
+                disposables.Add(new GUILayout.HorizontalScope());
+                GUILayout.Space(width);
+                disposables.Add(new GUILayout.VerticalScope());
+
+                return QcSharp.DisposableAction(() =>
+                {
+                    foreach (var d in disposables)
+                        d.Dispose();
+                });
+            }
         }
 
         private class Unindenter : IDisposable
