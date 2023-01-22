@@ -80,13 +80,15 @@ namespace QuizCanners.Utils
 
         public bool TryIterate (ref int index, out T current) 
         {
-            if (instances.Count == 0)
+            int cnt = instances.Count;
+
+            if (cnt == 0)
             {
                 current = null;
                 return false;
             }
 
-            index = (index +1) % instances.Count;
+            index = (index + Mathf.FloorToInt(cnt/10) + 1) % cnt;
             current = instances[index];
             return true;
         }

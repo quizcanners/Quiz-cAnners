@@ -167,8 +167,13 @@ namespace QuizCanners.Utils
                     if (Application.isPlaying)
                     {
                         Icon.Add.Click(() => IsLoadedOrLoading = true);
-
                         Icon.Load.Click(() => Load(LoadSceneMode.Single));
+
+                        if (pegi.PaintingGameViewUI)
+                        {
+                            ToString().PegiLabel().Write();
+                        }
+
                     }
 #if UNITY_EDITOR
                     else if (IsValid && "Switch".PegiLabel(toolTip: "Save scene before switching to another. Sure you want to change?").ClickConfirm(
@@ -219,14 +224,8 @@ namespace QuizCanners.Utils
         {
             if (ScenePath.IsNullOrEmpty())
                 return "NO SCENE PATH";
-            var separator = ScenePath.LastIndexOfAny(new char[] { '/', '\\' });
 
-            string result = ScenePath;
-
-            if (separator > 0)
-                result = result.Substring(separator + 1);
-
-            return result.Replace(".unity", "");
+            return QcSharp.GetFileNameFromPath(ScenePath);
         }
         public string NeedAttention()
         {

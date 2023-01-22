@@ -895,6 +895,30 @@ namespace QuizCanners.Utils
 
         #endregion
 
+        public static string GetFileNameFromPath(string text) 
+        {
+            if (text.IsNullOrEmpty())
+                return "";
+
+            int lastBack = text.LastIndexOf('/');
+            int lastFront = text.LastIndexOf('\\');
+
+            var maxSlash = Math.Max(lastBack, lastFront);
+
+            if (maxSlash >= 0) 
+            {
+                text = text[(maxSlash + 1)..];
+            }
+
+            var dot = text.IndexOf('.');
+            if (dot >= 0) 
+            {
+                text = text[..dot];
+            }
+
+            return text;
+        }
+
         public static string FixDecimalSeparator(string text)
         {
             var separator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
