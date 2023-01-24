@@ -547,6 +547,8 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(this TextLabel label, ref float val, float min, float max)
         {
+            label.FallbackWidthFraction = 0.3f;
+
             max = Mathf.Max(max, val);
             
             label.sliderText(val);

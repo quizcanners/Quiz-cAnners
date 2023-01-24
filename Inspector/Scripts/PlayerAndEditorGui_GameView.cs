@@ -76,16 +76,28 @@ namespace QuizCanners.Inspect
 
             public class Window
             {
-                public float Upscale;
+              
                 private WindowFunction _function;
                 private Rect _windowRect;
                 private Vector2 _scrollPosition;
-
                 private bool _useExactSize;
-
                 private int _maxWidth;
                 private int _maxHeight;
                 private bool _foldedIn;
+                private bool _customUpscale;
+                private float _upscale;
+
+                public void SetUpscale(float upscale) 
+                {
+                    _upscale = upscale;
+                    _customUpscale = true;
+                }
+
+                public float Upscale 
+                {
+                    get => _upscale;
+                }
+
                 public bool FoldedIn 
                 {
                     get => _foldedIn;
@@ -123,8 +135,11 @@ namespace QuizCanners.Inspect
                         {
                             GUI.matrix = Matrix4x4.TRS(new Vector3(0, 0, 0), Quaternion.identity,
                                 new Vector3(Upscale, Upscale, 1));
-                            GUILayout.BeginArea(new Rect(40 / Upscale, 20 / Upscale, Screen.width / Upscale,
-                                Screen.height / Upscale));
+
+                            var safeArea = Screen.safeArea;
+                                     
+                            GUILayout.BeginArea(new Rect((40 + safeArea.x) / Upscale, (20 + safeArea.y) / Upscale, safeArea.width / Upscale,
+                                safeArea.height / Upscale));
 
                             FoldedIn = false;
                         }
@@ -165,12 +180,9 @@ namespace QuizCanners.Inspect
                                 _tooltip = _tooltipDelay > 0 ? _tooltip : " ";
                             }
 
-
-                            pegi.Nl();
+                            Nl();
                             _tooltip.PegiLabel(style: Styles.HintText).Nl();
-
                             UnIndent();
-
                         }
 
                         if (!FoldedIn)
@@ -200,13 +212,16 @@ namespace QuizCanners.Inspect
                     }
 
                     PegiEditorOnly.EndObject(PegiEditorOnly.inspectedUnityObject);
-
                     PaintingGameViewUI = false;
                 }
                 public void Render(IPEGI p) => Render(p, p.Inspect, p.GetNameForInspector());
                 public void Render(IPEGI p, string windowName) => Render(p, p.Inspect, windowName);
                 public void Render(IPEGI target, WindowFunction doWindow, string c_windowName)
                 {
+                    if (!_customUpscale)
+                    {
+                        _upscale = Mathf.Min(Screen.width, Screen.height) / 320f;
+                    }
 
                     PegiEditorOnly.ResetInspectionTarget(target);
 
@@ -235,9 +250,15 @@ namespace QuizCanners.Inspect
                     _windowRect.height = 50;
                 }
 
+                public Window() 
+                {
+
+                }
+
                 public Window(int windowWidth, int windowHeight)
                 {
-                    this.Upscale = 1;
+                    _upscale = 1;
+                    _customUpscale = true;
                     _maxWidth = windowWidth;
                     _maxHeight = windowHeight;
                     _useExactSize = true;
@@ -245,10 +266,11 @@ namespace QuizCanners.Inspect
                     FoldedIn = true;
                 }
 
-                public Window(float upscale = 1)
+                public Window(float customUpscale = 1)
                 {
-                    this.Upscale = upscale;
-                    _windowRect = new Rect(20, 50, 350 * upscale, 400 * upscale);
+                    _customUpscale = true;
+                    _upscale = customUpscale;
+                    _windowRect = new Rect(20, 50, 350 * customUpscale, 400 * customUpscale);
                 }
             }
 
