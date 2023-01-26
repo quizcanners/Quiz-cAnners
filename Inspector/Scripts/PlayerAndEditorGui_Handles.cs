@@ -133,7 +133,7 @@ namespace QuizCanners.Inspect
                     }
 
                     UnityEditor.EditorGUI.BeginChangeCheck();
-                    newPosition = UnityEditor.Handles.FreeMoveHandle(position, Quaternion.identity, size, snapSize, ToFunction(shape));
+                    var fmh_136_80_638103705023594423 = Quaternion.identity; newPosition = UnityEditor.Handles.FreeMoveHandle(position, size, snapSize, ToFunction(shape));
                     
                     return EndChangeCheck();
 
