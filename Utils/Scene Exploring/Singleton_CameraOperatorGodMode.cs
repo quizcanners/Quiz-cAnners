@@ -164,7 +164,7 @@ namespace QuizCanners.Utils
 
             if (LEGACY_INPUT)
             {
-                rightMouseButon = Input.GetMouseButton(1);
+                rightMouseButon = Input.GetMouseButton(1) && !Input.GetMouseButtonDown(1); // Ignore delta during first frame
             }
 
 
@@ -199,8 +199,6 @@ namespace QuizCanners.Utils
         }
 
         #region Inspector
-
-
 
         public override void Inspect()
         {

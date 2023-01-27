@@ -33,6 +33,8 @@ namespace QuizCanners.Utils
         protected List<T> pool = new List<T>();
         protected List<T> instances = new List<T>();
 
+        private LoopLock _clearAllLock = new LoopLock();
+
         public int InstancesCount => instances.Count;
 
         public int TotalCount => instances.Count + pool.Count;
@@ -113,6 +115,9 @@ namespace QuizCanners.Utils
 
         public bool ReturnToPool(T effect)
         {
+            if (!_clearAllLock.Unlocked)
+                return false;
+
             if (!instances.Remove(effect))
                 return false;
 
@@ -237,20 +242,32 @@ namespace QuizCanners.Utils
         {
             ClearPool();
 
-            foreach (var e in instances)
-                if (e)
-                    e.gameObject.DestroyWhatever();
+            if (!_clearAllLock.Unlocked)
+                return;
 
-            instances.Clear();
+            using (_clearAllLock.Lock())
+            {
+                foreach (var e in instances)
+                    if (e)
+                        e.gameObject.DestroyWhatever();
+
+                instances.Clear();
+            }
         }
 
         private void ClearPool() 
         {
-            foreach (var e in pool)
-                if (e)
-                    e.gameObject.DestroyWhatever();
+            if (!_clearAllLock.Unlocked)
+                return;
 
-            pool.Clear();
+            using (_clearAllLock.Lock())
+            {
+                foreach (var e in pool)
+                    if (e)
+                        e.gameObject.DestroyWhatever();
+
+                pool.Clear();
+            }
         }
 
         #region Inspector
