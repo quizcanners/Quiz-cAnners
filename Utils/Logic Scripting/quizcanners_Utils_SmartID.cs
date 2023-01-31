@@ -166,6 +166,8 @@ namespace QuizCanners.Utils
     {
         public int Id = -1;
 
+        public bool IsValid => Id >= 0;
+
         protected abstract List<TValue> GetEnities();
 
         public virtual bool TryGetEntity(out TValue entity)
