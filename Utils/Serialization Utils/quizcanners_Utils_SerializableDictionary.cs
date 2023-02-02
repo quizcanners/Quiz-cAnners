@@ -109,7 +109,7 @@ namespace QuizCanners.Utils
                 }
                 else
                 {
-                    name.PegiLabel().Try_enter_Inspect(value, ref CollectionMeta.inspectedElement_Internal, index).OnChanged(CollectionMeta.OnChanged);
+                    name.PegiLabel().Try_Enter_Inspect(value, ref CollectionMeta.inspectedElement_Internal, index).OnChanged(CollectionMeta.OnChanged);
                 }
             }
         }

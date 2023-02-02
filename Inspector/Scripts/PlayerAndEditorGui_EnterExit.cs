@@ -59,7 +59,7 @@ namespace QuizCanners.Inspect
             }
         }
 
-#       region Enter & Exit
+        #region Enter & Exit
 
         public static StateToken IsEntered(this TextLabel label, bool showLabelIfTrue = true, Styles.PegiGuiStyle enterLabelStyle = null)
         {
@@ -162,7 +162,7 @@ namespace QuizCanners.Inspect
             return PegiEditorOnly.isFoldedOutOrEntered;
         }
 
-        public static ChangesToken Enter_Inspect(this TextLabel label, System.Action inspectFunction)
+        public static ChangesToken Enter_Inspect(this TextLabel label, Action inspectFunction)
         {
             using (Context.IncrementDisposible(out bool canSkip))
             {
@@ -180,7 +180,7 @@ namespace QuizCanners.Inspect
                         inspectFunction.Invoke();
                     } catch (Exception ex) 
                     {
-                        pegi.Write_Exception(ex);
+                        Write_Exception(ex);
                     }
                 }
 
@@ -273,7 +273,7 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static ChangesToken Try_enter_Inspect(this TextLabel label, object target, ref int entered, int thisOne) 
+        public static ChangesToken Try_Enter_Inspect(this TextLabel label, object target, ref int entered, int thisOne) 
         {
             if (!EnterInternal.OptionsDrawn(ref entered, thisOne))
                 return ChangesToken.False;
@@ -353,7 +353,7 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-#       region Internal
+        #region Internal
 
         private static class EnterInternal 
         {
@@ -591,8 +591,6 @@ namespace QuizCanners.Inspect
         }
 
 
-
-
         private static StateToken IsEntered_ListIcon<T>(this TextLabel txt, List<T> list)
         {
             if (collectionInspector.CollectionIsNull(list))
@@ -650,7 +648,6 @@ namespace QuizCanners.Inspect
 
             return "{0} [1]".F(txt);
         }
-
 
         #endregion
 
@@ -764,9 +761,9 @@ namespace QuizCanners.Inspect
         }
 #       endregion
 
-#       endregion
+        #endregion
 
-#       region Line
+        #region Line
 
         public static void Line() => Line(PaintingGameViewUI ? Color.white : Color.black);
 
@@ -784,6 +781,6 @@ namespace QuizCanners.Inspect
             GUI.color = c;
         }
 
-#       endregion
+        #endregion
     }
 }

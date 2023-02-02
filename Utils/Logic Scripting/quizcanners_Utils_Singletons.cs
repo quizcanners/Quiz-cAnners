@@ -11,7 +11,7 @@ namespace QuizCanners.Utils
 
         public static List<TInterface> GetAll<TInterface>() => CollectionSingleton<TInterface>.Instances;
 
-        public static TValue TryGetValue<TService, TValue>(Func<TService,TValue> valueGetter, TValue defaultValue = default(TValue), bool logOnServiceMissing = true) where TService : IQcSingleton
+        public static TValue TryGetValue<TService, TValue>(Func<TService,TValue> valueGetter, TValue defaultValue = default, bool logOnServiceMissing = true) where TService : IQcSingleton
         {
             Try<TService>(onFound: s => defaultValue = valueGetter(s), logOnServiceMissing: logOnServiceMissing);
             return defaultValue;
@@ -59,7 +59,7 @@ namespace QuizCanners.Utils
         private static class SingletonGeneric<T>
         {
             private static T instance;
-            private static readonly Gate.Integer _versionGate = new Gate.Integer();
+            private static readonly Gate.Integer _versionGate = new();
             public static T Instance
             {
                 get
@@ -82,7 +82,7 @@ namespace QuizCanners.Utils
         private static class CollectionSingleton<T>
         {
             private static List<T> instances;
-            private static readonly Gate.Integer _versionGate = new Gate.Integer();
+            private static readonly Gate.Integer _versionGate = new();
             public static List<T> Instances
             {
                 get
@@ -114,7 +114,7 @@ namespace QuizCanners.Utils
 
             internal static int Version;
 
-            private static readonly Dictionary<Type, object> _services = new Dictionary<Type, object>();
+            private static readonly Dictionary<Type, object> _services = new();
 
             internal static List<T> GetAll<T>() 
             {
@@ -158,10 +158,10 @@ namespace QuizCanners.Utils
                 Version++;
             }
 
-            private static readonly PlayerPrefValue.Int _prsstInspectedIndex = new PlayerPrefValue.Int("qc_SrvInsp", -1);
-            private static readonly PlayerPrefValue.String _prsstInspectedCategory = new PlayerPrefValue.String("qc_SrvCat", "");
+            private static readonly PlayerPrefValue.Int _prsstInspectedIndex = new("qc_SrvInsp", -1);
+            private static readonly PlayerPrefValue.String _prsstInspectedCategory = new("qc_SrvCat", "");
 
-            private static readonly LoopLock _singletonLoop = new LoopLock();
+            private static readonly LoopLock _singletonLoop = new();
 
             private static string _searchText = "";
 
@@ -182,8 +182,8 @@ namespace QuizCanners.Utils
 
                     pegi.Nl();
 
-                    HashSet<Type> processedTypes = new HashSet<Type>();
-                    HashSet<string> processedCategories = new HashSet<string>();
+                    HashSet<Type> processedTypes = new();
+                    HashSet<string> processedCategories = new();
 
                     if (_prsstInspectedCategory.GetValue().IsNullOrEmpty() == false)
                     {
@@ -229,9 +229,8 @@ namespace QuizCanners.Utils
                             {
                                 KeyValuePair<Type, object> el = _services.GetElementAt(i);
 
-                                var srv = el.Value as IQcSingleton;
 
-                                string myCategory = srv == null ? Categories.DEFAULT : srv.InspectedCategory;
+                                string myCategory = el.Value is not IQcSingleton srv ? Categories.DEFAULT : srv.InspectedCategory;
 
                                 bool show = false;
 
@@ -296,9 +295,7 @@ namespace QuizCanners.Utils
 
                     void InspectServiceInList(object service, int index)
                     {
-                        var lst = service as IPEGI_ListInspect;
-
-                        if (lst != null)
+                        if (service is IPEGI_ListInspect lst)
                         {
                             int entered = -1;
                             if (lst.InspectInList_Nested(ref entered, index))
@@ -333,12 +330,10 @@ namespace QuizCanners.Utils
                     {
                         if (s.Value != null)
                         {
-                            var load = s.Value as ILoadingProgressForInspector;
-
                             string state = "";
                             float progress01 = 0.5f;
 
-                            if (load != null && load.IsLoading(ref state, ref progress01))
+                            if (s.Value is ILoadingProgressForInspector load && load.IsLoading(ref state, ref progress01))
                             {
                                "{0} {1}%  ({2})".F(s.Key, Mathf.FloorToInt(progress01 * 100), state).PegiLabel().DrawProgressBar(progress01);
                             }
@@ -378,7 +373,7 @@ namespace QuizCanners.Utils
 
             protected virtual void OnRegisterServiceInterfaces() { }
 
-            private readonly List<Type> _typesToRemove = new List<Type>();
+            private readonly List<Type> _typesToRemove = new();
 
             protected void RegisterServiceAs<T>() 
             {

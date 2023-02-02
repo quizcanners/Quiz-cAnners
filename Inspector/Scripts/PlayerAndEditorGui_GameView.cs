@@ -128,11 +128,15 @@ namespace QuizCanners.Inspect
                 {
                     PaintingGameViewUI = true;
                     PegiEditorOnly.StartObject();
+                    bool matrixOverride = false;
+                    Matrix4x4 matrix = new Matrix4x4();
 
                     try
                     {
                         if (!UseWindow)
                         {
+                            matrix = GUI.matrix;
+                            matrixOverride = true;
                             GUI.matrix = Matrix4x4.TRS(new Vector3(0, 0, 0), Quaternion.identity,
                                 new Vector3(Upscale, Upscale, 1));
 
@@ -213,6 +217,11 @@ namespace QuizCanners.Inspect
 
                     PegiEditorOnly.EndObject(PegiEditorOnly.inspectedUnityObject);
                     PaintingGameViewUI = false;
+
+                    if (matrixOverride)
+                    {
+                        GUI.matrix = matrix;
+                    }
                 }
                 public void Render(IPEGI p) => Render(p, p.Inspect, p.GetNameForInspector());
                 public void Render(IPEGI p, string windowName) => Render(p, p.Inspect, windowName);
@@ -220,7 +229,7 @@ namespace QuizCanners.Inspect
                 {
                     if (!_customUpscale)
                     {
-                        _upscale = Mathf.Min(Screen.width, Screen.height) / 320f;
+                        _upscale = Mathf.Max(1, Mathf.Min(Screen.width, Screen.height) / 320f);
                     }
 
                     PegiEditorOnly.ResetInspectionTarget(target);

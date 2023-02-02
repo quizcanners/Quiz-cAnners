@@ -104,7 +104,7 @@ namespace QuizCanners.Inspect
 
             #region Save & Load
 
-            public CfgEncoder Encode() => new CfgEncoder().Add_IfNotNegative("i", CurrentlyEntered);
+            public CfgEncoder Encode() => new CfgEncoder().Add_IfNotNegative("i", GetCurrentlyEnteredInternal());
 
             public void DecodeTag(string key, CfgData data)
             {

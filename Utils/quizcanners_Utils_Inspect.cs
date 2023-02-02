@@ -7,6 +7,7 @@ using UnityEngine;
 using Profiler = UnityEngine.Profiling.Profiler;
 using QuizCanners.Inspect.Examples;
 using static QuizCanners.Utils.QcDebug;
+using UnityEngine.VFX;
 
 #if UNITY_EDITOR
 using UnityEditor.Sprites;
@@ -236,7 +237,7 @@ namespace QuizCanners.Utils
                 }
             }
 
-            private readonly PlayerPrefValue.String _screenShotName = new PlayerPrefValue.String("qc_ScreenShotName", defaultValue: "Screen Shot");
+            private readonly PlayerPrefValue.String _screenShotName = new("qc_ScreenShotName", defaultValue: "Screen Shot");
 
            // public string screenShotName;
 
@@ -423,7 +424,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        private static readonly ScreenShootTaker screenShots = new ScreenShootTaker();
+        private static readonly ScreenShootTaker screenShots = new();
 
         #endregion
 
@@ -443,8 +444,8 @@ namespace QuizCanners.Utils
             return pegi.ChangesToken.False;
         }
 
-        private static readonly pegi.EnterExitContext _context = new pegi.EnterExitContext(playerPrefId: "inspEnt");
-        private static readonly pegi.EnterExitContext _enteredData = new pegi.EnterExitContext(playerPrefId: "inspEntDta");
+        private static readonly pegi.EnterExitContext _context = new(playerPrefId: "inspEnt");
+        private static readonly pegi.EnterExitContext _enteredData = new(playerPrefId: "inspEntDta");
    
         public static void InspectAllUtils()
         {
@@ -477,7 +478,7 @@ namespace QuizCanners.Utils
                                     pegi.GameView.ShowNotification("ERROR: Bundles are being used");
                             }
 
-                            List<string> lst = new List<string>();
+                            List<string> lst = new();
 
                             Caching.GetAllCachePaths(lst);
 
@@ -538,7 +539,7 @@ namespace QuizCanners.Utils
 
                 "Logs".PegiLabel().IsEntered().Nl().If_Entered(() => QcLog.LogHandler.Nested_Inspect());
 
-                "Profiler".PegiLabel().Enter_Inspect(QcDebug.TimeProfiler.Instance).Nl();
+                "Profiler".PegiLabel().Enter_Inspect(TimeProfiler.Instance).Nl();
     
                 if ("Time & Audio".PegiLabel().IsEntered().Nl())
                 {
@@ -574,17 +575,40 @@ namespace QuizCanners.Utils
 
                     pegi.Nl();
 
-                  
-
                     "Time.deltaTime: {0}".F(QcSharp.SecondsToReadableString(Time.deltaTime)).PegiLabel().Nl();
 
                     "Time.realtimeSinceStartup {0}".F(QcSharp.SecondsToReadableString(Time.realtimeSinceStartup)).PegiLabel().Nl();
 
+                    
+                }
+
+                if ("Graphics".PegiLabel().IsEntered().Nl()) 
+                {
                     var fr = Application.targetFrameRate;
                     if ("Frame-Rate".PegiLabel().Edit(ref fr).Nl() && fr > 0)
                     {
                         Application.targetFrameRate = fr;
                     }
+
+                    var res = Screen.currentResolution;
+
+                    int width = res.width;
+                    int height = res.height;
+
+                    "Screen: {0}x{1}".F(Screen.width, Screen.height).PegiLabel().Nl();
+
+                    "Display: {0}x{1}".F(Display.main.renderingWidth, Display.main.renderingHeight).PegiLabel().Nl();
+
+                    "Resolution: {0}x{1}".F(width, height).PegiLabel().Nl();
+
+                    var changes = pegi.ChangeTrackStart();
+
+                    "Width".PegiLabel(60).Edit(ref width, 8, Display.main.renderingWidth).Nl();
+                    "Height".PegiLabel(60).Edit(ref height, 8, Display.main.renderingHeight).Nl();
+
+                    if (changes)
+                        Screen.SetResolution(width, height, fullscreen: true);
+
                 }
 
                 if ("Screen Shots".PegiLabel().IsEntered().Nl())
