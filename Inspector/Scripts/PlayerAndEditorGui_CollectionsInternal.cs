@@ -808,6 +808,9 @@ namespace QuizCanners.Inspect
 #endif
                 return new ChangesToken(changed);
             }
+
+        
+
             private void SetSelected<T>(CollectionInspectorMeta meta, List<T> list, bool val)
             {
                 if (meta == null)
@@ -1444,6 +1447,20 @@ namespace QuizCanners.Inspect
                 }
                 return StateToken.False;
             }
+        }
+
+        public static ChangesToken DragAndDrop_Area<T>(out List<T> droppedElements) where T : Object
+        {
+            droppedElements = new List<T>();
+
+#if UNITY_EDITOR
+            foreach (var ret in PegiEditorOnly.DropAreaGUI<T>())
+            {
+                droppedElements.Add(ret);
+            }
+#endif
+            return droppedElements.Count > 0 ? ChangesToken.True : ChangesToken.False; // ChangesToken.;
+
         }
     }
 }

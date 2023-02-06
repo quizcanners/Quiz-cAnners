@@ -1,13 +1,13 @@
 ﻿#if UNITY_EDITOR
-using UnityEngine;
-using UnityEditor;
-using System.Collections.Generic;
-using QuizCanners.Utils;
-using System.Linq.Expressions;
-using Type = System.Type;
-using ReorderableList = UnityEditorInternal.ReorderableList;
-using SceneManager = UnityEngine.SceneManagement.SceneManager;
-using System;
+    using UnityEngine;
+    using UnityEditor;
+    using System.Collections.Generic;
+    using QuizCanners.Utils;
+    using System.Linq.Expressions;
+    using Type = System.Type;
+    using ReorderableList = UnityEditorInternal.ReorderableList;
+    using SceneManager = UnityEngine.SceneManagement.SceneManager;
+    using System;
 #endif
 
 using static QuizCanners.Inspect.pegi;
@@ -22,9 +22,7 @@ using Object = UnityEngine.Object;
 
 namespace QuizCanners.Inspect
 {
-
     internal static partial class PegiEditorOnly {
-
 
         internal static Styles.Background.BackgroundStyle nextBgStyle;
         internal static Object inspectedUnityObject;
@@ -284,7 +282,7 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        public static Object ClearFromPooledSerializedObjects(Object obj) //where T : Object
+        public static Object ClearFromPooledSerializedObjects(Object obj)
         {
             if (obj && SerializedObjects.ContainsKey(obj))
                 SerializedObjects.Remove(obj);
@@ -349,9 +347,8 @@ namespace QuizCanners.Inspect
             _textAndToolTip.tooltip = text.toolTip;
             return _textAndToolTip;
         }
+        
         #region Foldout
-
-
         private static StateToken StylizedFoldOut(bool foldedOut, TextLabel txt, string hint = "FoldIn/FoldOut")
         {
             txt.FallbackHint = () => hint;
@@ -1473,7 +1470,7 @@ namespace QuizCanners.Inspect
         }
         #endregion
 
-        private static bool _searchInChildren;
+       // private static bool _searchInChildren;
 
         public static IEnumerable<T> DropAreaGUI<T>() where T : Object
         {
@@ -1482,15 +1479,7 @@ namespace QuizCanners.Inspect
             var evt = Event.current;
             var drop_area = GUILayoutUtility.GetRect(0.0f, 50.0f, GUILayout.ExpandWidth(true));
 
-            bool isComponent = typeof(Component).IsAssignableFrom(typeof(T));
-
-            if (isComponent) 
-            {
-                GUILayout.Box("Drag & Drop area for Game Object with {0} is above".F(collectionInspector.GetCurrentListLabel<T>(null)));
-                "Search in children".PegiLabel(120).Toggle(ref _searchInChildren).Nl();
-            }
-            else
-                GUILayout.Box("Drag & Drop area for {0} is above".F(collectionInspector.GetCurrentListLabel<T>(null)));
+            GUILayout.Box("Drag & Drop {0}[] above".F(collectionInspector.GetCurrentListLabel<T>(null)));
 
             switch (evt.type)
             {
@@ -1512,10 +1501,14 @@ namespace QuizCanners.Inspect
                             else {
                                 var go = o as GameObject;
 
-                                if (!go) continue;
-                                foreach (var c in (_searchInChildren
-                                    ? go.GetComponentsInChildren(typeof(T))
-                                    : go.GetComponents(typeof(T)))) {
+                                if (!go) 
+                                    continue;
+
+                                foreach (var c in 
+                                    //_searchInChildren
+                                    //? go.GetComponentsInChildren(typeof(T))
+                                    //: 
+                                    go.GetComponents(typeof(T))) {
 
                                     yield return c as T;
                                 }

@@ -8,7 +8,7 @@ namespace QuizCanners.Utils
 {
     public abstract class PoolSingletonBase<T> : Singleton.BehaniourBase, IEnumerable<T>, IGotCount where T: Component
     {
-        [SerializeField] protected List<T> prefabs = new List<T>();
+        [SerializeField] protected List<T> prefabs = new();
         [SerializeField] private bool _disablePooling;
 
         public bool DisablePooling 
@@ -33,7 +33,7 @@ namespace QuizCanners.Utils
         protected List<T> pool = new List<T>();
         protected List<T> instances = new List<T>();
 
-        private LoopLock _clearAllLock = new LoopLock();
+        private readonly LoopLock _clearAllLock = new();
 
         public int InstancesCount => instances.Count;
 
@@ -64,21 +64,7 @@ namespace QuizCanners.Utils
             return CanSpawn();
         }
 
-        protected Vector3 GetScaleBasedOnDistance(Vector3 pos) => Vector3.one * GetScaleFactorFromDistance(pos);
 
-        protected float GetScaleFactorFromDistance(Vector3 pos) => (0.25f + QcMath.SmoothStep(0, 5, GetDistanceToCamera(pos)) * 0.75f);
-
-        protected float GetDistanceToCamera(Vector3 pos)
-        {
-            var cam = Singleton.Get<Singleton_CameraOperatorGodMode>();
-
-            if (cam) 
-            {
-                Vector3.Distance(cam.transform.position, pos);
-            }
-
-            return Vector3.Distance(Camera.main.transform.position, pos);
-        }
 
         public bool TryIterate (ref int index, out T current) 
         {
