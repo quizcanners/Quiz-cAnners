@@ -8,6 +8,7 @@ using Object = UnityEngine.Object;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine.SceneManagement;
+using QuizCanners.Inspect;
 
 #if UNITY_EDITOR
 using  UnityEditor;
@@ -1059,10 +1060,11 @@ namespace QuizCanners.Utils {
 #endif
         }
 
-        public static void RepaintViews()
+        public static void RepaintViews(UnityEngine.Object obj)
         {
 #if UNITY_EDITOR
-            SceneView.RepaintAll();
+            pegi.Handle.SceneSetDirty(obj);
+            //SceneView.RepaintAll();
             UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
 #endif
         }

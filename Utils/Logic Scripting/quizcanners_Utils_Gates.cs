@@ -63,7 +63,7 @@ namespace QuizCanners.Utils
         public class Frame : GateBase
         {
             private int _frameIndex;
-            private readonly SystemTime _editorGateTime = new SystemTime();
+            private readonly SystemTime _editorGateTime = new SystemTime(initialValue: InitialValue.StartArmed);
             private int _editorFrames;
 
             public bool TryEnter()
@@ -222,8 +222,7 @@ namespace QuizCanners.Utils
             protected override DateTime GetCurrent => DateTime.Now;
             protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime).TotalSeconds;
 
-            public SystemTime (InitialValue initialValue = InitialValue.Uninitialized) 
-                : base (initialValue){}
+            public SystemTime (InitialValue initialValue) : base (initialValue){}
 
         }
 
@@ -232,8 +231,7 @@ namespace QuizCanners.Utils
             protected override float GetCurrent => Time.time;
             protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
 
-            public UnityTimeScaled(InitialValue initialValue = InitialValue.Uninitialized)
-               : base(initialValue) { }
+            public UnityTimeScaled(InitialValue initialValue) : base(initialValue) { }
         }
 
         public class UnityTimeUnScaled : TimeBase<float>, IPEGI
@@ -241,8 +239,7 @@ namespace QuizCanners.Utils
             protected override float GetCurrent => Time.unscaledTime;
             protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
 
-            public UnityTimeUnScaled(InitialValue initialValue = InitialValue.Uninitialized)
-                : base(initialValue) { }
+            public UnityTimeUnScaled(InitialValue initialValue) : base(initialValue) { }
         }
 
         public class UnityTimeSinceStartup : TimeBase<double>, IPEGI
@@ -250,8 +247,7 @@ namespace QuizCanners.Utils
             protected override double GetCurrent => QcUnity.TimeSinceStartup();
             protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
 
-            public UnityTimeSinceStartup(InitialValue initialValue = InitialValue.Uninitialized)
-                : base(initialValue) { }
+            public UnityTimeSinceStartup(InitialValue initialValue) : base(initialValue) { }
         }
 
       
