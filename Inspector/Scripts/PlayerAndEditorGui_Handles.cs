@@ -28,6 +28,24 @@ namespace QuizCanners.Inspect
 
         public static class Handle
         {
+            public class PlaneHandleState : IPEGI, IPEGI_Handles
+            {
+                public PlaneProjection _projection;
+                public Vector3 worldPosition;
+
+                public void Inspect()
+                {
+
+                }
+
+                public void OnSceneDraw()
+                {
+
+                }
+
+                public enum PlaneProjection { x,y,z}
+            }
+
             //UnityEditor.Handles.Disc
             //UnityEditor.Handles.DrawLine
             //UnityEditor.Handles.PositionHandle
@@ -464,7 +482,6 @@ namespace QuizCanners.Inspect
             }
 #endif
 
-
             internal static void DrawRotatedCube(Vector3 position, Quaternion rotation, Vector3 size, Action<Vector3, Vector3> draw)
             {
 
@@ -498,6 +515,7 @@ namespace QuizCanners.Inspect
                 }
 
             }
+
 
         }
 

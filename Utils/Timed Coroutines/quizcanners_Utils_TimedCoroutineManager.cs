@@ -12,9 +12,9 @@ namespace QuizCanners.Utils
 {
     public static partial class QcAsync
     {
-        public static TimedCoroutine.CallAgainRequest CallAgain() => new TimedCoroutine.CallAgainRequest();
+        public static TimedCoroutine.CallAgainRequest CallAgain() => new();
 
-        public static TimedCoroutine.CallAgainRequest CallAgain(string message) => new TimedCoroutine.CallAgainRequest(message: message);
+        public static TimedCoroutine.CallAgainRequest CallAgain(string message) => new(message: message);
 
         /*
         public static TimedEnumeration.CallAgain CallAfter(float seconds) =>
@@ -30,16 +30,16 @@ namespace QuizCanners.Utils
             new TimedEnumeration.CallAgain(task: Task.Delay(timeSpan), message: message);*/
 
         public static TimedCoroutine.CallAgainRequest CallAfter_Thread(Action afterThisTask) =>
-            new TimedCoroutine.CallAgainRequest(task: Task.Run(afterThisTask));
+            new(task: Task.Run(afterThisTask));
 
         public static TimedCoroutine.CallAgainRequest CallAfter_Thread(Action afterThisTask, string message) =>
-            new TimedCoroutine.CallAgainRequest(task: Task.Run(afterThisTask), message: message);
+            new(task: Task.Run(afterThisTask), message: message);
 
         public class TimedCoroutinesManager : IPEGI
         {
-            private static readonly List<TimedCoroutine> pool = new List<TimedCoroutine>();
+            private static readonly List<TimedCoroutine> pool = new();
 
-            private readonly List<TimedCoroutine> _enumerators = new List<TimedCoroutine>();
+            private readonly List<TimedCoroutine> _enumerators = new();
 
             public int GetActiveCoroutinesCount => _enumerators.Count;
 
@@ -112,7 +112,7 @@ namespace QuizCanners.Utils
             behaviour.StartCoroutine(new TimedCoroutine(enumerator).GetCoroutine(onExitAction: onExit));
 
         #region Inspector
-        public static TimedCoroutinesManager DefaultCoroutineManager = new TimedCoroutinesManager();
+        public static TimedCoroutinesManager DefaultCoroutineManager = new();
 
         private static string CalculatePi_Test(int digits)
         {

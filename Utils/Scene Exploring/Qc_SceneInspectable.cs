@@ -176,7 +176,7 @@ namespace QuizCanners.Utils
 
                     }
 #if UNITY_EDITOR
-                    else if (IsValid && "Switch".PegiLabel(toolTip: "Save scene before switching to another. Sure you want to change?").ClickConfirm(
+                    else if (IsValid && !SceneReference.ScenePathDirty && "Switch".PegiLabel(toolTip: "Save scene before switching to another. Sure you want to change?").ClickConfirm(
                         confirmationTag: "SwSc" + ScenePath))
                         EditorSceneManager.OpenScene(ScenePath);
 #endif
@@ -185,7 +185,7 @@ namespace QuizCanners.Utils
             }
 #if UNITY_EDITOR
 
-            if (IsValid)
+            if (IsValid && !SceneReference.ScenePathDirty)
             {
                 bool match = false;
                 var allScenes = EditorBuildSettings.scenes;

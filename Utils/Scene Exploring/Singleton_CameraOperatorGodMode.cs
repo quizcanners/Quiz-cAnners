@@ -29,7 +29,10 @@ namespace QuizCanners.Utils
         public bool orbitingFocused;
         public float spinStartTime;
 
+
         [SerializeField] protected Camera _mainCam;
+
+        private bool mouseOutside = false;
 
         public override string InspectedCategory => Utils.Singleton.Categories.SCENE_MGMT;
 
@@ -52,28 +55,32 @@ namespace QuizCanners.Utils
 
         private void SpinAround()
         {
-
             var camTr = _mainCam.transform;
 
-            bool downRMB = false;
-            bool upRMB = false;
-            bool pressedRMB = false;
+            bool downMMB = false;
+            bool upMMB = false;
+            bool pressedMMB = false;
 
             if (LEGACY_INPUT)
             {
-                downRMB = Input.GetMouseButtonDown(2);
-                upRMB = Input.GetMouseButtonUp(2);
-                pressedRMB = Input.GetMouseButton(2);
+                if (!mouseOutside)
+                {
+                    downMMB = Input.GetMouseButtonDown(2);
+                }
+
+                upMMB = Input.GetMouseButtonUp(2);
+                pressedMMB = Input.GetMouseButton(2);
             }
 
-            if (downRMB)
+            if (downMMB)
             {
                 var ray = MainCam.ScreenPointToRay(Input.mousePosition);
 
                 RaycastHit hit;
                 if (Physics.Raycast(ray, out hit))
                     spinCenter = hit.point;
-                else return;
+                else 
+                    return;
 
                 var before = camTr.localRotation;
                 camTr.LookAt(spinCenter);
@@ -87,16 +94,19 @@ namespace QuizCanners.Utils
                 spinStartTime = Time.time;
             }
 
-            if (upRMB)
-                _orbitDistance = 0;
+            if (upMMB)
+                _orbitDistance = -1;
 
-            if ((!(_orbitDistance > 0)) || (!pressedRMB))
+            if (_orbitDistance <= 0 || (!pressedMMB))
                 return;
 
             if (LEGACY_INPUT)
             {
-                camOrbit.x += Input.GetAxis("Mouse X") * 5;
-                camOrbit.y -= Input.GetAxis("Mouse Y") * 5;
+                if (!downMMB)
+                {
+                    camOrbit.x += Input.GetAxis("Mouse X") * 5;
+                    camOrbit.y -= Input.GetAxis("Mouse Y") * 5;
+                }
             }
 
             if (camOrbit.y <= -360)
@@ -109,7 +119,10 @@ namespace QuizCanners.Utils
                              (new Vector3(0.0f, 0.0f, -_orbitDistance)) +
                              spinCenter;
 
+            //if (!mouseOutside)
+
             transform.position = campos;
+
             if (!orbitingFocused)
             {
                 camTr.localRotation = LerpUtils.LerpBySpeed(camTr.localRotation, rot2, 200, unscaledTime: true);
@@ -121,6 +134,7 @@ namespace QuizCanners.Utils
         }
 
 
+     
 
         protected virtual void OnUpdateInternal()
         {
@@ -132,9 +146,12 @@ namespace QuizCanners.Utils
             var add = Vector3.zero;
             bool SpeedUp = false;
             bool rightMouseButon = false;
+           
 
             if (LEGACY_INPUT)
             {
+                mouseOutside = _mainCam.IsMouseOutsideViewArea(Input.mousePosition);
+
                 if (Input.GetKey(KeyCode.W)) add += camTf.forward;
                 if (Input.GetKey(KeyCode.A)) add -= camTf.right;
                 if (Input.GetKey(KeyCode.S)) add -= camTf.forward;

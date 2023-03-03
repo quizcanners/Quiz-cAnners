@@ -14,7 +14,7 @@ namespace QuizCanners.Inspect
     {
         public const int defaultButtonSize = 26;
 
-        public static class EditorViewPegi
+        public static class EditorView
         {
             public static void RefocusIfLocked(Object current, Object target)
             {

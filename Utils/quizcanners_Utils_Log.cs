@@ -178,8 +178,8 @@ namespace QuizCanners.Utils
             public override string ToString() => _name + (Disabled ? " Disabled" : " Enabled");
 
             protected bool Disabled => QcDebug.IsRelease && !_logInBuild;
-            private static readonly Dictionary<string, int> loggedErrors = new Dictionary<string, int>();
-            private static readonly Dictionary<string, int> loggedWarnings = new Dictionary<string, int>();
+            private static readonly Dictionary<string, int> loggedErrors = new();
+            private static readonly Dictionary<string, int> loggedWarnings = new();
 
             public ChillLogger(string name, bool logInBuild = false)
             {

@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine.SceneManagement;
 using QuizCanners.Inspect;
+using Codice.CM.Common.Tree.Partial;
 
 #if UNITY_EDITOR
 using  UnityEditor;
@@ -263,6 +264,12 @@ namespace QuizCanners.Utils {
         private static readonly Gate.Frame _cameraCullingCache = new Gate.Frame();
 
         private static readonly Dictionary<Camera, Dictionary<Vector3, bool>> s_camsCulling = new Dictionary<Camera, Dictionary<Vector3, bool>>();
+
+        public static bool IsMouseOutsideViewArea(this Camera cam, Vector3 mousePos) 
+        {
+            var view = cam.ScreenToViewportPoint(mousePos);
+            return view.x < 0 || view.x > 1 || view.y < 0 || view.y > 1;
+        }
 
         public static bool IsInCameraViewArea(this Camera cam, Vector3 worldPosition, float objectSize = 1, float maxDistance = -1)
         {
@@ -2287,8 +2294,73 @@ return false;
 
             mf.mesh.colors = cols;
         }
+        public static bool TryGetSubMeshIndex(this RaycastHit hit, out int subMeshIndex)
+        {
+            subMeshIndex = 0;
 
-        public static int GetSubMeshNumber(this Mesh m, int triangleIndex)
+            var meshCol = hit.collider as MeshCollider;
+
+            if (!meshCol)
+                return false;
+
+            var mesh = meshCol.sharedMesh;
+
+            if (!mesh)
+                return false;
+
+            if (mesh.isReadable == false)
+            {
+                QcLog.ChillLogger.LogWarningOnce("Mesh {0} is not readable".F(mesh.name), mesh.name, hit.transform);
+                return false;
+            }
+
+            var triangleIndex = hit.triangleIndex;
+
+            int triangleCount = 0;
+            for (int i = 0; i < mesh.subMeshCount; ++i)
+            {
+                var triangles = mesh.GetTriangles(i);
+                triangleCount += triangles.Length / 3;
+                if (triangleIndex < triangleCount)
+                {
+                    subMeshIndex = i;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool TryGetSubMeshIndex(this Mesh mesh, int triangleIndex, out int subMeshIndex)
+        { 
+            subMeshIndex = 0;
+
+            if (!mesh)
+                return false;
+
+            if (mesh.isReadable == false)
+            {
+                QcLog.ChillLogger.LogWarningOnce("Mesh {0} is not readable".F(mesh.name), mesh.name, mesh);
+                return false;
+            }
+
+            int triangleCount = 0;
+            for (int i = 0; i < mesh.subMeshCount; ++i)
+            {
+                var triangles = mesh.GetTriangles(i);
+                triangleCount += triangles.Length / 3;
+                if (triangleIndex < triangleCount)
+                {
+                    subMeshIndex = i;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /*
+        public static int GetSubMeshNumber_CheckAllTriangles(this Mesh m, int triangleIndex)
         {
             if (!m)
                 return 0;
@@ -2322,7 +2394,7 @@ return false;
 
             return 0;
         }
-
+        */
         public static void AssignMeshAsCollider(this MeshCollider c, Mesh mesh) {
             // One version of Unity had a bug so this is to counter it, may be not needed anymore
             c.sharedMesh = null;

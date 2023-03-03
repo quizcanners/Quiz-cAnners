@@ -49,7 +49,7 @@ namespace QuizCanners.Utils
                 _endTime = Time.time + seconds;
             }
 
-            public void SetMax(float seconds)
+            public void SetIfBigger(float seconds)
             {
                 IsInitialized = true;
                 _endTime = Mathf.Max(Time.time + seconds, _endTime);
