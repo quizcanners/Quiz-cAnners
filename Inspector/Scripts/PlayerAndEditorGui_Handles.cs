@@ -79,11 +79,13 @@ namespace QuizCanners.Inspect
 
             private static ChangesToken EndClickCheck()
             {
-                if (EndChangeCheck())
+#if UNITY_EDITOR
+                if (EditorOnly_EndChangeCheck())
                 {
                     _clickGate.Update();
                     return ChangesToken.True;
                 }
+#endif
 
                 return ChangesToken.False;
             }

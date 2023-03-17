@@ -30,8 +30,8 @@ namespace QuizCanners.Utils
 
         public virtual float VacancyPortion => (MAX_INSTANCES - (float)instances.Count) / MAX_INSTANCES;
 
-        protected List<T> pool = new List<T>();
-        protected List<T> instances = new List<T>();
+        protected List<T> pool = new();
+        protected List<T> instances = new();
 
         private readonly LoopLock _clearAllLock = new();
 
@@ -41,7 +41,7 @@ namespace QuizCanners.Utils
 
         public bool CanSpawn() 
         {
-            if (!IsSingletonActive()) //!gameObject.activeInHierarchy)
+            if (!IsSingletonActive) //!gameObject.activeInHierarchy)
                 return false;
 
             if (prefabs.Count == 0)
@@ -50,7 +50,7 @@ namespace QuizCanners.Utils
                 return false;
             }
 
-            if (instances.Count >= MAX_INSTANCES)
+            if (instances.Count >= MAX_INSTANCES * Pool.MaxCount.GetCoefficientFromFramerate())
                 return false;
 
             return true;
@@ -329,6 +329,12 @@ namespace QuizCanners.Utils
 
     public static partial class Pool
     {
+
+        public static bool IsVisibleByCamera(Vector3 pos, float objectSize = 1, float maxDistance = -1)
+        {
+            return Camera.main.IsInCameraViewArea(pos, objectSize: objectSize, maxDistance: maxDistance);
+        }
+
         public static bool TrySpawn<T>(Vector3 position) where T : Component => Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawn(position, out var result));
         
         public static bool TrySpawn<T>(Vector3 position, out T instance) where T : Component
@@ -361,7 +367,7 @@ namespace QuizCanners.Utils
         public static bool TrySpawnIfVisible<T>(Vector3 position, Action<T> onInstanciated) where T : Component 
             => Singleton.Try<PoolSingletonBase<T>>(s => s.TrySpawnIfVisible(position, onInstanciated));
 
-        public static float VacancyFraction<T>(float defaultValue = 1f) where T : Component => Singleton.TryGetValue<PoolSingletonBase<T>, float>(s => s.VacancyPortion, defaultValue: defaultValue);
+        public static float VacancyFraction<T>(float defaultValue = 1f) where T : Component => Singleton.GetValue<PoolSingletonBase<T>, float>(s => s.VacancyPortion, defaultValue: defaultValue);
 
         public static void Return<T>(T instance) where T : Component => Singleton.Try<PoolSingletonBase<T>>(onFound: s => s.ReturnToPool(instance), logOnServiceMissing: false); 
 

@@ -11,7 +11,7 @@ namespace QuizCanners.Utils
 
         public static List<TInterface> GetAll<TInterface>() => CollectionSingleton<TInterface>.Instances;
 
-        public static TValue TryGetValue<TService, TValue>(Func<TService,TValue> valueGetter, TValue defaultValue = default, bool logOnServiceMissing = true) where TService : IQcSingleton
+        public static TValue GetValue<TService, TValue>(Func<TService,TValue> valueGetter, TValue defaultValue = default, bool logOnServiceMissing = true) where TService : IQcSingleton
         {
             Try<TService>(onFound: s => defaultValue = valueGetter(s), logOnServiceMissing: logOnServiceMissing);
             return defaultValue;
@@ -24,7 +24,7 @@ namespace QuizCanners.Utils
         {
             var inst = SingletonGeneric<TService>.Instance;
 
-            if (!QcUnity.IsNullOrDestroyed_Obj(inst) && inst.IsSingletonActive())
+            if (!QcUnity.IsNullOrDestroyed_Obj(inst) && inst.IsSingletonActive)
             {
                 try
                 {
@@ -369,7 +369,7 @@ namespace QuizCanners.Utils
 
             public virtual string InspectedCategory => Categories.DEFAULT;
 
-            public virtual bool IsSingletonActive ()=> gameObject.activeInHierarchy;
+            public virtual bool IsSingletonActive { get => gameObject.activeInHierarchy; set { gameObject.SetActive(value); } } 
 
             protected virtual void OnRegisterServiceInterfaces() { }
 
@@ -517,8 +517,8 @@ namespace QuizCanners.Utils
             {
                 if (gameObject.activeSelf && !gameObject.activeInHierarchy)
                     Icon.Warning.Draw("Object is disabled in hierarchy");
-                else if ((IsSingletonActive() ? Icon.Active : Icon.InActive).Click(toolTip: gameObject.activeSelf ? "Make Inactive" : "Make Active")) 
-                    gameObject.SetActive(!gameObject.activeSelf);
+                else if ((IsSingletonActive ? Icon.Active : Icon.InActive).Click(toolTip: gameObject.activeSelf ? "Make Inactive" : "Make Active"))
+                    IsSingletonActive = !IsSingletonActive; 
                 
                 if (ToString().PegiLabel().ClickLabel() | this.Click_Enter_Attention())
                     edited = ind;
@@ -545,7 +545,7 @@ namespace QuizCanners.Utils
         {
             public virtual string InspectedCategory => Categories.DEFAULT;
 
-            public virtual bool IsSingletonActive() => true;
+            public virtual bool IsSingletonActive { get => true; set { } }
 
             public ClassBase()
             {
@@ -555,11 +555,11 @@ namespace QuizCanners.Utils
             public string NameForDisplayPEGI() => QcSharp.AddSpacesInsteadOfCapitals(GetType().ToString().SimplifyTypeName(), keepCatipals: false);
         }
 
-        public interface IQcSingleton 
+        public interface IQcSingleton
         {
             string InspectedCategory { get; }
 
-            bool IsSingletonActive();
+            bool IsSingletonActive { get; set; }
         }
 
         public interface ILoadingProgressForInspector 

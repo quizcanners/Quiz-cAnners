@@ -221,9 +221,7 @@ namespace QuizCanners.Inspect
 
             var isFOOE = PegiEditorOnly.isFoldedOutOrEntered;
 
-            int recurses;
-
-            bool inDic = inspectionChain.TryGetValue(pgi, out recurses);
+            bool inDic = inspectionChain.TryGetValue(pgi, out int recurses);
 
             if (!inDic || recurses < 4)
             {
@@ -423,7 +421,7 @@ namespace QuizCanners.Inspect
 
                 ed.DrawDefaultInspector();
 
-                return EndChangeCheck();
+                return EditorOnly_EndChangeCheck();
 
             }
 #endif
@@ -453,7 +451,7 @@ namespace QuizCanners.Inspect
                     ed.DrawDefaultInspector();
 
 
-                    return EndChangeCheck();
+                    return EditorOnly_EndChangeCheck();
                 }
             }
 #endif

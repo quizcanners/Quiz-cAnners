@@ -6,10 +6,8 @@ using UnityEngine;
 using Graphic = UnityEngine.UI.Graphic;
 using Object = UnityEngine.Object;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using UnityEngine.SceneManagement;
 using QuizCanners.Inspect;
-using Codice.CM.Common.Tree.Partial;
 
 #if UNITY_EDITOR
 using  UnityEditor;

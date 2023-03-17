@@ -288,7 +288,7 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        public static ChangesToken Edit_Inspect<T>(this TextLabel label, ref T obj, bool showLabelIfEntered = true) where T : Object
+        public static ChangesToken Edit_Inspect<T>(this TextLabel label, ref T obj) where T : Object
         {
             var changed = ChangeTrackStart();
 

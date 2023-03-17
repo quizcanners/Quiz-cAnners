@@ -5,7 +5,6 @@ using QuizCanners.Utils;
 using UnityEngine;
 using Object = UnityEngine.Object;
 using QuizCanners.Migration;
-using log4net.Appender;
 
 // ReSharper disable InconsistentNaming
 #pragma warning disable IDE1006 // Naming Styles

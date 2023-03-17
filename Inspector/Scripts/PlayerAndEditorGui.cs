@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using QuizCanners.Utils;
 using UnityEngine;
 
@@ -62,13 +63,19 @@ namespace QuizCanners.Inspect
         private static readonly List<Color> _previousBgColors = new List<Color>();
         private static readonly List<Color> _previousGuiColors = new List<Color>();
 
+        public static UnityEngine.Object InspectedUnityObject =>
+        #if UNITY_EDITOR
+            PegiEditorOnly.inspectedUnityObject;
+        #else
+            null;
+        #endif
         public static bool IsFoldedOut => PegiEditorOnly.isFoldedOutOrEntered;
         public static string EnvironmentNl => Environment.NewLine;
 
-        #region GUI Modes & Fitting
+#region GUI Modes & Fitting
 
 #if UNITY_EDITOR
-        private static ChangesToken EndChangeCheck()
+        private static ChangesToken EditorOnly_EndChangeCheck()
         {
             var changed = UnityEditor.EditorGUI.EndChangeCheck();
             if (changed)
@@ -98,13 +105,13 @@ namespace QuizCanners.Inspect
 
         private static int RemainingLength(int otherElements) => PaintingGameViewUI ? PLAYTIME_GUI_WIDTH - otherElements : Screen.width - otherElements;
 
-        #endregion
+#endregion
 
-        #region Inspection Variables
+#region Inspection Variables
 
 
 
-        #region BG Color
+#region BG Color
 
         private static bool BgColorReplaced => !_previousBgColors.IsNullOrEmpty();
 
@@ -240,9 +247,9 @@ namespace QuizCanners.Inspect
             }
         }
         
-        #endregion
+#endregion
 
-        #region Focus MGMT
+#region Focus MGMT
 
         private static void RepaintEditor()
         {
@@ -254,11 +261,11 @@ namespace QuizCanners.Inspect
 
         public static void UnFocus()
         {
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (!PaintingGameViewUI)
                 UnityEditor.EditorGUI.FocusTextInControl("_");
             else
-            #endif
+#endif
                 GUI.FocusControl("_");
         }
 
@@ -280,7 +287,7 @@ namespace QuizCanners.Inspect
             }
         }
 
-        #endregion
+#endregion
 
         public class ChangesTracker
         {
@@ -345,7 +352,7 @@ namespace QuizCanners.Inspect
             }
         }
 
-        #region New Line
+#region New Line
 
         private static int IndentLevel
         {

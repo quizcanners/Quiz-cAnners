@@ -15,7 +15,7 @@ namespace QuizCanners.Utils
             private static bool _initialized;
             private static int _framesAtStart = 0;
             private static float _timeAtStart = 0.0f;
-            private static float _resetInterval = 5f;
+            private static float _resetInterval = 1f;
 
             public static int GetTotalFrames() => Time.frameCount - _framesAtStart;
 
@@ -44,7 +44,7 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public static void ResetTimer(float resetInterval = 5)
+            public static void ResetTimer(float resetInterval = 1)
             {
                 _initialized = true;
                 _resetInterval = resetInterval;

@@ -7,6 +7,22 @@ namespace QuizCanners.Utils
 {
     public static partial class Pool
     {
+        public static class MaxCount
+        {
+            private static float _byFramerateModifier = 1;
+            private static readonly Gate.Frame _byFrameRecalculateGate = new();
+            public static float GetCoefficientFromFramerate()
+            {
+                if (_byFrameRecalculateGate.TryEnter())
+                {
+                    float quality = QcDebug.FrameRate.FrameRatePerSecond / (Application.targetFrameRate > 10 ? Application.targetFrameRate : 60);
+                    _byFramerateModifier = Mathf.Lerp(1, quality, 0.75f);
+                }
+
+                return _byFramerateModifier;
+            }
+        }
+
         public static class Utils 
         {
             public static Vector3 GetScaleBasedOnDistance(Vector3 pos) => Vector3.one * GetScaleFactorFromDistance(pos);
