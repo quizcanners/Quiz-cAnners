@@ -101,9 +101,7 @@ namespace QuizCanners.Inspect {
 
         public void OnSceneGUI()
         {
-            var trg = target as IPEGI_Handles;
-
-            if (trg != null)
+            if (target is IPEGI_Handles trg)
             {
                 pegi.IsDrawingHandles = true;
                 try

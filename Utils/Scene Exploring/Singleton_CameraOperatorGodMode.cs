@@ -235,6 +235,13 @@ namespace QuizCanners.Utils
                 if (_mainCam.transform == transform)
                 {
                     "Camera should be a Child Object of the Camera Operator".PegiLabel().WriteWarning().Nl();
+                } else if (!_mainCam.transform.IsChildOf(transform)) 
+                {
+                    "Camera should be a child of this transform".PegiLabel().WriteWarning().Nl();
+                    if ("Move Camera".PegiLabel().Click().Nl())
+                    {
+                        _mainCam.transform.parent = transform;
+                    }
                 }
             }
 

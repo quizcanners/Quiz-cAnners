@@ -474,8 +474,8 @@ namespace QuizCanners.Inspect
 
         }
 
-        private static List<object> _reflectiveInspectionDepth = new List<object>();
-        private static LoopLock _reflectiveInspectLoopLock = new LoopLock();
+        private static readonly List<object> _reflectiveInspectionDepth = new();
+        private static readonly LoopLock _reflectiveInspectLoopLock = new();
 
 
         public static ChangesToken TryReflectionInspect(object obj, EnterExitContext context = null)
@@ -515,7 +515,7 @@ namespace QuizCanners.Inspect
                 return;
             }
 
-            using (context == null ? null : context.StartContext())
+            using (context?.StartContext())
             {
                 foreach (var prop in obj.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
@@ -905,12 +905,12 @@ namespace QuizCanners.Inspect
             return obj;
         }
 
-        private static readonly Dictionary<IPEGI, int> inspectionChain = new Dictionary<IPEGI, int>();
+        private static readonly Dictionary<IPEGI, int> inspectionChain = new();
 
         internal static void ResetInspectedChain() => inspectionChain.Clear();
 
 #if UNITY_EDITOR
-        private static readonly Dictionary<Object, UnityEditor.Editor> defaultEditors = new Dictionary<Object, UnityEditor.Editor>();
+        private static readonly Dictionary<Object, UnityEditor.Editor> defaultEditors = new();
         private static UnityEditor.Editor GetEditorFor(Object obj)
         {
             if (!defaultEditors.TryGetValue(obj, out var editor))
