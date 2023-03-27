@@ -63,7 +63,7 @@ namespace QuizCanners.Utils
             return v2;
         }
 
-        public static Vector2 Floor(this Vector2 v2) => new Vector2(Mathf.Floor(v2.x), Mathf.Floor(v2.y));
+        public static Vector2 Floor(this Vector2 v2) => new(Mathf.Floor(v2.x), Mathf.Floor(v2.y));
 
         public static bool ClampIndexToCount(this ICollection list, ref int value, int min = 0)
         {
@@ -131,9 +131,11 @@ namespace QuizCanners.Utils
 
             rawPoints.Add(p3);
 
-            var adjustedPoints = new List<Vector3>();
+            var adjustedPoints = new List<Vector3>
+            {
+                p0
+            };
 
-            adjustedPoints.Add(p0);
             float segmentLength = length / (pointCount - 1); // Because X points translates into X-1 segments
             float forNextAdjustedSegment = segmentLength;
             int rawIndex = 1;
@@ -313,7 +315,7 @@ namespace QuizCanners.Utils
 
         public static Quaternion Avarage(this List<Quaternion> quaternions)
         {
-            Quaternion average = new Quaternion(0, 0, 0, 0);
+            Quaternion average = new(0, 0, 0, 0);
 
             int amount = 0;
 
@@ -423,25 +425,25 @@ namespace QuizCanners.Utils
             return v;
         }
 
-        public static Vector2 YX(this Vector2 vec) => new Vector2(vec.y, vec.x);
+        public static Vector2 YX(this Vector2 vec) => new(vec.y, vec.x);
 
-        public static Vector2 X(this Vector2 vec, float x) => new Vector2(x, vec.y);
+        public static Vector2 X(this Vector2 vec, float x) => new(x, vec.y);
 
-        public static Vector2 Y(this Vector2 vec, float y) => new Vector2(vec.x, y);
+        public static Vector2 Y(this Vector2 vec, float y) => new(vec.x, y);
 
-        public static Vector2 XY(this Vector3 vec) => new Vector2(vec.x, vec.y);
+        public static Vector2 XY(this Vector3 vec) => new(vec.x, vec.y);
 
-        public static Vector2 YX(this Vector3 vec) => new Vector2(vec.y, vec.x);
+        public static Vector2 YX(this Vector3 vec) => new(vec.y, vec.x);
 
-        public static Vector2 XZ(this Vector3 vec) => new Vector2(vec.x, vec.z);
+        public static Vector2 XZ(this Vector3 vec) => new(vec.x, vec.z);
 
-        public static Vector3 Z(this Vector3 vec, float z) => new Vector3(vec.x, vec.y, z);
+        public static Vector3 Z(this Vector3 vec, float z) => new(vec.x, vec.y, z);
 
-        public static Vector3 Y(this Vector3 vec, float y) => new Vector3(vec.x, y, vec.z);
+        public static Vector3 Y(this Vector3 vec, float y) => new(vec.x, y, vec.z);
 
-        public static Vector3 XYZ(this Vector4 vec) => new Vector3(vec.x, vec.y, vec.z);
+        public static Vector3 XYZ(this Vector4 vec) => new(vec.x, vec.y, vec.z);
 
-        public static Vector3 Round(this Vector3 vec) => new Vector3(Mathf.Round(vec.x), Mathf.Round(vec.y), Mathf.Round(vec.z));
+        public static Vector3 Round(this Vector3 vec) => new(Mathf.Round(vec.x), Mathf.Round(vec.y), Mathf.Round(vec.z));
         
         public static float MaxAbs(this Vector3 vec)
         {
@@ -449,39 +451,43 @@ namespace QuizCanners.Utils
             return Mathf.Max(Mathf.Max(vec.x, vec.y), vec.z);
         }
 
-        public static Vector2 ZW(this Vector4 vec) => new Vector2(vec.z, vec.w);
+        public static Vector2 ZW(this Vector4 vec) => new(vec.z, vec.w);
 
-        public static Vector2 XY(this Vector4 vec) => new Vector2(vec.x, vec.y);
+        public static Vector2 XY(this Vector4 vec) => new(vec.x, vec.y);
 
-        public static Vector2 XW(this Vector4 vec) => new Vector2(vec.x, vec.w);
+        public static Vector2 XW(this Vector4 vec) => new(vec.x, vec.w);
 
-        public static Vector2 ZY(this Vector4 vec) => new Vector2(vec.z, vec.y);
+        public static Vector2 ZY(this Vector4 vec) => new(vec.z, vec.y);
 
-        public static Vector3 ToVector3(this Vector2 v2xy, float z = 0) => new Vector3(v2xy.x, v2xy.y, z);
+        public static Vector3 ToVector3(this Vector2 v2xy, float z = 0) => new(v2xy.x, v2xy.y, z);
 
-        public static Vector3 ToVector3XZ(this Vector2 v2xz, float y = 0) => new Vector3(v2xz.x, y, v2xz.y);
+        public static Vector3 ToVector3XZ(this Vector2 v2xz, float y = 0) => new(v2xz.x, y, v2xz.y);
 
-        public static Vector4 ToVector4(this Vector2 v2xy, float z = 0, float w = 0) => new Vector4(v2xy.x, v2xy.y, z, w);
+        public static Vector4 ToVector4(this Vector2 v2xy, float z = 0, float w = 0) => new(v2xy.x, v2xy.y, z, w);
 
-        public static Vector4 ToVector4(this Vector2 v2xy, Vector2 v2zw) => new Vector4(v2xy.x, v2xy.y, v2zw.x, v2zw.y);
+        public static Vector4 ToVector4(this Vector2 v2xy, Vector2 v2zw) => new(v2xy.x, v2xy.y, v2zw.x, v2zw.y);
 
-        public static Vector4 ToVector4(this Vector3 v3xyz, float w = 0) => new Vector4(v3xyz.x, v3xyz.y, v3xyz.z, w);
+        public static Vector4 ToVector4(this Vector3 v3xyz, float w = 0) => new(v3xyz.x, v3xyz.y, v3xyz.z, w);
 
         public static Vector4 ToVector4(this Rect rect, bool useMinMax) =>
             useMinMax ? new Vector4(rect.xMin, rect.yMin, rect.xMax, rect.yMax) : new Vector4(rect.x, rect.y, rect.width, rect.height);
 
-        public static Vector4 ToVector4(this Color col) => new Vector4(col.r, col.g, col.b, col.a);
+        public static Vector4 ToVector4(this Color col) => new(col.r, col.g, col.b, col.a);
 
-        public static Vector4 ToVector4(this Quaternion q) => new Vector4(q.x, q.y, q.z, q.w);
+        public static Vector4 ToVector4(this Quaternion q) => new(q.x, q.y, q.z, q.w);
 
-        public static Vector4 X(this Vector4 vec, float x) => new Vector4(x, vec.y, vec.z, vec.w);
-        public static Vector4 Y(this Vector4 vec, float y) => new Vector4(vec.x, y, vec.z, vec.w);
-        public static Vector4 Z(this Vector4 vec, float z) => new Vector4(vec.x, vec.y, z, vec.w);
-        public static Vector4 W(this Vector4 vec, float w) => new Vector4(vec.x, vec.y, vec.z, w);
+        public static Vector4 X(this Vector4 vec, float x) => new(x, vec.y, vec.z, vec.w);
+        public static Vector4 Y(this Vector4 vec, float y) => new(vec.x, y, vec.z, vec.w);
+        public static Vector4 Z(this Vector4 vec, float z) => new(vec.x, vec.y, z, vec.w);
+        public static Vector4 W(this Vector4 vec, float w) => new(vec.x, vec.y, vec.z, w);
 
-        public static Vector3 XYZ(this Quaternion q) => new Vector3(q.x, q.y, q.z);
+        public static Vector3 XYZ(this Quaternion q) => new(q.x, q.y, q.z);
 
-        
+
+        public static bool IsIn01Range_Exclude1(this Vector2 vec) => vec.x >= 0 && vec.x < 1 && vec.y >= 0 && vec.y < 1;
+        public static bool IsIn01Range(this Vector3 vec) => vec.x >= 0 && vec.x < 1 && vec.y >= 0 && vec.y < 1 && vec.z >= 0 && vec.z < 1;
+        public static bool IsIn01Range(this Vector4 vec) => vec.x >= 0 && vec.x < 1 && vec.y >= 0 && vec.y < 1 && vec.z >= 0 && vec.z < 1 && vec.w >= 0 && vec.w < 1;
+
 
         public static Rect ToRect(this Vector4 v4, bool usingMinMax)
             => usingMinMax ? Rect.MinMaxRect(v4.x, v4.y, v4.z, v4.w) : new Rect(v4.x, v4.y, v4.z, v4.w);
@@ -492,43 +498,39 @@ namespace QuizCanners.Utils
         
         public static string ToText(this ColorMask icon)
         {
-            switch (icon)
+            return icon switch
             {
-                case ColorMask.R: return "Red";
-                case ColorMask.G: return "Green";
-                case ColorMask.B: return "Blue";
-                case ColorMask.A: return "Alpha";
-                case ColorMask.Color: return "RGB";
-                case ColorMask.All: return "All";
-                default: return "Unknown channel";
-            }
+                ColorMask.R => "Red",
+                ColorMask.G => "Green",
+                ColorMask.B => "Blue",
+                ColorMask.A => "Alpha",
+                ColorMask.Color => "RGB",
+                ColorMask.All => "All",
+                _ => "Unknown channel",
+            };
         }
 
         public static string ToText(this ColorChanel icon)
         {
-            switch (icon)
+            return icon switch
             {
-                case ColorChanel.R: return "Red";
-                case ColorChanel.G: return "Green";
-                case ColorChanel.B: return "Blue";
-                case ColorChanel.A: return "Alpha";
-                default: return "Unknown channel";
-            }
+                ColorChanel.R => "Red",
+                ColorChanel.G => "Green",
+                ColorChanel.B => "Blue",
+                ColorChanel.A => "Alpha",
+                _ => "Unknown channel",
+            };
         }
         
         public static float GetValueFrom(this ColorChanel chan, Color col)
         {
-            switch (chan)
+            return chan switch
             {
-                case ColorChanel.R:
-                    return col.r;
-                case ColorChanel.G:
-                    return col.g;
-                case ColorChanel.B:
-                    return col.b;
-                default:
-                    return col.a;
-            }
+                ColorChanel.R => col.r,
+                ColorChanel.G => col.g,
+                ColorChanel.B => col.b,
+                _ => col.a,
+            };
         }
 
         public static void SetValueOn(this ColorChanel chan, ref Color col, float value)
@@ -576,7 +578,7 @@ namespace QuizCanners.Utils
                 target.a = source.a * alpha + target.a * deAlpha;
         }
 
-        public static Vector4 ToVector4(this ColorMask mask) => new Vector4(
+        public static Vector4 ToVector4(this ColorMask mask) => new(
             mask.HasFlag(ColorMask.R) ? 1 : 0,
             mask.HasFlag(ColorMask.G) ? 1 : 0,
             mask.HasFlag(ColorMask.B) ? 1 : 0,
@@ -584,19 +586,14 @@ namespace QuizCanners.Utils
 
         public static ColorChanel ToColorChannel(this ColorMask bm)
         {
-            switch (bm)
+            return bm switch
             {
-                case ColorMask.R:
-                    return ColorChanel.R;
-                case ColorMask.G:
-                    return ColorChanel.G;
-                case ColorMask.B:
-                    return ColorChanel.B;
-                case ColorMask.A:
-                    return ColorChanel.A;
-            }
-
-            return ColorChanel.A;
+                ColorMask.R => ColorChanel.R,
+                ColorMask.G => ColorChanel.G,
+                ColorMask.B => ColorChanel.B,
+                ColorMask.A => ColorChanel.A,
+                _ => ColorChanel.A,
+            };
         }
 
         public static void SetValuesOn(this ColorMask bm, ref Vector4 target, Color source)
@@ -619,14 +616,14 @@ namespace QuizCanners.Utils
         
         public static List<int> NormalizeToPercentage<T>(List<T> list, Func<T,double> getValue, float percentTrashold = 0.1f) 
         {
-            List<int> resultPercentages = new List<int>(list.Count);
+            List<int> resultPercentages = new(list.Count);
 
             if (list.Count == 0)
                 return resultPercentages;
 
             double totalSum = 0;
 
-            List<double> probabilities = new List<double>(list.Count);
+            List<double> probabilities = new(list.Count);
 
             for(int i=0; i< list.Count; i++) 
             {

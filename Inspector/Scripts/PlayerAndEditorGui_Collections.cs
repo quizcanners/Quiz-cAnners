@@ -24,7 +24,7 @@ namespace QuizCanners.Inspect
 
         public static int InspectedIndex => collectionInspector.Index;
 
-        internal static readonly CollectionInspector collectionInspector = new CollectionInspector();
+        internal static readonly CollectionInspector collectionInspector = new();
 
         internal static ChangesToken InspectValueInArray<T>(ref T[] array, int index, ref int inspected, CollectionInspectorMeta listMeta = null)
         {
@@ -104,7 +104,7 @@ namespace QuizCanners.Inspect
 
                 if (!TryUseListInspection(ref el, ref inspected))
                 {
-                    var pg = el as IPEGI;
+                    //var pg = el as IPEGI;
 
                     var need = el as INeedAttention;
                     var warningText = need?.NeedAttention();
@@ -432,14 +432,14 @@ namespace QuizCanners.Inspect
 
         #region List
 
-        public static ChangesToken Edit_List_Enum<T>(this TextLabel label, List<T> list, T defaultValue = default(T)) 
+        public static ChangesToken Edit_List_Enum<T>(this TextLabel label, List<T> list, T defaultValue = default) 
         {
             label.style = Styles.ListLabel;
             label.Nl();
-            return list.Edit_List_Enum(defaultValue: defaultValue);
+            return Edit_List_Enum(list, defaultValue: defaultValue);
         }
 
-        public static ChangesToken Edit_List_Enum<T>(this List<T> list, T defaultValue = default(T))
+        public static ChangesToken Edit_List_Enum<T>(List<T> list, T defaultValue = default)
         {
             var changed = ChangeTrackStart();
             int toDelete = -1;
@@ -953,7 +953,7 @@ namespace QuizCanners.Inspect
         
 
         private static int _tmpKeyInt;
-        private static readonly Dictionary<System.Type, string> dictionaryNamesForAddNewElement = new Dictionary<System.Type, string>();
+        private static readonly Dictionary<System.Type, string> dictionaryNamesForAddNewElement = new();
         public static ChangesToken AddDictionaryPairOptions<TValue>(Dictionary<int, TValue> dic) 
         {
             var changed = ChangeTrackStart();
@@ -1020,7 +1020,7 @@ namespace QuizCanners.Inspect
             {
                 if (Icon.Add.Click("Add new Value"))
                 {
-                    TValue value = default(TValue);
+                    TValue value = default;
 
                     var t = typeof(TValue);
 
@@ -1226,7 +1226,7 @@ namespace QuizCanners.Inspect
                     nameIsKey = listMeta[CollectionInspectParams.nameIsDictionaryKey];
                 }
 
-                KeyValuePair<TKey, TValue> modifiedElement = new KeyValuePair<TKey, TValue>();
+                KeyValuePair<TKey, TValue> modifiedElement = new();
                 bool modified = false;
 
                 foreach (var item in collectionInspector.InspectionIndexes(dic, listMeta, new KeyValuePairInspector<TKey, TValue>()))
@@ -1399,7 +1399,7 @@ namespace QuizCanners.Inspect
 
             var changed = ChangeTrackStart();
 
-            added = default(T);
+            added = default;
 
             if (array == null)
             {
@@ -1556,9 +1556,9 @@ namespace QuizCanners.Inspect
 
                 var fullMatch = true;
 
-                List<string> tmpStrings = new List<string>();
+                List<string> tmpStrings = new();
 
-                List<IEnumerator> enumerators = new List<IEnumerator>()
+                List<IEnumerator> enumerators = new()
                 {
                     searchable.SearchKeywordsEnumerator()
                 };
@@ -1579,7 +1579,7 @@ namespace QuizCanners.Inspect
 
                         while (enumerators.Count > 0 && !matched[i]) 
                         {
-                            var cur = enumerators[enumerators.Count - 1];
+                            var cur = enumerators[^1];
                             bool loopingEnumerator = true;
 
                             while (loopingEnumerator && !matched[i])
@@ -1640,7 +1640,7 @@ namespace QuizCanners.Inspect
         }
 
 
-        private static readonly SearchData defaultSearchData = new SearchData();
+        private static readonly SearchData defaultSearchData = new();
 
         private static readonly char[] splitCharacters = { ' ', '.' };
 
@@ -1657,7 +1657,7 @@ namespace QuizCanners.Inspect
             public bool FilterByNeedAttention;
 
             private string[] _searchBys;
-            private readonly List<int> _filteredListElements = new List<int>();
+            private readonly List<int> _filteredListElements = new();
             private int _fileredForCount = -1;
             private int _focusOnSearchBarIn;
        

@@ -775,6 +775,10 @@ namespace QuizCanners.Inspect
             if (obj.ToPegiStringInterfacePart(out tmp)) 
                 return tmp;
 
+            var mbeh = obj as MonoBehaviour;
+            if (mbeh)
+                return obj.ToString();
+
             var cmp = obj as Component;
             return cmp ? "{0} ({1})".F(cmp.gameObject.name, cmp.GetType().ToPegiStringType()) : obj.name;
         }
