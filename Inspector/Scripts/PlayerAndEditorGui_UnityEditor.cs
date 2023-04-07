@@ -1559,11 +1559,12 @@ namespace QuizCanners.Inspect
                 collectionInspector.selectedEls[ind] = val; //SetSelected(ind, val);
         }
 
-        public static bool Reorder_List<T>(List<T> l, CollectionInspectorMeta metas)
+        public static ChangesToken Reorder_List<T>(List<T> l, CollectionInspectorMeta metas)
         {
             _listMetaData = metas;
 
-            EditorGUI.BeginChangeCheck();
+            _START();
+            //EditorGUI.BeginChangeCheck();
 
             if (_currentReorderedList != l)
             {
@@ -1588,7 +1589,7 @@ namespace QuizCanners.Inspect
             }
 
             l.GetReordable(metas).DoLayoutList();
-            return EditorGUI.EndChangeCheck();
+            return _END(); //EditorGUI.EndChangeCheck();
         }
 
         private static void DrawHeader(Rect rect) => GUI.Label(rect, "Ordering {0} {1}s".F(_currentReorderedList.Count.ToString(), _currentReorderedType.ToPegiStringType()));

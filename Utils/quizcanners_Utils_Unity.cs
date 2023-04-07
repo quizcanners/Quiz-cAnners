@@ -1303,13 +1303,10 @@ namespace QuizCanners.Utils {
             while (go.transform.parent)
                 go = go.transform.parent.gameObject;
 
-#       if UNITY_2021_1_OR_NEWER
             if (PrefabUtility.IsPartOfAnyPrefab(go)  
                 || (UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() != null))
                 return true;
-#       else
-            return PrefabUtility.GetCorrespondingObjectFromSource(go) && PrefabUtility.GetPrefabInstanceHandle(go);
-#       endif
+
 
 #endif
             return false;

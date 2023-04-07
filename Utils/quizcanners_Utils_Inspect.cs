@@ -561,6 +561,9 @@ namespace QuizCanners.Utils
 
                     "Time.frameCount: {0}".F(Time.frameCount).PegiLabel().Nl();
 
+                    var phA = Physics.autoSyncTransforms;
+
+                    "Physics Auto Sync Transforms".PegiLabel().ToggleIcon(ref phA).Nl(()=> Physics.autoSyncTransforms = phA);
 
                     Inspect_TimeScaleOption();
 

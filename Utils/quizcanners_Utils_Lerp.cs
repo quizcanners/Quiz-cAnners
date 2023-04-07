@@ -120,6 +120,21 @@ namespace QuizCanners.Lerp
             return Vector3.LerpUnclamped(from, to, portion);
         }
 
+        public static Vector3 LerpByDistance(Vector3 from, Vector3 to, float moveDistance, out float portion)
+        {
+            float totalDistance = Vector3.Distance(from, to);
+
+            if (totalDistance < moveDistance) 
+            {
+                portion = 1;
+                return to;
+            }
+
+            portion = moveDistance / totalDistance;
+
+            return Vector3.LerpUnclamped(from, to, portion);
+        }
+
         public static Vector3 LerpBySpeed_DirectionFirst(Vector3 from, Vector3 to, float speed, bool unscaledTime)
         {
 

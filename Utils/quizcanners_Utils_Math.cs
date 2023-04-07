@@ -484,6 +484,7 @@ namespace QuizCanners.Utils
         public static Vector3 XYZ(this Quaternion q) => new(q.x, q.y, q.z);
 
 
+        public static bool IsIn01Range_Exclude1(this Vector3 vec) => vec.x >= 0 && vec.x < 1 && vec.y >= 0 && vec.y < 1 && vec.z >= 0 && vec.z < 1;
         public static bool IsIn01Range_Exclude1(this Vector2 vec) => vec.x >= 0 && vec.x < 1 && vec.y >= 0 && vec.y < 1;
         public static bool IsIn01Range(this Vector3 vec) => vec.x >= 0 && vec.x < 1 && vec.y >= 0 && vec.y < 1 && vec.z >= 0 && vec.z < 1;
         public static bool IsIn01Range(this Vector4 vec) => vec.x >= 0 && vec.x < 1 && vec.y >= 0 && vec.y < 1 && vec.z >= 0 && vec.z < 1 && vec.w >= 0 && vec.w < 1;

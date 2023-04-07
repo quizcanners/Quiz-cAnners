@@ -47,8 +47,9 @@ namespace QuizCanners.Utils
         {
             get
             {
-                if (!_mainCam)
-                    _mainCam = Camera.main;
+                if (_mainCam)
+                    return _mainCam;
+                _mainCam = Camera.main;
                 return _mainCam;
             }
         }

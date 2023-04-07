@@ -29,7 +29,7 @@ namespace QuizCanners.Utils
                     if (!first)
                         return null;
 
-                    if (!Application.isPlaying)
+                    if (!Application.isPlaying || QcUnity.IsPartOfAPrefab(first.gameObject))
                         return first.material;
 
                     _materialInstance = UnityEngine.Object.Instantiate(first.material);
