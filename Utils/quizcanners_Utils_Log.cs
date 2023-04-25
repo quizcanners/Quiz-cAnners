@@ -28,12 +28,36 @@ namespace QuizCanners.Utils
                 unimplementedValue.ToString().SimplifyTypeName(),
                 unimplementedValue.GetType().ToPegiStringType());
 
+        public static string CaseNotImplemented<T>(T unimplementedValue, string context)
+        {
+          //  string valueName;
+
+            var type = typeof(T);
+
+            /*
+            if (type.IsEnum)
+            {
+                valueName = Enum.GetName(type, unimplementedValue);
+            }
+            else
+                valueName = unimplementedValue.ToString().SimplifyTypeName();*/
+
+            return "Case [{0}] for [{1}] is not implemented for {2}".F(
+               unimplementedValue.ToString().SimplifyTypeName(),
+               type.ToPegiStringType(),
+               context
+               );
+        }
+
+        /*
         public static string CaseNotImplemented(object unimplementedValue, string context)
-           => "Case [{0}] for [{1}] is not implemented for {2}".F(
+        {
+            return "Case [{0}] for [{1}] is not implemented for {2}".F(
                unimplementedValue.ToString().SimplifyTypeName(),
                unimplementedValue.GetType().ToPegiStringType(),
                context
                );
+        }*/
 
         public static InspectableLogging LogHandler = new InspectableLogging();
 

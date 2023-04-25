@@ -280,7 +280,7 @@ namespace QuizCanners.Utils {
             {
                 float distanceToCamera = Vector3.Distance(cam.transform.position + cam.transform.forward * cam.nearClipPlane, worldPosition);
 
-                if (distanceToCamera < objectSize)
+                if (distanceToCamera < objectSize + 10)
                 {
                     return true;
                 }

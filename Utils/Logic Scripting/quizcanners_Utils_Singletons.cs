@@ -7,6 +7,19 @@ namespace QuizCanners.Utils
 {
     public static class Singleton
     {
+        public static TSingleton GetOrCreate<TSingleton>() where TSingleton : ClassBase, new()
+        {
+            var inst = Get<TSingleton>();
+
+            if (inst == null) 
+            {
+                inst = new TSingleton();
+                Debug.Log("Creating "+nameof(TSingleton));
+            }
+
+            return inst;
+        }
+
         public static TSingleton Get<TSingleton>() where TSingleton : IQcSingleton => SingletonGeneric<TSingleton>.Instance;
 
         public static List<TInterface> GetAll<TInterface>() => CollectionSingleton<TInterface>.Instances;
@@ -454,7 +467,7 @@ namespace QuizCanners.Utils
 
                             if (destroy && deprecated)
                             {
-                                Debug.Log("Destroying Old {0}".F(deprecated.gameObject.name));
+                                Debug.Log("{0}: {1}".F(SingletonCollisionSolution.ToString().SimplifyTypeName(), deprecated.gameObject.name), deprecated.gameObject);
                                 Destroy(deprecated.gameObject);
                             }
 
