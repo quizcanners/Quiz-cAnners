@@ -212,6 +212,13 @@ namespace QuizCanners.Utils
 
         public static T Get<T>(this Material mat, IndexGeneric<T> property) => property.Get(mat);
 
+        public static bool Get(this Material mat, MaterialToggle property) => property.Get(mat);
+
+        public static int Get(this Material mat, KeywordEnum property) => Mathf.RoundToInt(property.Get(mat));
+        
+        public static void Set(this Material mat, KeywordEnum property, int value) => property.Set(mat, value);    
+        
+
         #endregion
 
         #region Float
@@ -575,6 +582,7 @@ namespace QuizCanners.Utils
         public class TextureValue : IndexGeneric<Texture>, IPEGI
         {
             public static readonly TextureValue mainTexture = new("_MainTex");
+            public static readonly TextureValue bumpMap = new("_BumpMap");
 
             public override Texture Get(Material mat) => mat.GetTexture(id);
             public override Texture Get(MaterialPropertyBlock block) => block.GetTexture(id);
@@ -740,12 +748,19 @@ namespace QuizCanners.Utils
         [Serializable]
         public class KeywordEnum : IPEGI
         {
+            private readonly int id;
             private readonly string _name;
-            private readonly string[] _enumValues;
+            public readonly string[] EnumValues;
 
             public override string ToString() => _name;
 
             [SerializeField] private string lastValue;
+
+            public float Get(Material material) => material.GetFloat(id);
+            public float Get(MaterialPropertyBlock block) => block.GetFloat(id);
+
+            public void Set(Material material, int value) => material.SetFloat(id, value);
+            public void Set(MaterialPropertyBlock block, int value) => block.SetFloat(id, value);
 
             public bool this[string key] 
             {
@@ -765,7 +780,8 @@ namespace QuizCanners.Utils
             public KeywordEnum(string name, params string[] values)
             {
                 _name = name;
-                _enumValues = values;
+                id = Shader.PropertyToID(name);
+                EnumValues = values;
             }
 
             public void Inspect()
@@ -773,7 +789,7 @@ namespace QuizCanners.Utils
                 _name.PegiLabel().Write_ForCopy();
                 pegi.Nl();
 
-                foreach (var val in _enumValues) 
+                foreach (var val in EnumValues) 
                 {
                     if (this[val])
                         "Remove {0}".F(val).PegiLabel().Click(() => this[val] = false);
@@ -813,15 +829,18 @@ namespace QuizCanners.Utils
         [Serializable]
         public class MaterialToggle : IPEGI
         {
+            private readonly string _floatProperty;
+            private readonly int _floatPropertyId;
             private readonly string _keyword;
-            private readonly int _keywordId;
 
             [SerializeField] public bool LastValue;
             public override string ToString() => _keyword;
 
+            public bool Get(Material material) => material.GetFloat(_floatPropertyId) > 0;
+            
             public Material SetOn(Material material)
             {
-                material.SetFloat(_keywordId, LastValue ? 1 : 0);
+                material.SetFloat(_floatPropertyId, LastValue ? 1 : 0);
                 material.SetShaderKeyword(_keyword, LastValue);
                 return material;
             }
@@ -833,13 +852,14 @@ namespace QuizCanners.Utils
                 return material;
             }
 
-            public MaterialToggle(string keywordName)
+            public MaterialToggle(string floatPropertyName, string keyword)
             {
-                _keyword = keywordName;
-                _keywordId = Shader.PropertyToID(keywordName);
+                _floatProperty = floatPropertyName;
+                _floatPropertyId = Shader.PropertyToID(floatPropertyName);
+                _keyword = keyword;
             }
 
-            public void Inspect() => _keyword.PegiLabel().ToggleIcon(ref LastValue);
+            public void Inspect() => _floatProperty.PegiLabel().ToggleIcon(ref LastValue);
         }
 
 

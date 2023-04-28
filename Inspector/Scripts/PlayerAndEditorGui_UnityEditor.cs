@@ -85,8 +85,7 @@ namespace QuizCanners.Inspect
         public static void RepaintEditor() {
             if (_editor)
                 _editor.Repaint();
-            if (_materialEditor!= null)
-                _materialEditor.unityMaterialEditor.Repaint();
+            _materialEditor?.unityMaterialEditor.Repaint();
         }
 
         public static void Inspect_MB(Editor editor) 
@@ -338,7 +337,7 @@ namespace QuizCanners.Inspect
         
         public static void UnIndent(int amount = 1) => EditorGUI.indentLevel = Mathf.Max(0, EditorGUI.indentLevel - amount);
         
-        private static readonly GUIContent _textAndToolTip = new GUIContent();
+        private static readonly GUIContent _textAndToolTip = new();
 
         //TextLabel
         private static GUIContent TextAndTip(TextLabel text)
@@ -1241,8 +1240,7 @@ namespace QuizCanners.Inspect
 
             EditorGUI.BeginChangeCheck();
 
-            if (cnt == null)
-                cnt = GUIContent.none;
+            cnt ??= GUIContent.none;
 
             if (width < 1)
                 EditorGUILayout.PropertyField(property, cnt, includeChildren);
@@ -1268,7 +1266,7 @@ namespace QuizCanners.Inspect
             switch (member.MemberType)
             {
                 case System.Reflection.MemberTypes.Field: name = member.Name; break;
-                case System.Reflection.MemberTypes.Property: name = "m_{0}{1}".F(char.ToUpper(member.Name[0]), member.Name.Substring(1)); break;
+                case System.Reflection.MemberTypes.Property: name = "m_{0}{1}".F(char.ToUpper(member.Name[0]), member.Name[1..]); break;
                 default: "Not Impl {0}".F(member.MemberType.ToString().SimplifyTypeName()).PegiLabel(90).Write(); return null;
             }
 
@@ -1276,7 +1274,7 @@ namespace QuizCanners.Inspect
         }
 
 
-        private static readonly Dictionary<Object, SerializedObject> SerializedObjects = new Dictionary<Object, SerializedObject>();
+        private static readonly Dictionary<Object, SerializedObject> SerializedObjects = new();
 
         private static SerializedObject GetSerObj(Object obj)
         {
@@ -1348,8 +1346,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Click(Texture image, int width, GUIStyle style = null)
         {
-            if (style == null)
-                style = Styles.ImageButton.Current;
+            style ??= Styles.ImageButton.Current;
 
             CheckLine_Editor();
             return GUILayout.Button(image, style, GUILayout.MaxHeight(width), GUILayout.MaxWidth(width + 10)).FeedChanges_Internal();
@@ -1359,8 +1356,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken ClickImage(GUIContent cnt, int width, int height, GUIStyle style = null)
         {
-            if (style == null)
-                style = Styles.ImageButton.Current;
+            style ??= Styles.ImageButton.Current;
 
             CheckLine_Editor();
 
@@ -1371,7 +1367,7 @@ namespace QuizCanners.Inspect
 
         #region write
 
-        private static readonly GUIContent imageAndTip = new GUIContent();
+        private static readonly GUIContent imageAndTip = new();
 /*
         private static GUIContent ImageAndTip(Texture tex) => ImageAndTip(tex, tex.GetNameForInspector_Uobj());
        */
@@ -1521,7 +1517,7 @@ namespace QuizCanners.Inspect
 
         #region Reordable List
 
-        private static readonly Dictionary<System.Collections.IList, ReorderableList> _reorderableLists = new Dictionary<System.Collections.IList, ReorderableList>();
+        private static readonly Dictionary<System.Collections.IList, ReorderableList> _reorderableLists = new();
 
         private static ReorderableList GetReordable<T>(this List<T> list, CollectionInspectorMeta metaDatas)
         {
