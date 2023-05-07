@@ -169,7 +169,9 @@ namespace QuizCanners.Utils
                     instance = new Material(shader);
                 }
                 else
+                {
                     instance.shader = shader;
+                }
 
                 return instance;
             }

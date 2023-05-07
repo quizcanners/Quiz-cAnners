@@ -46,7 +46,10 @@ namespace QuizCanners.Utils
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogException(ex);
+                    if (pegi.IsExitGUIException(ex))
+                        throw ex;
+                    else
+                        Debug.LogException(ex);
                 }
             } else if (logOnServiceMissing) 
             {

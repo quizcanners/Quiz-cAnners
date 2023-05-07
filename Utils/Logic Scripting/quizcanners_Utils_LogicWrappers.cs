@@ -109,6 +109,9 @@ namespace QuizCanners.Utils
             [NonSerialized] private int _count;
 
             public int Count => _count;
+            public int MaxCount => _maxCount;
+
+            public int CompletedCount => _maxCount - _count;
 
             public bool IsFinished
             {
@@ -118,6 +121,8 @@ namespace QuizCanners.Utils
                     _count = value ? 0 : _maxCount;
                 }
             }
+
+            public float Remaining01 => _maxCount > 0 ? ((float)_count / _maxCount) : 1;
 
             public void RemoveOne() => _count--;
 

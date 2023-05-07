@@ -117,7 +117,10 @@ namespace QuizCanners.Inspect
                         pgi.Inspect();
                     } catch (Exception ex) 
                     {
-                        Write_Exception(ex);
+                        if (IsExitGUIException(ex))
+                            throw ex;
+                        else
+                            Write_Exception(ex);
                     }
 
                     try
@@ -1398,6 +1401,10 @@ namespace QuizCanners.Inspect
 
         public static void ProgressBar(TextLabel text, float value) {
             CheckLine_Editor();
+
+            if (text.label.IsNullOrEmpty())
+                text.label = "Unnamed";
+
             EditorGUI.ProgressBar(GetRect(height: 25), Mathf.Clamp01(value), text.label);
         }
 

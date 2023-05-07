@@ -31,12 +31,12 @@ namespace QuizCanners.Utils
         {
             get
             {
-                var l = (LoadOperation != null && !LoadOperation.isDone) || IsLoaded;
+                var result = (LoadOperation != null && !LoadOperation.isDone) || IsLoaded;
 
                 if (IsLoaded && _onLoadedInitializationOneFrameDelay.TryEnter())
                     _framesSinceLoaded++;
 
-                return l;
+                return result;
             }
             set
             {
@@ -79,7 +79,7 @@ namespace QuizCanners.Utils
 
         public void Load(LoadSceneMode mode)
         {
-            if (Application.isPlaying == false)
+            if (!Application.isPlaying)
             {
 #if UNITY_EDITOR
                 if (IsValid && !IsLoaded)
@@ -88,25 +88,25 @@ namespace QuizCanners.Utils
                     SceneManager.SetActiveScene(scene); // In Editor Scenes are usually opened to editing
                 }
 #endif
-
+                return;
             }
-            else
+
+
+            if (LoadOperation != null && !LoadOperation.isDone)
+                return;
+
+            if (IsLoaded)
+                return;
+            
+            try
             {
-                if (LoadOperation == null || LoadOperation.isDone)
-                {
-                    if (!IsLoaded)
-                    {
-                        try
-                        {
-                            LoadOperation = SceneManager.LoadSceneAsync(ScenePath, mode);
-                            _framesSinceLoaded = 0;
-                        } catch (Exception ex) 
-                        {
-                            LoadingFailed = true;
-                            Debug.LogException(ex);
-                        }
-                    }
-                }
+                Debug.Log("Loading " + ToString());
+                LoadOperation = SceneManager.LoadSceneAsync(ScenePath, mode);
+                _framesSinceLoaded = 0;
+            } catch (Exception ex) 
+            {
+                LoadingFailed = true;
+                Debug.LogException(ex);
             }
         }
 

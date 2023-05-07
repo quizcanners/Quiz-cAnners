@@ -83,6 +83,7 @@ namespace QuizCanners.Utils
             
             [SerializeField] public T latestValue;
             protected bool globalValueSet;
+            private bool lastValueSet;
 
             public abstract T Get(Material mat);
             public abstract T Get(MaterialPropertyBlock block);
@@ -91,7 +92,14 @@ namespace QuizCanners.Utils
 
             public T GlobalValue
             {
-                get => latestValue!= null ? latestValue : GlobalValue_Internal;
+                get
+                {
+                    if (lastValueSet) 
+                        return latestValue;
+                    latestValue = GlobalValue_Internal;
+                    lastValueSet = true;
+                    return latestValue;
+                }
                 set
                 {
                     latestValue = value;
@@ -751,16 +759,23 @@ namespace QuizCanners.Utils
             private readonly int id;
             private readonly string _name;
             public readonly string[] EnumValues;
+            public readonly string[] Keywords;
 
             public override string ToString() => _name;
 
             [SerializeField] private string lastValue;
 
             public float Get(Material material) => material.GetFloat(id);
-            public float Get(MaterialPropertyBlock block) => block.GetFloat(id);
 
-            public void Set(Material material, int value) => material.SetFloat(id, value);
-            public void Set(MaterialPropertyBlock block, int value) => block.SetFloat(id, value);
+            public void Set(Material material, int value)
+            {
+                material.SetFloat(id, value);
+                
+                for (int i=0; i< Keywords.Length; i++) 
+                {
+                    material.SetShaderKeyword(Keywords[i] , value == i);
+                }
+            }
 
             public bool this[string key] 
             {
@@ -782,6 +797,13 @@ namespace QuizCanners.Utils
                 _name = name;
                 id = Shader.PropertyToID(name);
                 EnumValues = values;
+
+                Keywords = new string[EnumValues.Length];
+                for (int i = 0; i < EnumValues.Length; i++)
+                {
+                    Keywords[i] = "{0}_{1}".F(_name, EnumValues[i].ToUpperInvariant());
+                }
+
             }
 
             public void Inspect()

@@ -197,7 +197,7 @@ namespace QuizCanners.Inspect
 
         }
 
-        internal static bool IsExitGUIException(Exception exception)
+        public static bool IsExitGUIException(Exception exception)
         {
             while (exception is System.Reflection.TargetInvocationException && exception.InnerException != null)
             {

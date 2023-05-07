@@ -441,7 +441,7 @@ namespace QuizCanners.Inspect
 
                 int val = Mathf.RoundToInt(material.Get(property));
 
-                if (property.ToString().PegiLabel(0.3f).Select(ref val, property.EnumValues))
+                if (property.ToString().PegiLabel(0.3f).Select(ref val, property.Keywords))
                 {
                     material.Set(property, val);
                 }
