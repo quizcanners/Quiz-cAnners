@@ -169,6 +169,8 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
+        public static ChangesToken ClickConfirm(this TextLabel label) => label.ClickConfirm(confirmationTag: label.label);
+
         public static ChangesToken ClickConfirm(this Icon icon, string confirmationTag, string toolTip = "", int width = defaultButtonSize)
         {
             if (ConfirmationDialogue.IsRequestedFor(confirmationTag))

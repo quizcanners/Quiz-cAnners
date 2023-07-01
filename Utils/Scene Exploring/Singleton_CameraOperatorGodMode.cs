@@ -6,12 +6,13 @@ namespace QuizCanners.Utils
 
 #pragma warning disable IDE0018 // Inline variable declaration
 
+    /*
     public interface IGodModeCameraController
     {
         Vector3 GetTargetPosition();
         Vector3 GetCameraOffsetPosition();
         bool TryGetCameraHeight(out float height);
-    }
+    }*/
 
     [ExecuteInEditMode]
     public class Singleton_CameraOperatorGodMode : Singleton.BehaniourBase, IPEGI
@@ -32,7 +33,25 @@ namespace QuizCanners.Utils
 
         [SerializeField] protected Camera _mainCam;
 
+        public Quaternion Rotation
+        {
+            get => _mainCam.transform.rotation;
+            set => _mainCam.transform.rotation = value;
+        }
+
+        public Vector3 Position
+        {
+            get => transform.position;
+            set => transform.position = value;
+        }
+
         private bool mouseOutside = false;
+
+        public float FOV 
+        {
+            get => _mainCam.fieldOfView;
+            set => _mainCam.fieldOfView = value;
+        }
 
         public override string InspectedCategory => Utils.Singleton.Categories.SCENE_MGMT;
 
@@ -135,7 +154,20 @@ namespace QuizCanners.Utils
         }
 
 
-     
+        bool MouseOutsideOfView
+        {
+            get 
+            {
+                if (!Application.isEditor)
+                    mouseOutside = false;
+                else
+                {
+                    mouseOutside = _mainCam.IsMouseOutsideViewArea(Input.mousePosition);
+                }
+
+                return mouseOutside;
+            }
+        }
 
         protected virtual void OnUpdateInternal()
         {
@@ -188,24 +220,36 @@ namespace QuizCanners.Utils
 
             if (rotateWithoutRmb || rightMouseButon)
             {
-                var eul = camTf.localEulerAngles;
-
-                var rotationX = eul.y;
-                float _rotationY = eul.x;
-
-                if (LEGACY_INPUT)
-                {
-                    rotationX += Input.GetAxis("Mouse X") * sensitivity;
-                    _rotationY -= Input.GetAxis("Mouse Y") * sensitivity;
-                }
-
-                _rotationY = _rotationY < 120 ? Mathf.Min(_rotationY, 85) : Mathf.Max(_rotationY, 270);
-
-                camTf.localEulerAngles = new Vector3(_rotationY, rotationX, 0);
+                RatateWithMouse();
             }
 
             SpinAround();
 
+        }
+
+        public void RatateWithMouse() 
+        {
+            if (MouseOutsideOfView)
+                return;
+
+            var camTf = _mainCam.transform;
+
+            var eul = camTf.localEulerAngles;
+
+            var rotationX = eul.y;
+            float _rotationY = eul.x;
+
+            var rotationSpeed = sensitivity * FOV / 90f;
+
+            if (LEGACY_INPUT)
+            {
+                rotationX += Input.GetAxis("Mouse X") * rotationSpeed;
+                _rotationY -= Input.GetAxis("Mouse Y") * rotationSpeed;
+            }
+
+            _rotationY = _rotationY < 120 ? Mathf.Min(_rotationY, 85) : Mathf.Max(_rotationY, 270);
+
+            camTf.localEulerAngles = new Vector3(_rotationY, rotationX, 0);
         }
 
         public void Update()

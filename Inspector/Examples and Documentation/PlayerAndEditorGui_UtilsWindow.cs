@@ -16,7 +16,7 @@ namespace QuizCanners.Inspect.Examples
 
         void OnGUI()
         {
-            QcUtils.InspectAllUtils();
+            pegi.Nested_Inspect(QcUtils.InspectAllUtils);
         }
     }
 

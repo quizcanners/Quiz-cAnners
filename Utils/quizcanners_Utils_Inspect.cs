@@ -7,7 +7,6 @@ using UnityEngine;
 using Profiler = UnityEngine.Profiling.Profiler;
 using QuizCanners.Inspect.Examples;
 using static QuizCanners.Utils.QcDebug;
-using UnityEngine.VFX;
 
 #if UNITY_EDITOR
 using UnityEditor.Sprites;
@@ -21,8 +20,6 @@ namespace QuizCanners.Utils
     {
         public const string QUIZ_cANNERS = "Quiz c'Anners";
 
-        #region Various Managers Classes
-    
         [Serializable]
         public class ScreenShootTaker : IPEGI
         {
@@ -253,182 +250,11 @@ namespace QuizCanners.Utils
 
         }
 
-        [Serializable]
-        public struct DynamicRangeFloat : ICfgCustom, IPEGI
-        {
-
-            [SerializeField] public float min;
-            [SerializeField] public float max;
-
-            [SerializeField] private float _value;
-
-            public float Value
-            {
-                get { return _value; }
-
-                set
-                {
-                    _value = value;
-                    min = Mathf.Min(min, value);
-                    max = Mathf.Max(max, value);
-                    UpdateRange();
-                }
-            }
-
-            #region Inspector
-
-            private float dynamicMin;
-            private float dynamicMax;
-
-            private void UpdateRange(float by = 1)
-            {
-
-                float width = dynamicMax - dynamicMin;
-
-                width *= by * 0.5f;
-
-                dynamicMin = Mathf.Max(min, _value - width);
-                dynamicMax = Mathf.Min(max, _value + width);
-            }
-
-            private bool _showRange;
-
-            public void Inspect()
-            {
-                var rangeChanged = false;
-
-                if ("><".PegiLabel().Click())
-                    UpdateRange(0.3f);
-
-                pegi.Edit(ref _value, dynamicMin, dynamicMax);
-                //    Value = _value;
-
-                if ("<>".PegiLabel().Click())
-                    UpdateRange(3f);
-             
-
-                if (!_showRange && Icon.Edit.ClickUnFocus("Edit Range", 20))
-                    _showRange = true;
-
-                if (_showRange)
-                {
-                  
-
-                    if (Icon.FoldedOut.ClickUnFocus("Hide Range"))
-                        _showRange = false;
-
-                    pegi.Nl();
-
-                    "[{0} : {1}] - {2}".F(dynamicMin, dynamicMax, "Focused Range").PegiLabel().Nl();
-
-                    "Range: [".PegiLabel(60).Write();
-
-                    var before = min;
-
-
-                    if (pegi.Edit_Delayed(ref min, 40))
-                    {
-                        rangeChanged = true;
-
-                        if (min >= max)
-                            max = min + (max - before);
-                    }
-
-                    "-".PegiLabel(10).Write();
-
-                    if (pegi.Edit_Delayed(ref max, 40))
-                    {
-                        rangeChanged = true;
-                        min = Mathf.Min(min, max);
-                    }
-
-                    "]".PegiLabel(10).Write();
-
-                    pegi.FullWindow.DocumentationClickOpen("Use >< to shrink range around current value for more precision. And <> to expand range.", "About <> & ><");
-
-                    if (Icon.Refresh.Click())
-                    {
-                        dynamicMin = min;
-                        dynamicMax = max;
-
-                    }
-
-                    pegi.Nl();
-
-                    "Tap Enter to apply Range change in the field (will Clamp current value)".PegiLabel().Write_Hint();
-
-
-
-                    pegi.Nl();
-
-                    if (rangeChanged)
-                    {
-                        Value = Mathf.Clamp(_value, min, max);
-
-                        if (Mathf.Abs(dynamicMin - dynamicMax) < (float.Epsilon * 10))
-                        {
-                            dynamicMin = Mathf.Clamp(dynamicMin - float.Epsilon * 10, min, max);
-                            dynamicMax = Mathf.Clamp(dynamicMax + float.Epsilon * 10, min, max);
-                        }
-                    }
-
-
-                }
-            }
-
-            #endregion
-
-            #region Encode & Decode
-
-            public CfgEncoder Encode() => new CfgEncoder()
-                .Add_IfNotEpsilon("m", min)
-                .Add_IfNotEpsilon("v", Value)
-                .Add_IfNotEpsilon("x", max);
-
-            public void DecodeInternal(CfgData data)
-            {
-              
-                new CfgDecoder(data).DecodeTagsFor(ref this);
-                dynamicMin = min;
-                dynamicMax = max;
-            }
-
-            public void DecodeTag(string key, CfgData data)
-            {
-                switch (key)
-                {
-                    case "m":
-                        min = data.ToFloat();
-                        break;
-                    case "v":
-                        Value = data.ToFloat();
-                        break;
-                    case "x":
-                        max = data.ToFloat();
-                        break;
-                }
-            }
-
-            #endregion
-
-            public DynamicRangeFloat(float min = 0, float max = 1, float value = 0.5f)
-            {
-                this.min = min;
-                this.max = max;
-                dynamicMin = min;
-                dynamicMax = max;
-                _value = value;
-
-                _showRange = false;
-
-            }
-        }
-
         private static readonly ScreenShootTaker screenShots = new();
 
-        #endregion
-
         #region Inspect Debug Options 
+
+        public static IPEGI CurrentProjectInspector;
 
         public static pegi.ChangesToken Inspect_TimeScaleOption()
         {
@@ -446,11 +272,21 @@ namespace QuizCanners.Utils
 
         private static readonly pegi.EnterExitContext _context = new(playerPrefId: "inspEnt");
         private static readonly pegi.EnterExitContext _enteredData = new(playerPrefId: "inspEntDta");
-   
+        private static readonly LoopLock _inspectionLoopLock = new();
+
+
         public static void InspectAllUtils()
-        {
+        {   
+            if (!_inspectionLoopLock.Unlocked) 
+            {
+                "Recursively entered".PegiLabel().WriteWarning().Nl();
+                return;
+            }
+
             pegi.Nl();
 
+
+            using (_inspectionLoopLock.Lock())
             using (_context.StartContext())
             {
                 if (!_context.IsAnyEntered && Application.isPlaying) 
@@ -458,6 +294,19 @@ namespace QuizCanners.Utils
                     pegi.Nl();
                     FrameRate.Inspect();
                     pegi.Nl();
+                }
+
+                var valid = !QcUnity.IsNullOrDestroyed_Obj(CurrentProjectInspector);
+
+                var current = valid ? CurrentProjectInspector.ToString() : "";
+
+                try
+                {
+                    pegi.Conditionally_Enter_Inspect(current.PegiLabel(), valid, CurrentProjectInspector).Nl();
+
+                } catch (Exception ex) 
+                {
+                    pegi.Write_Exception(ex);
                 }
 
                 "Singletons".PegiLabel().IsEntered().Nl().If_Entered(Singleton.Collector.Inspect);

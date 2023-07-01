@@ -303,8 +303,8 @@ namespace QuizCanners.Utils
             public override void InspectInList(ref int edited, int ind) => InspectValue();
             public override void Inspect()
             {
-                base.Inspect();
-                pegi.Nl();
+               // base.Inspect();
+               // pegi.Nl();
                 InspectValue().Nl();
             }
 
@@ -400,7 +400,7 @@ namespace QuizCanners.Utils
 
         public class ColorFeature : IndexWithShaderFeatureGeneric<Color>, IPEGI {
 
-            public static readonly ColorFloat4Value tintColor = new ("_TintColor");
+            public static readonly ColorValue tintColor = new ("_TintColor");
 
             public override void SetLatestValueOn(Material material) => material.SetColor(id, latestValue);
             public override Color Get(Material material) => material.GetColor(id);
@@ -432,9 +432,9 @@ namespace QuizCanners.Utils
 
         [Serializable]
 
-        public class ColorFloat4Value : IndexGeneric<Color> {
+        public class ColorValue : IndexGeneric<Color> {
 
-            public static readonly ColorFloat4Value tintColor = new("_TintColor");
+            public static readonly ColorValue tintColor = new("_TintColor");
 
             public bool ConvertToLinear
             {
@@ -486,29 +486,29 @@ namespace QuizCanners.Utils
                     GlobalValue = latestValue;
             }
 
-            public ColorFloat4Value()
+            public ColorValue()
             {
                 latestValue = Color.grey;
             }
 
-            public ColorFloat4Value(string name) : base(name)
+            public ColorValue(string name) : base(name)
             {
                 latestValue = Color.grey;
             }
             
-            public ColorFloat4Value(string name, bool convertToLinear) : base(name)
+            public ColorValue(string name, bool convertToLinear) : base(name)
             {
                 latestValue = Color.grey;
                 ConvertToLinear = convertToLinear;
             }
 
-            public ColorFloat4Value(string name, Color startingColor, bool convertToLinear) : base(name)
+            public ColorValue(string name, Color startingColor, bool convertToLinear) : base(name)
             {
                 latestValue = startingColor;
                 ConvertToLinear = convertToLinear;
             }
 
-            public ColorFloat4Value(string name, Color startingColor) : base(name)
+            public ColorValue(string name, Color startingColor) : base(name)
             {
                 latestValue = startingColor;
             }

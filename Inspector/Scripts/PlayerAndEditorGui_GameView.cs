@@ -80,9 +80,9 @@ namespace QuizCanners.Inspect
                 private WindowFunction _function;
                 private Rect _windowRect;
                 private Vector2 _scrollPosition;
-                private bool _useExactSize;
-                private int _maxWidth;
-                private int _maxHeight;
+                private readonly bool _useExactSize;
+                private readonly int _maxWidth;
+                private readonly int _maxHeight;
                 private bool _foldedIn;
                 private bool _customUpscale;
                 private float _upscale;
@@ -127,132 +127,134 @@ namespace QuizCanners.Inspect
                 private void DrawFunctionWrapper(int windowID)
                 {
                     PaintingGameViewUI = true;
-                    PegiEditorOnly.StartObject();
                     bool matrixOverride = false;
-                    Matrix4x4 matrix = new Matrix4x4();
+                    Matrix4x4 matrix = new();
 
-                    try
+                    using (QcSharp.DisposableAction(() =>
                     {
-                        if (!UseWindow)
-                        {
-                            matrix = GUI.matrix;
-                            matrixOverride = true;
-                            GUI.matrix = Matrix4x4.TRS(new Vector3(0, 0, 0), Quaternion.identity,
-                                new Vector3(Upscale, Upscale, 1));
+                        PaintingGameViewUI = false;
 
-                            var safeArea = Screen.safeArea;
-                                     
-                            GUILayout.BeginArea(new Rect((40 + safeArea.x) / Upscale, (20 + safeArea.y) / Upscale, safeArea.width / Upscale,
-                                safeArea.height / Upscale));
-
-                            FoldedIn = false;
-                        }
-                        else
+                        if (matrixOverride)
+                            GUI.matrix = matrix;
+                            
+                    }))
+                    {
+                        try
                         {
-                            if (Icon.FoldedOut.Click().Nl())
-                                FoldedIn = !FoldedIn;
-                        }
+                            if (!UseWindow)
+                            {
+                                matrix = GUI.matrix;
+                                matrixOverride = true;
+                                GUI.matrix = Matrix4x4.TRS(new Vector3(0, 0, 0), Quaternion.identity,
+                                    new Vector3(Upscale, Upscale, 1));
 
-                        if (!FoldedIn)
-                        {
+                                var safeArea = Screen.safeArea;
+
+                                GUILayout.BeginArea(new Rect((40 + safeArea.x) / Upscale, (20 + safeArea.y) / Upscale, safeArea.width / Upscale,
+                                    safeArea.height / Upscale));
+
+                                FoldedIn = false;
+                            }
+                            else
+                            {
+                                if (Icon.FoldedOut.Click().Nl())
+                                    FoldedIn = !FoldedIn;
+                            }
+
+                            if (!FoldedIn)
+                            {
+                                if (UseWindow)
+                                {
+                                    _scrollPosition = GUILayout.BeginScrollView(_scrollPosition
+                                        , GUILayout.Width(_windowRect.width * 0.9f)
+                                        , GUILayout.Height(_windowRect.height * 0.9f));
+                                }
+                                else
+                                {
+                                    _scrollPosition = GUILayout.BeginScrollView(_scrollPosition
+                                        , GUILayout.Width(Screen.width * 0.9f / Upscale)
+                                        , GUILayout.Height(Screen.height * 0.9f / Upscale));
+                                }
+
+                                if (!FullWindow.ShowingPopup())
+                                    _function();
+
+                                var gotTooltip = !GUI.tooltip.IsNullOrEmpty();
+
+                                if (gotTooltip)
+                                {
+                                    _tooltip = "{0}:{1}".F(Msg.ToolTip.GetText(), GUI.tooltip);
+                                    _tooltipDelay = 50;
+                                }
+                                else
+                                {
+                                    _tooltipDelay--;
+                                    _tooltip = _tooltipDelay > 0 ? _tooltip : " ";
+                                }
+
+                                Nl();
+                                _tooltip.PegiLabel(style: Styles.HintText).Nl();
+                                UnIndent();
+                            }
+
+                            if (!FoldedIn)
+                            {
+                                GUILayout.EndScrollView();
+                            }
+
                             if (UseWindow)
                             {
-                                _scrollPosition = GUILayout.BeginScrollView(_scrollPosition
-                                   , GUILayout.Width(_windowRect.width * 0.9f)
-                                   , GUILayout.Height(_windowRect.height * 0.9f));
-                            }
-                            else
-                            {
-                                _scrollPosition = GUILayout.BeginScrollView(_scrollPosition
-                                    , GUILayout.Width(Screen.width * 0.9f / Upscale)
-                                    , GUILayout.Height(Screen.height * 0.9f / Upscale));
-                            }
-
-                            if (!FullWindow.ShowingPopup())
-                                _function();
-
-                            var gotTooltip = !GUI.tooltip.IsNullOrEmpty();
-
-                            if (gotTooltip)
-                            {
-                                _tooltip = "{0}:{1}".F(Msg.ToolTip.GetText(), GUI.tooltip);
-                                _tooltipDelay = 50;
-                            }
-                            else
-                            {
-                                _tooltipDelay--;
-                                _tooltip = _tooltipDelay > 0 ? _tooltip : " ";
-                            }
-
-                            Nl();
-                            _tooltip.PegiLabel(style: Styles.HintText).Nl();
-                            UnIndent();
-                        }
-
-                        if (!FoldedIn)
-                        {
-                            GUILayout.EndScrollView();
-                        }
-
-                        if (UseWindow)
-                        {
- #if ENABLE_LEGACY_INPUT_MANAGER
-                            if (_windowRect.Contains(Input.mousePosition))
-                                MouseOverUI = true;
+#if ENABLE_LEGACY_INPUT_MANAGER
+                                if (_windowRect.Contains(Input.mousePosition))
+                                    MouseOverUI = true;
 #endif
 
-                            GUI.DragWindow(new Rect(0, 0, 3000, 40 * Upscale));
+                                GUI.DragWindow(new Rect(0, 0, 3000, 40 * Upscale));
+                            }
+                            else
+                            {
+                                MouseOverUI = true;
+                                GUILayout.EndArea();
+                            }
+
                         }
-                        else
+                        catch (System.Exception ex)
                         {
-                            MouseOverUI = true;
-                            GUILayout.EndArea();
+                            Debug.LogException(ex);
                         }
-
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Debug.LogException(ex);
-                    }
-
-                    PegiEditorOnly.EndObject(PegiEditorOnly.inspectedUnityObject);
-                    PaintingGameViewUI = false;
-
-                    if (matrixOverride)
-                    {
-                        GUI.matrix = matrix;
                     }
                 }
                 public void Render(IPEGI p) => Render(p, p.Inspect, p.GetNameForInspector());
                 public void Render(IPEGI p, string windowName) => Render(p, p.Inspect, windowName);
                 public void Render(IPEGI target, WindowFunction doWindow, string c_windowName)
                 {
-                    if (!_customUpscale)
+                    using (PegiEditorOnly.StartInspector(target))
                     {
-                        _upscale = Mathf.Max(1, Mathf.Min(Screen.width, Screen.height) / 320f);
+                        if (!_customUpscale)
+                        {
+                            _upscale = Mathf.Max(1, Mathf.Min(Screen.width, Screen.height) / 320f);
+                        }
+
+                        _function = doWindow;
+
+                        if (UseWindow)
+                        {
+                            _windowRect.x = Mathf.Clamp(_windowRect.x, 0, Screen.width - 10);
+                            _windowRect.y = Mathf.Clamp(_windowRect.y, 0, Screen.height - 10);
+
+                            _windowRect.width = Mathf.Clamp(_windowRect.width, 10, Screen.width);
+                            _windowRect.height = Mathf.Clamp(_windowRect.height, 10, Screen.height);
+
+                            _windowRect = GUILayout.Window(0, _windowRect, DrawFunctionWrapper, c_windowName,
+                                GUILayout.MaxWidth(360 * Upscale), GUILayout.ExpandHeight(IsFoldedOut), GUILayout.ExpandWidth(IsFoldedOut));
+                        }
+                        else
+                        {
+                            DrawFunctionWrapper(0);
+                        }
                     }
-
-                    PegiEditorOnly.ResetInspectionTarget(target);
-
-                    _function = doWindow;
-
-                    if (UseWindow)
-                    {
-                        _windowRect.x = Mathf.Clamp(_windowRect.x, 0, Screen.width - 10);
-                        _windowRect.y = Mathf.Clamp(_windowRect.y, 0, Screen.height - 10);
-
-                        _windowRect.width = Mathf.Clamp(_windowRect.width, 10, Screen.width);
-                        _windowRect.height = Mathf.Clamp(_windowRect.height, 10, Screen.height);
-
-                        _windowRect = GUILayout.Window(0, _windowRect, DrawFunctionWrapper, c_windowName,
-                            GUILayout.MaxWidth(360 * Upscale), GUILayout.ExpandHeight(IsFoldedOut), GUILayout.ExpandWidth(IsFoldedOut));
-                    }
-                    else
-                    {
-                        DrawFunctionWrapper(0);
-                    }
-
                 }
+
                 public void Collapse()
                 {
                     _windowRect.width = 50;

@@ -1,6 +1,9 @@
-﻿using System;
+﻿using QuizCanners.Inspect;
+using QuizCanners.Migration;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.ConstrainedExecution;
 using UnityEngine;
 
 namespace QuizCanners.Utils
@@ -14,10 +17,10 @@ namespace QuizCanners.Utils
 
     public static partial class QcMath
     {
-        public static float SmoothStep(float edge0, float edge1, float x)
+        public static float SmoothStep(float edge0, float edge1, float t)
         {
-            float t = Mathf.Clamp01((x - edge0) / (edge1 - edge0));
-            return t * t * (3f - 2f * t);
+            float coef = Mathf.Clamp01((t - edge0) / (edge1 - edge0));
+            return coef * coef * (3f - 2f * coef);
         }
 
         public static IDisposable RandomBySeedDisposable(int seed)
@@ -333,6 +336,7 @@ namespace QuizCanners.Utils
 
         #region Transformations
 
+   
         public static Vector2 Clamp01(this Vector2 v2)
         {
             v2.x = Mathf.Clamp01(v2.x);
@@ -436,6 +440,8 @@ namespace QuizCanners.Utils
         public static Vector2 YX(this Vector3 vec) => new(vec.y, vec.x);
 
         public static Vector2 XZ(this Vector3 vec) => new(vec.x, vec.z);
+
+        public static Vector3 X(this Vector3 vec, float x) => new(x, vec.y, vec.z);
 
         public static Vector3 Z(this Vector3 vec, float z) => new(vec.x, vec.y, z);
 
@@ -700,8 +706,177 @@ namespace QuizCanners.Utils
             return resultPercentages;
         }
 
+        [Serializable]
+        public struct DynamicRangeFloat : ICfgCustom, IPEGI
+        {
 
-     
+            [SerializeField] public float min;
+            [SerializeField] public float max;
+
+            [SerializeField] private float _value;
+
+            public float Value
+            {
+                get { return _value; }
+
+                set
+                {
+                    _value = value;
+                    min = Mathf.Min(min, value);
+                    max = Mathf.Max(max, value);
+                    UpdateRange();
+                }
+            }
+
+            #region Inspector
+
+            private float dynamicMin;
+            private float dynamicMax;
+
+            private void UpdateRange(float by = 1)
+            {
+
+                float width = dynamicMax - dynamicMin;
+
+                width *= by * 0.5f;
+
+                dynamicMin = Mathf.Max(min, _value - width);
+                dynamicMax = Mathf.Min(max, _value + width);
+            }
+
+            private bool _showRange;
+
+            public void Inspect()
+            {
+                var rangeChanged = false;
+
+                if ("><".PegiLabel().Click())
+                    UpdateRange(0.3f);
+
+                pegi.Edit(ref _value, dynamicMin, dynamicMax);
+                //    Value = _value;
+
+                if ("<>".PegiLabel().Click())
+                    UpdateRange(3f);
+
+
+                if (!_showRange && Icon.Edit.ClickUnFocus("Edit Range", 20))
+                    _showRange = true;
+
+                if (_showRange)
+                {
+
+
+                    if (Icon.FoldedOut.ClickUnFocus("Hide Range"))
+                        _showRange = false;
+
+                    pegi.Nl();
+
+                    "[{0} : {1}] - {2}".F(dynamicMin, dynamicMax, "Focused Range").PegiLabel().Nl();
+
+                    "Range: [".PegiLabel(60).Write();
+
+                    var before = min;
+
+
+                    if (pegi.Edit_Delayed(ref min, 40))
+                    {
+                        rangeChanged = true;
+
+                        if (min >= max)
+                            max = min + (max - before);
+                    }
+
+                    "-".PegiLabel(10).Write();
+
+                    if (pegi.Edit_Delayed(ref max, 40))
+                    {
+                        rangeChanged = true;
+                        min = Mathf.Min(min, max);
+                    }
+
+                    "]".PegiLabel(10).Write();
+
+                    pegi.FullWindow.DocumentationClickOpen("Use >< to shrink range around current value for more precision. And <> to expand range.", "About <> & ><");
+
+                    if (Icon.Refresh.Click())
+                    {
+                        dynamicMin = min;
+                        dynamicMax = max;
+
+                    }
+
+                    pegi.Nl();
+
+                    "Tap Enter to apply Range change in the field (will Clamp current value)".PegiLabel().Write_Hint();
+
+
+
+                    pegi.Nl();
+
+                    if (rangeChanged)
+                    {
+                        Value = Mathf.Clamp(_value, min, max);
+
+                        if (Mathf.Abs(dynamicMin - dynamicMax) < (float.Epsilon * 10))
+                        {
+                            dynamicMin = Mathf.Clamp(dynamicMin - float.Epsilon * 10, min, max);
+                            dynamicMax = Mathf.Clamp(dynamicMax + float.Epsilon * 10, min, max);
+                        }
+                    }
+
+
+                }
+            }
+
+            #endregion
+
+            #region Encode & Decode
+
+            public CfgEncoder Encode() => new CfgEncoder()
+                .Add_IfNotEpsilon("m", min)
+                .Add_IfNotEpsilon("v", Value)
+                .Add_IfNotEpsilon("x", max);
+
+            public void DecodeInternal(CfgData data)
+            {
+
+                new CfgDecoder(data).DecodeTagsFor(ref this);
+                dynamicMin = min;
+                dynamicMax = max;
+            }
+
+            public void DecodeTag(string key, CfgData data)
+            {
+                switch (key)
+                {
+                    case "m":
+                        min = data.ToFloat();
+                        break;
+                    case "v":
+                        Value = data.ToFloat();
+                        break;
+                    case "x":
+                        max = data.ToFloat();
+                        break;
+                }
+            }
+
+            #endregion
+
+            public DynamicRangeFloat(float min = 0, float max = 1, float value = 0.5f)
+            {
+                this.min = min;
+                this.max = max;
+                dynamicMin = min;
+                dynamicMax = max;
+                _value = value;
+
+                _showRange = false;
+
+            }
+        }
+
     }
 }
 

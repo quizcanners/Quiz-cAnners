@@ -33,11 +33,14 @@ namespace QuizCanners.Utils
         public static bool Try<TSingleton>(Action<TSingleton> onFound, bool logOnServiceMissing = true) where TSingleton : IQcSingleton =>
             Try(onFound: onFound, onFailed: null, logOnServiceMissing: logOnServiceMissing);
 
+        public static bool Try<TServiceA, TServiceB>(Action<TServiceA, TServiceB> onFound, bool logOnServiceMissing = true) where TServiceA : IQcSingleton where TServiceB : IQcSingleton =>
+            Try(onFound: onFound, onFailed: null, logOnServiceMissing: logOnServiceMissing);
+
         public static bool Try<TService>(Action<TService> onFound, Action onFailed, bool logOnServiceMissing = false) where TService : IQcSingleton
         {
             var inst = SingletonGeneric<TService>.Instance;
 
-            if (!QcUnity.IsNullOrDestroyed_Obj(inst) && inst.IsSingletonActive)
+            if (IsValid(inst, logOnServiceMissing)) //!QcUnity.IsNullOrDestroyed_Obj(inst) && inst.IsSingletonActive)
             {
                 try
                 {
@@ -70,6 +73,74 @@ namespace QuizCanners.Utils
             }
 
             return false;
+        }
+
+        public static bool Try<TServiceA, TServiceB>(Action<TServiceA, TServiceB> onFound, Action onFailed, bool logOnServiceMissing = false) where TServiceA : IQcSingleton where TServiceB : IQcSingleton
+        {
+            var instA = SingletonGeneric<TServiceA>.Instance;
+            var instB = SingletonGeneric<TServiceB>.Instance;
+
+            if (IsValid(instA, logOnServiceMissing) && IsValid(instB, logOnServiceMissing))
+            {
+                try
+                {
+                    onFound.Invoke(instA, instB);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    if (pegi.IsExitGUIException(ex))
+                        throw ex;
+                    else
+                        Debug.LogException(ex);
+                }
+            }
+            else if (logOnServiceMissing)
+            {
+                QcLog.ChillLogger.LogWarningOnce("Service {0} is missing".F(typeof(TServiceA).ToPegiStringType()), "SngMsng" + typeof(TServiceA).ToString());
+            }
+
+
+            if (onFailed != null)
+            {
+                try
+                {
+                    onFailed.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsValid<T>(T srv, bool logWarning) where T : IQcSingleton
+        {
+            if (QcUnity.IsNullOrDestroyed_Obj(srv))
+            {
+                if (logWarning)
+                {
+                    var srvNm = typeof(T).ToPegiStringType();
+                    QcLog.ChillLogger.LogWarningOnce("Service {0} is missing".F(srvNm), "SngMsng" + srvNm);
+                }
+
+                return false;
+            }
+
+            if (!srv.IsSingletonActive)
+            {
+                if (logWarning)
+                {
+                    var srvNm = typeof(T).ToPegiStringType();
+                    QcLog.ChillLogger.LogWarningOnce("Service {0} is deactivated".F(srvNm), "SngInAct" + srvNm);
+                }
+
+                return false;
+            }
+
+            return true;
         }
 
         private static class SingletonGeneric<T>
@@ -370,6 +441,7 @@ namespace QuizCanners.Utils
         {
             public const string DEFAULT = "Other";
             public const string SCENE_MGMT = "Unity Systems";
+            public const string AUDIO = "Audio";
             public const string RENDERING = "Rendering";
             public const string TEST = "Test";
             public const string GAME_LOGIC = "Game Logic";
@@ -470,7 +542,7 @@ namespace QuizCanners.Utils
 
                             if (destroy && deprecated)
                             {
-                                Debug.Log("{0}: {1}".F(SingletonCollisionSolution.ToString().SimplifyTypeName(), deprecated.gameObject.name), deprecated.gameObject);
+                                Debug.Log("{0}: {1} ({2})".F(SingletonCollisionSolution.ToString().SimplifyTypeName(), deprecated.gameObject.name, GetType().ToPegiStringType()), gameObject);
                                 Destroy(deprecated.gameObject);
                             }
 

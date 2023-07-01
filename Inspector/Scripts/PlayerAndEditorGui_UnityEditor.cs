@@ -31,28 +31,37 @@ namespace QuizCanners.Inspect
       
         internal static bool IsNextFoldedOut => selectedFold == _elementIndex - 1;
 
-        public static void ResetInspectionTarget(object target)
-        {
-            inspectedTarget = target;
-            inspectedUnityObject = target as Object;
-            ResetInspectedChain();
-        }
-
         public static bool IsFoldedOutOrEntered 
         {
             get => isFoldedOutOrEntered;
             set => isFoldedOutOrEntered = new StateToken(value);
         }
 
-        internal static void StartObject()
+        internal static bool InspectorStarted;
+
+        internal static IDisposable StartInspector(object obj)
         {
+            if (InspectorStarted)
+                Debug.LogError("Inspector was aleady started");
+
+            InspectorStarted = true;
+
             _elementIndex = 0;
             _horizontalStarted = false;
             globChanged = false;
+
+            inspectedTarget = obj;
+            inspectedUnityObject = obj as Object;
+            ResetInspectedChain();
+
+            return QcSharp.DisposableAction(() => EndInspector());
         }
 
-        internal static void EndObject(Object obj)
+        private static void EndInspector()
         {
+
+            InspectorStarted = false;
+
             if (globChanged)
             {
 #if UNITY_EDITOR
@@ -60,11 +69,15 @@ namespace QuizCanners.Inspect
                 if (!Application.isPlaying)
                     UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
 
-                ClearFromPooledSerializedObjects(obj);
-
-                EditorUtility.SetDirty(obj);
+                if (inspectedUnityObject)
+                {
+                    ClearFromPooledSerializedObjects(inspectedUnityObject);
+                    EditorUtility.SetDirty(inspectedUnityObject);
+                }
 #endif
             }
+            inspectedTarget = null;
+            inspectedUnityObject = null;
             Nl();
         }
 
@@ -104,7 +117,7 @@ namespace QuizCanners.Inspect
 
             if (pgi != null)
             {
-                StartObject();
+               
                 SerObj = so;
                 if (!FullWindow.ShowingPopup())
                 {
@@ -115,7 +128,8 @@ namespace QuizCanners.Inspect
                     try
                     {
                         pgi.Inspect();
-                    } catch (Exception ex) 
+                    }
+                    catch (Exception ex)
                     {
                         if (IsExitGUIException(ex))
                             throw ex;
@@ -138,7 +152,7 @@ namespace QuizCanners.Inspect
                     if (globChanged && o)
                         PrefabUtility.RecordPrefabInstancePropertyModifications(o);
                 }
-
+                
                 Nl();
                 paintedPegi = true;
             }
@@ -172,14 +186,8 @@ namespace QuizCanners.Inspect
 
             if (!scrObj)
             {
-                StartObject();
-
                 "Target is not Scriptable Object. Check your PEGI_Inspector_OS.".PegiLabel().WriteWarning();
-                
-                EndObject(editor.target);
-
                 editor.DrawDefaultInspector();
-
                 return;
             }
 
@@ -189,31 +197,28 @@ namespace QuizCanners.Inspect
             var pgi = scrObj as IPEGI;
             if (pgi != null)
             {
-                if (!FullWindow.ShowingPopup())
+                if (FullWindow.ShowingPopup())
+                    return;
+
+                SerObj = so;
+                Toggle_DefaultInspector(scrObj);
+
+                try
                 {
-                    StartObject();
-                    SerObj = so;
-                    Toggle_DefaultInspector(scrObj);
+                    pgi.Inspect();
+                }
+                catch (Exception ex)
+                {
+                    Write_Exception(ex);
+                }
 
-                    try 
-                    { 
-                        pgi.Inspect();
-                    }
-                    catch (Exception ex)
-                    {
-                        Write_Exception(ex);
-                    }
-
-                    try
-                    {
-                        Nested_Inspect_Attention_MessageOnly(pgi);
-                    }
-                    catch (Exception ex)
-                    {
-                        Write_Exception(ex);
-                    }
-
-                    EndObject(scrObj);
+                try
+                {
+                    Nested_Inspect_Attention_MessageOnly(pgi);
+                }
+                catch (Exception ex)
+                {
+                    Write_Exception(ex);
                 }
                 
                 return;
@@ -230,16 +235,13 @@ namespace QuizCanners.Inspect
         public static ChangesToken Inspect_Material(PEGI_Inspector_Material editor) {
             
             _materialEditor = editor;
-
-            ResetInspectionTarget(editor.unityMaterialEditor.target);
-
             var mat = editor.unityMaterialEditor.target as Material;
+            var changed = false;
 
-            StartObject();
-
-            var changed = !FullWindow.ShowingPopup() && editor.Inspect(mat);
-
-            EndObject(mat);
+            using (StartInspector(editor.unityMaterialEditor.target))
+            {
+                changed = !FullWindow.ShowingPopup() && editor.Inspect(mat);
+            }
 
             return new ChangesToken(globChanged || changed);
         }

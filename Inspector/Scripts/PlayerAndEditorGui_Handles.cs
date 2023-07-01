@@ -2,6 +2,7 @@ using QuizCanners.Utils;
 using System;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.IMGUI.Controls;
 #endif
 using UnityEngine;
 using static QuizCanners.Inspect.pegi.SceneDraw;
@@ -246,9 +247,71 @@ namespace QuizCanners.Inspect
 
                 return ChangesToken.False;
             }
-      
 
-            public static ChangesToken FreeMove(Vector3 position, out Vector3 newPosition, HandleCap shape = HandleCap.Sphere, Scaling scaling = Scaling.RotateOnly, float size = 1, Vector3 snapSize = default(Vector3))
+
+
+
+            public static ChangesToken BoxBoundsHandle(Transform transfrom, Color color)
+            {
+                var pos = transfrom.position;
+                var size = transfrom.localScale;
+
+                if (BoxBoundsHandle(ref pos, ref size, color)) 
+                {
+                    transfrom.position = pos;
+                    transfrom.localScale = size;
+                    return ChangesToken.True;
+                }
+
+                return ChangesToken.False;
+            }
+
+            public static ChangesToken BoxBoundsHandle(ref Vector3 center, ref Vector3 size, Color color)
+            {
+                var bnds = new Bounds(center, size);
+
+                if (BoxBoundsHandle(ref bnds, color)) 
+                {
+                    center = bnds.center;
+                    size = bnds.size;
+
+                    return ChangesToken.True;
+                }
+
+                return ChangesToken.False;
+            }
+
+#if UNITY_EDITOR
+            private static readonly BoxBoundsHandle m_BoundsHandle = new();
+
+#endif
+
+            public static ChangesToken BoxBoundsHandle(ref Bounds bounds, Color color) 
+            {
+        
+#if UNITY_EDITOR
+                if (IsDrawingHandles)
+                {
+                    m_BoundsHandle.center = bounds.center;
+                    m_BoundsHandle.size = bounds.size;
+                    m_BoundsHandle.wireframeColor = color;
+                    
+                    EditorGUI.BeginChangeCheck();
+                    m_BoundsHandle.DrawHandle();
+                    if (EndClickCheck()) 
+                    {
+                        bounds.center = m_BoundsHandle.center;
+                        bounds.size = m_BoundsHandle.size;
+
+                        return ChangesToken.True;
+                    }
+                }
+#endif
+
+                return ChangesToken.False;
+            }
+
+            public static ChangesToken FreeMove(Vector3 position, out Vector3 newPosition, HandleCap shape = HandleCap.Sphere, Scaling scaling = Scaling.RotateOnly, float size = 1, Vector3 snapSize = default)
             {
 #if UNITY_EDITOR
                 if (IsDrawingHandles)
@@ -276,7 +339,7 @@ namespace QuizCanners.Inspect
 #if UNITY_EDITOR
                 if (IsDrawingHandles)
                 {
-                    DrawRotatedCube(position, rotation, size, (va, vb) => UnityEditor.Handles.DrawLine(va, vb));
+                    DrawRotatedWireCube(position, rotation, size, (va, vb) => UnityEditor.Handles.DrawLine(va, vb));
                     return;
                 }
 #endif
@@ -298,7 +361,7 @@ namespace QuizCanners.Inspect
 #if UNITY_EDITOR
                 if (IsDrawingHandles)
                 {
-                    UnityEditor.Handles.DrawWireDisc(position, normal: normal, radius: radius);
+                    Handles.DrawWireDisc(position, normal: normal, radius: radius);
                     return;
                 }
 #endif
@@ -419,11 +482,22 @@ namespace QuizCanners.Inspect
                 }
             }
 
+            public static void DrawCube(Vector3 position, Vector3 size, Color col)
+            {
+                if (!IsDrawingHandles)
+                {
+                    using (SetColorDisposible(col))
+                    {
+                        Gizmos.DrawCube(position, size);
+                    }
+                }
+            }
+
             public static void DrawWireCube(Vector3 position, Vector3 size)
             {
                 if (!IsDrawingHandles)
                 {
-                    DrawRotatedCube(position, Quaternion.identity, size, (va, vb) => Gizmos.DrawLine(va, vb));
+                    DrawRotatedWireCube(position, Quaternion.identity, size, (va, vb) => Gizmos.DrawLine(va, vb));
                 }
             }
 
@@ -431,7 +505,7 @@ namespace QuizCanners.Inspect
             {
                 if (!IsDrawingHandles)
                 {
-                    DrawRotatedCube(position, rotation, size, (va, vb) => Gizmos.DrawLine(va, vb)); 
+                    DrawRotatedWireCube(position, rotation, size, (va, vb) => Gizmos.DrawLine(va, vb)); 
                 }
             }
 
@@ -484,7 +558,7 @@ namespace QuizCanners.Inspect
             }
 #endif
 
-            internal static void DrawRotatedCube(Vector3 position, Quaternion rotation, Vector3 size, Action<Vector3, Vector3> draw)
+            internal static void DrawRotatedWireCube(Vector3 position, Quaternion rotation, Vector3 size, Action<Vector3, Vector3> draw)
             {
 
                 size *= 0.5f;

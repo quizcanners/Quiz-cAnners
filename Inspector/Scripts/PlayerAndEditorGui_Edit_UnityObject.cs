@@ -384,7 +384,7 @@ namespace QuizCanners.Inspect
             public ChangesToken Edit(ShaderProperty.FloatValue property, float min, float max) =>
                 Edit(property, property.ToString(), min, max);
             
-            public ChangesToken Edit(ShaderProperty.ColorFloat4Value property, string name = null)
+            public ChangesToken Edit(ShaderProperty.ColorValue property, string name = null)
             {
                 var mat = material;
                 var val = mat.Get(property);

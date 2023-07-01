@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using QuizCanners.Utils;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,8 +11,13 @@ namespace QuizCanners.Lerp
 {
     public static class LerpUtils
     {
+        const MethodImplOptions INLINE = MethodImplOptions.AggressiveInlining;
+
         #region Float
 
+        [MethodImpl(INLINE)]
+        public static float ExpLerp(float from, float to, float portion) => Mathf.Pow(from, 1 - portion) * Mathf.Pow(to, portion);
+        
         private static float GetTime(bool unscaledTime) => unscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
 
         private static float SpeedToPortion(float speed, float dist, bool unscaledTime)

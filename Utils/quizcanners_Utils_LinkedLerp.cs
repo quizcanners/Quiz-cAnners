@@ -1466,7 +1466,7 @@ namespace QuizCanners.Lerp
             public ShaderColor(string nName, Color initialValue, float maxSpeed = 1, Material m = null,
                 Renderer renderer = null) : base(maxSpeed, m, renderer)
             {
-                _property = new ShaderProperty.ColorFloat4Value(nName);
+                _property = new ShaderProperty.ColorValue(nName);
                 CurrentValue = initialValue;
             }
 

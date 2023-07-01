@@ -46,9 +46,9 @@ namespace QuizCanners.Inspect
             set 
             {
                 // Debug Inspector
-                /* 
-                if (value && !_globChanged)
-                    Debug.Log("Glob Changed to true");*/
+                
+              //  if (value) // && !_globChanged)
+                 //   Debug.Log("Glob Changed to true. Was changed: {0}".F(_globChanged));
 
                 _globChanged = value;
             }
@@ -196,6 +196,48 @@ namespace QuizCanners.Inspect
             return message != null;
         }
 
+        public static bool NeedsAttention_UObj<T>(IList<T> list, out string message, string listName = "list", bool canBeNull = false) where T : UnityEngine.Object
+        {
+            message = NeedsAttention_UObj(list, listName, canBeNull);
+            return message != null;
+        }
+
+        public static string NeedsAttention_UObj<T>(IList<T> list, string listName = "list", bool canBeNull = false) where T : UnityEngine.Object
+        {
+            string msg = null;
+            if (list == null)
+                msg = canBeNull ? null : "{0} is Null".F(listName);
+            else
+            {
+
+                int i = 0;
+
+                foreach (var el in list)
+                {
+                    if (el)
+                    {
+                        if (NeedsAttention(el, out msg))
+                        {
+                            msg = " {0} on {1}:{2}".F(msg, i, el.GetNameForInspector());
+                            LastNeedAttentionIndex = i;
+                            return msg;
+                        }
+                    }
+                    else if (!canBeNull)
+                    {
+                        msg = "{0} element in {1} is NULL".F(i, listName);
+                        LastNeedAttentionIndex = i;
+                        return msg;
+                    }
+
+                    i++;
+                }
+            }
+
+            return msg;
+        }
+
+
         public static string NeedsAttention(System.Collections.IList list, string listName = "list", bool canBeNull = false)
         {
             string msg = null;
@@ -292,11 +334,8 @@ namespace QuizCanners.Inspect
         public class ChangesTracker
         {
             private bool _wasAlreadyChanged;
-            public bool Changed
-            {
-                get => !_wasAlreadyChanged && globChanged;
-            }
-
+            public bool Changed => !_wasAlreadyChanged && globChanged;
+            
             public void Feed(bool isChanged) 
             {
                 if (isChanged)
@@ -308,7 +347,7 @@ namespace QuizCanners.Inspect
 
             public static implicit operator bool(ChangesTracker me) => me.Changed;
 
-            public static implicit operator ChangesToken(ChangesTracker me) => new ChangesToken(me.Changed);
+            public static implicit operator ChangesToken(ChangesTracker me) => new(me.Changed);
 
             internal ChangesTracker()
             {

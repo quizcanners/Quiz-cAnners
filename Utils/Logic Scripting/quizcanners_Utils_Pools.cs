@@ -19,13 +19,15 @@ namespace QuizCanners.Utils
                     _byFramerateModifier = Mathf.Lerp(1, quality, 0.75f);
                 }
 
+               
+
                 return _byFramerateModifier;
             }
         }
 
         public static class Utils 
         {
-            public static Vector3 GetScaleBasedOnDistance(Vector3 pos) => Vector3.one * GetScaleFactorFromDistance(pos);
+            public static Vector3 GetScaleBasedOnDistance(Vector3 pos, float add = 0) => Vector3.one * (GetScaleFactorFromDistance(pos) + add);
 
             public static float GetScaleFactorFromDistance(Vector3 pos) => (0.25f + QcMath.SmoothStep(0, 20, GetDistanceToCamera(pos)) * 0.75f);
 
@@ -52,8 +54,8 @@ namespace QuizCanners.Utils
         
         public abstract class Generic<T> : Base, IPEGI, IPEGI_ListInspect, IEnumerable<T> where T : Component
         {
-            protected List<T> pool = new List<T>();
-            [SerializeField] protected List<T> instances = new List<T>();
+            protected List<T> pool = new();
+            [SerializeField] protected List<T> instances = new();
 
             protected abstract T CreateInternal(Transform parent);
 
@@ -73,7 +75,7 @@ namespace QuizCanners.Utils
             {
                 while (instances.Count > targetCount)
                 {
-                    ReturnToPool(instances[instances.Count - 1]);
+                    ReturnToPool(instances[^1]);
                 }
 
                 while (instances.Count < targetCount)

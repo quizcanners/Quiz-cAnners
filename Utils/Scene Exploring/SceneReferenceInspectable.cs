@@ -12,7 +12,7 @@ namespace QuizCanners.Utils
 {
 
     [Serializable]
-    public class Qc_SceneInspectable : IPEGI_ListInspect, Singleton.ILoadingProgressForInspector, INeedAttention
+    public class SceneReferenceInspectable : IPEGI_ListInspect, Singleton.ILoadingProgressForInspector, INeedAttention
     {
 
         public SerializableSceneReference SceneReference = new();
@@ -100,7 +100,7 @@ namespace QuizCanners.Utils
             
             try
             {
-                Debug.Log("Loading " + ToString());
+                //Debug.Log("Loading " + ToString());
                 LoadOperation = SceneManager.LoadSceneAsync(ScenePath, mode);
                 _framesSinceLoaded = 0;
             } catch (Exception ex) 

@@ -6,6 +6,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 using System.Collections;
 using System.Reflection;
+using static UnityEngine.GraphicsBuffer;
 
 #pragma warning disable IDE0019 // Use pattern matching
 #pragma warning disable IDE0018 // Inline variable declaration
@@ -125,30 +126,33 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Nested_Inspect(Action function, Object target = null)
         {
-            var changed = ChangeTrackStart();
-
-            var il = IndentLevel;
-
-            try
+            using (PegiEditorOnly.InspectorStarted ? null : PegiEditorOnly.StartInspector(target))
             {
-                function();
+                var changed = ChangeTrackStart();
 
-                if (changed)
+                var il = IndentLevel;
+
+                try
                 {
-                    if (target)
-                        target.SetToDirty();
-                    else
-                        function.Target.SetToDirty_Obj();
+                    function();
+
+                    if (changed)
+                    {
+                        if (target)
+                            target.SetToDirty();
+                        else
+                            function.Target.SetToDirty_Obj();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Write_Exception(ex);
-            }
+                catch (Exception ex)
+                {
+                    Write_Exception(ex);
+                }
 
-            IndentLevel = il;
+                IndentLevel = il;
 
-            return changed;
+                return changed;
+            }
         }
 
         public static ChangesToken Nested_Inspect<T>(ref T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : struct, IPEGI
@@ -208,69 +212,73 @@ namespace QuizCanners.Inspect
 
         private static ChangesToken Nested_Inspect_Internal<T>(ref T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : IPEGI
         {
-            if (pgi == null) 
+            using (PegiEditorOnly.InspectorStarted ? null : PegiEditorOnly.StartInspector(pgi))
             {
-                "NULL".PegiLabel().WriteWarning().Nl();
-                return ChangesToken.False;
-            }
 
-            if (fromNewLine)
-                Nl();
-
-            var changed = ChangeTrackStart();
-
-            var isFOOE = PegiEditorOnly.isFoldedOutOrEntered;
-
-            bool inDic = inspectionChain.TryGetValue(pgi, out int recurses);
-
-            if (!inDic || recurses < 4)
-            {
-                inspectionChain[pgi] = recurses + 1;
-
-                var indent = IndentLevel;
-
-                try
+                if (pgi == null)
                 {
-                    pgi.Inspect();
-                }
-                catch (Exception ex)
-                {
-                    if (IsExitGUIException(ex))
-                        throw ex;
-                    else
-                        Write_Exception(ex);
+                    "NULL".PegiLabel().WriteWarning().Nl();
+                    return ChangesToken.False;
                 }
 
-                if (writeWhenNeedsAttention)
+                if (fromNewLine)
+                    Nl();
+
+                var changed = ChangeTrackStart();
+
+                var isFOOE = PegiEditorOnly.isFoldedOutOrEntered;
+
+                bool inDic = inspectionChain.TryGetValue(pgi, out int recurses);
+
+                if (!inDic || recurses < 4)
                 {
+                    inspectionChain[pgi] = recurses + 1;
+
+                    var indent = IndentLevel;
+
                     try
                     {
-                        Nested_Inspect_Attention_MessageOnly(pgi);
+                        pgi.Inspect();
                     }
                     catch (Exception ex)
                     {
-                        Write_Exception(ex);
+                        if (IsExitGUIException(ex))
+                            throw ex;
+                        else
+                            Write_Exception(ex);
+                    }
+
+                    if (writeWhenNeedsAttention)
+                    {
+                        try
+                        {
+                            Nested_Inspect_Attention_MessageOnly(pgi);
+                        }
+                        catch (Exception ex)
+                        {
+                            Write_Exception(ex);
+                        }
+                    }
+
+                    RestoreBGColor();
+                    IndentLevel = indent;
+
+                    int count;
+                    if (inspectionChain.TryGetValue(pgi, out count))
+                    {
+                        if (count < 2)
+                            inspectionChain.Remove(pgi);
+                        else
+                            inspectionChain[pgi] = count - 1;
                     }
                 }
+                else
+                    "3rd recursion".PegiLabel().WriteWarning();
 
-                RestoreBGColor();
-                IndentLevel = indent;
+                PegiEditorOnly.isFoldedOutOrEntered = isFOOE;
 
-                int count;
-                if (inspectionChain.TryGetValue(pgi, out count))
-                {
-                    if (count < 2)
-                        inspectionChain.Remove(pgi);
-                    else
-                        inspectionChain[pgi] = count - 1;
-                }
+                return changed;
             }
-            else
-                "3rd recursion".PegiLabel().WriteWarning();
-
-            PegiEditorOnly.isFoldedOutOrEntered = isFOOE;
-
-            return changed;
         }
 
         public static ChangesToken InspectInList_Nested<T>(this T obj, ref int inspected, int current) where T : IPEGI_ListInspect
@@ -477,6 +485,16 @@ namespace QuizCanners.Inspect
         private static readonly List<object> _reflectiveInspectionDepth = new();
         private static readonly LoopLock _reflectiveInspectLoopLock = new();
 
+
+        public static ChangesToken TryReflectionInspect(object obj, UnityEngine.Object objectToSetDirty,  EnterExitContext context = null) 
+        {
+            var changes = TryReflectionInspect(obj, context);
+
+            if (changes && objectToSetDirty)
+                objectToSetDirty.SetToDirty();
+
+            return changes;
+        }
 
         public static ChangesToken TryReflectionInspect(object obj, EnterExitContext context = null)
         {
@@ -743,7 +761,7 @@ namespace QuizCanners.Inspect
             return obj == null;
         }
 
-        private static bool IsDefaultOrNull<T>(this T obj) => (obj == null) || EqualityComparer<T>.Default.Equals(obj, default);
+        private static bool IsDefaultOrNull<T>(this T obj) => (obj == null) || EqualityComparer<T>.Default.Equals(obj, default) || (obj is string && (obj as string).IsNullOrEmpty());
 
         public static void AddOrReplaceByIGotIndex<T>(this List<T> list, T newElement) where T : IGotIndex
         {
