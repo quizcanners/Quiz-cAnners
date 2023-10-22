@@ -52,13 +52,10 @@ namespace QuizCanners.Utils
         {
             get 
             {
-                if (_collectionMeta == null)
-                {
-                    _collectionMeta = new pegi.CollectionInspectorMeta(labelName: this.GetNameForInspector().Replace("Dictionary", ""), showAddButton: CanAdd)
+                _collectionMeta ??= new pegi.CollectionInspectorMeta(labelName: this.GetNameForInspector().Replace("Dictionary", ""), showAddButton: CanAdd)
                     {
                         ElementName = ElementName
                     };
-                }
                 return _collectionMeta;
             }
         }

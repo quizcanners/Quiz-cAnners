@@ -82,7 +82,7 @@ namespace QuizCanners.Utils
         public abstract class IndexGeneric<T> : BaseShaderPropertyIndex {
             
             [SerializeField] public T latestValue;
-            protected bool globalValueSet;
+            public bool GlobalValueSet { get; private set; }
             private bool lastValueSet;
 
             public abstract T Get(Material mat);
@@ -104,7 +104,7 @@ namespace QuizCanners.Utils
                 {
                     latestValue = value;
                     GlobalValue_Internal = value;
-                    globalValueSet = true;
+                    GlobalValueSet = true;
                 }
             }
 
@@ -139,7 +139,7 @@ namespace QuizCanners.Utils
             public override void InspectInList(ref int edited, int ind)
             {
                 base.InspectInList(ref edited, ind);
-                if (globalValueSet)
+                if (GlobalValueSet)
                     Icon.SelectAll.Draw(toolTip: "Set as Global value");
             }
 
@@ -147,7 +147,7 @@ namespace QuizCanners.Utils
             {
                 base.Inspect();
                 pegi.Nl();
-                if (globalValueSet)
+                if (GlobalValueSet)
                     "Global Value Set: {0}".F(GlobalValue).PegiLabel().Nl();
             }
 
@@ -264,7 +264,7 @@ namespace QuizCanners.Utils
                     name.PegiLabel(0.25f).Edit(ref latestValue))
               .OnChanged(() =>
               {
-                  if (globalValueSet)
+                  if (GlobalValueSet)
                       GlobalValue = latestValue;
               });
             
@@ -312,20 +312,20 @@ namespace QuizCanners.Utils
             {
                 var changes = pegi.ChangeTrackStart();
 
-                if (globalValueSet == false)
+                if (GlobalValueSet == false)
                     Icon.InActive.Draw("Global value not set");
 
                 bool useDefine = latestValue > 0;
                 if (pegi.ToggleIcon(ref useDefine))
                 {
                     latestValue = useDefine ? 1 : 0;
-                    if (globalValueSet)
+                    if (GlobalValueSet)
                         GlobalValue = latestValue;
                 }
 
                 name.PegiLabel(0.25f).Edit_01(ref latestValue).OnChanged(() =>
                 {
-                    if (globalValueSet)
+                    if (GlobalValueSet)
                         GlobalValue = latestValue;
                 });
 
@@ -375,7 +375,7 @@ namespace QuizCanners.Utils
                     name.PegiLabel(0.25f).Edit(ref latestValue))
               .OnChanged(() =>
               {
-                  if (globalValueSet)
+                  if (GlobalValueSet)
                       GlobalValue = latestValue;
               });
 
@@ -482,7 +482,7 @@ namespace QuizCanners.Utils
             public override void Inspect()
             {
                //base.Inspect();
-                if (name.PegiLabel().Edit(ref latestValue, hdr: true).Nl() && globalValueSet)
+                if (name.PegiLabel().Edit(ref latestValue, hdr: true).Nl() && GlobalValueSet)
                     GlobalValue = latestValue;
             }
 
@@ -546,7 +546,7 @@ namespace QuizCanners.Utils
 
                 return name.PegiLabel().Edit(ref latestValue).OnChanged(() =>
                 {
-                    if (globalValueSet)
+                    if (GlobalValueSet)
                         GlobalValue = latestValue;
                 });
             }

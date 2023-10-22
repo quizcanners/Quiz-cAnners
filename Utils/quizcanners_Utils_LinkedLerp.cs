@@ -237,7 +237,7 @@ namespace QuizCanners.Lerp
                      modSpeed *= _easePortion;
                  }*/
 
-                return LerpUtils.SpeedToMinPortion(modSpeed, magnitude, ref linkedPortion, unscaledTime: unscaledTime);
+                return QcLerp.SpeedToMinPortion(modSpeed, magnitude, ref linkedPortion, unscaledTime: unscaledTime);
             }
 
             #region Inspector
@@ -327,7 +327,7 @@ namespace QuizCanners.Lerp
 
                 var magnitude = Quaternion.Angle(CurrentValue, targetValue);
 
-                return  LerpUtils.SpeedToMinPortion(SpeedLimit, magnitude, ref linkedPortion, unscaledTime: unscaledTime);
+                return  QcLerp.SpeedToMinPortion(SpeedLimit, magnitude, ref linkedPortion, unscaledTime: unscaledTime);
             }
 
             #region Inspector
@@ -401,7 +401,7 @@ namespace QuizCanners.Lerp
             }
 
             protected override bool Portion(ref float linkedPortion, bool unscaledTime) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, CurrentValue - TargetValue, ref linkedPortion, unscaledTime: unscaledTime);
+                 QcLerp.SpeedToMinPortion(SpeedLimit, CurrentValue - TargetValue, ref linkedPortion, unscaledTime: unscaledTime);
 
             #region Inspect
 
@@ -480,7 +480,7 @@ namespace QuizCanners.Lerp
                 }
             }
 
-            protected readonly List<Texture> _targetTextures = new List<Texture>();
+            protected readonly List<Texture> _targetTextures = new();
 
             protected abstract Material Material { get; }
 
@@ -567,9 +567,9 @@ namespace QuizCanners.Lerp
             }
 
             // private static readonly ShaderProperty.VectorValue ImageProjectionPosition = new ShaderProperty.VectorValue("_imgProjPos");
-            private static readonly ShaderProperty.TextureValue NextTexture = new ShaderProperty.TextureValue("_Next_MainTex");
-            private static readonly ShaderProperty.TextureValue CurrentTexture = new ShaderProperty.TextureValue("_MainTex_Current");
-            private static readonly ShaderProperty.FloatValue TransitionPortion = new ShaderProperty.FloatValue("_Transition");
+            private static readonly ShaderProperty.TextureValue NextTexture = new("_Next_MainTex");
+            private static readonly ShaderProperty.TextureValue CurrentTexture = new("_MainTex_Current");
+            private static readonly ShaderProperty.FloatValue TransitionPortion = new("_Transition");
 
             #region Inspector
 
@@ -627,7 +627,7 @@ namespace QuizCanners.Lerp
 
         public abstract class BaseMaterialAtlasedTextureTransition : BaseMaterialTextureTransition
         {
-            private readonly Dictionary<Texture, Rect> offsets = new Dictionary<Texture, Rect>();
+            private readonly Dictionary<Texture, Rect> offsets = new();
 
             private void NullOffset(Texture tex)
             {
@@ -773,7 +773,7 @@ namespace QuizCanners.Lerp
             }
 
             protected override bool Portion(ref float linkedPortion, bool unscaledTime) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, LerpUtils.DistanceRgba(CurrentValue, targetValue), ref linkedPortion, unscaledTime: unscaledTime);
+                 QcLerp.SpeedToMinPortion(SpeedLimit, QcLerp.DistanceRgba(CurrentValue, targetValue), ref linkedPortion, unscaledTime: unscaledTime);
 
             protected sealed override bool LerpInternal(float linkedPortion)
             {
@@ -1010,7 +1010,7 @@ namespace QuizCanners.Lerp
 
                 var modSpeed = SpeedLimit;
 
-                return  LerpUtils.SpeedToMinPortion(modSpeed, magnitude, ref linkedPortion, unscaledTime: unscaledTime);
+                return  QcLerp.SpeedToMinPortion(modSpeed, magnitude, ref linkedPortion, unscaledTime: unscaledTime);
             }
 
             #region Inspector
@@ -1143,28 +1143,23 @@ namespace QuizCanners.Lerp
 
             #endregion
 
-            public QuaternionValue()
+            public QuaternionValue(float maxSpeedInDegrees = 90)
             {
+                SpeedLimit = maxSpeedInDegrees;
             }
 
-            public QuaternionValue(string name)
-            {
-                _name = name;
-            }
-
-            public QuaternionValue(string name, Quaternion initialValue)
+            public QuaternionValue(string name, float maxSpeedInDegrees = 90)
             {
                 _name = name;
-                targetValue = initialValue;
-                CurrentValue = initialValue;
+                SpeedLimit = maxSpeedInDegrees;
             }
 
-            public QuaternionValue(string name, Quaternion initialValue, float maxSpeed)
+            public QuaternionValue(string name, Quaternion initialValue, float maxSpeedInDegrees = 90)
             {
                 _name = name;
                 targetValue = initialValue;
                 CurrentValue = initialValue;
-                SpeedLimit = maxSpeed;
+                SpeedLimit = maxSpeedInDegrees;
             }
         }
 
@@ -1192,6 +1187,28 @@ namespace QuizCanners.Lerp
                 SpeedLimit = maxSpeed;
             }
         }
+
+        public class RectTransformAncoredPosition : BaseVector2Lerp
+        {
+            readonly RectTransform _transform;
+            protected override string Name_Internal => "Anchored Position";
+
+            public void PortionX(LerpData ld, float targetValueX) => Portion(ld, targetValue: CurrentValue.X(targetValueX));
+            public void PortionY(LerpData ld, float targetValueY) => Portion(ld, targetValue: CurrentValue.Y(targetValueY));
+
+            public override Vector2 CurrentValue
+            {
+                get { return _transform.anchoredPosition; }
+                set { _transform.anchoredPosition = value; }
+            }
+
+            public RectTransformAncoredPosition(RectTransform transform, float maxSpeed)
+            {
+                _transform = transform;
+                SpeedLimit = maxSpeed;
+            }
+        }
+
 
         #endregion
 
@@ -1225,7 +1242,7 @@ namespace QuizCanners.Lerp
             }
 
             protected override bool Portion(ref float portion, bool unscaledTime) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, Quaternion.Angle(CurrentValue, TargetValue), ref portion, unscaledTime: unscaledTime);
+                 QcLerp.SpeedToMinPortion(SpeedLimit, Quaternion.Angle(CurrentValue, TargetValue), ref portion, unscaledTime: unscaledTime);
         }
 
         public abstract class TransformVector3Base : BaseLerpGeneric<Vector3>
@@ -1255,7 +1272,7 @@ namespace QuizCanners.Lerp
             }
 
             protected override bool Portion(ref float portion, bool unscaledTime) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, (CurrentValue - targetValue).magnitude, ref portion, unscaledTime: unscaledTime);
+                 QcLerp.SpeedToMinPortion(SpeedLimit, (CurrentValue - targetValue).magnitude, ref portion, unscaledTime: unscaledTime);
         }
 
         public class TransformLocalScale : TransformVector3Base
@@ -1358,13 +1375,24 @@ namespace QuizCanners.Lerp
                 }
             }
 
+            public float GlobalValue 
+            {
+                get => _property.GlobalValue;
+                set 
+                {
+                    CurrentValue = value;
+                    _property.GlobalValue = value;
+                }
+            }
+
             private float targetValue;
 
             public override void Set(Material mat)
             {
                 if (mat)
                     mat.Set(_property);
-                else
+                
+                if (_property.GlobalValueSet || !mat)
                     _property.GlobalValue = _property.latestValue;
             }
 
@@ -1385,7 +1413,7 @@ namespace QuizCanners.Lerp
             }
 
             protected override bool Portion(ref float linkedPortion, bool unscaledTime) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, CurrentValue - targetValue, ref linkedPortion, unscaledTime: unscaledTime);
+                 QcLerp.SpeedToMinPortion(SpeedLimit, CurrentValue - targetValue, ref linkedPortion, unscaledTime: unscaledTime);
 
             protected override bool LerpSubInternal(float portion)
             {
@@ -1447,7 +1475,7 @@ namespace QuizCanners.Lerp
 
             public sealed override Color CurrentValue
             {
-                get { return _property.latestValue; }
+                get => _property.latestValue; 
                 set
                 {
                     _property.latestValue = value;
@@ -1455,11 +1483,22 @@ namespace QuizCanners.Lerp
                 }
             }
 
+            public Color GlobalValue 
+            {
+                get => _property.GlobalValue;
+                set
+                {
+                    CurrentValue = value;
+                    _property.GlobalValue = value;
+                }
+            }
+
             public override void Set(Material mat)
             {
                 if (mat)
                     mat.Set(_property);
-                else
+                
+                if (_property.GlobalValueSet || !mat)
                     _property.GlobalValue = CurrentValue;
             }
 
@@ -1489,7 +1528,7 @@ namespace QuizCanners.Lerp
             }
 
             protected override bool Portion(ref float portion, bool unscaledTime) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit,  LerpUtils.DistanceRgba(CurrentValue, TargetValue), ref portion, unscaledTime: unscaledTime);
+                 QcLerp.SpeedToMinPortion(SpeedLimit,  QcLerp.DistanceRgba(CurrentValue, TargetValue), ref portion, unscaledTime: unscaledTime);
 
             #region Encode & Decode
 
@@ -1567,7 +1606,7 @@ namespace QuizCanners.Lerp
             }
 
             protected override bool Portion(ref float portion, bool unscaledTime) =>
-                 LerpUtils.SpeedToMinPortion(SpeedLimit, (CurrentValue - TargetValue).magnitude, ref portion, unscaledTime: unscaledTime);
+                 QcLerp.SpeedToMinPortion(SpeedLimit, (CurrentValue - TargetValue).magnitude, ref portion, unscaledTime: unscaledTime);
 
             #region Encode & Decode
 
@@ -1767,7 +1806,7 @@ namespace QuizCanners.Lerp
         internal bool _unscaledTime;
         public string dominantParameter = "None";
 
-        public ChangesToken StartChangeTrack() => new ChangesToken(this);
+        public ChangesToken StartChangeTrack() => new(this);
 
         internal void OnValueLerped() => _lerpChangeVersion++;
 
@@ -1782,7 +1821,7 @@ namespace QuizCanners.Lerp
 
         public float Portion(bool skipLerp = false) => skipLerp ? 1 : _linkedPortion;
 
-        public bool Done => Mathf.Approximately(_linkedPortion, 1);//Math.Abs(_linkedPortion - 1) < float.Epsilon*10;
+        public bool IsDone => Mathf.Approximately(_linkedPortion, 1);//Math.Abs(_linkedPortion - 1) < float.Epsilon*10;
 
         public float MinPortion
         {

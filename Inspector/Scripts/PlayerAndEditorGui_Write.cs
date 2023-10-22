@@ -12,14 +12,15 @@ namespace QuizCanners.Inspect
 {
     public static partial class pegi
     {
-        private static readonly TextToken TEXT_TOK = new TextToken();
+        private static readonly TextToken TEXT_TOK = new();
 
-        public static TextLabel PegiLabel(this string label, float widthFraction) => new TextLabel(label, null, Mathf.FloorToInt(widthFraction * Screen.width), null);
-        public static TextLabel PegiLabel(this string label, int width) => new TextLabel(label, null, width, null);
-        public static TextLabel PegiLabel(this string label, Styles.PegiGuiStyle style) => new TextLabel(label, null, -1, style);
+        public static TextLabel PegiLabel(this string label, float widthFraction) => new(label, null, Mathf.FloorToInt(widthFraction * Screen.width), null);
+        public static TextLabel PegiLabel(this string label, int width) => new(label, null, width, null);
+        public static TextLabel PegiLabel(this string label, Styles.PegiGuiStyle style) => new(label, null, -1, style);
+        public static TextLabel PegiLabel(this string label, int width, Styles.PegiGuiStyle style) => new(label, null, width, style);
 
-        public static TextLabel PegiLabel(this string label, string toolTip, float widthFraction, Styles.PegiGuiStyle style = null) => new TextLabel(label, toolTip, Mathf.FloorToInt(widthFraction * Screen.width), style);
-        public static TextLabel PegiLabel(this string label, string toolTip = null, int width = -1, Styles.PegiGuiStyle style = null) => new TextLabel(label, toolTip, width, style);
+        public static TextLabel PegiLabel(this string label, string toolTip, float widthFraction, Styles.PegiGuiStyle style = null) => new(label, toolTip, Mathf.FloorToInt(widthFraction * Screen.width), style);
+        public static TextLabel PegiLabel(this string label, string toolTip = null, int width = -1, Styles.PegiGuiStyle style = null) => new(label, toolTip, width, style);
 
         public static TextToken Write(this TextLabel label) => label.TryWrite();
 
@@ -37,7 +38,7 @@ namespace QuizCanners.Inspect
             internal string toolTip;
             internal Styles.PegiGuiStyle style;
 
-            internal string TooltipOrLabel => GotToolTip ? toolTip : label;
+            internal readonly string TooltipOrLabel => GotToolTip ? toolTip : label;
 
             internal System.Func<string> FallbackHint 
             { 
@@ -73,20 +74,20 @@ namespace QuizCanners.Inspect
                 return this;
             }
 
-            internal bool IsInitialized => !label.IsNullOrEmpty();
-            internal bool GotWidth => width > 0;
-            internal bool GotToolTip => !toolTip.IsNullOrEmpty();
-            internal bool GotStyle => style != null;
+            internal readonly bool IsInitialized => !label.IsNullOrEmpty();
+            internal readonly bool GotWidth => width > 0;
+            internal readonly bool GotToolTip => !toolTip.IsNullOrEmpty();
+            internal readonly bool GotStyle => style != null;
 
-            public override string ToString() => label;
+            public override readonly string ToString() => label;
 
-            public bool TryGetLabel(out string label)
+            public readonly bool TryGetLabel(out string label)
             {
                 label = this.label;
                 return true;
             }
 
-            public TextToken TryWrite() 
+            public readonly TextToken TryWrite() 
             {
                 if (IsInitialized == false)
                     return TEXT_TOK;
@@ -138,8 +139,8 @@ namespace QuizCanners.Inspect
                 this.style = style;
             }
 
-
-
+            /*
+            
             private static TextToken Write_Internal(string text)
             {
                 var cnt = TextAndTip(text);
@@ -193,6 +194,8 @@ namespace QuizCanners.Inspect
 
             }
 
+            */
+
             private static TextToken Write(string text, string toolTip, int width, Styles.PegiGuiStyle style)
             {
 
@@ -233,7 +236,7 @@ namespace QuizCanners.Inspect
 
             }
 
-            private static TextToken Write(string text, int width) => Write(text, text, width);
+            //private static TextToken Write(string text, int width) => Write(text, text, width);
 
             private static TextToken Write(string text, string toolTip)
             {
@@ -282,7 +285,7 @@ namespace QuizCanners.Inspect
         }
 
         #region GUI Contents
-        private static readonly GUIContent imageAndTip = new GUIContent();
+        private static readonly GUIContent imageAndTip = new();
 
         private static GUIContent ImageAndTip(Texture tex, string toolTip)
         {
@@ -291,7 +294,7 @@ namespace QuizCanners.Inspect
             return imageAndTip;
         }
 
-        private static readonly GUIContent textAndTip = new GUIContent();
+        private static readonly GUIContent textAndTip = new();
 
         private static GUIContent TextAndTip(string text)
         {
@@ -311,18 +314,20 @@ namespace QuizCanners.Inspect
 
         #region Unity Object
 
-        public static void Write<T>(T field) where T : Object
+        public static TextToken Write<T>(T field) where T : Object
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
                 PegiEditorOnly.Write(field);
 #endif
+
+            return  TEXT_TOK;
         }
 
-        public static void Write<T>(this TextLabel label, T field) where T : Object
+        public static TextToken Write<T>(this TextLabel label, T field) where T : Object
         {
             Write(label);
-            Write(field);
+            return Write(field);
 
         }
 

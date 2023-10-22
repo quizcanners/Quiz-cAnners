@@ -9,14 +9,14 @@ namespace QuizCanners.Inspect
     public static partial class pegi
     {
         [Serializable]
-        public class EnterExitContext : ICfgCustom
+        public class EnterExitContext : ICfgCustom, IPEGI
         {
             [NonSerialized] internal int _currentIndex = -1;
             [HideInInspector] [SerializeField] private int _currentlyEntered = -1;
             private EnterExitContext _previous;
             [NonSerialized] internal bool contextUsed;
             private readonly PlayerPrefValue.Int _playerPref = null;
-            private readonly LogicWrappers.Request checkPlayerPrefs = new LogicWrappers.Request();
+            private readonly LogicWrappers.Request checkPlayerPrefs = new();
             private bool insideUsinglock;
             internal static EnterExitContext CurrentIndexer;
 
@@ -63,15 +63,14 @@ namespace QuizCanners.Inspect
 
             internal void OnChanged()
             {
-                if (_playerPref != null)
-                    _playerPref.SetValue(_currentlyEntered);
+                _playerPref?.SetValue(_currentlyEntered);
             }
 
             internal void Increment() => _currentIndex++;
             
             internal bool CanSkipCurrent => IsAnyEntered && _currentlyEntered != _currentIndex;
 
-            public StateToken IsAnyEntered => new StateToken(GetCurrentlyEnteredInternal() != -1);
+            public StateToken IsAnyEntered => new(GetCurrentlyEnteredInternal() != -1);
 
             public StateToken IsCurrentEntered
             {
@@ -102,6 +101,15 @@ namespace QuizCanners.Inspect
                 });
             }
 
+            #region Inspector
+            public void Inspect()
+            {
+
+                "Currently Entered".PegiLabel().Edit(ref _currentlyEntered).Nl();
+                "Current Index".PegiLabel().Edit(ref _currentIndex).Nl();
+            }
+            #endregion
+
             #region Save & Load
 
             public CfgEncoder Encode() => new CfgEncoder().Add_IfNotNegative("i", GetCurrentlyEnteredInternal());
@@ -119,6 +127,8 @@ namespace QuizCanners.Inspect
                 CurrentlyEntered = -1;
                 this.DecodeTagsFrom(data);
             }
+
+         
 
             #endregion
 
@@ -239,6 +249,12 @@ namespace QuizCanners.Inspect
                         inspected = -1;
                 } else 
                     EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => IsEnteredCurrent = StateToken.True);
+            }
+
+            internal static void Internal_exitOptionOnly(TextLabel txt, bool showLabelIfTrue = true)
+            {
+                if (IsEnteredCurrent)
+                    ExitClick(txt, showLabelIfTrue: showLabelIfTrue);
             }
 
             internal static bool Internal_isEntered(TextLabel txt, bool showLabelIfTrue = true)

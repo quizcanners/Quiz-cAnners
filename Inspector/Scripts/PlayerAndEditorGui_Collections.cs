@@ -91,16 +91,13 @@ namespace QuizCanners.Inspect
             {
                 var uo = el as Object;
 
-                if (el is Object)
+                if ((listMeta == null || listMeta[CollectionInspectParams.allowDeleting]) && el is Object)
                 {
                     isShown = true;
 
                     if (Edit(ref uo, typeof(T), width: (int)(Screen.width * 0.25f)))
                         el = (T)(object)uo;
                 }
-
-
-
 
                 if (!TryUseListInspection(ref el, ref inspected))
                 {
@@ -289,8 +286,11 @@ namespace QuizCanners.Inspect
                             isPrevious = true;
 
                     }
+
+                    return;
                 }
-                else if (el.GetNameForInspector().PegiLabel("Inspect", RemainingLength(defaultButtonSize * 2 + 10)).ClickLabel())
+
+                if (el.GetNameForInspector().PegiLabel("Inspect", RemainingLength(defaultButtonSize * 2 + 10)).ClickLabel())
                 {
                     inspected = index;
                     isPrevious = true;
@@ -546,7 +546,7 @@ namespace QuizCanners.Inspect
             {
                 "List of {0} is null".F(typeof(T).ToPegiStringType()).PegiLabel().Write();
 
-                    return changes;
+                return changes;
             }
 
             if (inspected >= list.Count)
@@ -562,34 +562,41 @@ namespace QuizCanners.Inspect
 
                 if (list != collectionInspector.reordering)
                 {
-
                     collectionInspector.TryShowListAddNewOption(list, ref added, listMeta);
 
-                    foreach (var el in collectionInspector.InspectionIndexes(list, listMeta))
+                    if (list.Count == 0)
                     {
-                        int i = collectionInspector.Index;
-
-                        if (el.IsNullOrDestroyed_Obj())
-                        {
-                            var us = el as Object;
-
-                            if (Edit(ref us, typeof(T)))
-                                list[i] = (T)((object)us);
-
-                            /*
-                            if (!Utils.IsMonoType(list, i))
-                            {
-                                (typeof(T).IsSubclassOf(typeof(Object))
-                                    ? "use edit_List_UObj"
-                                    : "is NUll").PegiLabel().Write();
-                            }*/
-                        }
-                        else
-                        {
-                            InspectValueInList(el, list, i, ref inspected, listMeta);
-                        }
-
                         Nl();
+                        "Empty List of {0}".F(typeof(T).ToPegiStringType()).PegiLabel(Styles.HeaderText).Nl();
+                    }
+                    else
+                    {
+                        foreach (var el in collectionInspector.InspectionIndexes(list, listMeta))
+                        {
+                            int i = collectionInspector.Index;
+
+                            if (el.IsNullOrDestroyed_Obj())
+                            {
+                                var us = el as Object;
+
+                                if (Edit(ref us, typeof(T)))
+                                    list[i] = (T)((object)us);
+
+                                /*
+                                if (!Utils.IsMonoType(list, i))
+                                {
+                                    (typeof(T).IsSubclassOf(typeof(Object))
+                                        ? "use edit_List_UObj"
+                                        : "is NUll").PegiLabel().Write();
+                                }*/
+                            }
+                            else
+                            {
+                                InspectValueInList(el, list, i, ref inspected, listMeta);
+                            }
+
+                            Nl();
+                        }
                     }
 
                     collectionInspector.TryShowListCreateNewOptions(list, ref added, listMeta);

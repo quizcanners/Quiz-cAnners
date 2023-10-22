@@ -1,4 +1,3 @@
-using Codice.Client.BaseCommands.Merge;
 using QuizCanners.Inspect;
 using System;
 using System.Collections;
@@ -35,6 +34,8 @@ namespace QuizCanners.Utils
 
             return true;
         }
+
+        //public override bool IsSingletonActive { get => base.IsSingletonActive && CanSpawn_ByPerformance(); set => base.IsSingletonActive = value; }
 
         protected virtual bool CanSpawn_AtPosition(Vector3 position) => Camera.main.IsInCameraViewArea(position);
 
@@ -402,7 +403,7 @@ namespace QuizCanners.Utils
 
                 try
                 {
-                    while (index <= _pool._maxActiveIndex && !_pool.allInstances[index].IsActive)
+                    while (index <= _pool._maxActiveIndex && (!_pool.allInstances[index] || !_pool.allInstances[index].IsActive))
                     {
                         index++;
                     }
@@ -411,7 +412,7 @@ namespace QuizCanners.Utils
                     Debug.LogError("Getting {0}, maxActive - {1}, Count: {2}".F(index, _pool._maxActiveIndex, _pool.allInstances.Count));
                 }
 
-                return index < _pool.allInstances.Count;
+                return index <= _pool._maxActiveIndex;//_pool.allInstances.Count;
 
             }
 
@@ -427,7 +428,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        public bool TryIterate_Randomly(ref int index, out T current)
+        public bool TryIterate(ref int index, out T current)
         {
             int cnt = _activeInstancesCount;
 
@@ -437,53 +438,26 @@ namespace QuizCanners.Utils
                 return false;
             }
 
-            index = (index + Mathf.FloorToInt(cnt / 10) + 1) % cnt;
-            current = allInstances[index];
-            return current.IsActive;
-        }
+            //int toSkip = Mathf.FloorToInt(cnt / 10) + 1;
 
-        #endregion
+            int maxSteps = 5;
 
-        #region Inspector
-
-        private readonly pegi.CollectionInspectorMeta _prefabsMeta = new("Prefabs");
-        private readonly pegi.CollectionInspectorMeta _instancesMeta = new("Instances");
-
-        private readonly pegi.TabContext _tab = new();
-
-        public override void Inspect()
-        {
-            base.Inspect();
-
-            if (InstancesCount > 0)
-                Icon.Delete.Click().OnChanged(ClearAll_Internal);
-
-            "Pool of {0}".F(typeof(T).Name).PegiLabel(pegi.Styles.ListLabel).Write();
-
-            pegi.Nl();
-
-            using (_tab.StartContext())
+            //index = (index + ) % cnt;
+            do
             {
-                pegi.AddTab("Prefabs", changes =>
-                {
-                    _prefabsMeta.Edit_List(prefabs).Nl();
-                    "Capacity: {0}/{1} ({2})".F(InstancesCount, RECOMMENDED_INSTANCES, MAX_INSTANCES).PegiLabel().Nl();
-                });
+                maxSteps--;
+                index++;
+            } while (index < _maxActiveIndex && !allInstances[index].IsActive && maxSteps > 0);
 
-                pegi.AddTab("Instance", changes =>
-                {
-                    _instancesMeta.Edit_List(allInstances).Nl();
-                });
-
-                pegi.AddTab("Debug", changes => 
-                {
-                    if (Application.isPlaying && Icon.Play.Click())
-                        TrySpawn(Vector3.zero, out _);
-
-                    "First Inactive:{0}".F(_firstInactiveIndex).PegiLabel().Nl();
-                    "Last Active: {0}".F(_maxActiveIndex).PegiLabel().Nl();
-                });
+            if (index>= _maxActiveIndex)
+            {
+                index = -1;
+                current = null;
+                return false;
             }
+
+            current = allInstances[index];
+            return current && current.IsActive;
         }
 
         #endregion
@@ -523,25 +497,36 @@ namespace QuizCanners.Utils
             if (_firstInactiveIndex < allInstances.Count)
             {
                 inst = allInstances[_firstInactiveIndex];
+                if (!inst)
+                    InstanciateNew(out inst);
+
                 inst.transform.position = worldPosition;
                 ProcessInstance(inst, index: _firstInactiveIndex);
                 _firstInactiveIndex++;
                 return;
             }
 
-#if UNITY_EDITOR
-            using (QcDebug.TimeProfiler.Instance["Pool Instancers"].Sum(typeof(T).ToPegiStringType()).Start())
-            {
-#endif
-                lastInstancePrefab = (lastInstancePrefab + 1) % prefabs.Count;
-                inst = Instantiate(prefabs[lastInstancePrefab], worldPosition, Quaternion.identity, transform);
-#if UNITY_EDITOR
-            }
-#endif
+            InstanciateNew(out inst);
 
+         
             allInstances.Add(inst);
 
             ProcessInstance(inst, index: allInstances.Count-1);
+
+            return;
+
+            void InstanciateNew(out T inst)
+            {
+#if UNITY_EDITOR
+                using (QcDebug.TimeProfiler.Instance["Pool Instancers"].Sum(typeof(T).ToPegiStringType()).Start())
+                {
+#endif
+                    lastInstancePrefab = (lastInstancePrefab + 1) % prefabs.Count;
+                    inst = Instantiate(prefabs[lastInstancePrefab], worldPosition, Quaternion.identity, transform);
+#if UNITY_EDITOR
+                }
+#endif
+            }
 
             void ProcessInstance(T newInst, int index) 
             {
@@ -561,6 +546,51 @@ namespace QuizCanners.Utils
         }
 
         protected virtual void OnInstanciated(T inst) { }
+
+        #region Inspector
+
+        private readonly pegi.CollectionInspectorMeta _prefabsMeta = new("Prefabs");
+        private readonly pegi.CollectionInspectorMeta _instancesMeta = new("Instances");
+
+        private readonly pegi.TabContext _tab = new();
+
+        public override void Inspect()
+        {
+            base.Inspect();
+
+            if (InstancesCount > 0)
+                Icon.Delete.Click().OnChanged(ClearAll_Internal);
+
+            "Pool of {0}".F(typeof(T).Name).PegiLabel(pegi.Styles.ListLabel).Write();
+
+            pegi.Nl();
+
+            using (_tab.StartContext())
+            {
+                pegi.AddTab("Prefabs", changes =>
+                {
+                    _prefabsMeta.Edit_List(prefabs).Nl();
+                    "Capacity: {0}/{1} ({2})".F(InstancesCount, RECOMMENDED_INSTANCES, MAX_INSTANCES).PegiLabel().Nl();
+                });
+
+                pegi.AddTab("Instance", changes =>
+                {
+                    _instancesMeta.Edit_List(allInstances).Nl();
+                });
+
+                pegi.AddTab("Debug", changes =>
+                {
+                    if (Application.isPlaying && Icon.Play.Click())
+                        TrySpawn(Vector3.zero, out _);
+
+                    "First Inactive:{0}".F(_firstInactiveIndex).PegiLabel().Nl();
+                    "Last Active: {0}".F(_maxActiveIndex).PegiLabel().Nl();
+                });
+            }
+        }
+
+        #endregion
+
     }
 
     public abstract class PoolableElement : MonoBehaviour

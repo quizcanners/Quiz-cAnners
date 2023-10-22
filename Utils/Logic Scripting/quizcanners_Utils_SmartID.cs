@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using UnityEngine;
 using static UnityEngine.EventSystems.EventTrigger;
 
 namespace QuizCanners.Utils
@@ -18,7 +19,7 @@ namespace QuizCanners.Utils
 
     public abstract class SmartStringIdGeneric<TValue> : SmartId, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable where TValue : IGotName//, new()
     {
-        private string _id;
+        [SerializeField] private string _id;
 
         public virtual string Id 
         {
@@ -183,6 +184,11 @@ namespace QuizCanners.Utils
         private bool cached;
         private TValue cachedValue;
 
+        protected virtual bool IsDirty 
+        {
+            get => false;
+            set  { }
+        }
 
         public override string Id
         {
@@ -195,7 +201,7 @@ namespace QuizCanners.Utils
 
         public override bool TryGetEntity(out TValue entity)
         {
-            if (cached)
+            if (cached && !IsDirty)
             {
                 entity = cachedValue;
                 return entity != null;
@@ -203,6 +209,7 @@ namespace QuizCanners.Utils
 
             cached = base.TryGetEntity(out entity);
             cachedValue = entity;
+            IsDirty = false;
 
             return entity != null;
            

@@ -58,10 +58,10 @@ namespace QuizCanners.Inspect
         internal static int _elementIndex;
         internal static int selectedFold = -1;
         internal static bool _horizontalStarted;
-        private static readonly Color AttentionColor = new Color(1f, 0.7f, 0.7f, 1);
-        private static readonly Color PreviousInspectedColor = new Color(0.3f, 0.7f, 0.3f, 1);
-        private static readonly List<Color> _previousBgColors = new List<Color>();
-        private static readonly List<Color> _previousGuiColors = new List<Color>();
+        private static readonly Color AttentionColor = new(1f, 0.7f, 0.7f, 1);
+        private static readonly Color PreviousInspectedColor = new(0.3f, 0.7f, 0.3f, 1);
+        private static readonly List<Color> _previousBgColors = new();
+        private static readonly List<Color> _previousGuiColors = new();
 
         public static UnityEngine.Object InspectedUnityObject =>
         #if UNITY_EDITOR
@@ -361,8 +361,8 @@ namespace QuizCanners.Inspect
 
             public static implicit operator bool(StateToken d) => d.IsEntered;
 
-            internal static StateToken True => new StateToken() { IsEntered = true };
-            internal static StateToken False => new StateToken() { IsEntered = false };
+            internal static StateToken True => new() { IsEntered = true };
+            internal static StateToken False => new() { IsEntered = false };
 
             public StateToken(bool value)
             {
@@ -376,8 +376,8 @@ namespace QuizCanners.Inspect
 
             public static implicit operator bool(ChangesToken d) => d.IsChanged;
 
-            internal static ChangesToken False => new ChangesToken() { IsChanged = false };
-            internal static ChangesToken True => new ChangesToken() { IsChanged = true };
+            internal static ChangesToken False => new() { IsChanged = false };
+            internal static ChangesToken True => new() { IsChanged = true };
 
             public static ChangesToken operator |(ChangesToken a, ChangesToken b) 
             {
@@ -437,9 +437,11 @@ namespace QuizCanners.Inspect
 #endif
             {
 
-                List<IDisposable> disposables = new List<IDisposable>();
+                List<IDisposable> disposables = new()
+                {
+                    new GUILayout.HorizontalScope()
+                };
 
-                disposables.Add(new GUILayout.HorizontalScope());
                 GUILayout.Space(width);
                 disposables.Add(new GUILayout.VerticalScope());
 

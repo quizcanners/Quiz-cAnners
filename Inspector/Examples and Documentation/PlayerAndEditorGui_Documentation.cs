@@ -9,7 +9,7 @@ namespace QuizCanners.Inspect.Examples
 {
     internal static partial class PlayerAndEditorGui_Documentation
     {
-        private static readonly List<DocEntry> entries = new List<DocEntry>() { 
+        private static readonly List<DocEntry> entries = new() { 
             new OverviewEntry(), 
             new InterfacesEntry(),
             new LabelEntry(), 
@@ -25,7 +25,7 @@ namespace QuizCanners.Inspect.Examples
             new DrawEntry(), 
             new ReturnTypesEntry() };
 
-        private static readonly pegi.CollectionInspectorMeta _entriesListMeta = new pegi.CollectionInspectorMeta("Player & Editor GUI Guide", allowDeleting: false, showAddButton: false, showEditListButton: false, playerPrefsIndex: "pgFnkInd");
+        private static readonly pegi.CollectionInspectorMeta _entriesListMeta = new("Player & Editor GUI Guide", allowDeleting: false, showAddButton: false, showEditListButton: false, playerPrefsIndex: "pgFnkInd");
 
         public static void Inspect() => _entriesListMeta.Edit_List(entries);
         
@@ -95,7 +95,7 @@ namespace QuizCanners.Inspect.Examples
                 WriteInterface<IGotCount>();
                 WriteInterface<IPEGI_Handles>();
 
-                void WriteInterface<T>() 
+                static void WriteInterface<T>() 
                 {
                     typeof(T).ToPegiStringType().PegiLabel(style: pegi.Styles.BaldText).Write_ForCopy(writeAsEditField: true).Nl();
                 }
@@ -168,7 +168,7 @@ namespace QuizCanners.Inspect.Examples
 
             protected override List<FunctionData> GetFunctions() => functions;
 
-            private readonly List<FunctionData> functions = new List<FunctionData>()
+            private readonly List<FunctionData> functions = new()
             {
                 new FunctionData(nameof(pegi.Write), ReturnType.TextToken,
                     about: "Writes the provided text.",
@@ -179,7 +179,7 @@ namespace QuizCanners.Inspect.Examples
                     extendsPegiLabel: true),
             };
 
-            private readonly List<string> searchBy = new List<string>() { "write", "writeBig", "text", "label", "string", "draw"};
+            private readonly List<string> searchBy = new() { "write", "writeBig", "text", "label", "string", "draw"};
 
             public override IEnumerator SearchKeywordsEnumerator()
             {
@@ -199,7 +199,7 @@ namespace QuizCanners.Inspect.Examples
 
             protected override List<FunctionData> GetFunctions() => functions;
 
-            private readonly List<FunctionData> functions = new List<FunctionData>()
+            private readonly List<FunctionData> functions = new()
             {
                 new FunctionData(nameof(pegi.Nl), ReturnType.SameReturnType,
                     about: "Makes sure that the next elements is drawn from a new line.",
@@ -222,7 +222,7 @@ namespace QuizCanners.Inspect.Examples
 
             protected override List<FunctionData> GetFunctions() => functions;
 
-            private readonly List<FunctionData> functions = new List<FunctionData>()
+            private readonly List<FunctionData> functions = new()
             {
                 new FunctionData(nameof(pegi.ChangeTrackStart), ReturnType.ChangesTracker,
                     about: "Creates a tracker that can be cast to bool with value True if any changes were made since it's creation.",
@@ -243,7 +243,7 @@ namespace QuizCanners.Inspect.Examples
 
             protected override List<FunctionData> GetFunctions() => functions;
           
-            private readonly List<FunctionData> functions = new List<FunctionData>()
+            private readonly List<FunctionData> functions = new()
             {
                 new FunctionData(nameof(pegi.Edit), ReturnType.Changes, 
                     about: "Allows to edit value with a slider to interpolate between min & max value, inclusively.", 
@@ -275,7 +275,7 @@ namespace QuizCanners.Inspect.Examples
                     new Parameter(name: "ref value", description: "A value to edit", optional: false)),
             };
 
-            private readonly List<string> searchBy = new List<string>() { "enum", "bool", "double", "float", "long", "int", "string", "Vector2", "Vector3", "Vector4", "Quaternion", "Color", "Color32", "Rect" };
+            private readonly List<string> searchBy = new() { "enum", "bool", "double", "float", "long", "int", "string", "Vector2", "Vector3", "Vector4", "Quaternion", "Color", "Color32", "Rect" };
 
             public override IEnumerator SearchKeywordsEnumerator()
             {
@@ -309,7 +309,7 @@ namespace QuizCanners.Inspect.Examples
 
             protected override List<FunctionData> GetFunctions() => functions;
 
-            private readonly List<FunctionData> functions = new List<FunctionData>()
+            private readonly List<FunctionData> functions = new()
             {
                 new FunctionData(nameof(pegi.Click), ReturnType.Click,
                     about: "Creates a button with a text. Returns True if button was clicked.",
@@ -330,7 +330,7 @@ namespace QuizCanners.Inspect.Examples
                     extendsPegiLabel: true),
             };
 
-            private readonly List<string> searchBy = new List<string>() { "Click", "Function", "Action" };
+            private readonly List<string> searchBy = new() { "Click", "Function", "Action" };
 
             public override IEnumerator SearchKeywordsEnumerator()
             {
@@ -357,7 +357,7 @@ namespace QuizCanners.Inspect.Examples
             public override string ToString() => "Enter";
 
             private int _foldedOutIndex = -1;
-            private readonly pegi.EnterExitContext _enteredIndex = new pegi.EnterExitContext();
+            private readonly pegi.EnterExitContext _enteredIndex = new();
 
             public override void Inspect_About()
             {
@@ -395,7 +395,7 @@ namespace QuizCanners.Inspect.Examples
                     .DrawExample();
 
 
-                void WriteStuff(string label) 
+                static void WriteStuff(string label) 
                 {
                     using(pegi.Indent())
                     {
@@ -408,7 +408,7 @@ namespace QuizCanners.Inspect.Examples
 
             protected override List<FunctionData> GetFunctions() => functions;
 
-            private readonly List<FunctionData> functions = new List<FunctionData>()
+            private readonly List<FunctionData> functions = new()
             {
                
 
@@ -417,7 +417,7 @@ namespace QuizCanners.Inspect.Examples
                     new Parameter(name: "bool showLabelIfTrue", description: "If element is entered, it's label will be hidden. Useful when entered data group also writes a title.", optional: true))
             };
 
-            private readonly List<string> searchBy = new List<string>() { "context", "entered", "exited", "folded", "hide", "isEntered", "menu", "sections"};
+            private readonly List<string> searchBy = new() { "context", "entered", "exited", "folded", "hide", "isEntered", "menu", "sections"};
 
             public override IEnumerator SearchKeywordsEnumerator()
             {
@@ -446,7 +446,7 @@ namespace QuizCanners.Inspect.Examples
 
             protected override List<FunctionData> GetFunctions() => functions;
 
-            private readonly List<FunctionData> functions = new List<FunctionData>()
+            private readonly List<FunctionData> functions = new()
             {
                 new FunctionData(nameof(pegi.Select), ReturnType.Changes, about: "Allow to select an element from a collection of elements.",
                      extendsPegiLabel: true,
@@ -483,7 +483,7 @@ namespace QuizCanners.Inspect.Examples
 
             protected override List<FunctionData> GetFunctions() => functions;
 
-            private readonly List<FunctionData> functions = new List<FunctionData>()
+            private readonly List<FunctionData> functions = new()
             {
                 new FunctionData(nameof(pegi.Draw), ReturnType.Changes,
                     about: "Draws a sprite.",
@@ -498,7 +498,7 @@ namespace QuizCanners.Inspect.Examples
                     ),
             };
 
-            private readonly List<string> searchBy = new List<string>() { "texture", "sprite", "icon" };
+            private readonly List<string> searchBy = new() { "texture", "sprite", "icon" };
 
             public override IEnumerator SearchKeywordsEnumerator()
             {

@@ -36,7 +36,7 @@ namespace QuizCanners.Inspect
             [SerializeField] internal int listSectionStartIndex;
             [NonSerialized] internal bool useOptimalShowRange = true;
             [NonSerialized] internal int itemsToShow = 10;
-            [NonSerialized] internal UnNullable<ElementData> elementDatas = new UnNullable<ElementData>();
+            [NonSerialized] internal UnNullable<ElementData> elementDatas = new();
             [NonSerialized] internal bool inspectListMeta = false;
             [NonSerialized] private CollectionInspectParams _config;
 
@@ -48,10 +48,7 @@ namespace QuizCanners.Inspect
                 set 
                 {
                     inspectedElement_Internal = value;
-                    if (_playerPref != null)
-                    {
-                        _playerPref.SetValue(value);
-                    }
+                    _playerPref?.SetValue(value);
                 }
             }
 
@@ -117,8 +114,8 @@ namespace QuizCanners.Inspect
 
             #region Inspector
 
-            [NonSerialized] internal readonly SearchData searchData = new SearchData();
-            [NonSerialized] private readonly EnterExitContext _context = new EnterExitContext();
+            [NonSerialized] internal readonly SearchData searchData = new();
+            [NonSerialized] private readonly EnterExitContext _context = new();
 
             public void Inspect()
             {

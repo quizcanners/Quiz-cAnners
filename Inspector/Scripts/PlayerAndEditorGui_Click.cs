@@ -291,7 +291,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Click(System.Action action)
         {
-            string name = "{0}()".F(action.Method.Name);
+            string name = "{0}()".F(QcSharp.AddSpacesInsteadOfCapitals(action.Method.Name));
 
             return name.PegiLabel().Click(action);
         }

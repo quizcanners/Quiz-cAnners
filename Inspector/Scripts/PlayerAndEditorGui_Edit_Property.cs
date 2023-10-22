@@ -13,7 +13,7 @@ using UnityEditor;
 namespace QuizCanners.Inspect
 {
 
-#pragma warning disable IDE1006 // Naming Styles
+//#pragma warning disable IDE1006 // Naming Styles
 
     public static partial class pegi
     {
@@ -26,7 +26,7 @@ namespace QuizCanners.Inspect
             {
                 label.FallbackWidthFraction = 0.25f;
                 label.Write();
-                return PegiEditorOnly.Edit_Property(null, memberExpression, obj, fieldWidth, includeChildren);
+                return PegiEditorOnly.Edit_Property(GUIContent.none, memberExpression, obj, fieldWidth, includeChildren);
             }
 
 #endif
@@ -244,7 +244,7 @@ namespace QuizCanners.Inspect
 
         public static IEnumerable<Type> GetBaseClassesAndInterfaces(this Type type, bool includeSelf = false)
         {
-            List<Type> allTypes = new List<Type>();
+            List<Type> allTypes = new();
 
             if (includeSelf) allTypes.Add(type);
             

@@ -122,6 +122,39 @@ namespace QuizCanners.Utils
             }
         }
 
+        public class ConsecutiveFrames
+        {
+            private int _lastFrameIndex;
+            private int _consequtiveFrames;
+
+            private int FrameIndex => Time.frameCount;
+
+            public void Reset() 
+            {
+                _consequtiveFrames = 0;
+                _lastFrameIndex = FrameIndex;
+            }
+
+            public bool TryEnter(int framesNeeded = 2)
+            {
+                if (FrameIndex == _lastFrameIndex) 
+                {
+                    return _consequtiveFrames >= framesNeeded;
+                }
+
+                if (FrameIndex - _lastFrameIndex > 1) 
+                {
+                    Reset();
+                    return false;
+                }
+
+                _lastFrameIndex = FrameIndex;
+                _consequtiveFrames++;
+
+                return _consequtiveFrames >= framesNeeded;
+            }
+        }
+
 
         public enum InitialValue
         {
@@ -577,7 +610,7 @@ namespace QuizCanners.Utils
 
         public class DirtyVersion 
         {
-            private int _dataVersion = 0;
+            private int _clearedVersion = 0;
             public int Version { get; private set; } = -1;
 
             public bool TryClear() 
@@ -594,7 +627,7 @@ namespace QuizCanners.Utils
 
             public bool TryClear(int versionDifference)
             {
-                if ((_dataVersion - Version) >= versionDifference)
+                if ((Version - _clearedVersion) >= versionDifference)
                 {
                     IsDirty = false;
                     return true;
@@ -606,13 +639,13 @@ namespace QuizCanners.Utils
 
             public bool IsDirty
             {
-                get =>  Version != _dataVersion;
+                get =>  Version != _clearedVersion;
                 set
                 {
                     if (value)
-                        _dataVersion++;
+                        Version++;
                     else
-                        Version = _dataVersion;
+                        _clearedVersion = Version;
                 }
             }
 
