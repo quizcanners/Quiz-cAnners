@@ -143,6 +143,7 @@ namespace QuizCanners.Inspect
             }
         }
 
+        /*
         public static StateToken IsConditionally_Entered(this TextLabel label, bool canEnter, ref bool entered, bool showLabelIfTrue = true)
         {
 
@@ -161,6 +162,7 @@ namespace QuizCanners.Inspect
 
             return PegiEditorOnly.isFoldedOutOrEntered;
         }
+        */
 
         public static ChangesToken Enter_Inspect(this TextLabel label, Action inspectFunction)
         {
@@ -210,6 +212,24 @@ namespace QuizCanners.Inspect
             }
         }
 
+        public static ChangesToken Conditionally_Enter_Inspect(this IPEGI val, bool canEnter) 
+        {
+            using (Context.IncrementDisposible(out bool canSkip))
+            {
+                if (canSkip)
+                    return ChangesToken.False;
+
+                if (!canEnter && Context.IsEnteredCurrent)
+                    Context.IsEnteredCurrent = StateToken.False;
+
+                TextLabel label = (val.IsNullOrDestroyed_Obj() ? "NULL" : val.ToString()).PegiLabel();
+
+                if (!Context.Internal_isConditionally_Entered(label, canEnter: canEnter, showLabelIfTrue: true))
+                    return ChangesToken.False;
+
+                return val.Nested_Inspect();
+            }
+        }
 
         public static ChangesToken Enter_Inspect(this TextLabel label, IPEGI val)
         {
@@ -232,7 +252,8 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static ChangesToken Enter_Inspect(this TextLabel label, IPEGI val, ref int entered, int thisOne)
+        /*
+        internal static ChangesToken Enter_Inspect(this TextLabel label, IPEGI val, ref int entered, int thisOne)
         {
             if (!EnterInternal.OptionsDrawn(ref entered, thisOne))
                 return ChangesToken.False;
@@ -244,7 +265,7 @@ namespace QuizCanners.Inspect
                 return val.Nested_Inspect();
 
             return ChangesToken.False;
-        }
+        }*/
 
         public static ChangesToken Enter_Inspect<T>(this T var) where T : class, IPEGI
         {
@@ -273,7 +294,7 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static ChangesToken Try_Enter_Inspect(this TextLabel label, object target, ref int entered, int thisOne) 
+        internal static ChangesToken Try_Enter_Inspect(this TextLabel label, object target, ref int entered, int thisOne) 
         {
             if (!EnterInternal.OptionsDrawn(ref entered, thisOne))
                 return ChangesToken.False;
@@ -297,7 +318,19 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
-            return target.GetNameForInspector().PegiLabel().Enter_Inspect(IPEGI, ref entered, thisOne);
+
+            if (!EnterInternal.OptionsDrawn(ref entered, thisOne))
+                return ChangesToken.False;
+
+            if (IPEGI == null)
+                label.label += " (NULL)";
+
+            if (label.IsEntered(ref entered, thisOne))
+                return IPEGI.Nested_Inspect();
+
+            return ChangesToken.False;
+
+           // return target.GetNameForInspector().PegiLabel().Enter_Inspect(IPEGI, ref entered, thisOne);
         }
 
         public static ChangesToken Enter_Inspect_AsList(this IPEGI_ListInspect var, string exitLabel = null)
@@ -315,7 +348,7 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static ChangesToken Enter_Inspect_AsList(this IPEGI_ListInspect var, ref int entered, int thisOne, string exitLabel = null)
+        internal static ChangesToken Enter_Inspect_AsList(this IPEGI_ListInspect var, ref int entered, int thisOne, string exitLabel = null)
         {
             if (!EnterInternal.OptionsDrawn(ref entered, thisOne))
                 return ChangesToken.False;
@@ -359,6 +392,7 @@ namespace QuizCanners.Inspect
         {
             public static bool OptionsDrawn(ref int entered, int thisOne) => entered == -1 || entered == thisOne;
 
+            /*
             public static StateToken IsConditionally_Entered(TextLabel label, bool canEnter, ref int entered, int thisOne, bool showLabelIfEntered = true, Styles.PegiGuiStyle enterLabelStyle = null)
             {
                 if (!OptionsDrawn(ref entered, thisOne))
@@ -379,9 +413,9 @@ namespace QuizCanners.Inspect
 
                 return PegiEditorOnly.isFoldedOutOrEntered;
             }
+            */
 
-
-            public static StateToken IsEntered(Icon ico, TextLabel txt, ref bool state, bool showLabelIfTrue = true)
+            internal static StateToken IsEntered(Icon ico, TextLabel txt, ref bool state, bool showLabelIfTrue = true)
             {
 
                 if (state)
@@ -402,7 +436,7 @@ namespace QuizCanners.Inspect
 
                 return PegiEditorOnly.isFoldedOutOrEntered;
             }
-            public static StateToken IsEntered(TextLabel txt, ref bool state, bool showLabelIfTrue = true) => IsEntered(Icon.Enter, txt, ref state, showLabelIfTrue);
+            internal static StateToken IsEntered(TextLabel txt, ref bool state, bool showLabelIfTrue = true) => IsEntered(Icon.Enter, txt, ref state, showLabelIfTrue);
 
       
             public static ChangesToken ClickEnter_DirectlyToElement_Internal<K, V>(Dictionary<K, V> dic, ref int inspected)

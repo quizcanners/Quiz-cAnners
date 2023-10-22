@@ -191,6 +191,11 @@ namespace QuizCanners.Utils
 
             public void Update_KeepFraction(float segment) => GetSegmentsAndUpdate(segment);
 
+            public void UseSegment(int count = 1) 
+            {
+                _lastTime += _defaultSegment * count;
+            }
+
             public void ClearDeltaTime() 
             {
                 _lastTime = CurrentTime;
@@ -198,6 +203,8 @@ namespace QuizCanners.Utils
 
             public int GetSegmentsWithouUpdate(float segment) 
             {
+                _defaultSegment = segment;
+
                 if (!_timeSet) 
                 {
                     _timeSet = true;

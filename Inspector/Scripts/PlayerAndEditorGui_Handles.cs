@@ -286,19 +286,20 @@ namespace QuizCanners.Inspect
 
 #endif
 
-            public static ChangesToken BoxBoundsHandle(ref Bounds bounds, Color color) 
+
+            public static ChangesToken BoxBoundsHandle(ref Bounds bounds, Color color)
             {
-        
+
 #if UNITY_EDITOR
                 if (IsDrawingHandles)
                 {
                     m_BoundsHandle.center = bounds.center;
                     m_BoundsHandle.size = bounds.size;
                     m_BoundsHandle.wireframeColor = color;
-                    
+
                     EditorGUI.BeginChangeCheck();
                     m_BoundsHandle.DrawHandle();
-                    if (EndClickCheck()) 
+                    if (EndClickCheck())
                     {
                         bounds.center = m_BoundsHandle.center;
                         bounds.size = m_BoundsHandle.size;

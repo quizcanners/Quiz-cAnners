@@ -23,6 +23,8 @@ namespace QuizCanners.Utils {
 
         public const string SO_CREATE_MENU = "Quiz Canners/";
 
+        public const string SO_CREATE_MENU_MODULES = "Quiz Canners/Modules/";
+
         public static T Instantiate<T>(string name = null) where T : MonoBehaviour
         {
 
@@ -751,7 +753,7 @@ namespace QuizCanners.Utils {
                 c.TrySetEnabled(value);
         }
 
-        public static bool IsUnityObject(this Type t) => typeof(Object).IsAssignableFrom(t);
+        public static bool IsUnityObject(this System.Type t) => typeof(Object).IsAssignableFrom(t);
 
         public static GameObject GetFocusedGameObject()
         {
@@ -775,8 +777,16 @@ namespace QuizCanners.Utils {
                 Object.DestroyImmediate(obj);
         }
 
-        public static void DestroyWhatever(this Texture tex) => tex.DestroyWhateverUnityObject();
+        public static void DestroyWhatever(this Texture tex)
+        {
+            if (!tex) 
+                return;
 
+            if (tex is RenderTexture rtTex) 
+                rtTex.Release();
+            
+            tex.DestroyWhateverUnityObject();
+        }
         public static void DestroyWhatever(this GameObject go) => go.DestroyWhateverUnityObject();
 
         public static void DestroyAndClear<T>(this List<T> gos) where T : Component
@@ -1737,6 +1747,29 @@ namespace QuizCanners.Utils {
 
         #region Texture Import Settings
 
+        public static Color[] GetPixelsFromNonReadableTexture(this Texture2D texture) 
+        {
+            RenderTexture tmp = RenderTexture.GetTemporary(texture.width,texture.height,0,RenderTextureFormat.Default, RenderTextureReadWrite.Linear);
+
+            using (QcSharp.DisposableAction(() => RenderTexture.ReleaseTemporary(tmp)))
+            {
+                Graphics.Blit(texture, tmp);
+                RenderTexture previous = RenderTexture.active;
+                RenderTexture.active = tmp;
+
+                Texture2D myTexture2D = new(texture.width, texture.height);
+
+                myTexture2D.ReadPixels(new Rect(0, 0, tmp.width, tmp.height), 0, 0);
+                myTexture2D.Apply();
+
+                RenderTexture.active = previous;
+                var pixels = myTexture2D.GetPixels();
+                myTexture2D.DestroyWhatever();
+
+                return pixels;
+            }
+        }
+
         public static bool IsColorTexture(this Texture tex)
         {
 #if UNITY_EDITOR
@@ -1907,14 +1940,14 @@ namespace QuizCanners.Utils {
                 importer.SaveAndReimport();
         }
 
-        public static bool WasWrongIsColor_Editor(this TextureImporter importer, bool isColor)
+        public static bool WasWrongIsColor_Editor(this TextureImporter importer, bool targetIsColor)
         {
 
             var needsReimport = false;
 
-            if (importer.sRGBTexture != isColor)
+            if (importer.sRGBTexture != targetIsColor)
             {
-                importer.sRGBTexture = isColor;
+                importer.sRGBTexture = targetIsColor;
                 needsReimport = true;
             }
 
@@ -2026,6 +2059,18 @@ namespace QuizCanners.Utils {
 
         }
 
+        public static bool WasReadable_Editor(this TextureImporter importer)
+        {
+            var needsReimport = false;
+
+            if (importer.isReadable)
+            {
+                importer.isReadable = false;
+                needsReimport = true;
+            }
+
+            return needsReimport;
+        }
 
         public static bool WasWrong_TextureImporterType(this TextureImporter importer, TextureImporterType targetType)
         {
@@ -2140,6 +2185,31 @@ return false;
             return true;
         }
 
+        public static void SaveTextureSameFolder(ref Texture2D Result, Object asset, string name) 
+        {
+            var bytes = Result.EncodeToPNG();
+            var dest =QcSharp.ReplaceFirst(text: AssetDatabase.GetAssetPath(asset), search: "Assets", replace: ""); // AssetDatabase.GetAssetPath(diffuse).Replace("Assets", "", 1);// AssetDatabase.GetAssetPath(diffuse).Replace("Assets", "");
+            var extension = dest[(dest.LastIndexOf(".", StringComparison.Ordinal) + 1)..];
+
+            dest = dest[..^extension.Length] + "png";
+
+            dest = ReplaceLastOccurrence(dest, asset.name, name);
+
+            File.WriteAllBytes(Application.dataPath + dest, bytes);
+
+            AssetDatabase.Refresh();
+
+            Result = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets" + dest, typeof(Texture2D));
+
+            var importer = Result.GetTextureImporter_Editor();
+
+            var needReimport = importer.WasReadable_Editor();
+            needReimport |= importer.WasWrongIsColor_Editor(false);
+            needReimport |= importer.WasClamped_Editor();
+
+            if (needReimport)
+                importer.SaveAndReimport();
+        }
    
         public static Texture2D SaveTextureAsAsset(Texture2D tex, string folderName, ref string textureName, bool saveAsNew)
         {

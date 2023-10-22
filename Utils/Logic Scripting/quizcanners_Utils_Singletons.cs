@@ -40,7 +40,7 @@ namespace QuizCanners.Utils
         {
             var inst = SingletonGeneric<TService>.Instance;
 
-            if (IsValid(inst, logOnServiceMissing)) //!QcUnity.IsNullOrDestroyed_Obj(inst) && inst.IsSingletonActive)
+            if (IsValid(inst, logOnServiceMissing))
             {
                 try
                 {
@@ -56,10 +56,9 @@ namespace QuizCanners.Utils
                 }
             } else if (logOnServiceMissing) 
             {
-                QcLog.ChillLogger.LogWarningOnce("Service {0} is missing".F(typeof(TService).ToPegiStringType()), "SngMsng" + typeof(TService).ToString());
+                QcLog.ChillLogger.LogWarningOnce(()=> "Service {0} is missing".F(typeof(TService).ToPegiStringType()), "SngMsng" + typeof(TService).ToString());
             }
          
-
             if (onFailed != null)
             {
                 try
@@ -123,7 +122,7 @@ namespace QuizCanners.Utils
                 if (logWarning)
                 {
                     var srvNm = typeof(T).ToPegiStringType();
-                    QcLog.ChillLogger.LogWarningOnce("Service {0} is missing".F(srvNm), "SngMsng" + srvNm);
+                    QcLog.ChillLogger.LogWarningOnce(()=> "Service {0} is missing".F(srvNm), "SngMsng" + srvNm);
                 }
 
                 return false;

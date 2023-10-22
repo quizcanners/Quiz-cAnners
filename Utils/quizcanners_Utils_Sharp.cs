@@ -2,11 +2,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -130,7 +128,22 @@ namespace QuizCanners.Utils
 
         public static string HtmlTagWrap(string tag, string content) => content.IsNullOrEmpty() ? "" : "<{0}>{1}</{0}>".F(tag, content);
 
-        public static string HtmlTagWrap(string tag, string value, string content) => content.IsNullOrEmpty() ? "" : "<{0}={1}>{2}</{0}>".F(tag, value, content);
+        public static string HtmlTagWrap(string tag, string tagValue, string content) => content.IsNullOrEmpty() ? "" : "<{0}={1}>{2}</{0}>".F(tag, tagValue, content);
+
+        public static void HtmlTagWrap(string tag, string tagValue, string content, StringBuilder sb)
+        {
+            sb.Append('<')
+                .Append(tag)
+                .Append('=')
+                .Append(tagValue)
+                .Append('>')
+                .Append(content)
+                .Append("</")
+                .Append(tag)
+                .Append('>');
+           // content.IsNullOrEmpty() ? "" : "<{0}={1}>{2}</{0}>".F(tag, tagValue, content);
+        }
+
 
         public static string HtmlTagWrap(string content, Color color) => content.IsNullOrEmpty() ? "" : "<{0}={1}>{2}</{0}>".F("color", "#" + ColorUtility.ToHtmlStringRGBA(color), content);
 
@@ -1144,10 +1157,8 @@ namespace QuizCanners.Utils
             if (n == 0)
                 return m;
 
-
             if (m == 0)
                 return n;
-
 
             // Step 2
             for (var i = 0; i <= n; d[i, 0] = i++) { }
@@ -1196,6 +1207,12 @@ namespace QuizCanners.Utils
             => new TemporaryContextSetterGeneric<T>(valueToSet, contextSetter, previousValue);
 
         public static IDisposable DisposableAction(Action onDispose) => new DisposableActionToken(onDispose);
+
+        public static T GetEnumFromStringByDistance<T>(string name)
+        {
+            int index = FindMostSimilarFrom(name, Enum.GetNames(typeof(T)));
+            return (T)Enum.GetValues(typeof(T)).GetValue(index);
+        }
 
         private class DisposableActionToken : IDisposable
         {

@@ -62,6 +62,30 @@ namespace QuizCanners.Inspect
 
         #region UnityObject
 
+        public static ChangesToken RenameGameObject_Option(GameObject go, string name)
+        {
+            if (!go)
+                return ChangesToken.False;
+
+            if (go.name != name && Icon.Link.Click("Rename {0} to {1}".F(go.name, name)))
+            {
+                go.name = name;
+                return ChangesToken.True;
+            }
+
+            return ChangesToken.False;
+        }
+
+        public static ChangesToken RenameComponent_Option(Object uObj, string name)
+        {
+            if (uObj && uObj is Component)
+            {
+                var cmp = uObj as Component;
+                RenameGameObject_Option(cmp.gameObject, name);
+            }
+            return ChangesToken.False;
+        }
+
         public static ChangesToken Edit_Scene(ref string path, int width) =>
 #if UNITY_EDITOR
                 !PaintingGameViewUI ? PegiEditorOnly.Edit_Scene(ref path, width) :
@@ -74,7 +98,7 @@ namespace QuizCanners.Inspect
 #endif
             ChangesToken.False;
 
-        public static ChangesToken Edit_IfNull<T>(this TextLabel label, ref T component, GameObject parent) where T : Component
+        public static ChangesToken Edit_IfNull<T>(this TextLabel label, ref T component, GameObject parent, bool renameOnAttach = false) where T : Component
         {
             if (component)
                 return ChangesToken.False;
@@ -82,7 +106,15 @@ namespace QuizCanners.Inspect
             label.FallbackWidthFraction = 0.33f;
 
             label.Write();
-            return Edit_IfNull(ref component, parent);
+            var res = Edit_IfNull(ref component, parent);
+
+            if (renameOnAttach && res && component) 
+            {
+                component.gameObject.name = label.label;
+            }
+            //RenameGameObject_Option(component.gameObject, label.label);
+
+            return res;
         }
 
         public static ChangesToken Edit_IfNull<T>(ref T component, GameObject parent) where T : Component
@@ -104,9 +136,11 @@ namespace QuizCanners.Inspect
                 if (Icon.Add.Click("Add Component"))
                     component = parent.AddComponent<T>();
             }
-            else if (Icon.Clear.Click())
-                component = null;
-
+            else
+            {
+                if (Icon.Clear.Click())
+                    component = null;
+            }
             return changed;
         }
 
@@ -116,13 +150,19 @@ namespace QuizCanners.Inspect
 #endif
             ChangesToken.False;
 
-        public static ChangesToken Edit<T>(this TextLabel label, ref T field, bool allowSceneObjects = true) where T : Object
+
+
+        public static ChangesToken Edit<T>(this TextLabel label, ref T field, bool allowSceneObjects = true, bool renameTarget_Option = false) where T : Object
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
             {
                 Write(label, defaultWidthFraction: 0.33f);
-                return Edit(ref field, allowSceneObjects);
+                var result = Edit(ref field, allowSceneObjects);
+
+                if (renameTarget_Option)
+                    RenameComponent_Option(field, label.label);
+                return result;
             }
 #endif
 
@@ -214,6 +254,8 @@ namespace QuizCanners.Inspect
 
                 if (!obj)
                 {
+                    Context.Internal_exitOptionOnly(label, showLabelIfTrue: showLabelIfEntered);
+
                     if (!selectFrom.IsNullOrEmpty())
                         label.Select_or_edit(ref obj, selectFrom);
                     else
@@ -236,7 +278,7 @@ namespace QuizCanners.Inspect
                             if (pgi != null)
                                 pgi.Nested_Inspect();
                             else
-                                pegi.TryDefaultInspect(obj as Object);
+                                TryDefaultInspect(obj as Object);
                         }
                         else
                         {
@@ -250,7 +292,7 @@ namespace QuizCanners.Inspect
                 return changed;
             }
         }
-
+        /*
         public static ChangesToken Edit_Enter_Inspect<T>(this TextLabel label, ref T obj, ref int entered, int thisOne, List<T> selectFrom = null, bool showLabelIfEntered = true) where T : Object
         {
             if (!EnterInternal.OptionsDrawn(ref entered, thisOne))
@@ -287,7 +329,7 @@ namespace QuizCanners.Inspect
 
             return changed;
         }
-
+        */
         public static ChangesToken Edit_Inspect<T>(this TextLabel label, ref T obj) where T : Object
         {
             var changed = ChangeTrackStart();
@@ -305,7 +347,7 @@ namespace QuizCanners.Inspect
         #region Material
 
 
-        public static MaterialToken PegiToken(this Material mat) => new MaterialToken(mat);
+        public static MaterialToken PegiToken(this Material mat) => new(mat);
 
         public class MaterialToken 
         {
@@ -401,6 +443,7 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
+            /*
             public ChangesToken Edit(ShaderProperty.VectorValue property, string name = null)
             {
                 var mat = material;
@@ -416,7 +459,7 @@ namespace QuizCanners.Inspect
                 }
 
                 return ChangesToken.False;
-            }
+            }*/
 
             public ChangesToken Edit(ShaderProperty.TextureValue property, string name = null)
             {
@@ -467,6 +510,7 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
+            /*
             public ChangesToken Toggle(ShaderProperty.FloatValue property, string name = null)
             {
                 var val = material.Get(property) > 0;
@@ -481,7 +525,7 @@ namespace QuizCanners.Inspect
                 }
 
                 return ChangesToken.False;
-            }
+            }*/
 
 
         }

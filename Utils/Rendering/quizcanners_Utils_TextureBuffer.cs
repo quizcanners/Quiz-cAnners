@@ -76,11 +76,14 @@ namespace QuizCanners.Utils
         }
 
 
+        public enum PrecisionType { Regular, Half, Float }
+
         public class DoubleBuffer : RenderTextureBufferBase, IPEGI
         {
             private readonly string _name;
             private readonly int _size;
-            private readonly bool _floatBuffer;
+            // private readonly bool _floatBuffer;
+            private PrecisionType _precision;
 
             private bool _latestIsZero;
            
@@ -113,9 +116,17 @@ namespace QuizCanners.Utils
                         _renderTextures = new List<RenderTexture>();
                         for (int i = 0; i < 2; i++)
                         {
-                            var tex = _floatBuffer ?
-                                new RenderTexture(_size, _size, depth: 0, RenderTextureFormat.ARGBHalf) :
-                                new RenderTexture(_size, _size, depth: 0, format: UnityEngine.Experimental.Rendering.DefaultFormat.LDR);
+                            RenderTexture tex;
+                            switch (_precision) 
+                            {
+                                case PrecisionType.Float:
+                                    tex = new RenderTexture(_size, _size, depth: 0, RenderTextureFormat.ARGBFloat); break;
+                                case PrecisionType.Half:
+                                    tex = new RenderTexture(_size, _size, depth: 0, RenderTextureFormat.ARGBHalf); break;
+                                case PrecisionType.Regular:
+                                default:
+                                    tex = new RenderTexture(_size, _size, depth: 0, format: UnityEngine.Experimental.Rendering.DefaultFormat.LDR); break;
+                            }
 
                             tex.name = "{0} {1}".F(_name, i);
 
@@ -125,6 +136,19 @@ namespace QuizCanners.Utils
 
                     return _renderTextures;
                 }
+            }
+
+            public void Clear() 
+            {
+                if (_renderTextures.IsNullOrEmpty())
+                    return;
+
+                foreach (var t in _renderTextures) 
+                {
+                    if (t)
+                        t.DestroyWhatever();
+                }
+                _renderTextures = null;
             }
 
             public RenderTexture Target
@@ -230,12 +254,67 @@ namespace QuizCanners.Utils
                 else
                     "Buffers not initialized".PegiLabel().Nl();
 
+                if ("Precision".PegiLabel().Edit_Enum(ref _precision).Nl())
+                {
+                    Clear();
+                }
+
+                Icon.Clear.Click(Clear);
                 pegi.Click(Swap).Nl();
             }
             public override string ToString() => _name;
             #endregion
 
-            public DoubleBuffer(string name, int size, bool isFloat)
+            public DoubleBuffer(string name, int size, PrecisionType precision)
+            {
+                _precision = precision;
+                _name = name;
+                if (!Mathf.IsPowerOfTwo(size))
+                {
+                    Debug.LogError("Creating a Texture that is not a power of two: " + size);
+                    size = Mathf.ClosestPowerOfTwo(size);
+                }
+                _size = size;
+            }
+
+            public DoubleBuffer(string name, PrecisionType precision)
+            {
+                _precision = precision;
+                _name = name;
+                _size = 512;
+            }
+        }
+
+        public class Single : IPEGI
+        {
+            private readonly string _name;
+            private readonly int _size;
+            private readonly bool _floatBuffer;
+
+            protected RenderTexture _renderTexture;
+
+            public void Blit(Shader shader)
+            {
+                var mat = RenderTextureBlit.MaterialReuse(shader);
+                Graphics.Blit(null, GetRenderTexture(), mat);
+            }
+
+            public RenderTexture GetRenderTexture()
+            {
+                if (_renderTexture)
+                    return _renderTexture;
+
+                _renderTexture = new RenderTexture(_size, _size, depth: 0,
+                    _floatBuffer ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGBHalf
+                    )
+                {
+                    name = "{0} {1}".F(_name)
+                };
+
+                return _renderTexture;
+            }
+
+            public Single(string name, int size, bool isFloat)
             {
                 _floatBuffer = isFloat;
                 _name = name;
@@ -247,11 +326,13 @@ namespace QuizCanners.Utils
                 _size = size;
             }
 
-            public DoubleBuffer(string name, bool isFloat)
+            public void Inspect()
             {
-                _floatBuffer = isFloat;
-                _name = name;
-                _size = 512;
+                if (_renderTexture)
+                {
+                    pegi.Edit(ref _renderTexture).Nl();
+                    pegi.Draw(_renderTexture, 256, alphaBlend: false);
+                }
             }
         }
 
@@ -259,8 +340,6 @@ namespace QuizCanners.Utils
         {
             public int Version;
             public abstract RenderTexture GetOrCreateTexture { get; }
-
-
 
             protected static void BlitInternal(RenderTextureBufferBase from, RenderTextureBufferBase to, Shader shader = null)
             {
@@ -271,9 +350,6 @@ namespace QuizCanners.Utils
                 else
                     Graphics.Blit(from.GetOrCreateTexture, to.GetOrCreateTexture);
             }
-
-
-
         }
 
     }

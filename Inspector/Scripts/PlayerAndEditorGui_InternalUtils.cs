@@ -22,7 +22,9 @@ namespace QuizCanners.Inspect
                 GameObject mb = null;
                 if (Edit(ref mb))
                 {
+#pragma warning disable UNT0014 // Invalid type for call to GetComponent
                     list[i] = mb.GetComponent<T>();
+#pragma warning restore UNT0014 // Invalid type for call to GetComponent
                     if (list[i] == null) GameView.ShowNotification(typeof(T) + " Component not found");
                 }
                 return true;

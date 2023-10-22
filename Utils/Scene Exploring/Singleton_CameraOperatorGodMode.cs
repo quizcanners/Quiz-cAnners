@@ -33,13 +33,13 @@ namespace QuizCanners.Utils
 
         [SerializeField] protected Camera _mainCam;
 
-        public Quaternion Rotation
+        public virtual Quaternion Rotation
         {
             get => _mainCam.transform.rotation;
             set => _mainCam.transform.rotation = value;
         }
 
-        public Vector3 Position
+        public virtual Vector3 Position
         {
             get => transform.position;
             set => transform.position = value;
@@ -145,7 +145,7 @@ namespace QuizCanners.Utils
 
             if (!orbitingFocused)
             {
-                camTr.localRotation = LerpUtils.LerpBySpeed(camTr.localRotation, rot2, 200, unscaledTime: true);
+                camTr.localRotation = QcLerp.LerpBySpeed(camTr.localRotation, rot2, 200, unscaledTime: true);
                 if (Quaternion.Angle(camTr.localRotation, rot2) < 1)
                     orbitingFocused = true;
             }
@@ -169,18 +169,11 @@ namespace QuizCanners.Utils
             }
         }
 
-        protected virtual void OnUpdateInternal()
+        public Vector3 GetNormalizedInput(out bool speedUp) 
         {
-            var operatorTf = transform;
             var camTf = _mainCam.transform;
-
-            camTf.localPosition = Vector3.zero;
-
+            speedUp = false;
             var add = Vector3.zero;
-            bool SpeedUp = false;
-            bool rightMouseButon = false;
-           
-
             if (LEGACY_INPUT)
             {
                 mouseOutside = _mainCam.IsMouseOutsideViewArea(Input.mousePosition);
@@ -198,16 +191,29 @@ namespace QuizCanners.Utils
             {
                 if (Input.GetKey(KeyCode.Q)) add += Vector3.down;
                 if (Input.GetKey(KeyCode.E)) add += Vector3.up;
-                SpeedUp = Input.GetKey(KeyCode.LeftShift);
+                speedUp = Input.GetKey(KeyCode.LeftShift);
             }
 
             add.Normalize();
 
+            return add;
+        }
+
+        protected virtual void OnUpdateInternal()
+        {
+            var operatorTf = transform;
+
+            _mainCam.transform.localPosition = Vector3.zero;
+
+            bool rightMouseButon = false;
+
+            var add = GetNormalizedInput(out var SpeedUp);
+
             var mainCameraVelocity = (SpeedUp ? 3f : 1f) * speed * add;
 
-            operatorTf.localPosition += mainCameraVelocity * Time.deltaTime;
+            operatorTf.localPosition += mainCameraVelocity * Mathf.Min(Time.unscaledDeltaTime, 0.016f);
 
-            operatorTf.localRotation = LerpUtils.LerpBySpeed(operatorTf.localRotation, Quaternion.identity, 160, unscaledTime: true);
+            operatorTf.localRotation = QcLerp.LerpBySpeed(operatorTf.localRotation, Quaternion.identity, 160, unscaledTime: true);
 
             if (!Application.isPlaying || _disableRotation)
                 return;
@@ -237,19 +243,19 @@ namespace QuizCanners.Utils
             var eul = camTf.localEulerAngles;
 
             var rotationX = eul.y;
-            float _rotationY = eul.x;
+            var rotationY = eul.x;
 
             var rotationSpeed = sensitivity * FOV / 90f;
 
             if (LEGACY_INPUT)
             {
                 rotationX += Input.GetAxis("Mouse X") * rotationSpeed;
-                _rotationY -= Input.GetAxis("Mouse Y") * rotationSpeed;
+                rotationY -= Input.GetAxis("Mouse Y") * rotationSpeed;
             }
 
-            _rotationY = _rotationY < 120 ? Mathf.Min(_rotationY, 85) : Mathf.Max(_rotationY, 270);
+            rotationY = rotationY < 120 ? Mathf.Min(rotationY, 85) : Mathf.Max(rotationY, 270);
 
-            camTf.localEulerAngles = new Vector3(_rotationY, rotationX, 0);
+            camTf.localEulerAngles = new Vector3(rotationY, rotationX, 0);
         }
 
         public void Update()
@@ -307,9 +313,6 @@ namespace QuizCanners.Utils
             pegi.Nl();
 
             "Editor Only".PegiLabel().ToggleIcon(ref _onlyInEditor).Nl();
-
-
-
         }
 
         #endregion

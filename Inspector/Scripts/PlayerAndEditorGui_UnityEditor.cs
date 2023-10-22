@@ -1,17 +1,16 @@
 ﻿#if UNITY_EDITOR
-    using UnityEngine;
     using UnityEditor;
     using System.Collections.Generic;
-    using QuizCanners.Utils;
     using System.Linq.Expressions;
     using Type = System.Type;
     using ReorderableList = UnityEditorInternal.ReorderableList;
     using SceneManager = UnityEngine.SceneManagement.SceneManager;
-    using System;
 #endif
 
-using static QuizCanners.Inspect.pegi;
+using System;
 using Object = UnityEngine.Object;
+using QuizCanners.Utils;
+using UnityEngine;
 
 // ReSharper disable InconsistentNaming
 #pragma warning disable IDE1006 // Naming Styles
@@ -22,6 +21,9 @@ using Object = UnityEngine.Object;
 
 namespace QuizCanners.Inspect
 {
+
+    using static pegi;
+
     internal static partial class PegiEditorOnly {
 
         internal static Styles.Background.BackgroundStyle nextBgStyle;
@@ -1245,7 +1247,8 @@ namespace QuizCanners.Inspect
 
             EditorGUI.BeginChangeCheck();
 
-            cnt ??= GUIContent.none;
+            cnt ??= new GUIContent(property.displayName);
+            //cnt ??= GUIContent.none;
 
             if (width < 1)
                 EditorGUILayout.PropertyField(property, cnt, includeChildren);

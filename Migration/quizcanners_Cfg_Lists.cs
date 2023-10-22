@@ -19,7 +19,7 @@ namespace QuizCanners.Migration
 
     public abstract class SO_Configurations_Generic<T> : ConfigurationsSO_Base, ICfg, IPEGI_ListInspect where T : Configuration, new()
     {
-        public List<T> configurations = new List<T>();
+        public List<T> configurations = new();
 
         public int IndexOfActiveConfiguration 
         {
@@ -54,25 +54,7 @@ namespace QuizCanners.Migration
 
         #region Inspector
 
-        public void InspectShortcut()
-        {
-            if (configurations.Count == 0)
-            {
-                if ("New {0}".F(typeof(T).ToPegiStringType()).PegiLabel().Click())
-                    configurations.Add(new T());
-            }
-            else
-            {
-                var any = configurations[0];
-                var active = any.ActiveConfiguration as T;
-
-                if (pegi.Select(ref active, configurations))
-                    any.ActiveConfiguration = active;
-
-                if (active != null && Icon.Save.Click())
-                    active.SaveCurrentState();
-            }
-        }
+   
 
         public override void Inspect() => "Configurations".PegiLabel().Edit_List(configurations);
 
@@ -94,12 +76,54 @@ namespace QuizCanners.Migration
             }
         }
 
+        public void InspectShortcut()
+        {
+            var changes = pegi.ChangeTrackStart();
+            if (configurations.Count == 0)
+            {
+                if ("New {0}".F(typeof(T).ToPegiStringType()).PegiLabel().Click())
+                    configurations.Add(new T());
+            }
+            else
+            {
+                var any = configurations[0];
+                var active = any.ActiveConfiguration as T;
+
+                if (pegi.Select(ref active, configurations))
+                    any.ActiveConfiguration = active;
+
+                if (active != null && Icon.Save.Click())
+                    active.SaveCurrentState();
+            }
+
+            if (changes)
+                this.SetToDirty();
+        }
+
+        public void Inspect_Select() 
+        {
+            InspectShortcut();
+            /*
+            var ind = IndexOfActiveConfiguration;
+            if (pegi.Select_Index(ref ind, configurations))
+                ActiveConfiguration = configurations[ind];*/
+        }
+
+        public void Inspect_Select(ref string key)
+        {
+            pegi.Select_iGotName(ref key, configurations);
+
+            if (!key.IsNullOrEmpty())
+            {
+                foreach (var c in configurations)
+                    if (c.name == key && Icon.Play.Click("Play " + c.name))
+                        ActiveConfiguration = c;
+            }
+        }
+
         public void InspectInList(ref int edited, int index)
         {
-            var ind = IndexOfActiveConfiguration;
-
-            if (pegi.Select_Index(ref ind, configurations))
-                ActiveConfiguration = configurations[ind];
+            Inspect_Select();
 
             if (Icon.Enter.Click())
                 edited = index;
@@ -112,9 +136,9 @@ namespace QuizCanners.Migration
     {
         public virtual void Inspect() { }
 
-        public static bool Inspect<T>(ref T configs) where T : ConfigurationsSO_Base
+        public static pegi.ChangesToken Inspect<T>(ref T configs) where T : ConfigurationsSO_Base
         {
-            var changed = false;
+            var changed = pegi.ChangeTrackStart();
 
             if (configs)
             {

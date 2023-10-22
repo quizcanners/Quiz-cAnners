@@ -17,10 +17,23 @@ namespace QuizCanners.Utils
 
     public static partial class QcMath
     {
+
         public static float SmoothStep(float edge0, float edge1, float t)
         {
             float coef = Mathf.Clamp01((t - edge0) / (edge1 - edge0));
             return coef * coef * (3f - 2f * coef);
+        }
+
+        public static float SmoothDampOffset(float rawValue, float maxOffset)
+        {
+            if (maxOffset <= 0)
+                return 0;
+
+            float rawAbsValue = Mathf.Abs(rawValue);
+
+            float clampedValue = maxOffset * (1 - maxOffset / (maxOffset + rawAbsValue));
+
+            return clampedValue * Mathf.Sign(rawValue);
         }
 
         public static IDisposable RandomBySeedDisposable(int seed)
@@ -336,7 +349,6 @@ namespace QuizCanners.Utils
 
         #region Transformations
 
-   
         public static Vector2 Clamp01(this Vector2 v2)
         {
             v2.x = Mathf.Clamp01(v2.x);

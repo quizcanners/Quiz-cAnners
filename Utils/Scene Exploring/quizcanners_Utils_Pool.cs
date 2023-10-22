@@ -42,7 +42,7 @@ namespace QuizCanners.Utils
         public static bool TrySpawn<T>(Vector3 position, Action<T> onInstanciated) where T : Component
             => Singleton.Try<PoolBehaviourCore<T>>(s => s.TrySpawn(position, onInstanciated));
 
-        public static bool TrySpawnIfVisible<T>(Vector3 position) where T : Component => Singleton.Try<PoolBehaviourCore<T>>(s => s.TrySpawnIfVisible(position, out var result));
+        public static bool TrySpawnIfVisible<T>(Vector3 position) where T : Component => Singleton.Try<PoolBehaviourCore<T>>(s => s.TrySpawnIfVisible(position, out var result), logOnServiceMissing: false);
 
         public static bool TrySpawnIfVisible<T>(Vector3 position, out T instance) where T : Component
         {
