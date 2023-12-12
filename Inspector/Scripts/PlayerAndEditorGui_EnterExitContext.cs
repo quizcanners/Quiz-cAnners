@@ -102,7 +102,7 @@ namespace QuizCanners.Inspect
             }
 
             #region Inspector
-            public void Inspect()
+            void IPEGI.Inspect()
             {
 
                 "Currently Entered".PegiLabel().Edit(ref _currentlyEntered).Nl();

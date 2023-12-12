@@ -138,13 +138,33 @@ namespace QuizCanners.Utils
         {
             if (IsLoadedOrLoading)
             {
-                var scene = SceneManager.GetSceneByPath(ScenePath);
+                SceneUnloadOptions();
 
-                "Unload".PegiLabel().Click(() =>
+                void SceneUnloadOptions() 
                 {
-                    IsLoadedOrLoading = false;
-                    return;
-                });
+                    var scene = SceneManager.GetSceneByPath(ScenePath);
+
+#if UNITY_EDITOR
+                    if (!Application.isPlaying && scene.isDirty)
+                    {
+                        if (Icon.Save.Click())
+                           EditorSceneManager.SaveScene(scene);
+
+                        if ("Unload".PegiLabel(toolTip: "The scene has unsaved changes. Are you sure you want to Unload and loose changes?").ClickConfirm(confirmationTag: "unload " + scene.name)) 
+                        {
+                            IsLoadedOrLoading = false;
+                        }
+
+                        return;
+                    }
+#endif
+
+                    "Unload".PegiLabel().Click(() =>
+                    {
+                        IsLoadedOrLoading = false;
+                        return;
+                    });
+                }
 
                 SceneManager.GetSceneByPath(ScenePath).name.PegiLabel().Write();
             }

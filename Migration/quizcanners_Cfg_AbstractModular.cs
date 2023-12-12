@@ -332,7 +332,7 @@ namespace QuizCanners.Migration
         
         private readonly pegi.CollectionInspectorMeta modulesMeta = new pegi.CollectionInspectorMeta("Modules", allowDeleting: false, showAddButton:false, allowReordering: false, showEditListButton:false);
 
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             modulesMeta.Edit_List(modules).Nl();
 

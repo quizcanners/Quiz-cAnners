@@ -339,8 +339,6 @@ namespace QuizCanners.Utils
 
         #region Int
 
-#if UNITY_2021_1_OR_NEWER 
-
         [Serializable]
         public class IntValue : IndexGeneric<int>
         {
@@ -391,8 +389,6 @@ namespace QuizCanners.Utils
                 _max = max;
             }
         }
-
-#endif
 
 #endregion
 
@@ -806,7 +802,7 @@ namespace QuizCanners.Utils
 
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 _name.PegiLabel().Write_ForCopy();
                 pegi.Nl();
@@ -840,7 +836,7 @@ namespace QuizCanners.Utils
 
             public Feature(string name) {  _name = name; }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 if (pegi.ToggleIcon(ref lastValue))
                     Enabled = lastValue;
@@ -881,7 +877,7 @@ namespace QuizCanners.Utils
                 _keyword = keyword;
             }
 
-            public void Inspect() => _floatProperty.PegiLabel().ToggleIcon(ref LastValue);
+            void IPEGI.Inspect() => _floatProperty.PegiLabel().ToggleIcon(ref LastValue);
         }
 
 
@@ -923,6 +919,43 @@ namespace QuizCanners.Utils
             public override void SetLatestValueOn(Material mat) => mat.SetVectorArray(id, _vectorArray);
 
             public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetVectorArray(id, _vectorArray);
+        }
+
+
+        [Serializable]
+        public class MatrixArrayValue : BaseShaderPropertyIndex
+        {
+            private Matrix4x4[] _vectorArray;
+            private readonly Fallback.Int _arraySize = new();
+
+            public Matrix4x4[] GlobalValue
+            {
+                get => Shader.GetGlobalMatrixArray(id);
+                set
+                {
+                    if (_arraySize.IsSet)
+                    {
+                        if (_arraySize.ManualValue != value.Length)
+                        {
+                            QcLog.ChillLogger.LogErrorOnce(() => "Trying to {0} of size {1} while previous length was {2}. Unsupported.".F(nameof(Shader.SetGlobalVectorArray), value.Length, _arraySize.ManualValue), key: "GlArSet");
+                        }
+                    }
+                    else
+                    {
+                        _arraySize.ManualValue = value.Length;
+                    }
+
+                    _vectorArray = value;
+
+                    Shader.SetGlobalMatrixArray(id, value);
+                }
+            }
+
+            public MatrixArrayValue(string name) : base(name) { }
+
+            public override void SetLatestValueOn(Material mat) => mat.SetMatrixArray(id, _vectorArray);
+
+            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetMatrixArray(id, _vectorArray);
         }
 
         #endregion

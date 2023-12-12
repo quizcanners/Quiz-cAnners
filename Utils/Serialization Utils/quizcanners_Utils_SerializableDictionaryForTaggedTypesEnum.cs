@@ -150,7 +150,7 @@ namespace QuizCanners.Utils
         private int _inspected = -1;
 
         private string _selectedTag = "_";
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             ToString().PegiLabel().Edit_Dictionary(this, ref _inspected).Nl();
 

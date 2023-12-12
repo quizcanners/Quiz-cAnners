@@ -15,7 +15,7 @@ namespace QuizCanners.Utils
         }
 
         private int _inspectedElement = -1;
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             typeof(T).ToPegiStringType().PegiLabel().Edit_Dictionary(AllElements, ref _inspectedElement).Nl();
         }

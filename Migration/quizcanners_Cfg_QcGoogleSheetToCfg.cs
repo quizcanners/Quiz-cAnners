@@ -358,7 +358,7 @@ namespace QuizCanners.Migration
 
         private pegi.EnterExitContext context = new pegi.EnterExitContext();
 
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             using (context.StartContext())
             {

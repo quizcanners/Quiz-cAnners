@@ -195,13 +195,22 @@ namespace QuizCanners.Utils
                     return val;
                 }
 
-                public DisposableTimer StartMax(string name)
+                public TimerCollectionElements.MaxValue Max(string name)
                 {
                     var val = new TimerCollectionElements.MaxValue(name);
                     _timings.Add(val);
                     _sortedTimings = null;
 
-                    return val.Start();
+                    return val;
+                }
+
+                public TimerCollectionElements.LastValue Last(string name)
+                {
+                    var val = new TimerCollectionElements.LastValue(name);
+                    _timings.Add(val);
+                    _sortedTimings = null;
+
+                    return val;
                 }
 
                 #region Inspector
@@ -211,7 +220,7 @@ namespace QuizCanners.Utils
                 private readonly pegi.CollectionInspectorMeta collectionMeta = new("Timings");
                 private bool _sortByDuration;
 
-                public void Inspect()
+                void IPEGI.Inspect()
                 {
                     if (_timings.IsNullOrEmpty())
                     {
@@ -398,9 +407,9 @@ namespace QuizCanners.Utils
                 public override string ToString() => "Dictionary";
 
                 private bool _sortByDuration;
-                private readonly pegi.CollectionInspectorMeta _listMeta = new("Timings", showDictionaryKey: false);
+                private readonly pegi.CollectionInspectorMeta _listMeta = new("Timings", allowDeleting: false, showAddButton: false, showDictionaryKey: false);
 
-                public void Inspect()
+                void IPEGI.Inspect()
                 {
                     if (_timings.IsNullOrEmpty())
                     {
@@ -418,11 +427,20 @@ namespace QuizCanners.Utils
                         if (_timings.Count > 1)
                             "Sort by duration.".PegiLabel().ToggleIcon(ref _sortByDuration);
 
+                        pegi.Nl();
+
                         if (_timings.Count > 0)
-                            if ("Clear".PegiLabel().ClickConfirm(confirmationTag: "clLog"))
+                            if (Icon.Clear.ClickConfirm(confirmationTag: "clLog", toolTip: "Clear timings"))
                                 Clear();
 
+                        if (_timings.Count > 1) 
+                        {
+                            "Total: {0} ".F(QcSharp.TicksToReadableString(TotalTicks())).PegiLabel().Write();
+                        }
+
                         pegi.Nl();
+
+
                     }
 
                     var vals = _timings.Values.ToList();
@@ -714,7 +732,7 @@ namespace QuizCanners.Utils
 
                     public override string ToString() => Name + " " + collection.GetNameForInspector();
 
-                    public void Inspect()
+                    void IPEGI.Inspect()
                     {
                         collection.Nested_Inspect();
                     }
@@ -747,7 +765,7 @@ namespace QuizCanners.Utils
 
                     public override string ToString() => Name + " " + collection.GetNameForInspector();
 
-                    public void Inspect()
+                    void IPEGI.Inspect()
                     {
                         collection.Nested_Inspect();
                     }

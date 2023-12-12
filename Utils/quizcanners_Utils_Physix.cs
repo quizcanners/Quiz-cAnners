@@ -47,7 +47,7 @@ namespace QuizCanners.Utils
             }
 
             #region Inspector
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 "Acceleration {0}".F(QcSharp.ToReadableString(AvaragedAcceleration.magnitude)).PegiLabel().DrawProgressBar(AvaragedAcceleration.magnitude * 0.1f);
 

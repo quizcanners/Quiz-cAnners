@@ -37,7 +37,7 @@ namespace QuizCanners.Utils
         #endif
 
         #region Inspector
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             if (Application.isEditor)
             {

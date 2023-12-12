@@ -105,7 +105,7 @@ namespace QuizCanners.Utils
 
            
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 Type current = InstanceType;
 
@@ -299,7 +299,7 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 var pgi = instance as IPEGI;
 

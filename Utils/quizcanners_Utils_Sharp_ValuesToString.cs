@@ -6,8 +6,6 @@ namespace QuizCanners.Utils
 
     public static partial class QcSharp
     {
-       
-
         private static readonly int charA = Convert.ToInt32('a');
 
         public enum LargeNumber
@@ -67,56 +65,55 @@ namespace QuizCanners.Utils
 
         public static string GetAbbreviation(this LargeNumber number)
         {
-            switch (number)
+            return number switch
             {
-                case LargeNumber.Thousand: return "K";// 3 
-                case LargeNumber.Million: return "M";// 6    
-                case LargeNumber.Billion: return "B";// 9 
-                case LargeNumber.Trillion: return "t"; // 12 
-                case LargeNumber.Quadrillion: return "q"; // 15     
-                case LargeNumber.Quintillion: return "Q";// 18  
-                case LargeNumber.Sextillion: return "s";// 21 
-                case LargeNumber.Septillion: return "S";// 24 
-                case LargeNumber.Octillion: return "o";// 27 
-                case LargeNumber.Nonillion: return "n";// 30 
-                case LargeNumber.Decillion: return "d";// 33 
-                case LargeNumber.Undecillion: return "U";// 36 
-                case LargeNumber.Duodecillion: return "D";// 39 
-                case LargeNumber.Tredecillion: return "T";// 42      
-                case LargeNumber.Quattuordecillion: return "Qt";// 45 
-                case LargeNumber.Quindecillion: return "Qd";// 48 
-                case LargeNumber.Sexdecillion: return "Sd";// 51
-                case LargeNumber.Septendecillion: return "St";// 54
-                case LargeNumber.Octodecillion: return "O";// 57
-                case LargeNumber.Novemdecillion: return "N";// 60
-                case LargeNumber.Vigintillion: return "v";// 63
-                case LargeNumber.Unvigintillion: return "c";// 66
-                case LargeNumber.Duovigintillion: return "Dd";// 69
-                case LargeNumber.Trevigintillion: return "Td";// 72   Quad=Q    Quint=I   Sex=S    Sep=P   Oc=O  Non=N  Vigint=V   Dec=D   Unde=U    Duo=D   Tre=T
-                case LargeNumber.Quattuorvigintillion: return "Qv";// 75    vigintillion=v
-                case LargeNumber.Quinvigintillion: return "Iv";// 78
-                case LargeNumber.Sexvigintillion: return "Sv";// 81
-                case LargeNumber.Septenvigintillion: return "Pv";// 84
-                case LargeNumber.Octovigintillion: return "Ov";// 87
-                case LargeNumber.Novemvigintillion: return "Nv";// 90
-                case LargeNumber.Trigintillion: return "Tv";// 93
-                case LargeNumber.Untrigintillion: return "Uv";// 96
-                case LargeNumber.Duotrigintillion: return "Dv";// 99
-                case LargeNumber.Googol: return "Go";// [SPECIAL] 100
-                case LargeNumber.Tretrigintillion: return "TT";// 102  ... trigintillion = T
-                case LargeNumber.Quattuortrigintillion: return "QT";// 105 
-                case LargeNumber.Quintrigintillion: return "IT";// 108
-                case LargeNumber.Sextrigintillion: return "ST";// 111
-                case LargeNumber.Septentrigintillion: return "PT";// 114
-                case LargeNumber.Octotrigintillion: return "OT";// 117
-                case LargeNumber.Novemtrigintillion: return "NT";// 120
-                case LargeNumber.Centillion: return "Ce";// [SPECIAL] 303
-
-                default: return "??";
-            }
+                LargeNumber.Thousand => "K",// 3 
+                LargeNumber.Million => "M",// 6    
+                LargeNumber.Billion => "B",// 9 
+                LargeNumber.Trillion => "t",// 12 
+                LargeNumber.Quadrillion => "q",// 15     
+                LargeNumber.Quintillion => "Q",// 18  
+                LargeNumber.Sextillion => "s",// 21 
+                LargeNumber.Septillion => "S",// 24 
+                LargeNumber.Octillion => "o",// 27 
+                LargeNumber.Nonillion => "n",// 30 
+                LargeNumber.Decillion => "d",// 33 
+                LargeNumber.Undecillion => "U",// 36 
+                LargeNumber.Duodecillion => "D",// 39 
+                LargeNumber.Tredecillion => "T",// 42      
+                LargeNumber.Quattuordecillion => "Qt",// 45 
+                LargeNumber.Quindecillion => "Qd",// 48 
+                LargeNumber.Sexdecillion => "Sd",// 51
+                LargeNumber.Septendecillion => "St",// 54
+                LargeNumber.Octodecillion => "O",// 57
+                LargeNumber.Novemdecillion => "N",// 60
+                LargeNumber.Vigintillion => "v",// 63
+                LargeNumber.Unvigintillion => "c",// 66
+                LargeNumber.Duovigintillion => "Dd",// 69
+                LargeNumber.Trevigintillion => "Td",// 72   Quad=Q    Quint=I   Sex=S    Sep=P   Oc=O  Non=N  Vigint=V   Dec=D   Unde=U    Duo=D   Tre=T
+                LargeNumber.Quattuorvigintillion => "Qv",// 75    vigintillion=v
+                LargeNumber.Quinvigintillion => "Iv",// 78
+                LargeNumber.Sexvigintillion => "Sv",// 81
+                LargeNumber.Septenvigintillion => "Pv",// 84
+                LargeNumber.Octovigintillion => "Ov",// 87
+                LargeNumber.Novemvigintillion => "Nv",// 90
+                LargeNumber.Trigintillion => "Tv",// 93
+                LargeNumber.Untrigintillion => "Uv",// 96
+                LargeNumber.Duotrigintillion => "Dv",// 99
+                LargeNumber.Googol => "Go",// [SPECIAL] 100
+                LargeNumber.Tretrigintillion => "TT",// 102  ... trigintillion = T
+                LargeNumber.Quattuortrigintillion => "QT",// 105 
+                LargeNumber.Quintrigintillion => "IT",// 108
+                LargeNumber.Sextrigintillion => "ST",// 111
+                LargeNumber.Septentrigintillion => "PT",// 114
+                LargeNumber.Octotrigintillion => "OT",// 117
+                LargeNumber.Novemtrigintillion => "NT",// 120
+                LargeNumber.Centillion => "Ce",// [SPECIAL] 303
+                _ => "??",
+            };
         }
 
-        private static readonly System.Globalization.CultureInfo provider = new System.Globalization.CultureInfo("en-US");
+        private static readonly System.Globalization.CultureInfo provider = new("en-US");
 
         public static string ToReadableString(this int value) => ToReadableString((double)value);
     
@@ -171,7 +168,7 @@ namespace QuizCanners.Utils
 
             if (result.Length > maxNumbers)
             {
-                result = result.Substring(0, maxNumbers);
+                result = result[..maxNumbers];
 
                 if (gotDot)
                     result = result.TrimEnd('.', ',');
@@ -181,9 +178,9 @@ namespace QuizCanners.Utils
 
                 if (gotDot)
                 {
-                    while (result[result.Length - 1] == '0')
+                    while (result[^1] == '0')
                     {
-                        result = result.Substring(0, result.Length - 1);
+                        result = result[..^1];
                     }
 
                     result = result.TrimEnd('.', ',');
@@ -193,6 +190,20 @@ namespace QuizCanners.Utils
 
             var finalNumber = "{0}{1}{2}".F(sign, result, unit);
             return finalNumber;
+        }
+
+        public static string ToMegabytes(uint bytes)
+        {
+            bytes >>= 10;
+            bytes /= 1024; // On new line to workaround IL2CPP bug
+            return "{0} Mb".F(bytes.ToString());
+        }
+
+        internal static string ToMegabytes(long bytes)
+        {
+            bytes >>= 10;
+            bytes /= 1024; // On new line to workaround IL2CPP bug
+            return "{0} Mb".F(bytes.ToString());
         }
     }
 }

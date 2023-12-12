@@ -1,4 +1,5 @@
 using QuizCanners.Inspect;
+using QuizCanners.Lerp;
 using System;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -83,7 +84,7 @@ namespace QuizCanners.Utils
 
             public void Restart() => _count = 0;
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 if (!Application.isPlaying && "Max Count".PegiLabel().Edit_Delayed(ref _maxCount).Nl())
                     _maxCount = Math.Max(1, _maxCount);
@@ -128,7 +129,7 @@ namespace QuizCanners.Utils
 
             public void Restart() => _count = _maxCount;
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 if (!Application.isPlaying && "Count".PegiLabel().Edit_Delayed(ref _maxCount).Nl())
                     _maxCount = Math.Max(1, _maxCount);
@@ -315,7 +316,7 @@ namespace QuizCanners.Utils
             }
 
             #region Inspector
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 if (result != null)
                 {
@@ -435,5 +436,41 @@ namespace QuizCanners.Utils
             }
 
         }
+
+
+        [Serializable]
+        public class FadeInOut 
+        {
+            [SerializeField] private float _speed = 1;
+            [SerializeField] private bool _unscaledTime;
+
+            private float _value;
+
+            private int _lastFrame;
+
+            public float CurrentValue 
+            {
+                get 
+                {
+                    if (_lastFrame < Time.frameCount-1) 
+                    {
+                        _value = QcLerp.LerpBySpeed(_value, 0, _speed, unscaledTime: _unscaledTime);
+                        _lastFrame = Time.frameCount-1;
+                    }
+
+                    return _value;
+                }
+            }
+
+            public void LerpUpThisFrame() 
+            {
+                if (Time.frameCount == _lastFrame)
+                    return;
+
+                _value = QcLerp.LerpBySpeed(_value, 1, _speed, unscaledTime: _unscaledTime);
+                _lastFrame = Time.frameCount;
+            }
+        }
+
     }
 }

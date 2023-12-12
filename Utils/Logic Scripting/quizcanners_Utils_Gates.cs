@@ -247,7 +247,7 @@ namespace QuizCanners.Utils
                 return false;
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 "Delta: ".F(TimeSpan.FromSeconds(GetDeltaWithoutUpdate()).ToShortDisplayString()).PegiLabel().Write();
             }
@@ -556,7 +556,7 @@ namespace QuizCanners.Utils
                 return TryChange(value, changeTreshold);
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 "Previous: {0}".F(previousValue).PegiLabel().Write();
             }

@@ -55,7 +55,7 @@ namespace QuizCanners.Utils
 
                 public override string ToString() => "Unity Json With Typed Test";
 
-                public void Inspect()
+                void IPEGI.Inspect()
                 {
                     "Name".PegiLabel().Edit(ref Name).Nl();
                     "Age".PegiLabel().Edit(ref Age).Nl();
@@ -73,14 +73,14 @@ namespace QuizCanners.Utils
                 {
                     [SerializeField] string SecretData;
 
-                    public void Inspect()
+                    void IPEGI.Inspect()
                     {
                         "Secret Data".PegiLabel().Edit(ref SecretData).Nl();
                     }
                 }
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
 
                 "Test Json".PegiLabel().Edit_Big(ref _testJson).Nl();
@@ -115,7 +115,7 @@ namespace QuizCanners.Utils
             private readonly pegi.EnterExitContext _testsContext = new(playerPrefId: "qcDbgTst");
             private readonly pegi.CollectionInspectorMeta _blockersMeta = new();
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 using (_context.StartContext())
                 {
@@ -247,7 +247,7 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 if (_blocked && "Load {0}".F(_loadingStage).PegiLabel().Click().Nl())
                     _blocked = false;

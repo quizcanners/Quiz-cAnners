@@ -65,7 +65,7 @@ namespace QuizCanners
         }
         public int Count => x_Max * y_Max * z_Max;
 
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             var changed = pegi.ChangeTrackStart();
 

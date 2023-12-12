@@ -97,7 +97,7 @@ namespace QuizCanners.Inspect.Examples
                     return "{0} {1}({2});".F(returnTypeString, FunctionName, sb.ToString());
                 }
 
-                public void Inspect()
+                void IPEGI.Inspect()
                 {
                     switch (ReturnType)
                     {
@@ -147,7 +147,7 @@ namespace QuizCanners.Inspect.Examples
                     Optional = optional;
                 }
 
-                public void Inspect()
+                void IPEGI.Inspect()
                 {
                     ((Optional ? "(Optional) " : "") + Name).PegiLabel(toolTip: "Parameter Name", style: pegi.Styles.BaldText).Nl();
 

@@ -48,9 +48,9 @@ namespace QuizCanners.Migration
     {
         [HideInInspector] [SerializeField] private string _value;
 
-        public override string ToString() => _value;
+        public override readonly string ToString() => _value;
 
-        public bool IsEmpty => _value.IsNullOrEmpty();
+        public readonly bool IsEmpty => _value.IsNullOrEmpty();
 
         public void Clear() => _value = null;
 
@@ -59,7 +59,7 @@ namespace QuizCanners.Migration
             _value = val;
         }
         
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             pegi.CopyPaste.InspectOptionsFor(ref this);
 
@@ -67,14 +67,14 @@ namespace QuizCanners.Migration
                 "{0} characters".PegiLabel().Write();
         }
 
-        private int ToIntInternal(string text)
+        private readonly int ToIntInternal(string text)
         {
             int variable;
             int.TryParse(text, out variable);
             return variable;
         }
 
-        private int ToIntFromTextSafe(string text, int defaultReturn)
+        private readonly int ToIntFromTextSafe(string text, int defaultReturn)
         {
             int res;
             return int.TryParse(text, out res) ? res : defaultReturn;
@@ -82,7 +82,7 @@ namespace QuizCanners.Migration
 
         #region Decoding Base Values
 
-        public BoneWeight ToBoneWeight()
+        public readonly BoneWeight ToBoneWeight()
         {
             var cody = new CfgDecoder(_value);
             var b = new BoneWeight();
@@ -108,7 +108,7 @@ namespace QuizCanners.Migration
             return b;
         }
 
-        public Matrix4x4 ToMatrix4X4()
+        public readonly Matrix4x4 ToMatrix4X4()
         {
             var cody = new CfgDecoder(_value);
             var m = new Matrix4x4();
@@ -145,7 +145,7 @@ namespace QuizCanners.Migration
             return m;
         }
 
-        public Quaternion ToQuaternion()
+        public readonly Quaternion ToQuaternion()
         {
 
             var cody = new CfgDecoder(_value);
@@ -167,7 +167,7 @@ namespace QuizCanners.Migration
             return q;
         }
 
-        public Vector4 ToVector4()
+        public readonly Vector4 ToVector4()
         {
 
             var cody = new CfgDecoder(_value);
@@ -189,7 +189,7 @@ namespace QuizCanners.Migration
             return v4;
         }
 
-        public Vector3 ToVector3()
+        public readonly Vector3 ToVector3()
         {
 
             var cody = new CfgDecoder(_value);
@@ -209,7 +209,7 @@ namespace QuizCanners.Migration
             return v3;
         }
 
-        public Vector2 ToVector2()
+        public readonly Vector2 ToVector2()
         {
 
             var cody = new CfgDecoder(_value);
@@ -228,7 +228,7 @@ namespace QuizCanners.Migration
             return v2;
         }
 
-        public Rect ToRect()
+        public readonly Rect ToRect()
         {
             var cody = new CfgDecoder(_value);
 
@@ -246,38 +246,38 @@ namespace QuizCanners.Migration
             return rect;
         }
         
-        public bool ToBool() => _value == CfgEncoder.IsTrueTag;
+        public readonly bool ToBool() => _value == CfgEncoder.IsTrueTag;
 
-        public bool ToBool(string yesTag) => _value == yesTag;
+        public readonly bool ToBool(string yesTag) => _value == yesTag;
         
-        public void ToInt(ref int value)
+        public readonly void ToInt(ref int value)
         {
             int variable;
             if (int.TryParse(_value, out variable))
                 value = variable;
         }
 
-        public int ToInt(int defaultValue = 0)
+        public readonly int ToInt(int defaultValue = 0)
         {
             int variable;
             return int.TryParse(_value, out variable) ? variable : defaultValue;
         }
 
-        public uint ToUInt()
+        public readonly uint ToUInt()
         {
             uint value;
             uint.TryParse(_value, out value);
             return value;
         }
 
-        public float ToFloat()
+        public readonly float ToFloat()
         {
             float val;
             float.TryParse(_value, NumberStyles.Float, CultureInfo.InvariantCulture.NumberFormat, out val);
             return val;
         }
         
-        public Color ToColor()
+        public readonly Color ToColor()
         {
             var cody = new CfgDecoder(_value);
             var c = new Color();
@@ -300,7 +300,7 @@ namespace QuizCanners.Migration
 
         #endregion
 
-        public T ToEnum<T>(T defaultValue = default(T), bool ignoreCase = true) where T : struct
+        public readonly T ToEnum<T>(T defaultValue = default(T), bool ignoreCase = true) where T : struct
         {
             T tmp;
             if (Enum.TryParse(_value, ignoreCase: ignoreCase, out tmp))
@@ -314,7 +314,7 @@ namespace QuizCanners.Migration
             return tmp;
         }
 
-        public Matrix4x4[] ToArray(out Matrix4x4[] l)
+        public readonly Matrix4x4[] ToArray(out Matrix4x4[] l)
         {
 
             var cody = new CfgDecoder(this);
@@ -348,7 +348,7 @@ namespace QuizCanners.Migration
         }
 
         #region Tagged Types Internal
-        private T Decode<T>(string tagAsTypeIndex, TaggedTypes.DerrivedList tps) where T : ICfg
+        private readonly T Decode<T>(string tagAsTypeIndex, TaggedTypes.DerrivedList tps) where T : ICfg
         {
             if (tagAsTypeIndex == CfgEncoder.NullTag) return default;
 
@@ -360,7 +360,7 @@ namespace QuizCanners.Migration
             return default;
         }
 
-        private T Decode<T>(string tagAsTypeIndex, List<Type> tps) where T : ICfg
+        private readonly T Decode<T>(string tagAsTypeIndex, List<Type> tps) where T : ICfg
         {
             if (tagAsTypeIndex == CfgEncoder.NullTag) return default;
 
@@ -375,7 +375,7 @@ namespace QuizCanners.Migration
 
         #region Decodey To Type
 
-        public void Decode<T>(out T val, TaggedTypes.DerrivedList typeList) where T : IGotClassTag, ICfg
+        public readonly void Decode<T>(out T val, TaggedTypes.DerrivedList typeList) where T : IGotClassTag, ICfg
         {
             val = default;
 
@@ -387,20 +387,20 @@ namespace QuizCanners.Migration
                 val = cody.GetData().Decode<T>(type);
         }
 
-        public T Decode<T>() where T : ICfg, new()
+        public readonly T Decode<T>() where T : ICfg, new()
         {
             var val = new T();
             DecodeOverride(ref val);
             return val;
         }
 
-        public void Decode<T>(out T val) where T : ICfg, new()
+        public readonly void Decode<T>(out T val) where T : ICfg, new()
         {
             val = new T();
             DecodeOverride(ref val);
         }
 
-        public void DecodeOverride<T>(ref T obj) where T : ICfg
+        public readonly void DecodeOverride<T>(ref T obj) where T : ICfg
         {
             var cstm = obj as ICfgCustom;
 
@@ -413,7 +413,7 @@ namespace QuizCanners.Migration
                 new CfgDecoder(this).DecodeTagsFor(ref obj);
         }
 
-        private T Decode<T>(Type childType) where T : ICfg
+        private readonly T Decode<T>(Type childType) where T : ICfg
         {
             var val = (T)Activator.CreateInstance(childType);
              DecodeOverride(ref val);
@@ -422,14 +422,14 @@ namespace QuizCanners.Migration
 
         #endregion
         
-        public void ToDelegate(CfgDecoder.DecodeDelegate dec) => new CfgDecoder(this).DecodeTagsFor(dec);
+        public readonly void ToDelegate(CfgDecoder.DecodeDelegate dec) => new CfgDecoder(this).DecodeTagsFor(dec);
 
         #region List
 
         private const string ListTag = "_lst";
         private const string ListMetaTag = "_lstMeta";
 
-        private void ToListInternal<T>(List<T> list, CfgDecoder overCody, TaggedTypes.DerrivedList tps) where T : ICfg
+        private readonly void ToListInternal<T>(List<T> list, CfgDecoder overCody, TaggedTypes.DerrivedList tps) where T : ICfg
         {
             var dta = overCody.GetData();
             var tag = overCody.CurrentTag;
@@ -448,7 +448,7 @@ namespace QuizCanners.Migration
                 list.Add(dta.Decode<T>(tag, tps));
         }
 
-        private void ToListInternal<T>(List<T> list, CfgDecoder overCody, List<Type> tps) where T : ICfg
+        private readonly void ToListInternal<T>(List<T> list, CfgDecoder overCody, List<Type> tps) where T : ICfg
         {
             var dta = overCody.GetData();
             var tag = overCody.CurrentTag;
@@ -466,7 +466,7 @@ namespace QuizCanners.Migration
                 list.Add(dta.Decode<T>(tag, tps));
         }
 
-        private void ToListInternal<T>(List<T> list, CfgDecoder overCody) where T : ICfg, new()
+        private readonly void ToListInternal<T>(List<T> list, CfgDecoder overCody) where T : ICfg, new()
         {
             var dta = overCody.GetData();
             var tag = overCody.CurrentTag;
@@ -485,7 +485,7 @@ namespace QuizCanners.Migration
                 list.Add(dta.Decode<T>());
         }
 
-        public void Decode_ListOfList<T>(out List<List<T>> l) where T : ICfg, new()
+        public readonly void Decode_ListOfList<T>(out List<List<T>> l) where T : ICfg, new()
         {
             l = new List<List<T>>();
 
@@ -500,7 +500,7 @@ namespace QuizCanners.Migration
             }
         }
 
-        public void ToList_Derrived<T>(out List<T> list) where T : ICfg
+        public readonly void ToList_Derrived<T>(out List<T> list) where T : ICfg
         {
             list = new List<T>();
 
@@ -516,7 +516,7 @@ namespace QuizCanners.Migration
 
         }
 
-        public void TryToListElements<T>(List<T> list) where T : class, ICfg
+        public readonly void TryToListElements<T>(List<T> list) where T : class, ICfg
         {
             var cody = new CfgDecoder(this);
 
@@ -539,7 +539,7 @@ namespace QuizCanners.Migration
             }
         } 
 
-        public void ToList<T>(out List<T> list) where T : ICfg, new()
+        public readonly void ToList<T>(out List<T> list) where T : ICfg, new()
         {
             list = new List<T>();
 
@@ -549,7 +549,7 @@ namespace QuizCanners.Migration
                 ToListInternal(list, cody);
         }
 
-        public void ToList<T>(out List<T> l, TaggedTypes.DerrivedList tps) where T : ICfg
+        public readonly void ToList<T>(out List<T> l, TaggedTypes.DerrivedList tps) where T : ICfg
         {
             var cody = new CfgDecoder(_value);
 
@@ -559,7 +559,7 @@ namespace QuizCanners.Migration
                ToListInternal(l, cody, tps); //l.Add(cody.GetData().Decode<T>(tag, tps)); 
         }
         
-        public void ToList(out List<string> l)
+        public readonly void ToList(out List<string> l)
         {
             l = new List<string>();
 
@@ -569,7 +569,7 @@ namespace QuizCanners.Migration
                 l.Add(cody.GetData().ToString());
         }
 
-        public void ToList(out List<int> l)
+        public readonly void ToList(out List<int> l)
         {
             l = new List<int>();
 
@@ -579,7 +579,7 @@ namespace QuizCanners.Migration
                 l.Add(cody.GetData().ToInt());
         }
 
-        public void ToList(out List<uint> l)
+        public readonly void ToList(out List<uint> l)
         {
             l = new List<uint>();
 
@@ -589,7 +589,7 @@ namespace QuizCanners.Migration
                 l.Add(cody.GetData().ToUInt());
         }
 
-        public void ToList(out List<Color> l)
+        public readonly void ToList(out List<Color> l)
         {
             l = new List<Color>();
 
@@ -603,7 +603,7 @@ namespace QuizCanners.Migration
 
         #region Dictionary
 
-        public void ToDictionary(out Dictionary<int, string> dic)
+        public readonly void ToDictionary(out Dictionary<int, string> dic)
         {
             var cody = new CfgDecoder(_value);
 
@@ -613,7 +613,7 @@ namespace QuizCanners.Migration
                 dic.Add(ToIntInternal(cody.GetNextTag()), cody.GetData().ToString());
         }
 
-        public void ToDictionary(out Dictionary<string, string> dic)
+        public readonly void ToDictionary(out Dictionary<string, string> dic)
         {
             var cody = new CfgDecoder(_value);
 
@@ -623,7 +623,7 @@ namespace QuizCanners.Migration
                 dic.Add(cody.GetNextTag(), cody.GetData().ToString());
         }
 
-        public void ToDictionary<T>(out T dic) where T: Dictionary<string, CfgData>, new()
+        public readonly void ToDictionary<T>(out T dic) where T: Dictionary<string, CfgData>, new()
         {
             var cody = new CfgDecoder(_value);
 
@@ -633,7 +633,7 @@ namespace QuizCanners.Migration
                 dic.Add(cody.GetNextTag(), cody.GetData());
         }
 
-        public void ToDictionary(out Dictionary<string, int> dic)
+        public readonly void ToDictionary(out Dictionary<string, int> dic)
         {
             var cody = new CfgDecoder(_value);
 
@@ -643,7 +643,7 @@ namespace QuizCanners.Migration
                 dic.Add(cody.GetNextTag(), cody.GetData().ToInt());
         }
 
-        public void ToDictionary<T>(out Dictionary<string, T> dic) where T : class, ICfg, new()
+        public readonly void ToDictionary<T>(out Dictionary<string, T> dic) where T : class, ICfg, new()
         {
             var cody = new CfgDecoder(_value);
 
@@ -727,8 +727,7 @@ namespace QuizCanners.Migration
         }
 
         public static T LoadFromResources<T>(this T s, string subFolder, string file)where T:ICfg, new() {
-			if (s == null)
-				s = new T ();
+			s ??= new T ();
 			new CfgData(QcFile.Load.FromResources(subFolder, file, asBytes: true)).DecodeOverride(ref s);
 			return s;
 		}

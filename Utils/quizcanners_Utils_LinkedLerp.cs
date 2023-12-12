@@ -1851,7 +1851,7 @@ namespace QuizCanners.Lerp
 
         public int GetCount() => _resets;
 
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             "Slowest:".PegiLabel().Write_ForCopy(dominantParameter).Nl();
             "Updates: {0}".F(_resets).PegiLabel().Nl();

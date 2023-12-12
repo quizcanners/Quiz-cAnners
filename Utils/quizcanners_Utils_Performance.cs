@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace QuizCanners.Utils
 {
-    public static class Performancer 
+    public static class TurnTable 
     {
         private static float longestWaitLastFrame = 0;
         private static float longestWaitThisFrame = 0;
@@ -35,5 +35,22 @@ namespace QuizCanners.Utils
 
             return false;
         }
+
+        public class Token 
+        {
+            private float _delay;
+            private Gate.UnityTimeUnScaled _checkVisibilityDelta = new(Gate.InitialValue.Uninitialized);
+
+            public bool TryGetTurn() 
+            {
+                return TryGetMyTurn(_checkVisibilityDelta, _delay);
+            }
+
+            public Token(float delay) 
+            {
+                _delay = delay;
+            }
+        }
+
     }
 }

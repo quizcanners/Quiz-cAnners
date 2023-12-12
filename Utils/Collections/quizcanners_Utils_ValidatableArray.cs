@@ -95,7 +95,7 @@ namespace QuizCanners.Utils
         [NonSerialized] private int _inspectStart = 0;
         [NonSerialized] private int _inspectedIndex = -1;
 
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             "Vacant: {0}".F(_firstVacantElement).PegiLabel().Nl();
             "Last Valid: {0}".F(_lastValidElement).PegiLabel().Nl();
