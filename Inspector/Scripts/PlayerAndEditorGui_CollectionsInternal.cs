@@ -95,38 +95,42 @@ namespace QuizCanners.Inspect
                     SkrollToBottomInternal();
                 }
 
-                if (_count >= _sectionSizeOptimal * 2 || _sectionStartIndex > 0)
+                /*
+                if (!_searching)
                 {
-                    if (_count > _sectionSizeOptimal)
+                    while ((_sectionStartIndex > 0 && _sectionStartIndex >= _count))
                     {
-
-                        while ((_sectionStartIndex > 0 && _sectionStartIndex >= _count))
-                        {
-                            _sectionStartIndex = Mathf.Max(0, _sectionStartIndex - _sectionSizeOptimal);
-                        }
-                        Nl();
-                        if (_sectionStartIndex > 0)
-                        {
-
-                            if (_sectionStartIndex > _sectionSizeOptimal && Icon.UpLast.ClickUnFocus("To First element"))
-                                _sectionStartIndex = 0;
-
-                            if (Icon.Up.Click("To previous elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
-                            {
-                                _sectionStartIndex = Mathf.Max(0, _sectionStartIndex - _sectionSizeOptimal + 1);
-                                if (_sectionStartIndex == 1)
-                                    _sectionStartIndex = 0;
-                            }
-
-                            ".. {0}; ".F(_sectionStartIndex - 1).PegiLabel().Write();
-
-                        }
-                        else
-                            Icon.UpLast.Write("Is the first section of the list.", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
-                        Nl();
-
+                        _sectionStartIndex = Mathf.Max(0, _sectionStartIndex - _sectionSizeOptimal);
                     }
+                }*/
+
+                if (_sectionStartIndex >= _count)
+                    _sectionStartIndex = Mathf.Max(0, _sectionStartIndex - _sectionSizeOptimal);
+
+
+                Nl();
+
+                if (_sectionStartIndex > 0)
+                {
+
+                    if (_sectionStartIndex > _sectionSizeOptimal && Icon.UpLast.ClickUnFocus("To First element"))
+                        _sectionStartIndex = 0;
+
+                    if (Icon.Up.Click("To previous elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
+                    {
+                        _sectionStartIndex = Mathf.Max(0, _sectionStartIndex - _sectionSizeOptimal + 1);
+                        if (_sectionStartIndex == 1)
+                            _sectionStartIndex = 0;
+                    }
+
+                    ".. {0}; ".F(_sectionStartIndex - 1).PegiLabel().Write();
+
                 }
+                else
+                    Icon.UpLast.Write("Is the first section of the list.", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
+                Nl();
+
+               
 
                 Nl();
 

@@ -11,7 +11,7 @@ namespace QuizCanners.Utils
         [Serializable]
         public class ForUiGraphics : IPEGI
         {
-            [SerializeField] public List<UnityEngine.UI.Graphic> materialUsers = new List<UnityEngine.UI.Graphic>();
+            [SerializeField] public List<UnityEngine.UI.Graphic> materialUsers = new();
             [NonSerialized] private Material _materialInstance;
 
             public Material MaterialInstance
@@ -47,7 +47,7 @@ namespace QuizCanners.Utils
                 materialUsers.Add(graphic);
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 "Instance".PegiLabel().Edit(ref _materialInstance).Nl();
             }
@@ -58,7 +58,7 @@ namespace QuizCanners.Utils
         {
 
             [SerializeField] public bool InstantiateInEditor;
-            [SerializeField] public List<MeshRenderer> materialUsers = new List<MeshRenderer>();
+            [SerializeField] public List<MeshRenderer> materialUsers = new();
             [NonSerialized] private Material materialInstance;
 
             public Material GetMaterialInstance(MeshRenderer rendy)
@@ -118,7 +118,7 @@ namespace QuizCanners.Utils
                 materialUsers.Add(rendy);
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 "Material User".PegiLabel().Edit_List(materialUsers).Nl();
 
@@ -150,7 +150,7 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 if (!sourceMaterial)
                     "Source Material".PegiLabel(90).Edit(ref sourceMaterial).Nl();
@@ -176,7 +176,7 @@ namespace QuizCanners.Utils
                 return instance;
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 "Material Instance".PegiLabel().Edit(ref instance).Nl();
             }

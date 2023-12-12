@@ -570,7 +570,8 @@ namespace QuizCanners.Utils
                 pegi.AddTab("Prefabs", changes =>
                 {
                     _prefabsMeta.Edit_List(prefabs).Nl();
-                    "Capacity: {0}/{1} ({2})".F(InstancesCount, RECOMMENDED_INSTANCES, MAX_INSTANCES).PegiLabel().Nl();
+                    if (Application.isPlaying)
+                        "Capacity: {0}/{1} ({2})".F(InstancesCount, RECOMMENDED_INSTANCES, MAX_INSTANCES).PegiLabel().Nl();
                 });
 
                 pegi.AddTab("Instance", changes =>

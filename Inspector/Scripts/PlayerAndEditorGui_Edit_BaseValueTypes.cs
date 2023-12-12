@@ -16,7 +16,7 @@ namespace QuizCanners.Inspect
     {
         #region UInt
 
-        public static bool Edit(ref uint val)
+        public static ChangesToken Edit(ref uint val)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
@@ -24,18 +24,18 @@ namespace QuizCanners.Inspect
 #endif
             _START();
             var newval = GUILayout.TextField(val.ToString(), Utils.GuiMaxWidthOption);
-            if (!_END()) return false;
+            if (!_END()) return ChangesToken.False;
 
             int newValue;
             if (int.TryParse(newval, out newValue))
                 val = (uint)newValue;
 
-            return true;
+            return ChangesToken.True;
 
 
         }
 
-        public static bool Edit(ref uint val, int width)
+        public static ChangesToken Edit(ref uint val, int width)
         {
 
 #if UNITY_EDITOR
@@ -45,17 +45,17 @@ namespace QuizCanners.Inspect
 
             _START();
             var strVal = GUILayout.TextField(val.ToString(), GUILayout.MaxWidth(width));
-            if (!_END()) return false;
+            if (!_END()) return ChangesToken.False;
 
             int newValue;
             if (int.TryParse(strVal, out newValue))
                 val = (uint)newValue;
 
-            return true;
+            return ChangesToken.True;
 
         }
 
-        public static bool Edit(ref uint val, uint min, uint max)
+        public static ChangesToken Edit(ref uint val, uint min, uint max)
         {
 
 #if UNITY_EDITOR
@@ -69,13 +69,13 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static bool Edit(this TextLabel label, ref uint val)
+        public static ChangesToken Edit(this TextLabel label, ref uint val)
         {
             Write(label);
             return Edit(ref val);
         }
 
-        public static bool Edit(this TextLabel label, ref uint val, uint min, uint max)
+        public static ChangesToken Edit(this TextLabel label, ref uint val, uint min, uint max)
         {
             label.sliderText(val);
             return Edit(ref val, min, max);

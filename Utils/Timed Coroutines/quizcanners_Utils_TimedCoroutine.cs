@@ -436,7 +436,7 @@ namespace QuizCanners.Utils
                 
         }
 
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             if (!Exited && !_stopAndCancel && "Stop & Cancel".PegiLabel().Click().Nl())
                 _stopAndCancel = true;

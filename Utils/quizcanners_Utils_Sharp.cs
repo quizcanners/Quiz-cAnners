@@ -338,7 +338,27 @@ namespace QuizCanners.Utils
             => collection.Join(names, el => el.NameForInspector, id => id, (e, i) => e).ToList();
 
         public static T GetElementAt<T>(this IEnumerable<T> source, int index) => source.ElementAt(index);
-        
+
+
+        public static T GetRandom<T>(this T[] arr, ref int previous)
+        {
+            if (arr.IsNullOrEmpty())
+                return default;
+
+            if (arr.Length == 1)
+                return arr[0];
+
+            var rnd = Random.Range(0, arr.Length);
+
+            if (rnd == previous)
+            {
+                rnd = (rnd + 1) % arr.Length;
+            }
+
+            previous = rnd;
+            return arr[previous];
+        }
+
         public static T GetRandom<T>(this List<T> list, ref int previous)
         {
             if (list.IsNullOrEmpty())
@@ -898,28 +918,46 @@ namespace QuizCanners.Utils
 
         #endregion
 
-        public static string GetFileNameFromPath(string text) 
+        private static int GetLastSlashIndex(string text) 
         {
-            if (text.IsNullOrEmpty())
-                return "";
-
             int lastBack = text.LastIndexOf('/');
             int lastFront = text.LastIndexOf('\\');
 
-            var maxSlash = Math.Max(lastBack, lastFront);
+            return Math.Max(lastBack, lastFront);
+        }
+
+        public static string GetPathToFile(string fullPath)
+        {
+            if (fullPath.IsNullOrEmpty())
+                return "";
+
+            var maxSlash = GetLastSlashIndex(fullPath);
+
+            if (maxSlash >= 0)
+                fullPath = fullPath.Substring(startIndex: 0, maxSlash); //[(maxSlash + 1)..];
+            
+            return fullPath;
+        }
+
+        public static string GetFileNameFromPath(string fullPath) 
+        {
+            if (fullPath.IsNullOrEmpty())
+                return "";
+
+            var maxSlash = GetLastSlashIndex(fullPath);
 
             if (maxSlash >= 0) 
             {
-                text = text[(maxSlash + 1)..];
+                fullPath = fullPath[(maxSlash + 1)..];
             }
 
-            var dot = text.IndexOf('.');
+            var dot = fullPath.IndexOf('.');
             if (dot >= 0) 
             {
-                text = text[..dot];
+                fullPath = fullPath[..dot];
             }
 
-            return text;
+            return fullPath;
         }
 
         public static string FixDecimalSeparator(string text)

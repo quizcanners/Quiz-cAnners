@@ -34,7 +34,7 @@ namespace QuizCanners.Inspect
                 public PlaneProjection _projection;
                 public Vector3 worldPosition;
 
-                public void Inspect()
+                void IPEGI.Inspect()
                 {
 
                 }

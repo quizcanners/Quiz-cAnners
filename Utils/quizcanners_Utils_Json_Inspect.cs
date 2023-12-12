@@ -99,7 +99,7 @@ namespace QuizCanners.Utils
         #region Inspector
         private static readonly List<string> inspectedPath = new List<string>();
 
-        public void Inspect()
+        void IPEGI.Inspect()
         {
 
             pegi.Nl();

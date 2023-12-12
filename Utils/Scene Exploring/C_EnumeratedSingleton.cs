@@ -67,7 +67,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             pegi.Nl();
 

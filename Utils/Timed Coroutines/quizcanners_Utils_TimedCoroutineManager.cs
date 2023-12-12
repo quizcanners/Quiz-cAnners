@@ -62,7 +62,7 @@ namespace QuizCanners.Utils
             private readonly pegi.CollectionInspectorMeta coroutinesListMeta = new pegi.CollectionInspectorMeta("Managed Coroutines", showAddButton: false);
 
             private Task _debugTask;
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 pegi.Nl();
 

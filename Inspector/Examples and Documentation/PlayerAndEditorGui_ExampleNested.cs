@@ -14,7 +14,7 @@ namespace QuizCanners.Inspect.Examples
 
         [SerializeField] private pegi.EnterExitContext _context = new();
 
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             var changed = pegi.ChangeTrackStart();
 

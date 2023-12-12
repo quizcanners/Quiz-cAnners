@@ -57,7 +57,7 @@ namespace QuizCanners.Utils
         public enum State { NeverStarted, InProgress, Done }
 
         #region Inspector
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             "Progress: {0}".F(Mathf.FloorToInt(FractionPassed * 100)).PegiLabel().Nl();
 

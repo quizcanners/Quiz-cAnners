@@ -117,7 +117,7 @@ namespace QuizCanners.Inspect
             [NonSerialized] internal readonly SearchData searchData = new();
             [NonSerialized] private readonly EnterExitContext _context = new();
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 using (_context.StartContext())
                 {

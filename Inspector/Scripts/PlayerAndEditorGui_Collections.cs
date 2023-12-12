@@ -285,9 +285,8 @@ namespace QuizCanners.Inspect
                         if (ClickHighlight(uo, tex))
                             isPrevious = true;
 
+                        return;
                     }
-
-                    return;
                 }
 
                 if (el.GetNameForInspector().PegiLabel("Inspect", RemainingLength(defaultButtonSize * 2 + 10)).ClickLabel())
@@ -295,6 +294,8 @@ namespace QuizCanners.Inspect
                     inspected = index;
                     isPrevious = true;
                 }
+
+                ClickHighlight(uo);
             }
 
 

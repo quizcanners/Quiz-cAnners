@@ -19,7 +19,7 @@ namespace QuizCanners.Inspect.Examples
         //You should attach this script to the game object and see the example
         private readonly pegi.EnterExitContext _menuContext = new pegi.EnterExitContext();
         private readonly pegi.EnterExitContext _examplesSubContext = new pegi.EnterExitContext();
-        public void Inspect()
+        void IPEGI.Inspect()
         {
             pegi.Nl();
 

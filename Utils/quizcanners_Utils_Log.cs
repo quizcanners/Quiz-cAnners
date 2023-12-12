@@ -110,7 +110,7 @@ namespace QuizCanners.Utils
 
             private readonly List<LogData> logs = new List<LogData>();
             private readonly pegi.CollectionInspectorMeta _logMeta = new pegi.CollectionInspectorMeta(labelName: "Logs", showAddButton: false, showEditListButton: false, showCopyPasteOptions: true); // _inspectedLog = -1;
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 var sub = SavingLogs;
                 if ("Save Logs".PegiLabel().ToggleIcon(ref sub).Nl())
@@ -166,7 +166,7 @@ namespace QuizCanners.Utils
                     edited = ind;
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 "Log:".PegiLabel(50).Write_ForCopy(Log, showCopyButton: true).Nl();
                 "Stack:".PegiLabel().Write_ForCopy_Big(Stack, showCopyButton: true).Nl();

@@ -32,6 +32,11 @@ namespace QuizCanners.Inspect
 
     public interface IInspectorDropdown { bool ShowInInspectorDropdown(); }
 
+    public interface IPEGI_Preview 
+    {
+        Texture GetPreview();
+    }
+
     #endregion
 
     public static partial class pegi

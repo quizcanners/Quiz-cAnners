@@ -67,7 +67,7 @@ namespace QuizCanners.Utils
             protected override int LoadValue() => PlayerPrefs.GetInt(key, defaultValue: defaultValue);
             public Int(string key, int defaultValue) : base(key, defaultValue) { }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 var tmp = GetValue();
                 if (key.PegiLabel().Edit(ref tmp))
@@ -81,7 +81,7 @@ namespace QuizCanners.Utils
             protected override float LoadValue() => PlayerPrefs.GetFloat(key, defaultValue: defaultValue);
             public Float(string key, float defaultValue) : base(key, defaultValue) { }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 var tmp = GetValue();
                 if (key.PegiLabel().Edit(ref tmp))
@@ -95,7 +95,7 @@ namespace QuizCanners.Utils
             protected override string LoadValue() => PlayerPrefs.GetString(key, defaultValue: defaultValue);
             public String(string key, string defaultValue) : base(key, defaultValue) { }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 var tmp = GetValue();
                 if (key.PegiLabel().Edit(ref tmp))
@@ -113,7 +113,7 @@ namespace QuizCanners.Utils
 
             public Bool(string key, bool defaultValue) : base(key, defaultValue) { }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 var tmp = GetValue();
                 if (key.PegiLabel().ToggleIcon(ref tmp))

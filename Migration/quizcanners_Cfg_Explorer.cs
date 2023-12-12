@@ -17,7 +17,7 @@ namespace QuizCanners.Migration
     [Serializable]
     public class ICfgObjectExplorer : IGotCount
     {
-        private readonly List<CfgState> states = new List<CfgState>();
+        private readonly List<CfgState> states = new();
         private string fileFolderHolder = "STDEncodes";
         private static ICfg inspectedCfg;
 
@@ -154,7 +154,7 @@ namespace QuizCanners.Migration
                 set { tag = value; }
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 if (_tags == null && data.ToString().Contains("|"))
                     this.Decode(data);
@@ -164,13 +164,10 @@ namespace QuizCanners.Migration
                 if (_tags != null)
                     tag.PegiLabel().Edit_List(_tags, ref inspectedTag);
 
-                dirty |= changes;
-
                 if (inspectedTag == -1)
                 {
-                   
                     //"data".PegiLabel().edit(40, ref data).changes(ref dirty);
-                    data.Inspect();
+                    pegi.Nested_Inspect_Value(ref data).Nl();
 
                     dirty |= changes;
                    /* UnityEngine.Object myType = null;
@@ -193,17 +190,15 @@ namespace QuizCanners.Migration
                             dirty = false;
                         }
                     }
-
                     pegi.Nl();
                 }
 
-
+                dirty |= changes;
                 pegi.Nl();
             }
 
             public void InspectInList(ref int edited, int ind)
             {
-
                 GetCount().ToString().PegiLabel(50).Write();
 
                 if (data.IsEmpty == false && data.ToString().Contains("|"))
@@ -218,7 +213,7 @@ namespace QuizCanners.Migration
                     if (pegi.Edit(ref tag))
                         dirty = true;
 
-                    data.Inspect(); //.changes(ref dirty);
+                    pegi.Nested_Inspect_Value(ref data).Nl(); //.Inspect(); //.changes(ref dirty);
                     //pegi.edit(ref data).changes(ref dirty);
                 }
 
@@ -259,8 +254,7 @@ namespace QuizCanners.Migration
 
             public void DecodeTag(string key, CfgData dta)
             {
-                if (_tags == null)
-                    _tags = new List<ICfgProperty>();
+                _tags ??= new List<ICfgProperty>();
 
                 _tags.Add(new ICfgProperty(key, dta));
             }
@@ -274,7 +268,7 @@ namespace QuizCanners.Migration
             private static ICfg Cfg => inspectedCfg;
 
             public string comment;
-            public ICfgProperty dataExplorer = new ICfgProperty("", new CfgData());
+            public ICfgProperty dataExplorer = new("", new CfgData());
 
             #region Inspector
             public string NameForInspector { get { return dataExplorer.tag; } set { dataExplorer.tag = value; } }
@@ -283,7 +277,7 @@ namespace QuizCanners.Migration
 
             public int GetCount() => dataExplorer.GetCount();
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
 
                 if (dataExplorer.inspectedTag == -1)

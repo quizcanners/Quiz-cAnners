@@ -57,7 +57,7 @@ namespace QuizCanners.Utils
                 return false;
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 var init = IsInitialized;
                 "{0}".F(_name).PegiLabel().ToggleIcon(ref init).Nl().OnChanged(() => IsInitialized = init);
@@ -247,7 +247,7 @@ namespace QuizCanners.Utils
             }
 
             #region Inspector
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 if (!_renderTextures.IsNullOrEmpty())
                     "Render Textures".PegiLabel().Edit_List_UObj(_renderTextures).Nl();
@@ -326,7 +326,7 @@ namespace QuizCanners.Utils
                 _size = size;
             }
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 if (_renderTexture)
                 {

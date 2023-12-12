@@ -45,7 +45,7 @@ namespace QuizCanners.Inspect.Examples
 
                 var sb = new CodeStringBuilder();
                 sb.AppendLine("class Example : {0}, IPEGI".F(nameof(MonoBehaviour)))
-                  .In().AppendLine("public void Inspect()")
+                  .In().AppendLine("void IPEGI.Inspect()")
                             .In().AppendLine("//pegi Functions")
                             .Out()
                     .Out()
@@ -63,7 +63,7 @@ namespace QuizCanners.Inspect.Examples
                 sb = new CodeStringBuilder();
                 sb.AppendLine("class ExampleMono : {0}, IPEGI".F(nameof(MonoBehaviour)))
                   .In()
-                  .AppendLine("public void Inspect()")
+                  .AppendLine("void IPEGI.Inspect()")
                             .In().AppendLine("//pegi Functions")
                             .Out()
                             .AppendLine()

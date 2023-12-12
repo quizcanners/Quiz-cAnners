@@ -1,6 +1,7 @@
 ﻿using System;
 using QuizCanners.Utils;
 using UnityEngine;
+using Codice.Client.BaseCommands;
 #if UNITY_EDITOR
 using  UnityEditor;
 #endif
@@ -64,9 +65,6 @@ namespace QuizCanners.Inspect {
 #if !UNITY_EDITOR
      public abstract class PEGI_Inspector_Override { }
 #else
-
-  
-
     public abstract class PEGI_Inspector_Override : Editor
     {
         public override void OnInspectorGUI()
@@ -88,7 +86,7 @@ namespace QuizCanners.Inspect {
                         return;
                     }
                 }
-           
+
                 pegi.Toggle_DefaultInspector(target);
 
                 EditorGUI.BeginChangeCheck();
@@ -118,7 +116,53 @@ namespace QuizCanners.Inspect {
                 pegi.IsDrawingHandles = false;
             }
         }
+
+        public override bool HasPreviewGUI()
+        {
+            return target is IPEGI_Preview;
+        }
+
+        public override void DrawPreview(Rect previewArea)
+        {
+            var tex = (target as IPEGI_Preview).GetPreview();
+
+            if (!tex)
+                return;
+
+            Vector2 res = new(tex.width, tex.height);
+            float texRelation = res.x / res.y;
+            float windowRelation = previewArea.width / previewArea.height;
+            float relation = texRelation / windowRelation;
+            Vector2 proportions = relation > 1 ? new Vector2(1, 1 / relation) : new Vector2(relation, 1);
+
+            GUI.DrawTexture(new Rect(previewArea.x, previewArea.y, previewArea.width * proportions.x, previewArea.height * proportions.y), tex);
+        }
+
+        public override Texture2D RenderStaticPreview(string assetPath, UnityEngine.Object[] subAssets, int width, int height)
+        {
+            var asPrev = target as IPEGI_Preview;
+
+            if (asPrev == null)
+                return null;
+
+            var rt = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
+            var sourceTex = asPrev.GetPreview();
+
+            if (sourceTex == null)
+                return null;
+
+            Graphics.Blit(sourceTex, rt);
+            RenderTexture.active = rt;
+            Texture2D tex = new(width, height, TextureFormat.ARGB32, true, true);
+            tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            tex.Apply();
+            RenderTexture.active = null;
+            rt.Release();
+            DestroyImmediate(rt, allowDestroyingAssets: false);
+
+            return tex;
+        }
     }
-    #endif
+#endif
 }
 

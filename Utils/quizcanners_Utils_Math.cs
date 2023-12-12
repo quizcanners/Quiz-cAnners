@@ -729,7 +729,7 @@ namespace QuizCanners.Utils
 
             public float Value
             {
-                get { return _value; }
+                readonly get => _value; 
 
                 set
                 {
@@ -758,7 +758,7 @@ namespace QuizCanners.Utils
 
             private bool _showRange;
 
-            public void Inspect()
+            void IPEGI.Inspect()
             {
                 var rangeChanged = false;
 
@@ -845,7 +845,7 @@ namespace QuizCanners.Utils
 
             #region Encode & Decode
 
-            public CfgEncoder Encode() => new CfgEncoder()
+            public readonly CfgEncoder Encode() => new CfgEncoder()
                 .Add_IfNotEpsilon("m", min)
                 .Add_IfNotEpsilon("v", Value)
                 .Add_IfNotEpsilon("x", max);

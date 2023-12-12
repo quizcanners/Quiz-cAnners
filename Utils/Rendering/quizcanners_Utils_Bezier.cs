@@ -108,7 +108,7 @@ namespace QuizCanners.Utils
 
         #region Inspector
 
-        public void Inspect()
+        void IPEGI.Inspect()
         {
         }
 

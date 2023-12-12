@@ -32,12 +32,15 @@ namespace QuizCanners.Utils
             public void SetOn(Animator animator) => animator.SetTrigger(name);
             public override void Reset(Animator animator) => animator.ResetTrigger(name);
 
-            public void Inspect(Animator animator)
+            public pegi.ChangesToken Inspect(Animator animator)
             {
+                var changes = pegi.ChangeTrackStart();
                 //base.Inspect(animator);
 
                 if (name.PegiLabel().Click())
                     SetOn(animator);
+
+                return changes;
             }
 
             public Trigger (string name) : base(name) { }
@@ -46,19 +49,21 @@ namespace QuizCanners.Utils
         public abstract class ValueGeneric<T> : Base
         {
             protected T _defaultValue;
-            protected T latestValue;
+            public T LatestValue { get; private set; }
+            private bool _latestSet = false;
 
-            public T GetLatest() => latestValue;
+            public T GetLatest() => LatestValue;
 
             public abstract T GetFrom(Animator animator);
 
             public bool SetOn(T value, Animator animator)
             {
-                if (latestValue.Equals(value))
+                if (_latestSet && LatestValue.Equals(value))
                     return false;
 
-                latestValue = value;
-                SetInternal(latestValue, animator);
+                _latestSet = true;
+                LatestValue = value;
+                SetInternal(LatestValue, animator);
                 return true;
             }
 
@@ -66,10 +71,14 @@ namespace QuizCanners.Utils
 
             protected abstract void SetInternal(T value, Animator animator);
 
-            public virtual void Inspect(Animator animator)
+            public virtual pegi.ChangesToken Inspect(Animator animator)
             {
-                if (!latestValue.Equals(_defaultValue) && Icon.Refresh.Click())
+                var changed = pegi.ChangeTrackStart();
+
+                if (!LatestValue.Equals(_defaultValue) && Icon.Refresh.Click())
                     Reset(animator);
+
+                return changed;
             }
 
             public ValueGeneric(string name, T defaultValue) : base(name)
@@ -82,12 +91,15 @@ namespace QuizCanners.Utils
         {
             protected override void SetInternal(float value, Animator animator) => animator.SetFloat(name, value);
 
-            public override void Inspect(Animator animator)
+            public override pegi.ChangesToken Inspect(Animator animator)
             {
-                base.Inspect(animator);
+                var changed = base.Inspect(animator);
 
-                if (name.PegiLabel(90).Edit(ref latestValue))
-                    SetOn(latestValue, animator);
+                var val = LatestValue;
+                if (name.PegiLabel(90).Edit(ref val))
+                    SetOn(LatestValue, animator);
+
+                return changed;
             }
 
             public override float GetFrom(Animator animator) => animator.GetFloat(name);
@@ -101,12 +113,15 @@ namespace QuizCanners.Utils
 
             public override bool GetFrom(Animator animator) => animator.GetBool(name);
 
-            public override void Inspect(Animator animator)
+            public override pegi.ChangesToken Inspect(Animator animator)
             {
-                base.Inspect(animator);
+                var changed = pegi.ChangeTrackStart();//base.Inspect(animator);
 
-                if (name.PegiLabel(90).ToggleIcon(ref latestValue))
-                    SetOn(latestValue, animator);
+                var val = LatestValue;
+                if (name.PegiLabel(90).ToggleIcon(ref val))
+                    SetOn(val, animator);
+
+                return changed;
             }
 
             public Bool(string name, bool defaultValue = false) : base(name, defaultValue) { }
@@ -118,19 +133,19 @@ namespace QuizCanners.Utils
 
             public override int GetFrom(Animator animator) => animator.GetInteger(name);
 
-            public override void Inspect(Animator animator)
+            public override pegi.ChangesToken Inspect(Animator animator)
             {
-                base.Inspect(animator);
+                var changed = base.Inspect(animator);
 
-                if (name.PegiLabel(90).Edit(ref latestValue))
-                    SetOn(latestValue, animator);
+                var val = LatestValue;
+                if (name.PegiLabel(90).Edit(ref val))
+                    SetOn(LatestValue, animator);
+
+                return changed;
             }
 
             public Integer(string name, int defaultValue = 0) : base(name, defaultValue) { }
         }
-
-
-
 
         public static Animator Set(this Animator animator, Trigger trig)
         {
