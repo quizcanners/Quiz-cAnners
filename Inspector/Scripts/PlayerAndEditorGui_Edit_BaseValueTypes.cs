@@ -556,6 +556,16 @@ namespace QuizCanners.Inspect
             return Edit(ref val, min, max);
         }
 
+        public static ChangesToken Edit(this TextLabel label, ref float val, float min, float max, float defaultValue)
+        {
+            var cahnges = ChangeTrackStart();
+            label.Edit(ref val, min, max);
+            if (val != defaultValue && Icon.Refresh.Click("Set Default value of {0}".F(defaultValue)))
+                val = defaultValue;
+
+            return cahnges;
+        }
+
         private static ChangesToken Edit(this Icon ico, ref float val, float min, float max)
         {
             ico.Draw();

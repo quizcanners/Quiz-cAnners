@@ -200,8 +200,8 @@ namespace QuizCanners.Utils
                     
                 }
 
-                if (!_context.IsAnyEntered && Application.isPlaying && Time.deltaTime < 0.1f)
-                    Icon.Warning.Draw("Delta time is "+ Time.deltaTime);
+                if (!_context.IsAnyEntered && Application.isPlaying && Time.timeScale < 0.1f)
+                    Icon.Warning.Draw("Delta time is "+ Time.timeScale);
 
                 pegi.Nl();
 
@@ -269,6 +269,10 @@ namespace QuizCanners.Utils
                 }
 
                 "Debug".PegiLabel().IsEntered().Nl().If_Entered(QcDebug.Inspect);
+
+                if (!_context.IsAnyEntered)
+                    QcScenes.Inspect();
+
             }
         }
 

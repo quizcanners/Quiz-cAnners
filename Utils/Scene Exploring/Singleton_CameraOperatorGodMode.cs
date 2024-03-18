@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using QuizCanners.Inspect;
 using QuizCanners.Lerp;
+
 namespace QuizCanners.Utils
 {
 
@@ -233,29 +234,68 @@ namespace QuizCanners.Utils
 
         }
 
+        const int MAX_ROTATION = 85;
+
+        public void Rotate(Vector2 input)
+        {
+            var camTf = _mainCam.transform;
+
+            var eul = camTf.localEulerAngles;
+
+            var rotationCoefficient = FOV / 90f;
+
+            input *= rotationCoefficient;
+
+            if (input.magnitude > MAX_ROTATION)
+                input = input.normalized * MAX_ROTATION;
+
+            var rotationX = eul.y + input.x;
+            var rotationY = eul.x - input.y;
+            
+            rotationY = rotationY < 120 ? Mathf.Min(rotationY, 85) : Mathf.Max(rotationY, 270);
+
+            camTf.localEulerAngles = new Vector3(rotationY, rotationX, eul.z);
+        }
+
+        public void RotateRelative(Vector2 input, Transform platform)
+        {
+            var camTf = _mainCam.transform;
+
+            var platformSpaceRotation = Quaternion.Inverse(platform.rotation) * camTf.rotation;
+            var platformSpaceEul = platformSpaceRotation.eulerAngles;
+            var rotationCoefficient = FOV / 90f;
+
+            input *= rotationCoefficient;
+
+            if (input.magnitude > MAX_ROTATION)
+                input = input.normalized * MAX_ROTATION;
+
+            var rotationX = platformSpaceEul.y + input.x;
+            var rotationY = platformSpaceEul.x - input.y;
+
+            rotationY = rotationY < 120 ? Mathf.Min(rotationY, 85) : Mathf.Max(rotationY, 270);
+            platformSpaceEul = new Vector3(rotationY, rotationX, platformSpaceEul.z);
+            camTf.rotation = platform.rotation * Quaternion.Euler(platformSpaceEul);
+        }
+
         public void RatateWithMouse() 
         {
             if (MouseOutsideOfView)
                 return;
 
-            var camTf = _mainCam.transform;
+            Rotate(GetInput() * sensitivity);
+        }
 
-            var eul = camTf.localEulerAngles;
+        Vector2 GetInput() => (LEGACY_INPUT)
+            ? new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"))
+            : Vector2.zero;
 
-            var rotationX = eul.y;
-            var rotationY = eul.x;
+        public void RatateWithMouse(Transform platform)
+        {
+            if (MouseOutsideOfView)
+                return;
 
-            var rotationSpeed = sensitivity * FOV / 90f;
-
-            if (LEGACY_INPUT)
-            {
-                rotationX += Input.GetAxis("Mouse X") * rotationSpeed;
-                rotationY -= Input.GetAxis("Mouse Y") * rotationSpeed;
-            }
-
-            rotationY = rotationY < 120 ? Mathf.Min(rotationY, 85) : Mathf.Max(rotationY, 270);
-
-            camTf.localEulerAngles = new Vector3(rotationY, rotationX, 0);
+            RotateRelative(GetInput() * sensitivity, platform);
         }
 
         public void Update()

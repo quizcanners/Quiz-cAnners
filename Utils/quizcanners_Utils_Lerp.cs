@@ -183,7 +183,7 @@ namespace QuizCanners.Lerp
         {
             float totalDistance = Vector3.Distance(from, to);
 
-            if (totalDistance < moveDistance) 
+            if (totalDistance <= moveDistance) 
             {
                 portion = 1;
                 return to;
@@ -192,6 +192,21 @@ namespace QuizCanners.Lerp
             portion = moveDistance / totalDistance;
 
             return Vector3.LerpUnclamped(from, to, portion);
+        }
+
+        public static float LerpByDistance(float from, float to, float moveDistance, out float portion)
+        {
+            float totalDistance = Mathf.Abs(from - to);
+
+            if (totalDistance <= moveDistance)
+            {
+                portion = 1;
+                return to;
+            }
+
+            portion = moveDistance / totalDistance;
+
+            return Mathf.LerpUnclamped(from, to, portion);
         }
 
         public static Vector3 LerpBySpeed_DirectionFirst(Vector3 from, Vector3 to, float speed, bool unscaledTime)

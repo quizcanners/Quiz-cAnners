@@ -40,6 +40,9 @@ namespace QuizCanners.Utils
                     Vector3.Distance(cam.transform.position, pos);
                 }
 
+                if (!Camera.main)
+                    return 10;
+
                 return Vector3.Distance(Camera.main.transform.position, pos);
             }
         }

@@ -1196,7 +1196,7 @@ namespace QuizCanners.Inspect
                 return null;
             }
 
-            string name = GetPropertyName(memberExpression);
+            string name = QcSharp.GetPropertyName(memberExpression); //GetPropertyName(memberExpression);
 
             if (name  == null) 
                 return null;
@@ -1217,7 +1217,7 @@ namespace QuizCanners.Inspect
                 return null;
             }
 
-            string name = GetPropertyName(memberExpression);
+            string name = QcSharp.GetPropertyName(memberExpression);//GetPropertyName(memberExpression);
 
             if (name == null)
                 return null;
@@ -1264,9 +1264,11 @@ namespace QuizCanners.Inspect
         }
 
 
-
+        /*
         private static string GetPropertyName<T>(Expression<Func<T>> memberExpression)
         {
+            QcSharp.GetPropertyName(memberExpression);
+
             System.Reflection.MemberInfo member = ((MemberExpression)memberExpression.Body).Member;
 
             string name;
@@ -1279,7 +1281,7 @@ namespace QuizCanners.Inspect
             }
 
             return name;
-        }
+        }*/
 
 
         private static readonly Dictionary<Object, SerializedObject> SerializedObjects = new();

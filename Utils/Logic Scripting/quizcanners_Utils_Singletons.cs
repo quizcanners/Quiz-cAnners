@@ -30,11 +30,19 @@ namespace QuizCanners.Utils
             return defaultValue;
         }
 
+        public static bool TryGet<TSingleton>(out TSingleton singleton) where TSingleton : MonoBehaviour, IQcSingleton
+        {
+            singleton = SingletonGeneric<TSingleton>.Instance;
+            return singleton;
+        }
+
         public static bool Try<TSingleton>(Action<TSingleton> onFound, bool logOnServiceMissing = true) where TSingleton : IQcSingleton =>
             Try(onFound: onFound, onFailed: null, logOnServiceMissing: logOnServiceMissing);
 
+        /*
         public static bool Try<TServiceA, TServiceB>(Action<TServiceA, TServiceB> onFound, bool logOnServiceMissing = true) where TServiceA : IQcSingleton where TServiceB : IQcSingleton =>
             Try(onFound: onFound, onFailed: null, logOnServiceMissing: logOnServiceMissing);
+        */
 
         public static bool Try<TService>(Action<TService> onFound, Action onFailed, bool logOnServiceMissing = false) where TService : IQcSingleton
         {
@@ -562,6 +570,7 @@ namespace QuizCanners.Utils
                 }
 
                 Collector.RegisterSingleton(this, type);
+
                 StartCoroutine(AfterEnableCoro());
 
 #if UNITY_EDITOR
@@ -600,18 +609,20 @@ namespace QuizCanners.Utils
                 pegi.Nl();
             }
 
+            protected virtual bool AllowDisableSingleton => true;
+
             public virtual void InspectInList(ref int edited, int ind)
             {
-                if (gameObject.activeSelf && !gameObject.activeInHierarchy)
-                    Icon.Warning.Draw("Object is disabled in hierarchy");
-                else if ((IsSingletonActive ? Icon.Active : Icon.InActive).Click(toolTip: gameObject.activeSelf ? "Make Inactive" : "Make Active"))
-                    IsSingletonActive = !IsSingletonActive; 
-                
-                if (ToString().PegiLabel().ClickLabel() | this.Click_Enter_Attention())
+              
+                if (this.Click_Enter_Attention() | ToString().PegiLabel(pegi.Styles.EnterLabel).ClickLabel())
                     edited = ind;
 
                 pegi.ClickHighlight(this);
 
+                if (gameObject.activeSelf && !gameObject.activeInHierarchy)
+                    Icon.Warning.Draw("Object is disabled in hierarchy");
+                else if ((AllowDisableSingleton || !IsSingletonActive) && (IsSingletonActive ? Icon.Active : Icon.InActive).Click(toolTip: gameObject.activeSelf ? "Make Inactive" : "Make Active"))
+                    IsSingletonActive = !IsSingletonActive;
             }
 
             public virtual string NeedAttention()
@@ -645,7 +656,6 @@ namespace QuizCanners.Utils
         public interface IQcSingleton
         {
             string InspectedCategory { get; }
-
             bool IsSingletonActive { get; set; }
         }
 

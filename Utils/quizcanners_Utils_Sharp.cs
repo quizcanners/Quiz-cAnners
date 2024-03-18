@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -398,41 +399,6 @@ namespace QuizCanners.Utils
             return dic.GetElementAt(Random.Range(0, dic.Count)).Value;
         }
 
-        public static T GetRandomByWeight<T>(this List<T> sequence, Func<T, float> weightSelector)
-        {
-            if (sequence.IsNullOrEmpty())
-            {
-                var typeName = typeof(T).Name;
-                QcLog.ChillLogger.LogErrorOnce("{0}: List<{1}> is {2}".F(nameof(GetRandomByWeight), typeName, sequence == null ? "NULL" : "Empty"), key: "{0} grnd".F(typeName));
-                return default;
-            }
-
-            if (sequence.Count == 1)
-                return sequence[0];
-
-            float TotalWeight = 0;
-
-            foreach (var el in sequence)
-            {
-                TotalWeight += weightSelector(el);
-            }
-
-            float itemWeightIndex = Random.Range(0f, TotalWeight);
-
-            float currentWeightIndex = 0;
-
-            foreach (var item in sequence)
-            {
-                currentWeightIndex += weightSelector(item);
-
-                if (currentWeightIndex >= itemWeightIndex)
-                {
-                    return item;
-                }
-            }
-
-            return sequence.TryGet(0);
-        }
 
         /// <summary>Returns True if any change to <c>List</c> were made to satisfy the target state.</summary>
         public static bool SetContains<T>(this List<T> list, T value, bool targetState)
@@ -1250,6 +1216,23 @@ namespace QuizCanners.Utils
         {
             int index = FindMostSimilarFrom(name, Enum.GetNames(typeof(T)));
             return (T)Enum.GetValues(typeof(T)).GetValue(index);
+        }
+
+        internal static string GetPropertyName<T>(Expression<Func<T>> memberExpression)
+        {
+            System.Reflection.MemberInfo member = ((MemberExpression)memberExpression.Body).Member;
+
+            string name;
+
+            switch (member.MemberType)
+            {
+                case System.Reflection.MemberTypes.Field: name = member.Name; break;
+                case System.Reflection.MemberTypes.Property: name = "m_{0}{1}".F(char.ToUpper(member.Name[0]), member.Name[1..]); break;
+                default: "Not Impl {0}".F(member.MemberType.ToString().SimplifyTypeName()).PegiLabel(90).Write(); return null;
+            }
+
+            return name;
+            
         }
 
         private class DisposableActionToken : IDisposable

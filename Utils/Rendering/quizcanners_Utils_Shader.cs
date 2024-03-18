@@ -10,7 +10,7 @@ namespace QuizCanners.Utils
     {
         #region Base Abstract
 
-        public abstract class BaseShaderPropertyIndex : ICfg, IPEGI_ListInspect, IPEGI
+        public abstract class BaseShaderPropertyIndex : IPEGI_ListInspect, IPEGI
         {
             protected int id;
             protected string name;
@@ -47,19 +47,6 @@ namespace QuizCanners.Utils
             
             public virtual void Inspect()=>
                 name.PegiLabel().Write_ForCopy();
-            #endregion
-
-            #region Encode & Decode
-            public virtual CfgEncoder Encode() => new CfgEncoder()
-                .Add_String("n", name) ;
-            
-            public virtual void DecodeTag(string key, CfgData data)
-            {
-                switch (key)
-                {
-                    case "n":  name = data.ToString(); UpdateIndex();  break;
-                }
-            }
             #endregion
 
             #region Constructors
@@ -232,7 +219,8 @@ namespace QuizCanners.Utils
         #region Float
         
         [Serializable]
-        public class FloatValue : IndexGeneric<float> {
+        public class FloatValue : IndexGeneric<float>, ICfg
+        {
 
             private readonly bool _usingRange;
             private readonly float _min;
@@ -267,7 +255,17 @@ namespace QuizCanners.Utils
                   if (GlobalValueSet)
                       GlobalValue = latestValue;
               });
-            
+
+            public CfgEncoder Encode() => new CfgEncoder()
+                .Add("val", GlobalValue);
+
+            public void DecodeTag(string key, CfgData data)
+            {
+                switch (key)
+                {
+                    case "val": GlobalValue = data.ToFloat(); break;
+                }
+            }
 
             public FloatValue() {}
 
@@ -275,13 +273,14 @@ namespace QuizCanners.Utils
 
             public FloatValue(string name, float min, float max) : base(name)
             {
+                latestValue = min;
                 _usingRange = true;
                 _min = min;
                 _max = max;
             }
         }
 
-        public class FloatFeature : IndexWithShaderFeatureGeneric<float>
+        public class FloatFeature : IndexWithShaderFeatureGeneric<float>, ICfg
         {
             public override void SetLatestValueOn(Material material) => material.SetFloat(id, latestValue);
             public override float Get(Material material) => material.GetFloat(id);
@@ -330,6 +329,17 @@ namespace QuizCanners.Utils
                 });
 
                 return changes;
+            }
+
+            public CfgEncoder Encode() => new CfgEncoder()
+                .Add("val", GlobalValue);
+
+            public void DecodeTag(string key, CfgData data)
+            {
+                switch (key)
+                {
+                    case "val": GlobalValue = data.ToFloat(); break;
+                }
             }
 
             public FloatFeature(string name, string featureDirective) : base(name, featureDirective) { }
@@ -607,18 +617,6 @@ namespace QuizCanners.Utils
 
             #region Texture Specific
 
-            [NonSerialized]
-            private List<string> _usageTags = new();
-
-            public TextureValue AddUsageTag(string value)
-            {
-                if (!_usageTags.Contains(value)) 
-                    _usageTags.Add(value);
-                return this;
-            }
-
-            public bool HasUsageTag(string tag) => _usageTags.Contains(tag);
-
             public Vector2 GetOffset(Material mat) => mat ? mat.GetTextureOffset(id) : Vector2.zero;
 
             public Vector2 GetTiling(Material mat) => mat ? mat.GetTextureScale(id) : Vector2.one;
@@ -674,15 +672,7 @@ namespace QuizCanners.Utils
             #endregion
 
             #region Constructors
-            public TextureValue() { }
-
-            public TextureValue(string name, string tag, bool set_ScreenFillAspect = false) : base(name)
-            {
-                AddUsageTag(tag);
-
-                if (set_ScreenFillAspect)
-                    GetScreenFillAspect();
-            }
+        //    public TextureValue() { }
 
             public TextureValue(string name, bool set_ScreenFillAspect = false) : base(name)
             {
@@ -692,32 +682,13 @@ namespace QuizCanners.Utils
 
             #endregion
 
-            #region Encode & Decode
-
-            public override  CfgEncoder Encode() => new CfgEncoder()
-                .Add("b", base.Encode())
-                .Add("tgs", _usageTags);
-
-            public override void DecodeTag(string key, CfgData data)
-            {
-                switch (key)
-                {
-                    case "b":
-                        data.ToDelegate(base.DecodeTag);
-                        break;
-                    case "tgs":
-                        data.ToList(out _usageTags);
-                        break;
-                }
-            }
-
+  
             public override void Inspect()
             {
                 pegi.Draw(mainTexture.GlobalValue);
                 pegi.Nl();
             }
 
-            #endregion
         }
 
         public static Vector2 GetOffset(this Material mat, TextureValue property) => property.GetOffset(mat);
@@ -759,32 +730,33 @@ namespace QuizCanners.Utils
 
             public override string ToString() => _name;
 
-            [SerializeField] private string lastValue;
+            private int lastIndex;
 
             public float Get(Material material) => material.GetFloat(id);
 
             public void Set(Material material, int value)
             {
                 material.SetFloat(id, value);
-                
+
+                lastIndex = value;
+
                 for (int i=0; i< Keywords.Length; i++) 
                 {
-                    material.SetShaderKeyword(Keywords[i] , value == i);
+                    material.SetShaderKeyword(Keywords[i], lastIndex == i);
                 }
             }
 
-            public bool this[string key] 
+            public bool this[int key]
             {
-                get => key.Equals(lastValue);
-                set 
+                get => key == lastIndex;
+                set
                 {
-                    if (!lastValue.IsNullOrEmpty()) 
-                    {
-                        QcUnity.SetShaderKeyword(lastValue, false);
-                    }
+                    lastIndex = key;
 
-                    lastValue = key;
-                    QcUnity.SetShaderKeyword(lastValue, value);
+                    for (int i = 0; i < Keywords.Length; i++)
+                    {
+                        QcUnity.SetShaderKeyword(Keywords[i], key == i);
+                    }
                 }
             }
 
@@ -799,24 +771,29 @@ namespace QuizCanners.Utils
                 {
                     Keywords[i] = "{0}_{1}".F(_name, EnumValues[i].ToUpperInvariant());
                 }
-
             }
+
+            #region Inspector
 
             void IPEGI.Inspect()
             {
                 _name.PegiLabel().Write_ForCopy();
                 pegi.Nl();
 
-                foreach (var val in EnumValues) 
+                for ( int i=0; i<EnumValues.Length; i++) 
                 {
-                    if (this[val])
-                        "Remove {0}".F(val).PegiLabel().Click(() => this[val] = false);
+                    var val = EnumValues[i]; 
+
+                    if (lastIndex == i)
+                        "Remove {0}".F(val).PegiLabel().Click(() => this[i] = false);
                     else
-                        "Add {0}".F(val).PegiLabel().Click(()=> this[val] = true);
+                        "Add {0}".F(val).PegiLabel().Click(()=> this[i] = true);
 
                     pegi.Nl();
                 }
             }
+
+            #endregion
         }
 
         [Serializable]

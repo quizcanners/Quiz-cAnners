@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using Object = UnityEngine.Object;
-using System.Linq;
 using System.Reflection;
 using QuizCanners.Utils;
 using UnityEngine;
@@ -18,7 +16,7 @@ namespace QuizCanners.Inspect
     public static partial class pegi
     {
 
-        public static ChangesToken Edit_Property<T>(this TextLabel label, Expression<System.Func<T>> memberExpression, Object obj, int fieldWidth = -1, bool includeChildren = true)
+        public static ChangesToken Edit_Property<T>(this TextLabel label, System.Linq.Expressions.Expression<System.Func<T>> memberExpression, Object obj, int fieldWidth = -1, bool includeChildren = true)
         {
 
 #if UNITY_EDITOR
@@ -33,7 +31,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken Edit_Property<T>(Expression<Func<T>> memberExpression, Object obj, int fieldWidth = -1, bool includeChildren = true)
+        public static ChangesToken Edit_Property<T>(System.Linq.Expressions.Expression<Func<T>> memberExpression, Object obj, int fieldWidth = -1, bool includeChildren = true)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
@@ -43,7 +41,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        private static ChangesToken Edit_Property<T>(Expression<Func<T>> memberExpression, int width, Object obj, bool includeChildren)
+        private static ChangesToken Edit_Property<T>(System.Linq.Expressions.Expression<Func<T>> memberExpression, int width, Object obj, bool includeChildren)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
@@ -56,7 +54,7 @@ namespace QuizCanners.Inspect
 
         // Nested Members
 
-        public static ChangesToken Edit_Property<T>(this TextLabel label, Expression<Func<T>> memberExpression1, string path, Object obj, int fieldWidth = -1, bool includeChildren = true)
+        public static ChangesToken Edit_Property<T>(this TextLabel label, System.Linq.Expressions.Expression<Func<T>> memberExpression1, string path, Object obj, int fieldWidth = -1, bool includeChildren = true)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
@@ -72,7 +70,7 @@ namespace QuizCanners.Inspect
 
      
 
-        public static ChangesToken Edit_Property<T>( Expression<Func<T>> memberExpression1, string path, Object obj, int width = -1, bool includeChildren = false)
+        public static ChangesToken Edit_Property<T>( System.Linq.Expressions.Expression<Func<T>> memberExpression1, string path, Object obj, int width = -1, bool includeChildren = false)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
@@ -191,7 +189,7 @@ namespace QuizCanners.Inspect
 
             if (includeAllBases) {
 
-                foreach (Type type in GetBaseClassesAndInterfaces(obj.GetType())) {
+                foreach (Type type in pegi.GetBaseClassesAndInterfaces(obj.GetType())) {
 
                     field = type.GetField(fieldName, bindings);
                     if (field != null) return (T)field.GetValue(obj);
@@ -222,7 +220,7 @@ namespace QuizCanners.Inspect
 
             if (includeAllBases)
             {
-                foreach (Type type in GetBaseClassesAndInterfaces(obj.GetType()))
+                foreach (Type type in pegi.GetBaseClassesAndInterfaces(obj.GetType()))
                 {
                     field = type.GetField(fieldName, bindings);
                     if (field != null)
@@ -242,27 +240,7 @@ namespace QuizCanners.Inspect
             return false;
         }
 
-        public static IEnumerable<Type> GetBaseClassesAndInterfaces(this Type type, bool includeSelf = false)
-        {
-            List<Type> allTypes = new();
-
-            if (includeSelf) allTypes.Add(type);
-            
-            allTypes.AddRange(
-
-                (type.BaseType == typeof(object)) ? 
-                    type.GetInterfaces() :
-                     Enumerable
-                    .Repeat(type.BaseType, 1)
-                    .Concat(type.GetInterfaces())
-                    .Concat(type.BaseType.GetBaseClassesAndInterfaces())
-                    .Distinct()
-                    
-                    );
-            
-
-            return allTypes;
-        }
+  
     
     }
 

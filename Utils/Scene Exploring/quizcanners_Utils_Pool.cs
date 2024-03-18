@@ -26,8 +26,23 @@ namespace QuizCanners.Utils
             return Camera.main.IsInCameraViewArea(pos, objectSize: objectSize, maxDistance: maxDistance);
         }
 
-        public static bool TrySpawn<T>(Vector3 position) where T : Component => Singleton.Try<PoolBehaviourCore<T>>(s => s.TrySpawn(position, out var result));
+        public static bool TrySpawn<T>(Vector3 position) where T : Component
+        {
+            if (Singleton.TryGet<PoolBehaviourCore<T>>(out var s))
+            {
+                try
+                {
+                    s.TrySpawn(position, out var result);
+                } catch (Exception ex) 
+                {
+                    Debug.LogException(ex);
+                }
 
+                return true;
+            }
+
+            return false;
+        }
         public static bool TrySpawn<T>(Vector3 position, out T instance) where T : Component
         {
             T result = null;
@@ -40,7 +55,7 @@ namespace QuizCanners.Utils
         }
 
         public static bool TrySpawn<T>(Vector3 position, Action<T> onInstanciated) where T : Component
-            => Singleton.Try<PoolBehaviourCore<T>>(s => s.TrySpawn(position, onInstanciated));
+            => Singleton.Try<PoolBehaviourCore<T>>(s => s.TrySpawn(position, onInstanciated), logOnServiceMissing: false);
 
         public static bool TrySpawnIfVisible<T>(Vector3 position) where T : Component => Singleton.Try<PoolBehaviourCore<T>>(s => s.TrySpawnIfVisible(position, out var result), logOnServiceMissing: false);
 

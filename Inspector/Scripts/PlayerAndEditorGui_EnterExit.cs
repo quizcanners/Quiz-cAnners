@@ -85,8 +85,10 @@ namespace QuizCanners.Inspect
                 else
                 {
                     label.style = enterLabelStyle ?? Styles.EnterLabel;
-                    (Icon.Enter.ClickUnFocus(label.label).IgnoreChanges(LatestInteractionEvent.Enter) |
-                    label.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter)).OnChanged(() => Context.IsEnteredCurrent = StateToken.True);
+                    (
+                        Icon.Enter.ClickUnFocus(label.label).IgnoreChanges(LatestInteractionEvent.Enter)
+                        | label.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter)
+                    ).OnChanged(() => Context.IsEnteredCurrent = StateToken.True);
                 }
             }
 
