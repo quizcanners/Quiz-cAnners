@@ -15,6 +15,9 @@ namespace QuizCanners.Utils
 
             public bool CreateRequest() => _requestCreated = true;
             public bool IsRequested => _requestCreated;
+
+            public void Use() => TryUseRequest();
+            
             public bool TryUseRequest()
             {
                 var result = _requestCreated;
@@ -427,6 +430,17 @@ namespace QuizCanners.Utils
             public bool TryUpdateIfChanged(Vector3 newValue) 
             {
                 if (newValue != Current) 
+                {
+                    Update(newValue);
+                    return true;
+                }
+
+                return false;
+            }
+
+            public bool TryUpdateIfChangedBy(Vector3 newValue, float difference)
+            {
+                if (Vector3.Distance(newValue, Current) >= difference)
                 {
                     Update(newValue);
                     return true;

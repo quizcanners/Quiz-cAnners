@@ -66,6 +66,15 @@ namespace QuizCanners.Utils
             private readonly SystemTime _editorGateTime = new(initialValue: InitialValue.StartArmed);
             private int _editorFrames;
 
+            public bool TryEnterIfFramesPassed(int framesCount) 
+            {
+                if (!IsFramesPassed(framesCount))
+                    return false;
+
+                DoneThisFrame = true;
+                return true;
+            }
+
             public bool TryEnter()
             {
                 if (DoneThisFrame)
@@ -158,7 +167,7 @@ namespace QuizCanners.Utils
 
         public enum InitialValue
         {
-            Uninitialized, InitializeOnCreate, StartArmed
+            Uninitialized, StartArmed
         }
 
 
@@ -257,7 +266,6 @@ namespace QuizCanners.Utils
                 switch (initialValue) 
                 {
                     case InitialValue.StartArmed: _startArmed = true; break;
-                    case InitialValue.InitializeOnCreate: Update(); break;
                 }
             }
 

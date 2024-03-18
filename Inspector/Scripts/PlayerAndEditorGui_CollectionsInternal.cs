@@ -2,7 +2,7 @@ using QuizCanners.Migration;
 using QuizCanners.Utils;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
+//using System.Threading;
 using UnityEngine;
 
 using Enm = System.Linq.Enumerable;
@@ -19,19 +19,19 @@ namespace QuizCanners.Inspect
 
             public int Index { get; set; } = -1;
             public IList reordering;
-            public TextLabel currentListLabel = new TextLabel();
+            public TextLabel currentListLabel = new();
             public System.Array _editingArrayOrder;
-            public readonly CountlessBool selectedEls = new CountlessBool();
+            public readonly CountlessBool selectedEls = new();
             public object previouslyEntered;
 
-            private readonly Dictionary<IEnumerable, int> Indexes = new Dictionary<IEnumerable, int>();
+            private readonly Dictionary<IEnumerable, int> Indexes = new();
             private bool _searching;
             private List<int> filteredList;
             private int _sectionSizeOptimal;
             private int _count;
-            private List<int> _copiedElements = new List<int>();
+            private List<int> _copiedElements = new();
             private bool cutPaste;
-            private readonly CountlessInt SectionOptimal = new CountlessInt();
+            private readonly CountlessInt SectionOptimal = new();
             private static IList addingNewOptionsInspected;
             private string addingNewNameHolder = "Name";
             private bool exitOptionHandled;
@@ -41,7 +41,7 @@ namespace QuizCanners.Inspect
             private SearchData searchData; // IN META
             private bool _scrollDownRequested;
             private bool allowDuplicants; // IN META
-            private readonly List<System.IDisposable> _toDispose = new List<System.IDisposable>();
+            private readonly List<System.IDisposable> _toDispose = new();
 
             public void Dispose() => End();
             public void End()
@@ -144,9 +144,8 @@ namespace QuizCanners.Inspect
 
                     Index = _sectionStartIndex;
 
-                    var list = collectionReference as IList<T>;
 
-                    if (list != null)
+                    if (collectionReference is IList<T> list)
                     {
                         for (; Index < collectionReference.Count; Index++)
                         {
@@ -570,8 +569,7 @@ namespace QuizCanners.Inspect
 
                 bool inspecting = inspected != -1;
 
-                if (sd == null)
-                    sd = defaultSearchData;
+                sd ??= defaultSearchData;
 
                 if (!inspecting)
                     sd.ToggleSearch(dic, label);
@@ -1066,11 +1064,7 @@ namespace QuizCanners.Inspect
                     {
                         list.Sort((emp1, emp2) =>
                         {
-
-                            var igc1 = emp1 as IGotIndex;
-                            var igc2 = emp2 as IGotIndex;
-
-                            if (igc1 == null || igc2 == null)
+                            if (emp1 is not IGotIndex igc1 || emp2 is not IGotIndex igc2)
                                 return 0;
 
                             return (down ? 1 : -1) * (igc1.IndexForInspector - igc2.IndexForInspector);
@@ -1121,10 +1115,7 @@ namespace QuizCanners.Inspect
 
                                 if (el != null)
                                 {
-
-                                    var istd = el as ICfgCustom;
-
-                                    if (istd != null)
+                                    if (el is ICfgCustom istd)
                                     {
                                         var ret = (T)System.Activator.CreateInstance(el.GetType());
 
@@ -1246,14 +1237,13 @@ namespace QuizCanners.Inspect
                 var el = list[index];
                 var changed = ChangeTrackStart();
 
-                var pl = el as IPEGI_ListInspect;
                 var isPrevious = (listMeta != null && listMeta.previouslyInspectedElement == index)
                                  || (listMeta == null && collectionInspector.previouslyEntered != null && el == collectionInspector.previouslyEntered);
 
                 if (isPrevious)
                     SetBgColor(PreviousInspectedColor);
 
-                if (pl != null)
+                if (el is IPEGI_ListInspect pl)
                 {
                     var chBefore = GUI.changed;
 
@@ -1287,7 +1277,6 @@ namespace QuizCanners.Inspect
                     }
                     else
                     {
-
                         var uo = el as Object;
 
                         var pg = el as IPEGI;
@@ -1304,8 +1293,7 @@ namespace QuizCanners.Inspect
 
                         iind?.IndexForInspector.ToString().PegiLabel(20).Write();
 
-                        var named = el as IGotName;
-                        if (named != null)
+                        if (el is IGotName named)
                         {
                             var so = uo as ScriptableObject;
                             var n = named.NameForInspector;
@@ -1354,7 +1342,7 @@ namespace QuizCanners.Inspect
                                         clickHighlightHandled = true;
                                     }
                                     //else if (Try_NameInspect(uo))
-                                      //  isPrevious = true;
+                                    //  isPrevious = true;
                                 }
                                 else if (el.GetNameForInspector().PegiLabel(toolTip: "Inspect", width: RemainingLength(defaultButtonSize * 2 + 50)).ClickLabel())
                                 {

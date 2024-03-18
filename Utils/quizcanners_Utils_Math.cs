@@ -3,17 +3,14 @@ using QuizCanners.Migration;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.ConstrainedExecution;
 using UnityEngine;
 
 namespace QuizCanners.Utils
 {
-
     public enum ColorChanel { R = 0, G = 1, B = 2, A = 3 }
 
     [Flags]
     public enum ColorMask { R = 1, G = 2, B = 4, A = 8, Color = 7, All = 15 }
-
 
     public static partial class QcMath
     {
@@ -630,9 +627,50 @@ namespace QuizCanners.Utils
         public static bool HasFlag(this ColorMask mask, int flag) => (mask & (ColorMask)(Mathf.Pow(2, flag))) != 0;
 
         public static bool HasFlag(this ColorMask mask, ColorMask flag) => (mask & flag) != 0;
-        
+
         #endregion
-        
+
+        public static T GetRandomByWeight<T>(this List<T> sequence, Func<T, float> weightSelector)
+        {
+            if (sequence.IsNullOrEmpty())
+            {
+                var typeName = typeof(T).Name;
+                QcLog.ChillLogger.LogErrorOnce("{0}: List<{1}> is {2}".F(nameof(GetRandomByWeight), typeName, sequence == null ? "NULL" : "Empty"), key: "{0} grnd".F(typeName));
+                return default;
+            }
+
+            if (sequence.Count == 1)
+                return sequence[0];
+
+            float TotalWeight = 0;
+
+            float[] weights = new float[sequence.Count];
+
+            for(int i=0; i<sequence.Count; i++) 
+            {
+                var el = sequence[i];
+                var w = weightSelector(el);
+                weights[i] = w;
+                TotalWeight += w;
+            }
+
+            float itemWeightIndex = UnityEngine.Random.Range(0f, TotalWeight);
+
+            float currentWeightIndex = 0;
+
+            for(int i=0; i< weights.Length; i++) 
+            {
+                currentWeightIndex += weights[i];
+
+                if (currentWeightIndex >= itemWeightIndex)
+                {
+                    return sequence[i];
+                }
+            }
+
+            return sequence[^1];
+        }
+
         public static List<int> NormalizeToPercentage<T>(List<T> list, Func<T,double> getValue, float percentTrashold = 0.1f) 
         {
             List<int> resultPercentages = new(list.Count);
@@ -716,6 +754,12 @@ namespace QuizCanners.Utils
                 resultPercentages[list.Count - 1] += totalPercentages;
 
             return resultPercentages;
+        }
+
+        public static bool IsInsideBox(Vector3 point, Vector3 center, Vector3 size)
+        {
+            var localOffset = (point - center).Abs();
+            return localOffset.x < size.x && localOffset.y < size.y && localOffset.z < size.z;
         }
 
         [Serializable]

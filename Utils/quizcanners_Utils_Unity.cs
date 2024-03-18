@@ -19,7 +19,7 @@ namespace QuizCanners.Utils {
 
 #pragma warning disable IDE0019 // Use pattern matching
 
-    public static class QcUnity {
+    public static partial class QcUnity {
 
         public const string SO_CREATE_MENU = "Quiz Canners/";
 
@@ -292,40 +292,36 @@ namespace QuizCanners.Utils {
                 s_camsCulling.Clear();
             }
 
-            if (cam)
+            if (!cam)
             {
-                var camTf = cam.transform;
-
-                float distanceToCamera = Vector3.Distance(camTf.position + camTf.forward * cam.nearClipPlane, worldPosition);
-
-                if (distanceToCamera < objectSize + 10)
-                {
-                    return true;
-                }
-
-                if (maxDistance > 0 && distanceToCamera > maxDistance)
-                {
-                    return false;
-                }    
-
-                var dic = s_camsCulling.GetOrCreate(cam);
-
-                if (dic.TryGetValue(worldPosition, out var resul))
-                    return resul;
-
-                var pos = cam.WorldToViewportPoint(worldPosition);
-
-                bool isVisible = (pos.x >= -0.1f && pos.x <= 1.1f && pos.y >= -0.1f && pos.y <= 1.1f);
-                
-                dic[worldPosition] = isVisible;
-                return isVisible;
-               
-            } else 
-            {
-                QcLog.ChillLogger.LogErrorOnce(()=> "Camera is null", key: "NoCam");
+                return true;
             }
 
-            return false;
+            var camTf = cam.transform;
+
+            float distanceToCamera = Vector3.Distance(camTf.position + camTf.forward * cam.nearClipPlane, worldPosition);
+
+            if (distanceToCamera < objectSize + 10)
+            {
+                return true;
+            }
+
+            if (maxDistance > 0 && distanceToCamera > maxDistance)
+            {
+                return false;
+            }    
+
+            var dic = s_camsCulling.GetOrCreate(cam);
+
+            if (dic.TryGetValue(worldPosition, out var resul))
+                return resul;
+
+            var pos = cam.WorldToViewportPoint(worldPosition);
+
+            bool isVisible = (pos.x >= -0.1f && pos.x <= 1.1f && pos.y >= -0.1f && pos.y <= 1.1f);
+                
+            dic[worldPosition] = isVisible;
+            return isVisible;
         }
 
         #endregion
@@ -1251,7 +1247,7 @@ namespace QuizCanners.Utils {
             return obj;
         }
 
-        public static List<T> FindAssets<T>(string name, string path = null) where T : Object {
+        public static List<T> FindAssetsByName<T>(string name, string path = null) where T : Object {
 
             List<T> assets = new();
 
@@ -2594,7 +2590,15 @@ return false;
       
         }
 
-#endregion
+        public static void Clear(this RenderTexture renderTexture, Color col)
+        {
+            RenderTexture rt = RenderTexture.active;
+            RenderTexture.active = renderTexture;
+            GL.Clear(true, true, col);
+            RenderTexture.active = rt;
+        }
+
+        #endregion
 
     }
 

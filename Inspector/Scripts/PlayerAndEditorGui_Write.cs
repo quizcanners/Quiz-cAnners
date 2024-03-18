@@ -378,7 +378,16 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static TextToken Draw(Texture img, int width = defaultButtonSize, bool alphaBlend = true)
+
+        public static TextToken Draw(this TextLabel text, Texture image, bool alphaBlend = false) 
+        {
+            text.Write().Nl();
+            var ret = Draw(image, width: Screen.width, alphaBlend: alphaBlend);
+            Nl();
+            return ret;
+        }
+
+        public static TextToken Draw(Texture img, int width = defaultButtonSize, bool alphaBlend = false)
         {
             if (!img)
                 return TEXT_TOK;

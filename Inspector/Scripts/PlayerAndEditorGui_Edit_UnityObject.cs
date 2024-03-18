@@ -98,6 +98,19 @@ namespace QuizCanners.Inspect
 #endif
             ChangesToken.False;
 
+        public static ChangesToken Edit_IfNull<T>(this TextLabel label, ref T so) where T : ScriptableObject
+        {
+            if (so)
+                return ChangesToken.False;
+
+            label.FallbackWidthFraction = 0.33f;
+
+            label.Write();
+            var res = Edit(ref so); 
+
+            return res;
+        }
+
         public static ChangesToken Edit_IfNull<T>(this TextLabel label, ref T component, GameObject parent, bool renameOnAttach = false) where T : Component
         {
             if (component)
@@ -243,7 +256,8 @@ namespace QuizCanners.Inspect
 #endif
                 ChangesToken.False;
 
-        public static ChangesToken Edit_Enter_Inspect<T>(this TextLabel label, ref T obj, List<T> selectFrom = null, bool showLabelIfEntered = true) where T : Object
+
+        public static ChangesToken Select_Enter_Inspect<T>(this TextLabel label, ref T obj, bool showLabelIfEntered = true) where T : Object
         {
             using (Context.IncrementDisposible(out bool canSkip))
             {
@@ -255,11 +269,7 @@ namespace QuizCanners.Inspect
                 if (!obj)
                 {
                     Context.Internal_exitOptionOnly(label, showLabelIfTrue: showLabelIfEntered);
-
-                    if (!selectFrom.IsNullOrEmpty())
-                        label.Select_or_edit(ref obj, selectFrom);
-                    else
-                        label.Edit(ref obj);
+                    SelectInAssets(ref obj);
                 }
                 else
                 {
@@ -282,6 +292,55 @@ namespace QuizCanners.Inspect
                         }
                         else
                         {
+                            SelectInAssets(ref obj);
+                        }
+                    }
+
+                    if (!Context.IsEnteredCurrent && Icon.Clear.ClickConfirm(confirmationTag: "Del " + label + obj.GetHashCode(), Msg.MakeElementNull.GetText()))
+                        obj = null;
+                }
+                return changed;
+            }
+        }
+
+        public static ChangesToken Edit_Enter_Inspect<T>(this TextLabel label, ref T obj, List<T> selectFrom = null, bool showLabelIfEntered = true) where T : Object
+        {
+            using (Context.IncrementDisposible(out bool canSkip))
+            {
+                if (canSkip)
+                    return ChangesToken.False;
+
+                var changed = ChangeTrackStart();
+
+                if (!obj)
+                {
+                    Context.Internal_exitOptionOnly(label, showLabelIfTrue: showLabelIfEntered);
+
+                    SelectOrEdit(ref obj);
+                }
+                else
+                {
+                    var lst = obj as IPEGI_ListInspect;
+
+                    if (lst != null)
+                    {
+                        Context.Internal_Enter_Inspect_AsList(lst, label.label);
+                    }
+                    else
+                    {
+                        if (Context.Internal_isEntered(label, showLabelIfEntered))
+                        {
+                            Nl();
+                            var pgi = QcUnity.TryGetInterfaceFrom<IPEGI>(obj);
+                            if (pgi != null)
+                                pgi.Nested_Inspect();
+                            else
+                                TryDefaultInspect(obj as Object);
+                        }
+                        else
+                        {
+
+                            SelectOrEdit(ref obj);
                             ClickHighlight(obj);
                         }
                     }
@@ -289,6 +348,15 @@ namespace QuizCanners.Inspect
                     if (!Context.IsEnteredCurrent && Icon.Clear.ClickConfirm(confirmationTag: "Del " + label + obj.GetHashCode(), Msg.MakeElementNull.GetText()))
                         obj = null;
                 }
+
+                void SelectOrEdit(ref T obj) 
+                {
+                    if (!selectFrom.IsNullOrEmpty())
+                        Select_or_edit(ref obj, selectFrom);
+                    else
+                        Edit(ref obj);
+                }
+
                 return changed;
             }
         }

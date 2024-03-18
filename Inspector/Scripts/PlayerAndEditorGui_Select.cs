@@ -287,6 +287,32 @@ namespace QuizCanners.Inspect
 
         #region UnityObject
 
+        private static readonly Dictionary<System.Type, List<Object>> s_assets = new();
+
+        public static ChangesToken SelectInAssets<T>(ref T obj) where T : Object
+        {
+            if (!s_assets.TryGetValue(typeof(T), out var objects)) 
+            {
+                objects = new List<Object>(QcUnity.FindAssetsByType<T>());
+                s_assets[typeof(T)] = objects;
+            }
+
+            Object o = obj;
+
+            var changed = ChangeTrackStart();
+
+            if (Select(ref o, objects))
+                obj = o as T;
+
+            if (Icon.Refresh.Click("Refresh List"))
+                s_assets.Remove(typeof(T));
+
+
+            ClickHighlight(o);
+
+            return changed;
+        }
+
         public static ChangesToken Select(ref SortingLayer sortingLayer)
         {
             var indexes = new List<int>(SortingLayer.layers.Length + 1);
@@ -312,14 +338,14 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        private static readonly Dictionary<System.Type, List<Object>> objectsInScene = new Dictionary<System.Type, List<Object>>();
+        private static readonly Dictionary<System.Type, List<Object>> s_objectsInScene = new();
 
         public static ChangesToken SelectInScene<T>(this TextLabel label, ref T obj) where T : Object
         {
-            if (!objectsInScene.TryGetValue(typeof(T), out List<Object> objects))
+            if (!s_objectsInScene.TryGetValue(typeof(T), out List<Object> objects))
             {
                 objects = new List<Object>(Object.FindObjectsOfType<T>());
-                objectsInScene[typeof(T)] = objects;
+                s_objectsInScene[typeof(T)] = objects;
             }
 
             Object o = obj;
@@ -332,7 +358,7 @@ namespace QuizCanners.Inspect
             ClickHighlight(o);
 
             if (Icon.Refresh.Click("Refresh List"))
-                objectsInScene.Remove(typeof(T)); 
+                s_objectsInScene.Remove(typeof(T)); 
 
             return changed;
         }

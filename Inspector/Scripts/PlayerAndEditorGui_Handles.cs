@@ -281,6 +281,21 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
+            public static ChangesToken BoxBoundsHandle(Transform transfrom, ref Vector3 center, ref Vector3 size, Color color)
+            {
+                var bnds = new Bounds(transfrom.position + center, size);
+
+                if (BoxBoundsHandle(ref bnds, color))
+                {
+                    center = bnds.center - transfrom.position;
+                    size = bnds.size;
+
+                    return ChangesToken.True;
+                }
+
+                return ChangesToken.False;
+            }
+
 #if UNITY_EDITOR
             private static readonly BoxBoundsHandle m_BoundsHandle = new();
 

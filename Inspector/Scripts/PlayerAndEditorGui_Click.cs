@@ -248,6 +248,20 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
         
+        public static ChangesToken ClickEnter(this TextLabel label, ref int edited, int ind) 
+        {
+            if (!label.GotStyle)
+                label.style = Styles.EnterLabel;
+
+            if (Icon.Enter.Click() | label.ClickLabel())
+            {
+                edited = ind;
+                return ChangesToken.True;
+            }
+
+            return ChangesToken.False;
+        }
+
         public static ChangesToken ClickLabel(this TextLabel label)
         {
             if (label.GotToolTip == false)

@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using QuizCanners.Utils;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -461,7 +460,7 @@ namespace QuizCanners.Inspect
 
             if ("Add {0}".F(typeof(T).ToPegiStringType()).PegiLabel().Click())
             {
-                list.Add(list.Count == 0 ? defaultValue : list.Last());
+                list.Add(list.Count == 0 ? defaultValue : list[^1]);
             }
 
             return changed;
@@ -1403,7 +1402,7 @@ namespace QuizCanners.Inspect
         
         private static ChangesToken Edit_Array<T>(ref T[] array, ref int inspected, out T added, CollectionInspectorMeta metaDatas = null)
         {
-            Nl();
+           // Nl();
 
             var changed = ChangeTrackStart();
 
@@ -1452,8 +1451,7 @@ namespace QuizCanners.Inspect
         
         #region Searching
 
-        public static bool SearchMatch_ObjectList(IEnumerable list, string searchText) => list.Cast<object>().Any(e => Try_SearchMatch_Obj(e, searchText));
-
+    
         public static bool Try_SearchMatch_Obj(object obj, string searchText) => SearchMatch_Obj_Internal(obj, new[] { searchText });
 
         private static bool SearchMatch_Obj_Internal(this object obj, string[] text, int[] indexes = null)
@@ -1535,8 +1533,21 @@ namespace QuizCanners.Inspect
             private static bool Internal_ByGotName(IGotName gotName, string[] text, ref bool[] matched)
                 => Internal_String(gotName?.NameForInspector, text, ref matched);
 
-            public static bool Internal_GotIndex(IGotIndex gotIndex, int[] indexes) => gotIndex != null && indexes.Any(t => gotIndex.IndexForInspector == t);
+            public static bool Internal_GotIndex(IGotIndex gotIndex, int[] indexes)
+            {
+                if (gotIndex == null)
+                    return false;
 
+                var target = gotIndex.IndexForInspector;
+
+                foreach (var i in indexes) 
+                {
+                    if (i == target)
+                        return true;
+                }
+
+                return false;
+            }
             public static bool Internal_String(string label, string[] text, ref bool[] matched)
             {
 

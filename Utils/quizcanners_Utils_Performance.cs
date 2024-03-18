@@ -4,7 +4,9 @@ using UnityEngine;
 
 namespace QuizCanners.Utils
 {
-    public static class TurnTable 
+    
+
+    public static class PerformanceTurnTable 
     {
         private static float longestWaitLastFrame = 0;
         private static float longestWaitThisFrame = 0;
