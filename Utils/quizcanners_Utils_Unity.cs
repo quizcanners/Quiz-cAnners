@@ -2587,7 +2587,6 @@ return false;
         public static bool GetMask(this Camera cam, int layerIndex)
         {
               return  (cam.cullingMask & (1 << layerIndex))!= 0;
-      
         }
 
         public static void Clear(this RenderTexture renderTexture, Color col)
@@ -2600,6 +2599,35 @@ return false;
 
         #endregion
 
+        public static Vector3 GetOverlapAreaVector(this Bounds volumeBounds, Bounds elementBounds)
+        {
+            Vector3 elementMin = elementBounds.min;
+            Vector3 elementMax = elementBounds.max;
+
+            Vector3 volumeMin = volumeBounds.min;
+            Vector3 volumeMax = volumeBounds.max;
+
+            Vector3 overlapMin = Vector3.Max(elementMin, volumeMin);
+            Vector3 overlapMax = Vector3.Min(elementMax, volumeMax);
+
+            return Vector3.Max(Vector3.zero, overlapMax - overlapMin);
+        }
+
+        public static Vector3 GetOverlapVector(this Bounds volumeBounds, Vector3 center, Vector3 size)
+        {
+            var halfSize = size * 0.5f;
+
+            Vector3 elementMin = center - halfSize;
+            Vector3 elementMax = center + halfSize;
+
+            Vector3 volumeMin = volumeBounds.min;
+            Vector3 volumeMax = volumeBounds.max;
+
+            Vector3 overlapMin = Vector3.Max(elementMin, volumeMin);
+            Vector3 overlapMax = Vector3.Min(elementMax, volumeMax);
+
+            return Vector3.Max(Vector3.zero, overlapMax - overlapMin);
+        }
     }
 
 #pragma warning restore IDE0019 // Use pattern matching

@@ -12,369 +12,396 @@ namespace QuizCanners.Utils
 
 #pragma warning disable IDE0034 // Simplify 'default' expression
 
-    public abstract class SmartId
+    public static class SmartId
     {
-        public abstract bool Equals(SmartId other);
-    }
 
-    public abstract class SmartStringIdGeneric<TValue> : SmartId, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable where TValue : IGotName//, new()
-    {
-        [SerializeField] private string _id;
-
-        public virtual string Id 
+        public static bool Contains<T,TValue>(this List<T> ids, TValue el) 
+            where T: StringGeneric<TValue>
+            where TValue : IGotName
         {
-            get => _id;
-            set => _id = value;
-        }
-
-        protected abstract Dictionary<string, TValue> GetEnities();
-
-        public virtual bool TryGetEntity(out TValue entity)
-        {
-            if (Id != null)
+            foreach (var id in ids) 
             {
-                var prots = GetEnities();
-
-                if (prots != null)
-                    return prots.TryGetValue(Id, out entity) && entity != null;
+                if (id.Id.Equals(el.NameForInspector))
+                    return true;
             }
 
-            entity = default(TValue);
             return false;
         }
 
-        public virtual TValue GetEntity()
+        public abstract class Base
         {
-            var prots = GetEnities();
-
-            if (prots != null)
-                return prots.TryGet(Id);
-
-            return default(TValue);
+            public abstract bool Equals(Base other);
         }
 
-        public bool Equals(SmartStringIdGeneric<TValue> other)
+        public abstract class StringGeneric<TValue> : Base, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable where TValue : IGotName//, new()
         {
-            if (other == null)
-                return false;
+            [SerializeField] private string _id;
 
-            if (Id.IsNullOrEmpty())
-                return false;
-
-            return Id.Equals(other.Id);
-        }
-
-        public override bool Equals(SmartId other) 
-        {
-            if (other == null)
-                return false;
-
-            if (Id.IsNullOrEmpty())
-                return false;
-
-            if (GetType() != other.GetType())
-                return false;
-            
-            var asId = other as SmartStringIdGeneric<TValue>;
-
-            return Id.Equals(asId.Id);
-        }
-
-        public override bool Equals(object obj) => Equals(obj as SmartId);
-        public override int GetHashCode() => HashCode.Combine(Id);
-        
-        public void SetEntityId(SmartStringIdGeneric<TValue> value) => Id = value.Id;
-        public void SetEntity(TValue value) => Id = value.NameForInspector;
-        
-        #region Encode & Decode
-        public CfgEncoder Encode() => new CfgEncoder().Add_String("id", Id);
-
-        public void DecodeTag(string key, CfgData data)
-        {
-            switch (key)
+            public virtual string Id
             {
-                case "id": Id = data.ToString(); break;
+                get => _id;
+                set => _id = value;
             }
-        }
 
-        #endregion
+            protected abstract Dictionary<string, TValue> GetEnities();
 
-        #region Inspector
-
-        //  [NonSerialized] private int _inspectedStuff = -1;
-        //     [NonSerialized] private int _inspectedElement = -1;
-
-        public virtual void Inspect()
-        {
-            InspectSelectPart().Nl();
-         
-            "REFERENCED OBJECT".PegiLabel(style: pegi.Styles.ListLabel).Nl();
-
-            TValue val = GetEntity();
-
-
-            if (val != null)
-                pegi.Try_Nested_Inspect(val).Nl();
-            else
-                ("ID {0} not found in Prototypes".F(Id)).PegiLabel().Nl();
-
-        }
-
-        public pegi.ChangesToken InspectSelectPart()
-        {
-            var changes = pegi.ChangeTrackStart();
-
-            var prots = GetEnities();
-
-            if (prots == null)
-                "NO PROTS".PegiLabel().Write();
-
-            var id = Id;
-            pegi.Select(ref id, prots).OnChanged(()=> Id = id);
-
-            return changes;
-        }
-
-        public virtual void InspectInList(ref int edited, int ind)
-        {
-            var th = this;
-            pegi.CopyPaste.InspectOptionsFor(ref th);
-
-            InspectSelectPart();
-
-            if (this.Click_Enter_Attention())
-                edited = ind;
-
-        }
-
-        public override string ToString()
-        {
-            TValue ent = GetEntity();
-            return ent != null ? "Id of {0}".F(ent.GetNameForInspector()) : "Target (Id: {0}) NOT FOUND".F(Id);
-        }
-
-        public virtual string NeedAttention()
-        {
-            if (GetEnities() == null)
-                return "No Entities";
-
-            if (GetEntity() == null)
-                return "No Entity for {0}".F(Id);
-
-            return null;
-        }
-
-        public virtual IEnumerator SearchKeywordsEnumerator()
-        {
-            yield return Id;
-
-            if (TryGetEntity(out var val)) 
+            public virtual bool TryGetEntity(out TValue entity)
             {
-                yield return val;   
-            }
-        }
+                if (Id != null)
+                {
+                    var prots = GetEnities();
 
-  
+                    if (prots != null)
+                        return prots.TryGetValue(Id, out entity) && entity != null;
+                }
 
-        #endregion
-    }
-
-    public abstract class SmartStringIdGeneric_Cached<TValue> : SmartStringIdGeneric<TValue> where TValue : IGotName
-    {
-        private bool cached;
-        private TValue cachedValue;
-
-        protected virtual bool IsDirty 
-        {
-            get => false;
-            set  { }
-        }
-
-        public override string Id
-        {
-            get => base.Id;
-            set {
-                base.Id = value;
-                cached = false;
-            }
-        }
-
-        public override bool TryGetEntity(out TValue entity)
-        {
-            if (cached && !IsDirty)
-            {
-                entity = cachedValue;
-                return entity != null;
+                entity = default(TValue);
+                return false;
             }
 
-            cached = base.TryGetEntity(out entity);
-            cachedValue = entity;
-            IsDirty = false;
-
-            return entity != null;
-           
-        }
-
-        public override TValue GetEntity()
-        {
-            if (cached)
-            {
-                return cachedValue;
-            }
-
-            cached = base.TryGetEntity(out cachedValue);
-
-            return cachedValue;
-        }
-    }
-
-    public abstract class SmartIntIdGeneric<TValue> : SmartId, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable
-    {
-        public int Id = -1;
-
-        public bool IsValid => Id >= 0;
-
-        protected abstract List<TValue> GetEnities();
-
-        public virtual bool TryGetEntity(out TValue entity)
-        {
-            if (Id != -1)
+            public virtual TValue GetEntity()
             {
                 var prots = GetEnities();
 
                 if (prots != null)
+                    return prots.GetValueOrDefault(Id);
+
+                return default(TValue);
+            }
+
+            public bool Equals(StringGeneric<TValue> other)
+            {
+                if (other == null)
+                    return false;
+
+                if (Id.IsNullOrEmpty())
+                    return false;
+
+                return Id.Equals(other.Id);
+            }
+
+            public override bool Equals(Base other)
+            {
+                if (other == null)
+                    return false;
+
+                if (Id.IsNullOrEmpty())
+                    return false;
+
+                if (GetType() != other.GetType())
+                    return false;
+
+                var asId = other as StringGeneric<TValue>;
+
+                return Id.Equals(asId.Id);
+            }
+
+            public override bool Equals(object obj) => Equals(obj as Base);
+            public override int GetHashCode() => HashCode.Combine(Id);
+
+            public void SetEntityId(StringGeneric<TValue> value) => Id = value.Id;
+            public void SetEntity(TValue value) => Id = value.NameForInspector;
+
+            #region Encode & Decode
+            public CfgEncoder Encode() => new CfgEncoder().Add_String("id", Id);
+
+            public void DecodeTag(string key, CfgData data)
+            {
+                switch (key)
                 {
-                    entity = prots.TryGet(Id);
-                    return entity != null;
+                    case "id": Id = data.ToString(); break;
                 }
             }
 
-            entity = default(TValue);
-            return false;
-        }
+            #endregion
 
-        public virtual TValue GetEntity()
-        {
-            var prots = GetEnities();
+            #region Inspector
 
-            if (prots != null)
-                return prots.TryGet(Id);
+            //  [NonSerialized] private int _inspectedStuff = -1;
+            //     [NonSerialized] private int _inspectedElement = -1;
 
-            return default(TValue);
-        }
-
-        public void SetEntity(SmartIntIdGeneric<TValue> value) => Id = value.Id;
-
-        public virtual void SetEntity(TValue value) 
-        {
-            if (value == null)
+            public virtual void Inspect()
             {
-                Id = -1;
-            } else 
+                InspectSelectPart().Nl();
+
+                "REFERENCED OBJECT".PegiLabel(style: pegi.Styles.ListLabel).Nl();
+
+                TValue val = GetEntity();
+
+
+                if (val != null)
+                    pegi.Try_Nested_Inspect(val).Nl();
+                else
+                    ("ID {0} not found in Prototypes".F(Id)).PegiLabel().Nl();
+
+            }
+
+            public pegi.ChangesToken InspectSelectPart()
             {
-                Id = GetEnities().IndexOf(value);
+                var changes = pegi.ChangeTrackStart();
+
+                var prots = GetEnities();
+
+                if (prots == null)
+                    "NO PROTS".PegiLabel().Write();
+
+                var id = Id;
+                pegi.Select(ref id, prots).OnChanged(() => Id = id);
+
+                return changes;
+            }
+
+            public virtual void InspectInList(ref int edited, int ind)
+            {
+                var th = this;
+                pegi.CopyPaste.InspectOptionsFor(ref th);
+
+                InspectSelectPart();
+
+                if (this.Click_Enter_Attention())
+                    edited = ind;
+
+            }
+
+            public override string ToString()
+            {
+                TValue ent = GetEntity();
+                return ent != null ? "Id of {0}".F(ent.GetNameForInspector()) : "Target (Id: {0}) NOT FOUND".F(Id);
+            }
+
+            public virtual string NeedAttention()
+            {
+                if (GetEnities() == null)
+                    return "No Entities";
+
+                if (GetEntity() == null)
+                    return "No Entity for {0}".F(Id);
+
+                return null;
+            }
+
+            public virtual IEnumerator SearchKeywordsEnumerator()
+            {
+                yield return Id;
+
+                if (TryGetEntity(out var val))
+                {
+                    yield return val;
+                }
+            }
+
+
+
+            #endregion
+
+            public StringGeneric() { }
+
+            public StringGeneric(TValue val)
+            {
+                SetEntity(val);
             }
         }
 
-        public override bool Equals(object obj) => Equals(obj as SmartId);
-
-        public override int GetHashCode() => Id + typeof(TValue).GetHashCode();
-
-        public override bool Equals(SmartId other)
+        public abstract class StringGeneric_Cached<TValue> : StringGeneric<TValue> where TValue : IGotName
         {
-            if (other == null)
+            private bool cached;
+            private TValue cachedValue;
+
+            protected virtual bool IsDirty
+            {
+                get => false;
+                set { }
+            }
+
+            public override string Id
+            {
+                get => base.Id;
+                set
+                {
+                    base.Id = value;
+                    cached = false;
+                }
+            }
+
+            public override bool TryGetEntity(out TValue entity)
+            {
+                if (cached && !IsDirty)
+                {
+                    entity = cachedValue;
+                    return entity != null;
+                }
+
+                cached = base.TryGetEntity(out entity);
+                cachedValue = entity;
+                IsDirty = false;
+
+                return entity != null;
+
+            }
+
+            public override TValue GetEntity()
+            {
+                if (cached)
+                {
+                    return cachedValue;
+                }
+
+                cached = base.TryGetEntity(out cachedValue);
+
+                return cachedValue;
+            }
+        }
+
+        public abstract class IntGeneric<TValue> : Base, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable
+        {
+            public int Id = -1;
+
+            public bool IsValid => Id >= 0;
+
+            protected abstract List<TValue> GetEnities();
+
+            public virtual bool TryGetEntity(out TValue entity)
+            {
+                if (Id != -1)
+                {
+                    var prots = GetEnities();
+
+                    if (prots != null)
+                    {
+                        entity = prots.TryGet(Id);
+                        return entity != null;
+                    }
+                }
+
+                entity = default(TValue);
                 return false;
-
-            if (GetType() != other.GetType())
-                return false;
-
-            var asId = other as SmartIntIdGeneric<TValue>;
-
-            return Id.Equals(asId.Id);
-        }
-
-        #region Encode & Decode
-        public CfgEncoder Encode() => new CfgEncoder().Add("iid", Id);
-
-        public void DecodeTag(string key, CfgData data)
-        {
-            switch (key)
-            {
-                case "iid": Id = data.ToInt(); break;
             }
-        }
 
-        #endregion
-
-        #region Inspector
-
-        public virtual void Inspect()
-        {
-            InspectSelectPart().Nl();
-
-            "REFERENCED OBJECT".PegiLabel(style: pegi.Styles.ListLabel).Nl();
-
-            TValue val = GetEntity();
-
-
-            if (val != null)
-                pegi.Try_Nested_Inspect(val).Nl();
-            else
-                ("ID {0} not found in Prototypes".F(Id)).PegiLabel().Nl();
-        }
-
-        public pegi.ChangesToken InspectSelectPart() 
-        {
-            var changes = pegi.ChangeTrackStart();
-
-            var prots = GetEnities();
-
-            if (prots == null)
-                "NO PROTS".PegiLabel().Write();
-            
-            pegi.Select_Index(ref Id, prots);
-
-            return changes;
-        }
-
-        public virtual void InspectInList(ref int edited, int ind)
-        {
-            var th = this;
-            pegi.CopyPaste.InspectOptionsFor(ref th);
-
-            InspectSelectPart();
-
-            if (this.Click_Enter_Attention())
-                edited = ind;
-        }
-
-        public override string ToString()
-        {
-            TValue ent = GetEntity();
-            return ent != null ? "Id of {0}".F(ent.GetNameForInspector()) : "Target (Id: {0}) NOT FOUND".F(Id);
-        }
-
-        public virtual string NeedAttention()
-        {
-            if (GetEnities() == null)
-                return "No Entities";
-
-            if (GetEntity() == null)
-                return "No Entity for {0}".F(Id);
-
-            return null;
-        }
-
-        public virtual IEnumerator SearchKeywordsEnumerator()
-        {
-            yield return Id;
-
-            if (TryGetEntity(out var val))
+            public virtual TValue GetEntity()
             {
-                yield return val;
+                var prots = GetEnities();
+
+                if (prots != null)
+                    return prots.TryGet(Id);
+
+                return default(TValue);
             }
+
+            public void SetEntity(IntGeneric<TValue> value) => Id = value.Id;
+
+            public virtual void SetEntity(TValue value)
+            {
+                if (value == null)
+                {
+                    Id = -1;
+                }
+                else
+                {
+                    Id = GetEnities().IndexOf(value);
+                }
+            }
+
+            public override bool Equals(object obj) => Equals(obj as Base);
+
+            public override int GetHashCode() => Id + typeof(TValue).GetHashCode();
+
+            public override bool Equals(Base other)
+            {
+                if (other == null)
+                    return false;
+
+                if (GetType() != other.GetType())
+                    return false;
+
+                var asId = other as SmartId.IntGeneric<TValue>;
+
+                return Id.Equals(asId.Id);
+            }
+
+            #region Encode & Decode
+            public CfgEncoder Encode() => new CfgEncoder().Add("iid", Id);
+
+            public void DecodeTag(string key, CfgData data)
+            {
+                switch (key)
+                {
+                    case "iid": Id = data.ToInt(); break;
+                }
+            }
+
+            #endregion
+
+            #region Inspector
+
+            public virtual void Inspect()
+            {
+                InspectSelectPart().Nl();
+
+                "REFERENCED OBJECT".PegiLabel(style: pegi.Styles.ListLabel).Nl();
+
+                TValue val = GetEntity();
+
+
+                if (val != null)
+                    pegi.Try_Nested_Inspect(val).Nl();
+                else
+                    ("ID {0} not found in Prototypes".F(Id)).PegiLabel().Nl();
+            }
+
+            public pegi.ChangesToken InspectSelectPart()
+            {
+                var changes = pegi.ChangeTrackStart();
+
+                var prots = GetEnities();
+
+                if (prots == null)
+                    "NO PROTS".PegiLabel().Write();
+
+                pegi.Select_Index(ref Id, prots);
+
+                return changes;
+            }
+
+            public virtual void InspectInList(ref int edited, int ind)
+            {
+                var th = this;
+                pegi.CopyPaste.InspectOptionsFor(ref th);
+
+                InspectSelectPart();
+
+                if (this.Click_Enter_Attention())
+                    edited = ind;
+            }
+
+            public override string ToString()
+            {
+                TValue ent = GetEntity();
+                return ent != null ? "Id of {0}".F(ent.GetNameForInspector()) : "Target (Id: {0}) NOT FOUND".F(Id);
+            }
+
+            public virtual string NeedAttention()
+            {
+                if (GetEnities() == null)
+                    return "No Entities";
+
+                if (GetEntity() == null)
+                    return "No Entity for {0}".F(Id);
+
+                return null;
+            }
+
+            public virtual IEnumerator SearchKeywordsEnumerator()
+            {
+                yield return Id;
+
+                if (TryGetEntity(out var val))
+                {
+                    yield return val;
+                }
+            }
+
+            #endregion
         }
 
-        #endregion
     }
 }

@@ -221,7 +221,7 @@ namespace QuizCanners.Utils
                 return l;
             }
 
-            public static object Get(Type type) => _services.TryGet(type);
+            public static object Get(Type type) => _services.GetValueOrDefault(type);
 
             public static void TryRemove(object obj) => TryRemove(obj, obj.GetType());
 

@@ -878,16 +878,22 @@ namespace QuizCanners.Inspect
                 if (obj.ToPegiStringInterfacePart(out tmp))
                     return tmp;
 
-                string typeName = obj.ToString(); // QcSharp.AddSpacesToSentence(obj.ToString(), preserveAcronyms: true);
-
-                var cnt = obj as IGotCount;
-
-                if (cnt != null) 
+                try
                 {
-                    typeName += " [{0}]".F(cnt.GetCount());
-                }
+                    string typeName = obj.ToString(); // QcSharp.AddSpacesToSentence(obj.ToString(), preserveAcronyms: true);
 
-                return typeName;
+                    var cnt = obj as IGotCount;
+
+                    if (cnt != null)
+                    {
+                        typeName += " [{0}]".F(cnt.GetCount());
+                    }
+
+                    return typeName;
+                } catch (Exception ex) 
+                {
+                    return "Error Getting name. " + ex.ToString();
+                }
             }
             /*if (type == typeof(double))
             {

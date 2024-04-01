@@ -60,7 +60,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken SelectPow2(ref int current, int min, int max)
         {
-            List<int> tmp = new List<int>(4);
+            List<int> tmp = new(4);
             min = Mathf.NextPowerOfTwo(min);
 
             while (min <= max)
@@ -414,8 +414,7 @@ namespace QuizCanners.Inspect
 
             CheckLine();
 
-            if (lst == null)
-                lst = new List<T>();
+            lst ??= new List<T>();
 
             var names = new List<string>(lst.Count + 1);
             var indexes = new List<int>(lst.Count + 1);
@@ -740,6 +739,8 @@ namespace QuizCanners.Inspect
         public static ChangesToken Select<TKey, TValue>(ref TValue val, Dictionary<TKey, TValue> dic, bool showIndex = false, bool stripSlashes = false, bool allowInsert = true)
             => Select(ref val, new List<TValue>(dic.Values), showIndex, stripSlashes, allowInsert);
 
+
+
         public static ChangesToken Select(ref int current, Dictionary<int, string> from)
         {
 #if UNITY_EDITOR
@@ -801,6 +802,12 @@ namespace QuizCanners.Inspect
         {
             Write(text);
             return Select(ref key, from);
+        }
+
+        public static ChangesToken Select<TKey, TValue>(this TextLabel text, ref TValue value, Dictionary<TKey, TValue> from)
+        {
+            Write(text);
+            return Select(ref value, from);
         }
 
         public static ChangesToken Select<TKey, TValue>(ref TKey key, Dictionary<TKey, TValue> from)

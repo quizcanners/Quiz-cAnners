@@ -27,7 +27,7 @@ namespace QuizCanners.Utils
         {
             Clear();
 
-            if (keys != null)
+            if (keys != null && values != null)
             {
                 if (keys.Count != values.Count)
                 {
@@ -65,7 +65,7 @@ namespace QuizCanners.Utils
             CollectionMeta.Edit_Dictionary(this).Nl();
         }
 
-        public override string ToString() => QcSharp.AddSpacesToSentence(GetType().ToPegiStringType());
+        public override string ToString() => "{0} [{1}]".F( QcSharp.AddSpacesToSentence(GetType().ToPegiStringType()), Count);
         #endregion
     }
 
@@ -82,7 +82,7 @@ namespace QuizCanners.Utils
         {
             string name = key.ToString().SimplifyTypeName();
 
-            var value = this.TryGet(key);
+            var value = this.GetValueOrDefault(key);
 
             if (value == null)
             {
@@ -113,7 +113,7 @@ namespace QuizCanners.Utils
 
         protected virtual void InspectElement(TKey key)
         {
-            TValue element = this.TryGet(key);
+            TValue element = this.GetValueOrDefault(key);
 
             if (element == null)
             {
