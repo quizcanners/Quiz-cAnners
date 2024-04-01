@@ -352,7 +352,7 @@ namespace QuizCanners.Migration
         {
             if (tagAsTypeIndex == CfgEncoder.NullTag) return default;
 
-            var type = tps.TaggedTypes.TryGet(tagAsTypeIndex);
+            var type = tps.TaggedTypes.GetValueOrDefault(tagAsTypeIndex);
 
             if (type != null)
                 return Decode<T>(type);
@@ -381,7 +381,7 @@ namespace QuizCanners.Migration
 
             var cody = new CfgDecoder(_value);
 
-            var type = typeList.TaggedTypes.TryGet(cody.GetNextTag());
+            var type = typeList.TaggedTypes.GetValueOrDefault(cody.GetNextTag());
 
             if (type != null)
                 val = cody.GetData().Decode<T>(type);

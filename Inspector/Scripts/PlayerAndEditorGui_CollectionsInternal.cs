@@ -368,7 +368,7 @@ namespace QuizCanners.Inspect
                                     tagTypes.DisplayNames[i].PegiLabel().Write();
                                     if (Icon.Create.ClickUnFocus().Nl())
                                     {
-                                        added = (T)System.Activator.CreateInstance(tagTypes.TaggedTypes.TryGet(k[i]));
+                                        added = (T)System.Activator.CreateInstance(tagTypes.TaggedTypes.GetValueOrDefault(k[i]));
                                         QcSharp.AddWithUniqueNameAndIndex(lst, added, addingNewNameHolder);
                                         SkrollToBottom();
                                     }
@@ -431,7 +431,7 @@ namespace QuizCanners.Inspect
                             if (Icon.Create.ClickUnFocus().Nl())
                             {
                                 changed = true;
-                                added = (T)System.Activator.CreateInstance(types.TaggedTypes.TryGet(k[i]));
+                                added = (T)System.Activator.CreateInstance(types.TaggedTypes.GetValueOrDefault(k[i]));
                                 QcSharp.AddWithUniqueNameAndIndex(lst, added, addingNewNameHolder);
                                 SkrollToBottom();
                             }

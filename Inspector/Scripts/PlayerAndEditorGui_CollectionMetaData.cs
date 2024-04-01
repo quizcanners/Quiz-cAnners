@@ -7,7 +7,9 @@ using UnityEngine;
 namespace QuizCanners.Inspect
 {
 
-    public static partial class pegi 
+#pragma warning disable IDE1006 // Naming Styles
+    public static partial class pegi
+#pragma warning restore IDE1006 // Naming Styles
     {
         [System.Flags]
         internal enum CollectionInspectParams

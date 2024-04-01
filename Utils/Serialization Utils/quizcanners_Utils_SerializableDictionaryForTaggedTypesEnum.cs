@@ -98,7 +98,7 @@ namespace QuizCanners.Utils
                     {
                         string key = keys[i];
                         SerializationMode mode = modes.TryGet(i, defaultValue: SerializationMode.Json);
-                        Type type = types.TryGet(keys[i]);
+                        Type type = types.GetValueOrDefault(keys[i]);
 
                         if (type == null)
                         {
@@ -158,7 +158,7 @@ namespace QuizCanners.Utils
             {
                 "Tag".PegiLabel().Select(ref _selectedTag, Cfg.DisplayNames).Nl();
 
-                var type = Cfg.TaggedTypes.TryGet(_selectedTag);
+                var type = Cfg.TaggedTypes.GetValueOrDefault(_selectedTag);
 
                 if (type != null)
                 {

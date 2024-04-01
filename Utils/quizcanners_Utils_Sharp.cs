@@ -714,7 +714,7 @@ namespace QuizCanners.Utils
             return val;
         }
 
-        public static TValue TryGet<TKey, TValue>(this Dictionary<TKey, TValue> dic, TKey key)
+        public static TValue GetValueOrDefault<TKey, TValue>(this Dictionary<TKey, TValue> dic, TKey key)
         {
             if (dic == null || key == null) 
             {
@@ -726,7 +726,7 @@ namespace QuizCanners.Utils
             return value;
         }
 
-        public static TValue TryGet<TKey, TValue>(this Dictionary<TKey, TValue> dic, TKey key, TValue defaultValue)
+        public static TValue GetValueOrDefault<TKey, TValue>(this Dictionary<TKey, TValue> dic, TKey key, TValue defaultValue)
         {
             if (dic == null || key == null)
             {

@@ -43,7 +43,10 @@ namespace QuizCanners.Utils
         public virtual Vector3 Position
         {
             get => transform.position;
-            set => transform.position = value;
+            set
+            {
+                transform.position = value;
+            }
         }
 
         private bool mouseOutside = false;
