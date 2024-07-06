@@ -140,14 +140,20 @@ namespace QuizCanners.Inspect
             Edit(ref component);
             if (!component)
             {
-                if (Icon.Refresh.Click("Get Component()"))
+                bool isGameObject = typeof(T) == typeof(Transform) || typeof(T) == typeof(GameObject);
+
+                if (!isGameObject)
                 {
-                    component = parent.GetComponent<T>();
-                    if (!component)
-                        component = parent.GetComponentInChildren<T>();
+                    if (Icon.Refresh.Click("Get Component()"))
+                    {
+                        component = parent.GetComponent<T>();
+                        if (!component)
+                            component = parent.GetComponentInChildren<T>();
+                    }
+
+                    if (typeof(T) != typeof(Transform) && typeof(T) != typeof(GameObject) && Icon.Add.Click("Add Component"))
+                        component = parent.AddComponent<T>();
                 }
-                if (Icon.Add.Click("Add Component"))
-                    component = parent.AddComponent<T>();
             }
             else
             {

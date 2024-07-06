@@ -134,21 +134,21 @@ namespace QuizCanners.Utils
         public class ConsecutiveFrames
         {
             private int _lastFrameIndex;
-            private int _consequtiveFrames;
+            private int _consequtiveRequests;
 
             private int FrameIndex => Time.frameCount;
 
             public void Reset() 
             {
-                _consequtiveFrames = 0;
+                _consequtiveRequests = 0;
                 _lastFrameIndex = FrameIndex;
             }
 
-            public bool TryEnter(int framesNeeded = 2)
+            public bool TryEnter(int requestsNeeded = 2)
             {
                 if (FrameIndex == _lastFrameIndex) 
                 {
-                    return _consequtiveFrames >= framesNeeded;
+                    return _consequtiveRequests >= requestsNeeded;
                 }
 
                 if (FrameIndex - _lastFrameIndex > 1) 
@@ -158,9 +158,9 @@ namespace QuizCanners.Utils
                 }
 
                 _lastFrameIndex = FrameIndex;
-                _consequtiveFrames++;
+                _consequtiveRequests++;
 
-                return _consequtiveFrames >= framesNeeded;
+                return _consequtiveRequests >= requestsNeeded;
             }
         }
 

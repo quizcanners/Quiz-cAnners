@@ -54,17 +54,22 @@ namespace QuizCanners.Utils
 #if UNITY_EDITOR
                     pegi.Edit(ref _asset);
 #endif
-                    if (ScenePathDirty)
-                    {
-                        var path = GetAssetPath();
-                        Icon.Warning.Draw("Scene pas has changed");
-                        if ("Update Path".PegiLabel(path).Click())
-                            ScenePath = path;
-                    }
+                    Inspect_SceneVaidity();
                 }
                 else
                 {
                     pegi.Edit_Scene(ref ScenePath);
+                }
+            }
+
+            public void Inspect_SceneVaidity() 
+            {
+                if (ScenePathDirty)
+                {
+                    var path = GetAssetPath();
+                    Icon.Warning.Draw("Scene pas has changed");
+                    if ("Update Path".PegiLabel(path).Click())
+                        ScenePath = path;
                 }
             }
 

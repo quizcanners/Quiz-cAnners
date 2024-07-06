@@ -73,6 +73,9 @@ namespace QuizCanners.Utils
                 if (_mainCam)
                     return _mainCam;
                 _mainCam = Camera.main;
+
+               
+
                 return _mainCam;
             }
         }

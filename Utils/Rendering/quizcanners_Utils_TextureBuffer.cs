@@ -70,7 +70,7 @@ namespace QuizCanners.Utils
             }
 
 
-            public void Release()
+            public void Clear()
             {
                 if (!_actualTexture)
                     return;
@@ -154,7 +154,7 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public void Release() 
+            public void Clear() 
             {
                 if (_renderTextures.IsNullOrEmpty())
                     return;
@@ -198,7 +198,7 @@ namespace QuizCanners.Utils
 
             private static readonly ShaderProperty.TextureValue _PREVIOUS_TEXTURE = new("_PreviousTex");
 
-            public void Blit(Shader shader)
+            public void Blit(Shader shader, bool andRelease)
             {
                 Swap();
                 var mat = RenderTextureBlit.MaterialReuse(shader);
@@ -206,13 +206,16 @@ namespace QuizCanners.Utils
 
                 Graphics.Blit(Previous, Target, mat);
 
+                if (andRelease)
+                    Previous.Release();
+
                 if (IsTargetSet)
                 {
                     ValueToUpdate.GlobalValue = Target;
                 }
             }
 
-            public RenderTexture RenderFromAndSwapIn(RenderTexture previous, Shader shader)
+            public RenderTexture RenderFromAndSwapIn(RenderTexture previous, Shader shader, bool andRelease)
             {
                 var result = Previous;
                 Previous = previous;
@@ -221,16 +224,23 @@ namespace QuizCanners.Utils
                 mat.Set(_PREVIOUS_TEXTURE, previous);
 
                 Graphics.Blit(previous, result, mat);
-               
+
+                if (andRelease)
+                    previous.Release();
+
                return result;
             }
 
-            public void BlitTargetWithPreviousAndSwap(ref RenderTexture previousResult, Shader shader)
+            public void BlitTargetWithPreviousAndSwap(ref RenderTexture previousResult, Shader shader, bool andRelease)
             {
                 var mat = RenderTextureBlit.MaterialReuse(shader);
                 mat.Set(_PREVIOUS_TEXTURE, previousResult);
 
                 Graphics.Blit(Target, Previous, mat);
+
+                if (andRelease)
+                    Target.Release();
+
                 (previousResult, Previous) = (Previous, previousResult);
             }
 
@@ -257,9 +267,13 @@ namespace QuizCanners.Utils
 
        
 
-            public void BlitTo(RenderTexture newTarget, Shader shader)
+            public void BlitTo(RenderTexture newTarget, Shader shader, bool andRelease)
             {
                 Graphics.Blit(Target, newTarget, RenderTextureBlit.MaterialReuse(shader));
+
+                if (andRelease)
+                    Target.Release();
+
             }
 
             #region Inspector
@@ -272,10 +286,10 @@ namespace QuizCanners.Utils
 
                 if ("Precision".PegiLabel().Edit_Enum(ref _precision).Nl())
                 {
-                    Release();
+                    Clear();
                 }
 
-                Icon.Clear.Click(Release);
+                Icon.Clear.Click(Clear);
                 pegi.Click(Swap).Nl();
             }
             public override string ToString() => _name;
@@ -350,6 +364,14 @@ namespace QuizCanners.Utils
                     size = Mathf.ClosestPowerOfTwo(size);
                 }
                 _size = size;
+            }
+
+            public void Clear() 
+            {
+                if (!_renderTexture)
+                    return;
+                _renderTexture.DestroyWhatever();
+                _renderTexture = null;
             }
 
             #region Inspector

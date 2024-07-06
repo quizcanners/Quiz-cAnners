@@ -27,10 +27,15 @@ namespace QuizCanners.Utils
 
             public string ScenePath => IsValid ? SceneReference.ScenePath : "";
 
+            private bool _fallbackState;
+
             public bool IsLoadedOrLoading
             {
                 get
                 {
+                    if (LoadingFailed)
+                        return _fallbackState;
+
                     if (s_scenesInQueueForLoading.Contains(this))
                         return true;
 
@@ -46,6 +51,8 @@ namespace QuizCanners.Utils
                 }
                 set
                 {
+                    _fallbackState = value;
+
                     if (value)
                         Load(); // LoadSceneMode.Additive);
                     else
@@ -57,6 +64,9 @@ namespace QuizCanners.Utils
             {
                 get
                 {
+                    if (LoadingFailed)
+                        return _fallbackState;
+
                     var scene = SceneManager.GetSceneByPath(SceneReference.ScenePath);
                     if (!scene.IsValid())
                         return false;
@@ -72,6 +82,9 @@ namespace QuizCanners.Utils
             {
                 get
                 {
+                    if (LoadingFailed)
+                        return _fallbackState;
+
                     if (SceneReference == null)
                         return false;
 
@@ -92,6 +105,9 @@ namespace QuizCanners.Utils
 
             public void Load() //LoadSceneMode mode)
             {
+
+                LoadingFailed = false;
+
                 if (!Application.isPlaying)
                 {
 #if UNITY_EDITOR
@@ -174,7 +190,14 @@ namespace QuizCanners.Utils
 
             public virtual void InspectInList(ref int edited, int ind)
             {
-                if (IsLoadedOrLoading)
+                if (Application.isPlaying && LoadingFailed) 
+                {
+                    "Failed to load".PegiLabel().Write();
+
+                    Icon.Warning.Draw();
+
+                }
+                else if (IsLoadedOrLoading)
                 {
                     SceneUnloadOptions();
 
@@ -211,7 +234,11 @@ namespace QuizCanners.Utils
 
 #if UNITY_EDITOR
                     if (!Application.isPlaying && IsValid && Icon.Add.Click())
-                        EditorSceneManager.OpenScene(SceneReference.ScenePath, OpenSceneMode.Additive);
+                    {
+                        Load();
+                        //LoadingFailed = false;
+                        //EditorSceneManager.OpenScene(SceneReference.ScenePath, OpenSceneMode.Additive);
+                    }
 #endif
 
                     if (LoadOperation != null && LoadOperation.isDone == false)
@@ -236,12 +263,17 @@ namespace QuizCanners.Utils
 #if UNITY_EDITOR
                         else if (IsValid && !SceneReference.ScenePathDirty && "Switch".PegiLabel(toolTip: "Save scene before switching to another. Sure you want to change?").ClickConfirm(
                             confirmationTag: "SwSc" + ScenePath))
+                        {
+                            LoadingFailed = false;
                             EditorSceneManager.OpenScene(ScenePath);
+                        }
 #endif
 
                     }
                 }
 #if UNITY_EDITOR
+
+                SceneReference.Inspect_SceneVaidity();
 
                 if (IsValid && !SceneReference.ScenePathDirty)
                 {

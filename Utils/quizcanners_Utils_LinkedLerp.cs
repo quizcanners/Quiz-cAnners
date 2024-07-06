@@ -1631,6 +1631,17 @@ namespace QuizCanners.Lerp
 
             #endregion
 
+
+            public override void Inspect()
+            {
+                base.Inspect();
+
+                pegi.Nl();
+
+                var val = TargetValue;
+                "Target value".PegiLabel().Edit(ref val).Nl(()=> TargetValue = val);
+            }
+
         }
 
         #endregion

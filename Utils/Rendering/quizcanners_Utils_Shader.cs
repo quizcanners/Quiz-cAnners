@@ -805,6 +805,12 @@ namespace QuizCanners.Utils
             
             [SerializeField] private bool lastValue;
 
+            public IDisposable EnableDisposible()
+            {
+                Enabled = true;
+                return QcSharp.DisposableAction(() => Enabled = false);
+            }
+
             public bool Enabled 
             {
                 get => lastValue;
