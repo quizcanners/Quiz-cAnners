@@ -609,15 +609,21 @@ namespace QuizCanners.Utils {
                  && pos.x < max.x && pos.y < max.y && pos.z < max.z;
         }
 
-        public static T GetNearest<T>(this List<T> elements, Vector3 targetPosition) where T : Component
+        public static bool TryFindNearest<T>(this List<T> elements, Vector3 targetPosition, out T nearest) where T : Component
         {
             if (elements.IsNullOrEmpty())
-                return null;
+            {
+                nearest = null;
+                return false;
+            }
 
             T nearestElement = elements[0];
 
             if (elements.Count == 1)
-                return nearestElement;
+            {
+                nearest = nearestElement;
+                return true;
+            }
 
             var closesDistance = Vector3.Distance(targetPosition, nearestElement.transform.position);
 
@@ -631,7 +637,9 @@ namespace QuizCanners.Utils {
                     nearestElement = evaluatedElement;
                 }
             }
-            return nearestElement;
+
+            nearest = nearestElement;
+            return true;
         }
 
 

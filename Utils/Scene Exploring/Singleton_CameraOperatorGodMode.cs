@@ -19,7 +19,7 @@ namespace QuizCanners.Utils
     public class Singleton_CameraOperatorGodMode : Singleton.BehaniourBase, IPEGI
     {
         public float speed = 20;
-        public float offsetClip = 0;
+        public float offsetClip01 = 0;
         public float sensitivity = 5;
         public bool _disableRotation;
         public bool rotateWithoutRmb;
@@ -204,6 +204,21 @@ namespace QuizCanners.Utils
             add.Normalize();
 
             return add;
+        }
+
+
+        public bool TryGetRelativeDirectionFromInput(float forward, float right, out Vector3 input)
+        {
+            if (forward == 0 && right == 0)
+            {
+                input = Vector3.zero;
+                return false;
+            }
+            var mainCamTf = _mainCam.transform;
+            var forwardDir = mainCamTf.forward;
+            var rightDir = mainCamTf.right;
+            input = (forwardDir * forward + rightDir * right).normalized;
+            return true;        
         }
 
         protected virtual void OnUpdateInternal()

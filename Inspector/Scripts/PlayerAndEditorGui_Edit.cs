@@ -131,11 +131,18 @@ namespace QuizCanners.Inspect
         }
 
         public static ChangesToken Edit_01(ref float val) => Edit(ref val, 0, 1);
+        public static ChangesToken Edit_N1_1(ref float val) => Edit(ref val, -1, 1);
 
         public static ChangesToken Edit_01(this TextLabel label, ref float val)
         {
             Write(label, 0.33f);
             return Edit(ref val, 0, 1);
+        }
+
+        public static ChangesToken Edit_N1_1(this TextLabel label, ref float val)
+        {
+            Write(label, 0.33f);
+            return Edit(ref val, -1, 1);
         }
 
         public static ChangesToken Edit_01(ref Rect val)
@@ -160,13 +167,30 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit_01(this TextLabel label, ref Vector2 val)
         {
-            Write(label, 0.33f);
-            return Edit_01(ref val);
+            Write(label).Nl();
+            using (Indent(2))
+            {
+                return Edit_01(ref val);
+            }
         }
 
+        public static ChangesToken Edit_N1_1(this TextLabel label, ref Vector2 val)
+        {
+            Write(label).Nl();
+            using (Indent(2))
+            {
+                return Edit_N1_1(ref val);
+            }
+        }
+
+
         public static ChangesToken Edit_01(ref Vector2 val) =>
-            "X".PegiLabel(10).Edit_01(ref val.x).Nl() |
-            "Y".PegiLabel(10).Edit_01(ref val.y).Nl();
+            "X".PegiLabel(20).Edit_01(ref val.x).Nl() |
+            "Y".PegiLabel(20).Edit_01(ref val.y).Nl();
+
+        public static ChangesToken Edit_N1_1(ref Vector2 val) =>
+            "X".PegiLabel(20).Edit_N1_1(ref val.x).Nl() |
+            "Y".PegiLabel(20).Edit_N1_1(ref val.y).Nl();
 
         public static ChangesToken Edit(this TextLabel label, ref Rect val)
         {

@@ -5,6 +5,8 @@ using UnityEngine;
 using System.Runtime.Serialization.Formatters.Binary;
 
 using Object = UnityEngine.Object;
+using System;
+
 #if UNITY_EDITOR
 using AssetDatabase = UnityEditor.AssetDatabase;
 #endif
@@ -221,6 +223,30 @@ namespace QuizCanners.Utils
 
                 return null;
             }
+
+            public static bool TryGetFileLocation_Editor(Object o, out string location) 
+            {
+#if UNITY_EDITOR
+
+                location = AssetDatabase.GetAssetPath(o);
+
+                if (location.IsNullOrEmpty()) 
+                    return false;
+
+                var subpath = Application.dataPath;
+                location = subpath.Substring(0, subpath.Length - 6) + location;
+
+                return true;
+
+#else
+                location = "";
+                return false;
+#endif
+
+
+            }
+
+
             public static string TryLoadAsTextAsset(Object o, bool asBytes = DEFAULT_IS_BINARY)
             {
                 var asset = o as TextAsset;
@@ -236,15 +262,16 @@ namespace QuizCanners.Utils
 
             #if UNITY_EDITOR
 
-                var path = AssetDatabase.GetAssetPath(o);
-                
-                if (path.IsNullOrEmpty()) return null;
-                
-                var subpath = Application.dataPath;
-                path = subpath.Substring(0, subpath.Length - 6) + path;
+                if (!TryGetFileLocation_Editor(o, out var path))
+                    return null;
 
                 return InternalAsString(path, asBytes);
+                /*var path = AssetDatabase.GetAssetPath(o);
 
+            if (path.IsNullOrEmpty()) return null;
+
+            var subpath = Application.dataPath;
+            path = subpath.Substring(0, subpath.Length - 6) + path;*/
             #else
                 return null;
             #endif
@@ -276,7 +303,8 @@ namespace QuizCanners.Utils
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.Log(fullPath + " not loaded " + ex);
+                    Debug.Log(fullPath + " not loaded ");
+                    Debug.LogException(ex);
                 }
 
                 return data;
