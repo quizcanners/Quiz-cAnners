@@ -280,7 +280,7 @@ namespace QuizCanners.Inspect
                         int current = EnterExitContext.CurrentIndexer._currentIndex;
                         int entered = EnterExitContext.CurrentIndexer.CurrentlyEntered;
 
-                        if (Nested_Inspect(() => var.InspectInList(ref entered, current)))
+                        if (Nested_Inspect(() => var.InspectInList(ref entered, current), var as UnityEngine.Object))
                         {
                             EnterExitContext.CurrentIndexer.CurrentlyEntered = entered;
                             new ChangesToken(IsEnteredCurrent).IgnoreChanges(LatestInteractionEvent.Enter);

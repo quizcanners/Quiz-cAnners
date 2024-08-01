@@ -408,11 +408,31 @@ namespace QuizCanners.Inspect
         {
             var changed = ChangeTrackStart();
 
+            label.Edit(ref obj).Nl();
+
+            if (obj)
+            {
+                Try_Nested_Inspect(obj);
+            }
+
+            return changed;
+        }
+
+        public static ChangesToken Edit_Inspect<T>(this TextLabel label, string newSoName, bool addSceneName, ref T obj) where T : ScriptableObject
+        {
+            var changed = ChangeTrackStart();
+
             if (!obj)
-                 label.Edit(ref obj);
+            {
+                label.Edit(ref obj);
+                if (Application.isEditor && Icon.Create.ClickConfirm(confirmationTag: "Create SO", toolTip: "Create Scriptable Object in Current Scene folder"))
+                {
+                    obj = QcUnity.CreateScriptableObjectAsset<T>(newSoName, addSceneName: addSceneName);
+                }
+            }
             else
                 Try_Nested_Inspect(obj);
-                
+
             return changed;
         }
 

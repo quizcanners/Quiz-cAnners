@@ -63,7 +63,7 @@ namespace QuizCanners.Utils
         {
             T result = null;
 
-            Singleton.Try<PoolBehaviourCore<T>>(s => s.TrySpawnIfVisible(position, out result));
+            Singleton.Try<PoolBehaviourCore<T>>(s => s.TrySpawnIfVisible(position, out result), logOnServiceMissing: false);
 
             instance = result;
 

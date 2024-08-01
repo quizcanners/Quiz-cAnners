@@ -138,6 +138,24 @@ namespace QuizCanners.Utils {
             return asset;
         }
 
+        public static T CreateScriptableObjectAsset<T>(string name, bool addSceneName) where T : ScriptableObject
+        {
+            if (!TryGetActiveScenePath(out var path)) 
+            {
+                Debug.LogError("Failed to get active path");
+                return null;
+            }
+
+            var asset = ScriptableObject.CreateInstance<T>();
+
+            if (addSceneName)
+                name += "_" + SceneManager.GetActiveScene().name;
+
+            SaveScriptableObjectAsAsset<T, T>(asset, path, name);
+
+            return asset;
+        }
+
         public static T CreateScriptableObjectAsset<T>(string path, string name) where T : ScriptableObject
         {
             var asset = ScriptableObject.CreateInstance<T>();
@@ -194,7 +212,7 @@ namespace QuizCanners.Utils {
 #endif
         }
 
-        #endregion
+#endregion
 
         #region External Communications
 
@@ -816,7 +834,7 @@ namespace QuizCanners.Utils {
         /*
                 private static Type audioUtilClass;
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
                 private static Type AudioUtilClass
                 {
                     get
@@ -827,7 +845,7 @@ namespace QuizCanners.Utils {
                         return audioUtilClass;
                     }
                 }
-        #endif*/
+#endif*/
 
         // private static MethodInfo playClipMethod;
 
@@ -1025,7 +1043,7 @@ namespace QuizCanners.Utils {
                  if (!clip)
                      return;
 
- #if UNITY_EDITOR
+#if UNITY_EDITOR
                  if (!Application.isPlaying)
                  {
                      if (setClipSamplePositionMethod == null)
@@ -1036,7 +1054,7 @@ namespace QuizCanners.Utils {
 
                      setClipSamplePositionMethod.Invoke(null, new object[] { clip, pos });
                  }
- #endif
+#endif
              }
 
              public EditorAudioPlayRequest(AudioClip clip)
@@ -1076,7 +1094,7 @@ namespace QuizCanners.Utils {
             return maxSample / ((float)(clip.frequency * clip.channels));
         }
 
-        #endregion
+#endregion
 
         #region Unity Editor MGMT
 

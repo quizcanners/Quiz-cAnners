@@ -138,7 +138,10 @@ namespace QuizCanners.Utils
         public bool ReturnToPool(T effect)
         {
             if (!_clearAllLock.Unlocked)
-                return false;
+            {
+                effect.gameObject.DestroyWhatever();
+                return true;
+            }
 
             effect.gameObject.SetActive(false);
 
@@ -162,7 +165,7 @@ namespace QuizCanners.Utils
         {
             if (InstancesCount > 0)
             {
-                Icon.Clear.Click().OnChanged(ClearAll_Internal);
+                Icon.Clear.Click().OnChanged(ClearAll);
 
                 "{0}/{1}".F(InstancesCount, RECOMMENDED_INSTANCES).PegiLabel(60).Write();
             }
@@ -304,22 +307,15 @@ namespace QuizCanners.Utils
                     e.gameObject.DestroyWhatever();
 
             instances.Clear();
-            
         }
 
         private void ClearPool()
         {
-            if (!_clearAllLock.Unlocked)
-                return;
+            foreach (var e in pool)
+                if (e)
+                    e.gameObject.DestroyWhatever();
 
-            using (_clearAllLock.Lock())
-            {
-                foreach (var e in pool)
-                    if (e)
-                        e.gameObject.DestroyWhatever();
-
-                pool.Clear();
-            }
+            pool.Clear();
         }
 
         #region Inspector
@@ -335,7 +331,7 @@ namespace QuizCanners.Utils
                 TrySpawn(Vector3.zero, out _);
 
             if (pool.Count > 0 || instances.Count > 0)
-                Icon.Delete.Click().OnChanged(ClearAll_Internal);
+                Icon.Delete.Click().OnChanged(ClearAll);
 
             pegi.Nl();
 
@@ -559,7 +555,7 @@ namespace QuizCanners.Utils
             base.Inspect();
 
             if (InstancesCount > 0)
-                Icon.Delete.Click().OnChanged(ClearAll_Internal);
+                Icon.Delete.Click().OnChanged(ClearAll);
 
             "Pool of {0}".F(typeof(T).Name).PegiLabel(pegi.Styles.ListLabel).Write();
 
