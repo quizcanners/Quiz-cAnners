@@ -18,7 +18,7 @@ namespace QuizCanners.Utils
      
 
 
-            public void OnAnyUpdate(Rigidbody rb) 
+            public void OnFixedUpdate(Rigidbody rb) 
             {
                 if ((Time.time - _previousTime) > 1f)
                     _positionInitialized = false;
@@ -34,7 +34,7 @@ namespace QuizCanners.Utils
                     return;
                 }
 
-                float DELTA = Time.time - _previousTime;
+                float DELTA = Time.fixedTime - _previousTime;
               
                 if (Mathf.Approximately(DELTA, 0))
                     return;
@@ -43,7 +43,7 @@ namespace QuizCanners.Utils
 
                 AvaragedAcceleration = Vector3.Lerp(AvaragedAcceleration, currentAcceleration, Mathf.Clamp01(DELTA / _smoothingSeconds));
 
-                _previousTime = Time.time;
+                _previousTime = Time.fixedTime;
             }
 
             #region Inspector

@@ -499,7 +499,6 @@ namespace QuizCanners.Utils
             }
         }
 
-
         public class Vector3Value : GateGenericBase<Vector3>
         {
             protected override bool DifferentFromPrevious(Vector3 newValue) => newValue != previousValue;
@@ -614,6 +613,51 @@ namespace QuizCanners.Utils
             {
                 SetValue(initialValue);
             }
+        }
+
+        public class ScreenSizeValue
+        {
+            private int _width;
+            private int _height;
+
+            private bool _isSet;
+
+            private static readonly PerformanceTurnTable.Token _performanceToken = new(delay: 0.1f);
+
+            public bool IsDirty => !_isSet || Screen.width != _width || Screen.height != _height;
+
+            private void Change() 
+            {
+                _width = Screen.width;
+                _height = Screen.height;
+                _isSet = true;
+            }
+
+            public bool TryChange_Now() 
+            {
+                if (!IsDirty)
+                    return false;
+
+                Change();
+
+                return true;
+            }
+
+            public void Clear() => _isSet = false;
+
+            public bool TryChange_Performant() 
+            {
+                if (!IsDirty)
+                    return false;
+
+                if (_isSet && !_performanceToken.TryGetTurn())
+                    return false;
+
+                Change();
+
+                return true;
+            }
+
         }
 
         public class DirtyVersion 

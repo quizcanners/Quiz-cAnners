@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace QuizCanners.Utils
 {
@@ -173,6 +174,17 @@ namespace QuizCanners.Utils
                                 Percentages = QcMath.NormalizeToPercentage(probabilities, prob => prob.Chances);
                                 "Probabilities".PegiLabel().Edit_List(probabilities).Nl();
                             }
+                        }
+                    }
+
+                    if ("Scenes".PegiLabel().IsEntered().Nl()) 
+                    {
+                        for (int i=0; i< SceneManager.sceneCount; i++) 
+                        {
+                            var s = SceneManager.GetSceneAt(i);
+                            if (s.isLoaded)
+                                Icon.Done.Draw();
+                            s.path.PegiLabel().Nl();
                         }
                     }
 

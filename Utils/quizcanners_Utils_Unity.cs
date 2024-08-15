@@ -730,7 +730,6 @@ namespace QuizCanners.Utils {
 
         public static T TryGetInterfaceFrom<T>(object obj) where T : class
         {
-
             if (IsNullOrDestroyed_Obj(obj))
                 return null;
 
@@ -755,24 +754,6 @@ namespace QuizCanners.Utils {
                 return !(obj as Object);
 
              return false;
-        }
-
-        public static bool TrySetEnabled(this Behaviour component, bool value)
-        {
-            if (!component) return false;
-
-            component.enabled = value;
-
-            return true;
-
-        }
-
-        public static void TrySetEnabled<T>(this List<T> components, bool value) where T : Behaviour
-        {
-            if (components.IsNullOrEmpty()) return;
-
-            foreach (var c in components)
-                c.TrySetEnabled(value);
         }
 
         public static bool IsUnityObject(this System.Type t) => typeof(Object).IsAssignableFrom(t);

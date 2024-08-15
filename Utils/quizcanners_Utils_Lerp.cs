@@ -487,7 +487,18 @@ namespace QuizCanners.Lerp
 
         }
 
+        public static Color LerpHeatmapColors(Color[] colors, float value01)
+        {
+            int count = colors.Length;
 
+            float step = Mathf.Clamp01(value01 - Mathf.Epsilon) * count;
+
+            int firstColorIndex = Mathf.FloorToInt(step);
+
+            float transition = step - firstColorIndex;
+
+            return Color.Lerp(colors[firstColorIndex], colors[firstColorIndex + 1], transition);
+        }
 
         public class DurationLerp 
         {

@@ -164,8 +164,6 @@ namespace QuizCanners.Utils
             private readonly int _returnOnFirstRequest;
             private bool _defaultSegmentSet;
 
-            
-
             public float SegmentDuration
             {
                 get => _defaultSegment;
@@ -177,8 +175,7 @@ namespace QuizCanners.Utils
             }
 
             float CurrentTime => _unscaledTime ? Time.unscaledTime : Time.time;
-            public int GetSegmentsWithouUpdate() => GetSegmentsWithouUpdate(_defaultSegment);
-
+          
             public void Reset() 
             {
                 _timeSet = false;
@@ -200,16 +197,25 @@ namespace QuizCanners.Utils
                 _lastTime += _defaultSegment * count;
             }
 
+            public float GetTimePassed() 
+            {
+                if (!_timeSet) 
+                {
+                    GetSegmentsWithouUpdate();
+                    return 0;
+                }
+
+                return CurrentTime - _lastTime;
+            }
+
             public void ClearDeltaTime() 
             {
                 _lastTime = CurrentTime;
             }
 
-            public int GetSegmentsWithouUpdate(float segment) 
+            public int GetSegmentsWithouUpdate() 
             {
-                _defaultSegment = segment;
-
-                if (!_timeSet) 
+                if (!_timeSet)
                 {
                     _timeSet = true;
                     _lastTime = CurrentTime;
@@ -217,8 +223,15 @@ namespace QuizCanners.Utils
                 }
 
                 var gap = CurrentTime - _lastTime;
-                var segments = Mathf.FloorToInt(gap / segment);
+                var segments = Mathf.FloorToInt(gap / _defaultSegment);
                 return segments;
+            }
+
+
+            public int GetSegmentsWithouUpdate(float segment) 
+            {
+                SegmentDuration = segment;
+                return GetSegmentsWithouUpdate();
             }
 
             public int GetSegmentsAndUpdate()
@@ -242,6 +255,7 @@ namespace QuizCanners.Utils
                     QcLog.ChillLogger.LogErrorOnce("Default Segment was not set", key: "No Dflt Sgm");
                 }
             }
+
 
             public TimeFixedSegmenter(bool unscaledTime, float segmentLength = 1, int returnOnFirstRequest = 0) 
             {

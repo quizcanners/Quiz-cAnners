@@ -1,6 +1,5 @@
 using QuizCanners.Inspect;
 using System;
-using System.IO;
 using UnityEngine;
 
 namespace QuizCanners.Utils
@@ -14,12 +13,32 @@ namespace QuizCanners.Utils
 
 #if UNITY_EDITOR
             [SerializeField] private UnityEditor.SceneAsset _asset;
+
+            [NonSerialized] private bool _triedToGet = false;
+            private UnityEditor.SceneAsset Asset 
+            {
+                get 
+                {
+                    if (_triedToGet)
+                        return _asset;
+                    _triedToGet = true;
+
+                    try
+                    {
+                        _asset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEditor.SceneAsset>(ScenePath);
+                    } catch (Exception ex) 
+                    {
+                        Debug.LogException(ex);
+                    }
+                    return _asset;
+                }
+            }
 #endif
 
             public bool IsValid =>
                 ScenePath.IsNullOrEmpty() == false
 #if UNITY_EDITOR
-                && _asset
+                && Asset
 #endif
                 ;
             public bool ScenePathDirty
@@ -33,7 +52,7 @@ namespace QuizCanners.Utils
 
             private string GetAssetPath() =>
 #if UNITY_EDITOR
-                _asset ? UnityEditor.AssetDatabase.GetAssetPath(_asset) : "";
+                Asset ? UnityEditor.AssetDatabase.GetAssetPath(Asset) : "";
 #else
             "";
 #endif
@@ -42,6 +61,7 @@ namespace QuizCanners.Utils
             public void SetScene_Editor(UnityEditor.SceneAsset asset) 
             {
                 _asset = asset;
+                _triedToGet = true;
                 ScenePath = GetAssetPath();
             }
 #endif
@@ -52,7 +72,8 @@ namespace QuizCanners.Utils
                 if (Application.isEditor)
                 {
 #if UNITY_EDITOR
-                    pegi.Edit(ref _asset);
+                    var ass = Asset;
+                    pegi.Edit(ref ass).OnChanged(()=> _asset = ass);
 #endif
                     Inspect_SceneVaidity();
                 }

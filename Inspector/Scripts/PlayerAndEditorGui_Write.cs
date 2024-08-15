@@ -450,7 +450,7 @@ namespace QuizCanners.Inspect
 
         #region Icon
 
-        public static TextToken Draw(this Icon icon, int size = defaultButtonSize) => Draw(icon.GetIcon(), size);
+        public static TextToken Draw(this Icon icon, int size = defaultButtonSize) => Draw(icon.GetIcon(), size, alphaBlend: true);
 
         public static TextToken Draw(this Icon icon, string toolTip, int size = defaultButtonSize) => Draw(icon.GetIcon(), toolTip, size);
 

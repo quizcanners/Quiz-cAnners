@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using QuizCanners.Inspect;
 using UnityEngine;
 using QuizCanners.Migration;
+using static Codice.Client.Common.Locks.ServerLocks.ForWorkingBranchOnRepoByItem;
 
 namespace QuizCanners.Utils 
 {
@@ -746,17 +747,22 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public bool this[int key]
+            public void Set(int index) 
             {
-                get => key == lastIndex;
+                lastIndex = index;
+                for (int i = 0; i < Keywords.Length; i++)
+                {
+                    QcUnity.SetShaderKeyword(Keywords[i], index == i);
+                }
+            }
+
+            public void DisableAll() => Set(-1);
+
+            private bool this[int key]
+            {
                 set
                 {
-                    lastIndex = key;
-
-                    for (int i = 0; i < Keywords.Length; i++)
-                    {
-                        QcUnity.SetShaderKeyword(Keywords[i], key == i);
-                    }
+                    QcUnity.SetShaderKeyword(Keywords[key], value);
                 }
             }
 

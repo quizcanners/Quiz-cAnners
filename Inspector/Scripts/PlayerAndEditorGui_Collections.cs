@@ -519,7 +519,7 @@ namespace QuizCanners.Inspect
             {
                 if (listMeta == null)
                 {
-                    "List MEta is Null".PegiLabel().WriteWarning(); Nl();
+                    "List Meta is Null".PegiLabel().WriteWarning(); Nl();
                 }
                 else
                     Edit_List(list, ref listMeta.inspectedElement_Internal, out _, listMeta).OnChanged(listMeta.OnChanged);
@@ -544,7 +544,7 @@ namespace QuizCanners.Inspect
 
             if (list == null)
             {
-                "List of {0} is null".F(typeof(T).ToPegiStringType()).PegiLabel().Write();
+                "List of {0} is null".F(listMeta == null ? typeof(T).ToPegiStringType() : listMeta.Label).PegiLabel().Write();
 
                 return changes;
             }
@@ -567,7 +567,7 @@ namespace QuizCanners.Inspect
                     if (list.Count == 0)
                     {
                         Nl();
-                        "Empty List of {0}".F(typeof(T).ToPegiStringType()).PegiLabel(Styles.HeaderText).Nl();
+                        "Empty List of {0}".F(listMeta == null ? typeof(T).ToPegiStringType() : listMeta.Label).PegiLabel(Styles.HeaderText).Nl();
                     }
                     else
                     {

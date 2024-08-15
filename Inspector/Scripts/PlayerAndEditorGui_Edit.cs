@@ -420,17 +420,22 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(this TextLabel label, ref Color col, bool showEyeDropper = true, bool showAlpha = true, bool hdr = false)
         {
-            if (PaintingGameViewUI)
-            {
-                if (label.IsFoldout())
-                    return Edit(ref col);
-            }
-            else
-            {
-                //Write(label, 0.33f);
 #if UNITY_EDITOR
+            if (!PaintingGameViewUI)
                 return PegiEditorOnly.Edit(label, ref col, showEyeDropper: showEyeDropper, showAlpha: showAlpha, hdr: hdr);
 #endif
+
+            using (SetBgColorDisposable(col))
+            {
+                if (label.IsFoldout())
+                {
+                    Nl();
+
+                    return Icon.Red.Edit_ColorChannel(ref col, 0).Nl() |
+                           Icon.Green.Edit_ColorChannel(ref col, 1).Nl() |
+                           Icon.Blue.Edit_ColorChannel(ref col, 2).Nl() |
+                           Icon.Alpha.Edit_ColorChannel(ref col, 3).Nl();
+                }
             }
 
             return ChangesToken.False;
