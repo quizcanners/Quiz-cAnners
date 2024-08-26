@@ -406,7 +406,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(this TextLabel label, ref float val)
         {
-            label.FallbackWidthFraction = 0.33f;
+            //label.FallbackWidthFraction = 0.33f;
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)

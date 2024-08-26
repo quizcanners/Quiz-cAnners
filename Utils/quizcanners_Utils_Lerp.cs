@@ -491,7 +491,7 @@ namespace QuizCanners.Lerp
         {
             int count = colors.Length;
 
-            float step = Mathf.Clamp01(value01 - Mathf.Epsilon) * count;
+            float step = Mathf.Clamp01(value01 - 0.01f) * (count - 1);
 
             int firstColorIndex = Mathf.FloorToInt(step);
 

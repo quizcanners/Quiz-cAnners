@@ -181,6 +181,12 @@ namespace QuizCanners.Utils
                 _timeSet = false;
             }
 
+            public void Update_ClearFraction() 
+            {
+                _timeSet = true;
+                _lastTime = CurrentTime;
+            }
+
             public void Update_KeepFraction()
             {
 #if UNITY_EDITOR
@@ -241,11 +247,11 @@ namespace QuizCanners.Utils
 #endif
                 return GetSegmentsAndUpdate(_defaultSegment);
             }
-            public int GetSegmentsAndUpdate(float segment) 
+            public int GetSegmentsAndUpdate(float segmentLength) 
             {
-                var segments = GetSegmentsWithouUpdate(segment);
-                _lastTime += segments * segment;
-                return segments;
+                var segmentCount = GetSegmentsWithouUpdate(segmentLength);
+                _lastTime += segmentCount * segmentLength;
+                return segmentCount;
             }
 
             private void CheckDefaultSegment() 
@@ -388,10 +394,18 @@ namespace QuizCanners.Utils
 
         public class DeltaPositionSegments 
         {
+            private bool _initialized;
             Vector3 _previousPosition;
 
             public bool TryGetSegments(Vector3 newPosition, float delta, out Vector3[] points) 
             {
+                if (!_initialized) 
+                {
+                    Reset(newPosition);
+                    points = null;
+                    return false;
+                }
+
                 var segment = (newPosition - _previousPosition);
 
                 float totalDistance = segment.magnitude;
@@ -417,6 +431,7 @@ namespace QuizCanners.Utils
             public void Reset(Vector3 position) 
             {
                 _previousPosition = position;
+                _initialized = true;
             }
 
         }
@@ -427,22 +442,37 @@ namespace QuizCanners.Utils
             public Vector3 Previous;
             public Vector3 Current;
 
+            private bool _initialized;
+
             public Vector3 Delta => Current - Previous;
 
             public void Reset(Vector3 value) 
             {
+                _initialized = true;
                 Previous = value;
                 Current = value;
             }
 
             public void Update(Vector3 newValue) 
             {
+                if (!_initialized)
+                {
+                    Reset(newValue);
+                    return;
+                }
+
                 Previous = Current;
                 Current = newValue;
             }
 
             public bool TryUpdateIfChanged(Vector3 newValue) 
             {
+                if (!_initialized) 
+                {
+                    Reset(newValue);
+                    return false;
+                }
+
                 if (newValue != Current) 
                 {
                     Update(newValue);
@@ -454,6 +484,12 @@ namespace QuizCanners.Utils
 
             public bool TryUpdateIfChangedBy(Vector3 newValue, float difference)
             {
+                if (!_initialized)
+                {
+                    Reset(newValue);
+                    return false;
+                }
+
                 if (Vector3.Distance(newValue, Current) >= difference)
                 {
                     Update(newValue);
@@ -465,6 +501,7 @@ namespace QuizCanners.Utils
 
         }
 
+      
 
         [Serializable]
         public class FadeInOut 

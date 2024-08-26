@@ -244,7 +244,6 @@ namespace QuizCanners.Utils
                 (previousResult, Previous) = (Previous, previousResult);
             }
 
-
             public void SetSourceAndTarget(ScreenSize source, ScreenSize target, ShaderProperty.TextureValue shaderTexture, Shader copyDownscale)
             {
                 TryReturnPreviousSetNew(target);
@@ -264,8 +263,6 @@ namespace QuizCanners.Utils
 
                 Set(shaderTexture, sourceAndTarget);
             }
-
-       
 
             public void BlitTo(RenderTexture newTarget, Shader shader, bool andRelease)
             {
