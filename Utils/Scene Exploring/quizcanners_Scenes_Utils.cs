@@ -10,7 +10,7 @@ namespace QuizCanners.Utils
         private static readonly List<ReferenceInspectable> s_scenesInQueueForLoading = new();
 
         private static readonly List<ReferenceInspectable> s_scenesToUnload = new();
-
+       
         public static bool IsAnyLoading
         { 
             get 

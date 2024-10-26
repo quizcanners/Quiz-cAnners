@@ -71,10 +71,10 @@ namespace QuizCanners.Utils
         {
             pegi.Nl();
 
-            "Role".PegiLabel(50).Edit_Enum(ref _role).Nl();
-            "On Conflict".PegiLabel(90).Edit_Enum(ref _conflictResolve).Nl();
+            "Role".ConstLabel().Edit_Enum(ref _role).Nl();
+            "On Conflict".ConstLabel().Edit_Enum(ref _conflictResolve).Nl();
 
-            "Object to enable (Optional)".PegiLabel(160).Edit(ref _child);
+            "Object to enable (Optional)".ConstLabel().Edit(ref _child);
 
 
 

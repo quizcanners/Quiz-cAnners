@@ -5,9 +5,9 @@ using UnityEngine;
 
 namespace QuizCanners.Migration
 {
-    public static class EncodeExtensions {
-
-        public static void AppendSplit(this System.Text.StringBuilder builder, string value) => builder.Append(value).Append(CfgEncoder.Splitter);
+    public static class EncodeExtensions 
+    {
+        public static System.Text.StringBuilder AppendSplit(this System.Text.StringBuilder builder, string value) => builder.Append(value).Append(CfgEncoder.Splitter);
         
         public static CfgEncoder Encode (this Transform tf, bool local) {
 
@@ -16,13 +16,13 @@ namespace QuizCanners.Migration
             cody.Add_Bool("loc", local);
 
             if (local) {
-                cody.Add("pos", tf.localPosition);
-                cody.Add("size", tf.localScale);
-                cody.Add("rot", tf.localRotation);
+                cody.Add("pos", tf.localPosition)
+                .Add("size", tf.localScale)
+                .Add("rot", tf.localRotation);
             } else {
-                cody.Add("pos", tf.position);
-                cody.Add("size", tf.localScale);
-                cody.Add("rot", tf.rotation);
+                cody.Add("pos", tf.position)
+                .Add("size", tf.localScale)
+                .Add("rot", tf.rotation);
             }
 
             return cody;
@@ -219,7 +219,7 @@ namespace QuizCanners.Migration
         public const string IsFalseTag = "n";
         #endregion
 
-        private readonly System.Text.StringBuilder _builder = new System.Text.StringBuilder();
+        private readonly System.Text.StringBuilder _builder = new();
 
         public CfgData CfgData => new(_builder.ToString());
 
@@ -243,12 +243,11 @@ namespace QuizCanners.Migration
 
         public CfgEncoder Add_String(string tag, string data)
         {
-            if (data == null)
-                data = "";
+            data ??= "";
 
-            _builder.AppendSplit(tag);
-            _builder.AppendSplit(data.Length.ToString());
-            _builder.AppendSplit(data);
+            _builder.AppendSplit(tag)
+            .AppendSplit(data.Length.ToString())
+            .AppendSplit(data);
             return this;
         }
 
@@ -475,7 +474,7 @@ namespace QuizCanners.Migration
         {
             if (QcUnity.IsNullOrDestroyed_Obj(cfg)) return this;
 
-            return (!(cfg is ICanBeDefaultCfg def) || !def.IsDefault) ? Add(tag, cfg) : this;
+            return (cfg is not ICanBeDefaultCfg def || !def.IsDefault) ? Add(tag, cfg) : this;
         }
 
         public CfgEncoder Add_IfNotEmpty(string tag, string val) => val.IsNullOrEmpty() ? this : Add_String(tag, val);

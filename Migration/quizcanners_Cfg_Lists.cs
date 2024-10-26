@@ -146,7 +146,7 @@ namespace QuizCanners.Migration
             }
             else
             {
-                "Configs".PegiLabel(90).Edit(ref configs);
+                "Configs".ConstLabel().Edit(ref configs);
 
                 if (Icon.Create.Click("Create new Config"))
                     configs = QcUnity.CreateScriptableObjectAsset<T>("ScriptableObjects/Configs", "Config");

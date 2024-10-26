@@ -43,6 +43,8 @@ namespace QuizCanners.Utils
                 set => _id = value;
             }
 
+            protected virtual bool AllowEdit => true;
+
             protected abstract Dictionary<string, TValue> GetEnities();
 
             public virtual bool TryGetEntity(out TValue entity)
@@ -122,7 +124,8 @@ namespace QuizCanners.Utils
 
             public virtual void Inspect()
             {
-                InspectSelectPart().Nl();
+                if (AllowEdit)
+                    InspectSelectPart().Nl();
 
                 "REFERENCED OBJECT".PegiLabel(style: pegi.Styles.ListLabel).Nl();
 
@@ -143,11 +146,11 @@ namespace QuizCanners.Utils
                 var prots = GetEnities();
 
                 if (prots == null)
-                    "NO PROTS".PegiLabel().Write();
+                    "NO PROTS".ConstLabel().Write();
 
                 var id = Id;
                 pegi.Select(ref id, prots).OnChanged(() => Id = id);
-
+                
                 return changes;
             }
 
@@ -156,7 +159,12 @@ namespace QuizCanners.Utils
                 var th = this;
                 pegi.CopyPaste.InspectOptionsFor(ref th);
 
-                InspectSelectPart();
+                if (AllowEdit)
+                {
+                    InspectSelectPart();
+                }
+                else if (ToString().PegiLabel(pegi.Styles.EnterLabel).ClickLabel())
+                    edited = ind;
 
                 if (this.Click_Enter_Attention())
                     edited = ind;
@@ -166,7 +174,7 @@ namespace QuizCanners.Utils
             public override string ToString()
             {
                 TValue ent = GetEntity();
-                return ent != null ? "Id of {0}".F(ent.GetNameForInspector()) : "Target (Id: {0}) NOT FOUND".F(Id);
+                return ent != null ? "{0}".F(ent.GetNameForInspector()) : "Target (Id: {0}) NOT FOUND".F(Id);
             }
 
             public virtual string NeedAttention()
@@ -355,7 +363,7 @@ namespace QuizCanners.Utils
                 var prots = GetEnities();
 
                 if (prots == null)
-                    "NO PROTS".PegiLabel().Write();
+                    "NO PROTS".ConstLabel().Write();
 
                 pegi.Select_Index(ref Id, prots);
 
@@ -403,5 +411,141 @@ namespace QuizCanners.Utils
             #endregion
         }
 
+        public abstract class IntGeneric_Dictionary<TValue> : Base, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable where TValue : IGotIndex
+        {
+            public int Id = -1;
+
+            public bool IsValid => Id >= 0;
+
+            protected abstract Dictionary<int, TValue> GetEnities();
+
+            public virtual bool TryGetEntity(out TValue entity)
+            {
+                if (Id >= 0)
+                {
+                    var prots = GetEnities();
+                    if (prots != null)
+                        return prots.TryGetValue(Id, out entity);
+                }
+
+                entity = default(TValue);
+                return false;
+            }
+
+            public virtual TValue GetEntity()
+            {
+                var prots = GetEnities();
+
+                if (prots != null && prots.TryGetValue(Id, out var val))
+                    return val;
+
+                return default(TValue);
+            }
+
+            public void SetEntity(IntGeneric_Dictionary<TValue> value) => Id = value.Id;
+
+            public virtual void SetEntity(TValue value) => Id = (value == null) ? -1 : value.IndexForInspector;
+            
+            public override bool Equals(object obj) => Equals(obj as Base);
+
+            public override int GetHashCode() => Id + typeof(TValue).GetHashCode();
+
+            public override bool Equals(Base other)
+            {
+                if (other == null)
+                    return false;
+
+                if (GetType() != other.GetType())
+                    return false;
+
+                var asId = other as IntGeneric_Dictionary<TValue>;
+
+                return Id == asId.Id;
+            }
+
+            #region Encode & Decode
+            public CfgEncoder Encode() => new CfgEncoder().Add("iid", Id);
+
+            public void DecodeTag(string key, CfgData data)
+            {
+                switch (key)
+                {
+                    case "iid": Id = data.ToInt(); break;
+                }
+            }
+
+            #endregion
+
+            #region Inspector
+
+            public virtual void Inspect()
+            {
+                InspectSelectPart().Nl();
+
+                "REFERENCED OBJECT".PegiLabel(style: pegi.Styles.ListLabel).Nl();
+
+                TValue val = GetEntity();
+
+
+                if (val != null)
+                    pegi.Try_Nested_Inspect(val).Nl();
+                else
+                    ("ID {0} not found in Prototypes".F(Id)).PegiLabel().Nl();
+            }
+
+            public pegi.ChangesToken InspectSelectPart()
+            {
+                var changes = pegi.ChangeTrackStart();
+
+                var prots = GetEnities();
+
+                if (prots == null)
+                    "NO PROTS".ConstLabel().Write();
+
+                pegi.Select(ref Id, prots);
+
+                return changes;
+            }
+
+            public virtual void InspectInList(ref int edited, int ind)
+            {
+                var th = this;
+                pegi.CopyPaste.InspectOptionsFor(ref th);
+
+                InspectSelectPart();
+
+                if (this.Click_Enter_Attention())
+                    edited = ind;
+            }
+
+            public override string ToString()
+            {
+                TValue ent = GetEntity();
+                return ent != null ? "Id of {0}".F(ent.GetNameForInspector()) : "Target (Id: {0}) NOT FOUND".F(Id);
+            }
+
+            public virtual string NeedAttention()
+            {
+                if (GetEnities() == null)
+                    return "No Entities";
+
+                if (GetEntity() == null)
+                    return "No Entity for {0}".F(Id);
+
+                return null;
+            }
+
+            public virtual IEnumerator SearchKeywordsEnumerator()
+            {
+                yield return Id;
+
+                if (TryGetEntity(out var val))
+                {
+                    yield return val;
+                }
+            }
+
+            #endregion
+        }
     }
 }

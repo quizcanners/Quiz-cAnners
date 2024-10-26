@@ -89,11 +89,11 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                if (!Application.isPlaying && "Max Count".PegiLabel().Edit_Delayed(ref _maxCount).Nl())
+                if (!Application.isPlaying && "Max Count".ConstLabel().Edit_Delayed(ref _maxCount).Nl())
                     _maxCount = Math.Max(1, _maxCount);
 
                 if (IsFinished)
-                    "Finished".PegiLabel().Nl();
+                    "Finished".ConstLabel().Nl();
                 else
                     "{0}% ({1}/{2})".F(_count*100 / _maxCount, _count, _maxCount).PegiLabel().Nl();
             }
@@ -134,7 +134,7 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                if (!Application.isPlaying && "Count".PegiLabel().Edit_Delayed(ref _maxCount).Nl())
+                if (!Application.isPlaying && "Count".ConstLabel().Edit_Delayed(ref _maxCount).Nl())
                     _maxCount = Math.Max(1, _maxCount);
 
                 ToString().PegiLabel().Nl();

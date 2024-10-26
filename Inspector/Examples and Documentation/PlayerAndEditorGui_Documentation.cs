@@ -108,21 +108,35 @@ namespace QuizCanners.Inspect.Examples
         {
             public override string ToString() => "Pegi Label";
 
-            private string _testValue = "Editable Text";
+            private string Test_Text = "Test_Text";
+            private int _testInt = 12345;
 
             public override void Inspect_About()
             {
                 "{0} extension creates a structure that includes text with optional: width, tooltip & GuiStyle. As arguments you can add tooltip, width and GuiStyle. Most other pegi functions are extensions on top of this fucntions.".F(nameof(pegi.PegiLabel)).PegiLabel().Write_Hint().Nl();
                 "SomeText.PegiLabel(toolTip, width, stype);".PegiLabel(toolTip: "tip", width: 310, style: pegi.Styles.BaldText).Nl();
 
-                DrawExample(() => "label".PegiLabel().Write(), 
-                                    "label.PegiLabel().Write();");
+                DrawExample(() => "label".PegiLabel().Write(),
+                                    "\"label\".PegiLabel().Write();");
 
-                DrawExample(() => "label".PegiLabel(toolTip: "tooltip").Edit(ref _testValue), 
-                                    "label.PegiLabel(toolTip: tooltip).Edit(ref _testValue);");
+                DrawExample(() => "label".PegiLabel(toolTip: "tooltip").Edit(ref Test_Text),
+                                    "\"label\".PegiLabel(toolTip: tooltip).Edit(ref Test_Text);");
 
                 DrawExample(() => "label".PegiLabel(toolTip: "tooltip", width: 50, style: pegi.Styles.BaldText).Select(ref exampleKey, exampleDictionary),
-                                    "label.PegiLabel(toolTip: tooltip, width: 50, style: pegi.Styles.BaldText).Select(ref exampleKey, exampleDictionary);");
+                                    "\"label\".PegiLabel(toolTip: tooltip, width: 50, style: pegi.Styles.BaldText).Select(ref exampleKey, exampleDictionary);");
+
+                "If label text will not change and there are more elements that need space next to it, consider using ConstLabel (added recently)".PegiLabel(pegi.Styles.BaldText).Nl();
+
+                DrawExample(() => "const label".ConstLabel(toolTip: "toolTip").Edit(ref _testInt),
+                                    "\"const label\".ConstLabel(toolTip: \"toolTip\").Edit(ref _testInt);");
+
+                DrawExample(() =>
+                {
+                    "const very long label nefore button".ConstLabel(toolTip: "toolTip").Edit(ref _testInt);
+                    if ("Button".PegiLabel().Click())
+                        Debug.Log("Clicking");
+                },
+                                   "\"const very long label nefore button\".ConstLabel(toolTip: \"toolTip\").Edit(ref _testInt);");
             }
         }
 

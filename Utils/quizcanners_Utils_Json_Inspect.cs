@@ -14,13 +14,16 @@ namespace QuizCanners.Utils
     
     public class EncodedJsonInspector : IPEGI
     {
+        private readonly string _name;
         private string jsonDestination = "";
 
         protected JsonBase rootJson;
 
+
+
         protected static void TryDecode(ref JsonBase j)
         {
-            if (!(j is JsonString str)) return;
+            if (j is not JsonString str) return;
 
             var tmp = str.TryDecodeString();
             if (tmp != null)
@@ -31,7 +34,7 @@ namespace QuizCanners.Utils
 
         protected static void DecodeOrInspectJson(ref JsonBase j, bool foldedOut, string name = "")
         {
-            var str = j.AsJsonString;
+            JsonString str = j.AsJsonString;
 
             if (str != null)
             {
@@ -39,12 +42,23 @@ namespace QuizCanners.Utils
                 {
                     if (!foldedOut)
                     {
+                        name.PegiLabel().Write_ForCopy();
+                        //if (name.Length > 15 && Icon.Copy.Click("Copy name to clipboard", 20))
+                        //  GUIUtility.systemCopyBuffer = name;
+                        pegi.Edit(ref str.data);
 
-                        name.PegiLabel().Edit(ref str.data);
+                        if (!str.InlineJson_Checked) 
+                        {
+                            str.InlineJson_Checked = true;
+                            str.InlineJson_Found = str.data.Contains("\\\"");
+                        }
 
-                        if (name.Length > 7 && Icon.Copy.Click("Copy name to clipboard", 15))
-                            GUIUtility.systemCopyBuffer = name;
-
+                        if (str.InlineJson_Found && Icon.Refresh.Click())
+                        {
+                            str.data = str.data.Substring(1, str.data.Length - 2);
+                            str.data = str.data.Replace("\\\"", "\"").Replace("%20", " ");
+                            TryDecode(ref j);
+                        }
                     }
                 }
                 else if (foldedOut && "Decode 1 layer".PegiLabel().Click())
@@ -62,7 +76,7 @@ namespace QuizCanners.Utils
 
         public EncodedJsonInspector() { rootJson = new JsonString(); }
 
-        public EncodedJsonInspector(string data) { rootJson = new JsonString(data); }
+        public EncodedJsonInspector(string data, string name = "") { rootJson = new JsonString(data); _name = name; }
 
         public bool triedToDecodeAll;
 
@@ -90,14 +104,17 @@ namespace QuizCanners.Utils
 
                 jsonDestination = sb.ToString();
 
-                rootAsString.data = rootAsString.data.Substring(index);
+                rootAsString.data = rootAsString.data[index..];
             }
             
             do { } while (rootJson.DecodeAll(ref rootJson));
         }
 
         #region Inspector
-        private static readonly List<string> inspectedPath = new List<string>();
+
+        public override string ToString() => "{0} Json: {1}".F(_name, rootJson);
+
+        private static readonly List<string> inspectedPathForErrorDebug = new();
 
         void IPEGI.Inspect()
         {
@@ -119,29 +136,32 @@ namespace QuizCanners.Utils
 
             pegi.Nl();
 
-            inspectedPath.Clear();
+            inspectedPathForErrorDebug.Clear();
 
             DecodeOrInspectJson(ref rootJson, true);
         }
 
         #endregion
 
-        protected class PathAdd : IDisposable
+        protected class PathAdd_ErrorDebug : IDisposable
         {
-            public PathAdd(string name)
+            public PathAdd_ErrorDebug(string name)
             {
-                inspectedPath.Add(name);
+                inspectedPathForErrorDebug.Add(name);
             }
 
             public void Dispose()
             {
-                inspectedPath.RemoveLast();
+                inspectedPathForErrorDebug.RemoveLast();
             }
         }
 
         #region Json Anatomy
         protected class JsonString : JsonBase
         {
+            public bool InlineJson_Checked;
+            public bool InlineJson_Found;
+
             public bool dataOnly;
 
             public override JsonString AsJsonString => this;
@@ -225,9 +245,9 @@ namespace QuizCanners.Utils
 
             private void LogError(string error)
             {
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
 
-                foreach (var path in inspectedPath)
+                foreach (var path in inspectedPathForErrorDebug)
                 {
                     sb.Append(path).Append("/");
                 }
@@ -249,15 +269,15 @@ namespace QuizCanners.Utils
 
                 data = Regex.Replace(data, @"\t|\n|\r", "");
 
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
                 int textIndex = 0;
                 int openBrackets = 0;
                 bool insideTextData = false;
                 string variableName = "";
 
-                List<JsonProperty> properties = new List<JsonProperty>();
+                List<JsonProperty> properties = new();
 
-                List<JsonString> vals = new List<JsonString>();
+                List<JsonString> vals = new();
 
                 var stage = JsonDecodingStage.DataTypeDecision;
 
@@ -271,56 +291,57 @@ namespace QuizCanners.Utils
                     {
                         case JsonDecodingStage.DataTypeDecision:
 
-                            if (c != ' ')
+                            if (c == ' ')
+                                break;
+                            
+                            if (c == '{')
+                                isaList = false;
+                            else if (c == '[')
+                                isaList = true;
+                            else if (c == '"')
                             {
-                                if (c == '{')
-                                    isaList = false;
-                                else if (c == '[')
-                                    isaList = true;
-                                else if (c == '"')
-                                {
-                                    stage = JsonDecodingStage.ReadingVariableName;
-                                    sb.Clear();
-                                    break;
-                                }
-                                else
-                                {
-                                    LogError("Is not collection. First symbol: " + c);
-                                    return null;
-                                }
-
-                                stage = isaList
-                                    ? JsonDecodingStage.ReadingData
-                                    : JsonDecodingStage.ExpectingVariableName;
+                                stage = JsonDecodingStage.ReadingVariableName;
+                                sb.Clear();
+                                break;
                             }
+                            else
+                            {
+                                LogError("Is not collection. First symbol: " + c);
+                                return null;
+                            }
+
+                            stage = isaList
+                                ? JsonDecodingStage.ReadingData
+                                : JsonDecodingStage.ExpectingVariableName;
+                            
                             break;
 
                         case JsonDecodingStage.ExpectingVariableName:
-                            if (c != ' ')
+                            if (c == ' ')
+                                break;
+                            
+                            if (c == '}' || c == ']')
                             {
-                                if (c == '}' || c == ']')
-                                {
 
-                                    int left = data.Length - textIndex;
+                                int left = data.Length - textIndex;
 
-                                    if (left > 5)
-                                        LogError("End of collection detected a bit too early. Left {0} symbols: {1}".F(left, data.Substring(textIndex)));
-                                    // End of collection instead of new element
-                                    break;
-                                }
-
-                                if (c == '"')
-                                {
-                                    stage = JsonDecodingStage.ReadingVariableName;
-                                    sb.Clear();
-                                }
-                                else
-                                {
-                                    LogError("Was expecting variable name: {0} ".F(data.Substring(textIndex)));
-                                    return null;
-                                }
+                                if (left > 5)
+                                    LogError("End of collection detected a bit too early. Left {0} symbols: {1}".F(left, data[textIndex..]));
+                                // End of collection instead of new element
+                                break;
                             }
 
+                            if (c == '"')
+                            {
+                                stage = JsonDecodingStage.ReadingVariableName;
+                                sb.Clear();
+                            }
+                            else
+                            {
+                                LogError("Was expecting variable name: {0} ".F(data[textIndex..]));
+                                return null;
+                            }
+                            
                             break;
                         case JsonDecodingStage.ReadingVariableName:
 
@@ -344,7 +365,7 @@ namespace QuizCanners.Utils
                             }
                             else if (c != ' ')
                             {
-                                LogError("Was Expecting two dots " + data.Substring(textIndex));
+                                LogError("Was Expecting two dots " + data[textIndex..]);
                                 return null;
                             }
 
@@ -353,44 +374,49 @@ namespace QuizCanners.Utils
                         case JsonDecodingStage.ReadingData:
 
                             bool needsClear = false;
-
+                            
                             if (c == '"')
-                                insideTextData = !insideTextData;
-
-                            if (!insideTextData && (c != ' '))
                             {
+                                insideTextData = !insideTextData;
+                               // break;
+                            }
+
+                            CheckForElementStartOrEnd();
+
+                            void CheckForElementStartOrEnd()
+                            {
+                                if (insideTextData || (c == ' '))
+                                    return;
 
                                 if (c == '{' || c == '[')
-                                    openBrackets++;
-                                else
                                 {
-
-                                    var comma = c == ',';
-
-                                    var closed = !comma && (c == '}' || c == ']');
-
-                                    if (closed)
-                                        openBrackets--;
-
-                                    if ((closed && openBrackets < 0) || (comma && openBrackets <= 0))
-                                    {
-
-                                        var dta = sb.ToString();
-
-                                        if (isaList)
-                                        {
-                                            if (dta.Length > 0)
-                                                vals.Add(new JsonString(dta));
-                                        }
-                                        else
-                                            properties.Add(new JsonProperty(variableName, dta));
-
-                                        needsClear = true;
-
-                                        stage = isaList ? JsonDecodingStage.ReadingData : JsonDecodingStage.ExpectingVariableName;
-                                    }
-
+                                    openBrackets++;
+                                    return;
                                 }
+                               
+                                var closed = c == '}' || c == ']';
+
+                                if (closed)
+                                    openBrackets--;
+
+                                bool elementCompleted = (closed && openBrackets < 0) || ((c == ',') && openBrackets <= 0);
+
+                                if (!elementCompleted)
+                                    return;
+                                
+                                var dta = sb.ToString();
+
+                                if (isaList)
+                                {
+                                    if (dta.Length > 0)
+                                        vals.Add(new JsonString(dta));
+                                }
+                                else
+                                    properties.Add(new JsonProperty(variableName, dta));
+
+                                needsClear = true;
+
+                                stage = isaList ? JsonDecodingStage.ReadingData : JsonDecodingStage.ExpectingVariableName;
                             }
 
                             if (!needsClear)
@@ -398,25 +424,21 @@ namespace QuizCanners.Utils
                             else
                                 sb.Clear();
 
-
                             break;
                     }
-
-
 
                     textIndex++;
                 }
 
                 if (isaList)
                     return new JsonList(vals);
-                return properties.Count > 0 ? new JsonClass(properties) : null;
 
+                return properties.Count > 0 ? new JsonClass(properties) : null;
             }
         }
 
         protected class JsonProperty : JsonBase
         {
-
             public string name;
 
             public JsonBase data;
@@ -444,24 +466,22 @@ namespace QuizCanners.Utils
 
             public override void Inspect()
             {
-
                 inspected = this;
-
 
                 pegi.Nl();
 
                 if (data.GetCount() > 0)
                 {
                     if (data.HasNestedData)
-                        (name + " " + data.GetNameForInspector()).PegiLabel().IsFoldout(ref foldedOut);
+                        (name + " " + data.ToString()).PegiLabel().IsFoldout(ref foldedOut);
 
-                    using (new PathAdd(ToString()))
+                    using (new PathAdd_ErrorDebug(ToString()))
                     {
                         DecodeOrInspectJson(ref data, foldedOut, name);
                     }
                 }
                 else
-                    (name + " " + data.GetNameForInspector()).PegiLabel().Write();
+                    (name + " " + data.ToString()).PegiLabel().Write();
 
                 pegi.Nl();
 
@@ -472,27 +492,26 @@ namespace QuizCanners.Utils
         protected class JsonList : JsonBase
         {
 
-            private readonly List<JsonBase> values;
-            private readonly Countless<bool> foldedOut = new Countless<bool>();
+            private readonly List<JsonBase> elements;
+            private readonly HashSet<int> foldedOut = new();
 
             private string previewValue = "";
             private bool previewFoldout;
 
-            public override int GetCount() => values.Count;
+            public override int GetCount() => elements.Count;
 
-            public override string ToString() => "[{0}]".F(values.Count);
+            public override string ToString() => "[{0}]".F(elements.Count);
 
             public override void Inspect()
             {
 
-                using (new PathAdd(ToString()))
+                using (new PathAdd_ErrorDebug(ToString()))
                 {
-                    if (values.Count > 0)
+                    if (elements.Count > 0)
                     {
-                        var cl = values[0] as JsonClass;
+                        var cl = elements[0] as JsonClass;
                         if (cl != null && cl.properties.Count > 0)
                         {
-
                             if (!previewFoldout && Icon.Config.Click(15).UnfocusOnChange())
                                 previewFoldout = true;
 
@@ -535,18 +554,18 @@ namespace QuizCanners.Utils
                     if (jp != null)
                     {
                         string name = jp.name;
-                        if (name[name.Length - 1] == 's')
+                        if (name[^1] == 's')
                         {
-                            nameForElemenet = name.Substring(0, name.Length - 1);
+                            nameForElemenet = name[..^1];
                         }
                     }
 
-                    for (int i = 0; i < values.Count; i++)
+                    for (int i = 0; i < elements.Count; i++)
                     {
 
-                        var val = values[i];
+                        var val = elements[i];
 
-                        bool fo = foldedOut[i];
+                        bool contains = foldedOut.Contains(i);
 
                         if (val.HasNestedData)
                         {
@@ -565,12 +584,12 @@ namespace QuizCanners.Utils
                                     preview = "missing";
                             }
 
-                            ((preview.Length > 0 && !fo) ? "{1} ({0})".F(previewValue, preview) : "[{0} {1}]".F(nameForElemenet, i)).PegiLabel().IsFoldout(ref fo);
-                            foldedOut[i] = fo;
+                            ((preview.Length > 0 && !contains) ? "{1} ({0})".F(previewValue, preview) : "[{0} {1}]".F(nameForElemenet, i)).PegiLabel().IsFoldout(ref contains);
+                            foldedOut.SetContains(i, contains: contains);
                         }
 
-                        pegi.Nested_Inspect(() => DecodeOrInspectJson(ref val, fo)).Nl();
-                        values[i] = val;
+                        pegi.Nested_Inspect(() => DecodeOrInspectJson(ref val, contains)).Nl();
+                        elements[i] = val;
                     }
                 }
 
@@ -581,12 +600,12 @@ namespace QuizCanners.Utils
             {
                 bool changes = false;
 
-                for (int i = 0; i < values.Count; i++)
+                for (int i = 0; i < elements.Count; i++)
                 {
-                    var val = values[i];
+                    var val = elements[i];
                     if (val.DecodeAll(ref val))
                     {
-                        values[i] = val;
+                        elements[i] = val;
                         changes = true;
                     }
                 }
@@ -594,9 +613,9 @@ namespace QuizCanners.Utils
                 return changes;
             }
 
-            public JsonList() { values = new List<JsonBase>(); }
+            public JsonList() { elements = new List<JsonBase>(); }
 
-            public JsonList(List<JsonString> values) { this.values = values.ToList<JsonBase>(); }
+            public JsonList(List<JsonString> values) { this.elements = values.ToList<JsonBase>(); }
         }
 
         protected class JsonClass : JsonBase
@@ -624,7 +643,7 @@ namespace QuizCanners.Utils
 
                 pegi.Indent();
 
-                using (new PathAdd(ToString()))
+                using (new PathAdd_ErrorDebug(ToString()))
                 {
                     for (int i = 0; i < properties.Count; i++)
                         properties[i].Nested_Inspect();
@@ -660,7 +679,6 @@ namespace QuizCanners.Utils
 
         protected abstract class JsonBase : IPEGI, IGotCount
         {
-
             public JsonBase AsBase => this;
 
             public virtual JsonString AsJsonString => null;

@@ -98,7 +98,7 @@ namespace QuizCanners.Inspect
 #endif
             ChangesToken.False;
 
-        public static ChangesToken Edit_IfNull<T>(this TextLabel label, ref T so) where T : ScriptableObject
+        public static ChangesToken EditSO_IfNull<T>(this TextLabel label, ref T so) where T : ScriptableObject
         {
             if (so)
                 return ChangesToken.False;
@@ -121,7 +121,7 @@ namespace QuizCanners.Inspect
             label.Write();
             var res = Edit_IfNull(ref component, parent);
 
-            if (renameOnAttach && res && component) 
+            if (renameOnAttach && component && !component.gameObject.name.Equals(label.label) && "Rename".PegiLabel(toolTip: "Rename to "+label.label).Click()) 
             {
                 component.gameObject.name = label.label;
             }
@@ -326,6 +326,8 @@ namespace QuizCanners.Inspect
                 }
                 else
                 {
+                    label.label = obj.ToString();
+
                     var lst = obj as IPEGI_ListInspect;
 
                     if (lst != null)
@@ -491,7 +493,7 @@ namespace QuizCanners.Inspect
                 if (name.IsNullOrEmpty())
                     name = property.ToString();
 
-                if (name.PegiLabel(name.Length * letterSizeInPixels).Edit(ref val))
+                if (name.ConstLabel().Edit(ref val))
                 {
                     material.Set(property, val);
                     return ChangesToken.True;
@@ -563,7 +565,7 @@ namespace QuizCanners.Inspect
                 if (name.IsNullOrEmpty())
                     name = property.ToString();
 
-                if (name.PegiLabel(name.Length * letterSizeInPixels).Edit(ref val))
+                if (name.ConstLabel().Edit(ref val))
                 {
                     mat.Set(property, val);
                     return ChangesToken.True;
@@ -587,7 +589,7 @@ namespace QuizCanners.Inspect
             }
 
 
-            public ChangesToken Toggle(ShaderProperty.MaterialToggle property, string name = null)
+            public ChangesToken Toggle(ShaderProperty.MaterialKeywordToggle property, string name = null)
             {
                 var val = property.Get(material);
 

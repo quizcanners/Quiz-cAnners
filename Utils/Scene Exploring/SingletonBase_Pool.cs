@@ -282,6 +282,13 @@ namespace QuizCanners.Utils
             }
             else
             {
+                if (prefabs.Count == 0) 
+                {
+                    QcLog.ChillLogger.LogErrorOnce("No prefabs assigned", "oPfbs", this);
+                    inst = null;
+                    return;
+                }
+
                 using (QcDebug.TimeProfiler.Instance["Pool Instancers"].Sum(typeof(T).ToPegiStringType()).Start())
                 {
                     lastInstancePrefab = (lastInstancePrefab + 1) % prefabs.Count;
@@ -340,16 +347,13 @@ namespace QuizCanners.Utils
 
             using (_tab.StartContext())
             {
-                pegi.AddTab("Prefabs", changes =>
+                pegi.AddTab("Prefabs", ()=>
                 {
                     "Prefabs".PegiLabel(60).Edit_List_UObj(prefabs).Nl();
                     "Capacity: {0}/{1}".F(pool.Count + instances.Count, MAX_INSTANCES).PegiLabel().Nl();
                 });
 
-                pegi.AddTab("Instance", changes =>
-                {
-                    _active.Edit_List(instances).Nl();
-                });
+                pegi.AddTab("Instance", ()=> _active.Edit_List(instances).Nl());
             }
         }
 
@@ -563,19 +567,19 @@ namespace QuizCanners.Utils
 
             using (_tab.StartContext())
             {
-                pegi.AddTab("Prefabs", changes =>
+                pegi.AddTab("Prefabs", ()=>
                 {
                     _prefabsMeta.Edit_List(prefabs).Nl();
                     if (Application.isPlaying)
                         "Capacity: {0}/{1} ({2})".F(InstancesCount, RECOMMENDED_INSTANCES, MAX_INSTANCES).PegiLabel().Nl();
                 });
 
-                pegi.AddTab("Instance", changes =>
+                pegi.AddTab("Instance", ()=>
                 {
                     _instancesMeta.Edit_List(allInstances).Nl();
                 });
 
-                pegi.AddTab("Debug", changes =>
+                pegi.AddTab("Debug", ()=>
                 {
                     if (Application.isPlaying && Icon.Play.Click())
                         TrySpawn(Vector3.zero, out _);

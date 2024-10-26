@@ -5,8 +5,6 @@ using UnityEngine;
 
 namespace QuizCanners.Migration
 {
-#pragma warning disable IDE0019 // Use pattern matching
-
     public static class CfgDecoderExtensions 
     {
         private static ICfgCustom _loopSafe;
@@ -18,9 +16,7 @@ namespace QuizCanners.Migration
 
         public static void Decode<T>(this T obj, CfgData data) where T : class, ICfgDecode
         {
-            var cstm = obj as ICfgCustom;
-
-            if (cstm != null)
+            if (obj is ICfgCustom cstm)
             {
                 if (cstm == _loopSafe)
                 {
@@ -31,7 +27,7 @@ namespace QuizCanners.Migration
                 {
                     _loopSafe = cstm;
                     cstm.DecodeInternal(data);
-                    _loopSafe = null; 
+                    _loopSafe = null;
                 }
             }
             else
@@ -51,11 +47,9 @@ namespace QuizCanners.Migration
             var val = (T)Activator.CreateInstance(childType);
 
             if (ovj == null) return val;
-            
-            var std = val as ICfg;
 
-            if (std == null) return val;
-            
+            if (val is not ICfg std) return val;
+
             std.Decode(new CfgData(ovj.Encode().ToString())); 
             
             return val;
@@ -239,5 +233,3 @@ namespace QuizCanners.Migration
     }
 
 }
-
-#pragma warning restore IDE0019 // Use pattern matching

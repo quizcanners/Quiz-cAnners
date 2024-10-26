@@ -2,7 +2,6 @@ using QuizCanners.Inspect;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.ParticleSystem;
 
 namespace QuizCanners.Utils
 {
@@ -139,28 +138,56 @@ namespace QuizCanners.Utils
             {
                 get
                 {
-                    if (!instance)
-                    {
-                        if (!sourceMaterial)
-                            QcLog.ChillLogger.LogErrorOnce("No sourceMaterial in material instancer", key: "noSrcMat");
-                        else
-                            instance = new Material(sourceMaterial);
-                    }
+                    if (instance)
+                        return instance;
+
+                    if (!sourceMaterial)
+                        QcLog.ChillLogger.LogErrorOnce("No sourceMaterial in material instancer", key: "noSrcMat");
+                    else
+                        instance = new Material(sourceMaterial);
+                    
                     return instance;
                 }
             }
 
+            public void Clear()
+            {
+                instance.DestroyWhateverUnityObject();
+                instance = null;
+            }
+
             void IPEGI.Inspect()
             {
-                if (!sourceMaterial)
-                    "Source Material".PegiLabel(90).Edit(ref sourceMaterial).Nl();
+                 "Source Material".ConstLabel().Edit(ref sourceMaterial).Nl(Clear);
+
+                if (instance)
+                    "Instance".PegiLabel().Edit(ref instance).Nl();
+
             }
         }
 
-
+        [Serializable]
         public class ByShader : IPEGI
         {
+            [SerializeField] private Shader shaderToUse;
             [NonSerialized] private Material instance;
+
+            public void Clear()
+            {
+                instance.DestroyWhateverUnityObject();
+                instance = null;
+            }
+
+            public Material Get() 
+            {
+                if (!shaderToUse) 
+                {
+                    QcLog.ChillLogger.LogErrorOnce("Shader not set", key: "ShNst");
+                    return null;
+                }
+
+                return Get(shaderToUse);
+            }
 
             public Material Get (Shader shader)
             {
@@ -176,10 +203,14 @@ namespace QuizCanners.Utils
                 return instance;
             }
 
+            #region Inspector
             void IPEGI.Inspect()
             {
-                "Material Instance".PegiLabel().Edit(ref instance).Nl();
+                "Shader to Use: ".PegiLabel().Edit(ref shaderToUse).Nl(Clear);
+                //"Material Instance".PegiLabel().Edit(ref instance).Nl();
             }
+
+            #endregion
         }
     }
 }

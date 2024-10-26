@@ -6,6 +6,8 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 using Object = UnityEngine.Object;
 using System;
+using UnityEditor;
+
 
 #if UNITY_EDITOR
 using AssetDatabase = UnityEditor.AssetDatabase;
@@ -22,13 +24,22 @@ namespace QuizCanners.Utils
 
         public enum LocationEnum { PersistantPath, Resources, Assets }
 
-        public class RelativeLocation 
+        public class RelativeLocation : IPEGI
         {
             public string FolderName;
             public string FileName;
             public bool AsBytes;
 
             internal string Extension => AsBytes ? BYTES_FILE_TYPE : TEXT_FILE_TYPE;
+
+            public void SaveGame(object saveData) => Save.ToPersistentPath.JsonTry(saveData, this);
+            public void LoadGame<T>(out T saveData)=> Load.FromPersistentPath.JsonTry(this, out saveData);
+
+            public void Inspect()
+            {
+                if ("Open {0} Save location".F(FolderName).PegiLabel().Click())
+                    Explorer.OpenPersistentFolder(FolderName);
+            }
 
             public RelativeLocation (string folderName, string fileName, bool asBytes = DEFAULT_IS_BINARY) 
             {
@@ -38,10 +49,10 @@ namespace QuizCanners.Utils
             }
         }
 
-        private static readonly BinaryFormatter Formatter = new BinaryFormatter();
+        private static readonly BinaryFormatter Formatter = new();
 
         public static readonly string OutsideOfAssetsFolder =
-            Application.dataPath.Substring(0, Application.dataPath.Length - 6);
+            Application.dataPath[..^6];
 
         public static class Explorer
         {
@@ -57,12 +68,12 @@ namespace QuizCanners.Utils
                 {
 
                     var txt = lst[i].Replace(@"\", @"/");
-                    txt = txt.Substring(txt.LastIndexOf("/", System.StringComparison.Ordinal) + 1);
+                    txt = txt[(txt.LastIndexOf("/", System.StringComparison.Ordinal) + 1)..];
 
                     int extension = txt.LastIndexOf(".", System.StringComparison.Ordinal);
 
                     if (extension>0)
-                        txt = txt.Substring(0, extension);
+                        txt = txt[..extension];
                     lst[i] = txt;
                 }
 
@@ -82,7 +93,7 @@ namespace QuizCanners.Utils
                 for (var i = 0; i < lst.Count; i++)
                 {
                     var txt = lst[i].Replace(@"\", @"/");
-                    txt = txt.Substring(txt.LastIndexOf("/", System.StringComparison.Ordinal) + 1);
+                    txt = txt[(txt.LastIndexOf("/", System.StringComparison.Ordinal) + 1)..];
                     lst[i] = txt;
                 }
 
@@ -234,7 +245,7 @@ namespace QuizCanners.Utils
                     return false;
 
                 var subpath = Application.dataPath;
-                location = subpath.Substring(0, subpath.Length - 6) + location;
+                location = subpath[..^6] + location;
 
                 return true;
 
@@ -296,7 +307,7 @@ namespace QuizCanners.Utils
                     }
                     else
                     {
-                        StreamReader reader = new StreamReader(fullPath);
+                        StreamReader reader = new(fullPath);
                         data = reader.ReadToEnd();
                         reader.Close();
                     }
@@ -423,6 +434,66 @@ namespace QuizCanners.Utils
 
         public static class Save 
         {
+            [Serializable]
+            public class SystemLocation : IPEGI
+            {
+                [SerializeField] private string _fileName;
+                [SerializeField] private string _extension;
+                public string FilePath;
+                public string GetFullPath(string fileName) => Path.Combine(FilePath, fileName) + _extension;
+
+                public string SaveText(string jsonText, string fileName = null, bool andOpen = true)
+                {
+                    if (fileName.IsNullOrEmpty())
+                        fileName = _fileName;
+
+                    var path = GetFullPath(fileName);
+
+                    ByFullPath(path, jsonText);
+
+                    if (andOpen)
+                        Explorer.OpenPath(path);
+
+                    return path;
+                }
+
+                public string SaveObject(object data, string fileName = null, bool andOpen = true) 
+                {
+                    if (fileName.IsNullOrEmpty())
+                        fileName = _fileName;
+
+                    var path = GetFullPath(fileName);
+
+                    var jsonText = JsonUtility.ToJson(data);
+                    ByFullPath(path, jsonText);
+
+                    if (andOpen)
+                        Explorer.OpenPath(path);
+
+                    return path;
+                }
+
+                public void Inspect()
+                {
+                    "File path".ConstLabel().Edit(ref FilePath);
+                    if (Icon.Edit.Click())
+                    {
+                        var newPath = EditorUtility.OpenFolderPanel("Save {0}{1} to".F(_fileName, _extension), FilePath, "");
+                        if (!newPath.IsNullOrEmpty())
+                            FilePath = newPath;
+                    }
+
+                    if (Icon.Folder.Click())
+                        QcFile.Explorer.OpenPath(FilePath);
+                }
+
+                public SystemLocation(string extension, string defaultFileName = "FILE_NAME")
+                {
+                    _fileName = defaultFileName;
+                    _extension = extension;
+                }
+            }
+
             #region Unity Assets
 
             public static void Asset(Object obj, string folder, string extension, bool refreshAfter = false)
@@ -474,7 +545,13 @@ namespace QuizCanners.Utils
             public static void ToAssets(string path, string filename, string data, bool asBytes = DEFAULT_IS_BINARY) =>
                 ByFullPath(Path.Combine(Application.dataPath, path), filename, data, asBytes: asBytes);
 
-            private static void ByFullPath(string fullDirectoryPath, string fileName, string data, bool asBytes)
+            public static void ByFullPath(string fullPath, string data)
+            {
+               // Directory.CreateDirectory(fullPath);
+                File.WriteAllText(fullPath, data);
+            }
+
+            public static void ByFullPath(string fullDirectoryPath, string fileName, string data, bool asBytes)
             {
                 string extension = asBytes ? BYTES_FILE_TYPE : TEXT_FILE_TYPE;
 
@@ -538,7 +615,7 @@ namespace QuizCanners.Utils
 
                 public static void String(string subPath, string fileName, string data, bool asBytes = DEFAULT_IS_BINARY)
                 {
-                    RelativeLocation location = new RelativeLocation(folderName: subPath, fileName: fileName, asBytes: asBytes);
+                    RelativeLocation location = new(folderName: subPath, fileName: fileName, asBytes: asBytes);
                     String(location, data: data);
                 }
 

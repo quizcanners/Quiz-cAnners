@@ -30,15 +30,26 @@ namespace QuizCanners.Utils
 
         public static string SecondsToReadableString(long seconds) => TicksToReadableString(seconds * TimeSpan.TicksPerSecond);
 
-        public static string TicksToReadableString(double totalTicks)
+        public static string TicksToReadableString(double totalTicks, bool precise = false)
         {
             double absElapsed = Math.Abs(totalTicks);
 
-            if (absElapsed < TimeSpan.TicksPerMillisecond)  return "{1} ms ({0} ticks)".F(totalTicks.ToString("0.00"), ForScale(TimeSpan.TicksPerMillisecond));
-            if (absElapsed < TimeSpan.TicksPerSecond)       return "{1} s ({0} miliseconds)".F(ForScale(TimeSpan.TicksPerMillisecond), ForScale(TimeSpan.TicksPerSecond));
-            if (absElapsed < TimeSpan.TicksPerMinute)       return "{1} min ({0} seconds)".F(ForScale(TimeSpan.TicksPerSecond), ForScale(TimeSpan.TicksPerMinute));
-            if (absElapsed < TimeSpan.TicksPerHour)         return "{1} hours ({0} minutes)".F(ForScale(TimeSpan.TicksPerMinute), ForScale(TimeSpan.TicksPerHour));
-                                                            return "{1} days ({0} hours)".F(ForScale(TimeSpan.TicksPerHour), ForScale(TimeSpan.TicksPerDay));
+            if (precise)
+            {
+                if (absElapsed < TimeSpan.TicksPerMillisecond) return "{1} ms ({0} ticks)".F(totalTicks.ToString("0.00"), ForScale(TimeSpan.TicksPerMillisecond));
+                if (absElapsed < TimeSpan.TicksPerSecond) return "{1} s ({0} miliseconds)".F(ForScale(TimeSpan.TicksPerMillisecond), ForScale(TimeSpan.TicksPerSecond));
+                if (absElapsed < TimeSpan.TicksPerMinute) return "{1} min ({0} seconds)".F(ForScale(TimeSpan.TicksPerSecond), ForScale(TimeSpan.TicksPerMinute));
+                if (absElapsed < TimeSpan.TicksPerHour) return "{1} hours ({0} minutes)".F(ForScale(TimeSpan.TicksPerMinute), ForScale(TimeSpan.TicksPerHour));
+                return "{1} days ({0} hours)".F(ForScale(TimeSpan.TicksPerHour), ForScale(TimeSpan.TicksPerDay));
+            } else 
+            {
+                if (absElapsed < TimeSpan.TicksPerMillisecond) return "{0} ticks".F(totalTicks.ToString("0.00"));
+                if (absElapsed < TimeSpan.TicksPerSecond) return "{0} ms".F(ForScale(TimeSpan.TicksPerMillisecond));
+                if (absElapsed < TimeSpan.TicksPerMinute) return "{0} s".F(ForScale(TimeSpan.TicksPerSecond));
+                if (absElapsed < TimeSpan.TicksPerHour) return "{0} m".F(ForScale(TimeSpan.TicksPerMinute));
+                if (absElapsed < TimeSpan.TicksPerDay) return "{0} hours".F(ForScale(TimeSpan.TicksPerHour));
+                return "{0} days".F(ForScale(TimeSpan.TicksPerDay));
+            }
 
             string ForScale(long scale)
             {
@@ -182,7 +193,7 @@ namespace QuizCanners.Utils
 
         #endregion
 
-        #region List Management
+        #region Collection Management
 
         internal static bool CanAdd<T>(List<T> list, ref object obj, out T conv, bool onlyIfNew = true)
         {
@@ -399,8 +410,17 @@ namespace QuizCanners.Utils
             return dic.GetElementAt(Random.Range(0, dic.Count)).Value;
         }
 
+        public static bool ToggleContains<T>(this List<T> list, T value)
+        {
+            if (!list.Remove(value))
+            {
+                list.Add(value);
+                return true;
+            }
 
-        /// <summary>Returns True if any change to <c>List</c> were made to satisfy the target state.</summary>
+            return false;
+        }
+
         public static bool SetContains<T>(this List<T> list, T value, bool targetState)
         {
             if (list.Contains(value) != targetState)
@@ -415,6 +435,7 @@ namespace QuizCanners.Utils
 
             return false;
         }
+
         public static void ForceSetCount<T>(this List<T> list, int count) where T : new()
         {
             if (count == list.Count)
@@ -577,6 +598,14 @@ namespace QuizCanners.Utils
         public static bool IsNullOrEmpty(this ICollection list) => list == null || list.Count == 0;
 
         public static bool IsNullOrEmpty<T>(this HashSet<T> hashSet) => hashSet == null || hashSet.Count == 0;
+
+        public static void SetContains(this HashSet<int> vals, int index, bool contains)
+        {
+            if (contains)
+                vals.Add(index);
+            else
+                vals.Remove(index);
+        }
 
         #endregion
 
@@ -900,7 +929,7 @@ namespace QuizCanners.Utils
             var maxSlash = GetLastSlashIndex(fullPath);
 
             if (maxSlash >= 0)
-                fullPath = fullPath.Substring(startIndex: 0, maxSlash); //[(maxSlash + 1)..];
+                fullPath = fullPath[..maxSlash]; //[(maxSlash + 1)..];
             
             return fullPath;
         }
@@ -958,17 +987,42 @@ namespace QuizCanners.Utils
                  
             for (int i = 1; i < text.Length; i++)
             {
-                var currentCharacter = text[i];
+                char currentCharacter = text[i];
+               
+                bool TryGetNext(out char symbol) 
+                {
+                    if (i >= text.Length-1) 
+                    {
+                        symbol = ' ';
+                        return false;
+                    }
+
+                    symbol = text[i+1];
+                    return true;
+                }
+
+                bool ShouldPreserve(char symbol) => char.IsUpper(symbol) || char.IsNumber(symbol);
+
                 if (char.IsUpper(currentCharacter))
                 {
-                    if ((previousCharacter != ' ' && !char.IsUpper(previousCharacter)) ||
-                        (preserveAcronyms && char.IsUpper(previousCharacter) &&
-                         i < text.Length - 1 && !char.IsUpper(text[i + 1])))
-                        newText.Append(' ');
+                    bool preserveWithPrevious = ShouldPreserve(previousCharacter);
 
-                    if (!wasUnderscore)
+                    if (preserveAcronyms 
+                        && (preserveWithPrevious || (TryGetNext(out var nextCharacter) && ShouldPreserve(nextCharacter))))
                     {
-                        currentCharacter = char.ToLower(currentCharacter);
+                        if (!preserveWithPrevious)
+                            newText.Append(' ');
+                    }
+                    else
+                    {
+
+                        if (previousCharacter != ' ' && !char.IsUpper(previousCharacter))
+                            newText.Append(' ');
+
+                        if (!wasUnderscore)
+                        {
+                            currentCharacter = char.ToLower(currentCharacter);
+                        }
                     }
                 }
                 else

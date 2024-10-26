@@ -10,6 +10,9 @@ namespace QuizCanners.Utils
 {
     public class TimedCoroutine : IPEGI_ListInspect, IPEGI, IGotName
     {
+
+        public static CallAgainRequest CallAgain => new();
+
         public class CallAgainRequest
         {
             public string message;

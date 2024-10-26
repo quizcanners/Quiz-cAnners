@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace QuizCanners.Utils
 {
@@ -115,6 +116,20 @@ namespace QuizCanners.Utils
 
         private static readonly System.Globalization.CultureInfo provider = new("en-US");
 
+        public static byte[] StringToByteArray(string name) => Encoding.ASCII.GetBytes(name);
+        
+        public static string ByteArrayToString(byte[] arr)
+        {
+            int nullIndex = Array.IndexOf(arr, (byte)0);
+
+            if (nullIndex == -1)
+            {
+                nullIndex = arr.Length;
+            }
+
+            return Encoding.UTF8.GetString(arr, 0, nullIndex);
+        }
+
         public static string ToReadableString(this int value) => ToReadableString((double)value);
     
         public static string ToReadableString(this double value, int maxNumbers = 3)
@@ -204,6 +219,54 @@ namespace QuizCanners.Utils
             bytes >>= 10;
             bytes /= 1024; // On new line to workaround IL2CPP bug
             return "{0} Mb".F(bytes.ToString());
+        }
+
+        public static string ToRelativeString(this DateTime date, bool showHours)
+        {
+            DateTime today = DateTime.Today;
+
+            if (showHours)
+            {
+                TimeSpan diff = date - DateTime.Now;
+                var inTotalHours = diff.TotalHours;
+
+                if (Math.Abs(inTotalHours) < 1)
+                    return "Now";
+
+                if (Math.Abs(inTotalHours) < 24)
+                {
+                    if (inTotalHours > 0)
+                    {
+                        return "in {0} hours".F(Math.Floor(inTotalHours));
+                    }
+
+                    if (inTotalHours < 0)
+                    {
+                        return "{0} hours ago".F(Math.Floor(-inTotalHours));
+                    }
+                }
+            }
+
+            if (date.Date == today)
+                return AddTimeIfneeded("Today");
+
+            if (date.Date == today.AddDays(1))     return AddTimeIfneeded("Tomorrow");
+            if (date.Date == today.AddDays(-1))    return AddTimeIfneeded("Yesterday");
+            if (date.Date == today.AddDays(2)) return AddTimeIfneeded("After Tomorrow");
+            if (date.Date == today.AddDays(-2)) return AddTimeIfneeded("Before Yesterday");
+
+            if (date.Year != DateTime.Now.Year)
+                return AddTimeIfneeded(date.ToString("dd-MMMM-yyyy"));
+
+            return AddTimeIfneeded(date.ToString("dd MMMM"));
+
+            string AddTimeIfneeded(string text)
+            {
+                if (!showHours)
+                    return text;
+
+                return "{0} at {1}".F(text, date.ToString("HHmm"));
+            }
         }
     }
 }

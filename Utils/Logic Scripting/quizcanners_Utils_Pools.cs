@@ -331,9 +331,9 @@ namespace QuizCanners.Utils
                 if (!Application.isPlaying)
                 {
                     if (!parent)
-                        "Parent".PegiLabel(90).Edit(ref parent);
+                        "Parent".ConstLabel().Edit(ref parent);
                     else
-                        "Prefab".PegiLabel(50).Edit(ref prefab);
+                        "Prefab".ConstLabel().Edit(ref prefab);
                 }
 
                 base.InspectInList(ref edited, ind);
@@ -345,8 +345,8 @@ namespace QuizCanners.Utils
 
                 if (!Application.isPlaying)
                 {
-                    "Parent".PegiLabel(60).Edit(ref parent).Nl();
-                    "Prefab".PegiLabel(60).Edit(ref prefab).Nl();
+                    "Parent".ConstLabel().Edit(ref parent).Nl();
+                    "Prefab".ConstLabel().Edit(ref prefab).Nl();
                 }
             }
 

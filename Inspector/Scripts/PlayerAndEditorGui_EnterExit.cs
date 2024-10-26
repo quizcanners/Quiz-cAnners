@@ -17,6 +17,8 @@ namespace QuizCanners.Inspect
 {
     public static partial class pegi
     {
+        public const char X_SYMBOL = '×';
+
         public static StateToken Toggle_Enter (this TextLabel exitLabel, ref bool toggle, bool hideTextWhenTrue = false) 
         {
             using (Context.IncrementDisposible(out bool canSkip))
@@ -124,9 +126,9 @@ namespace QuizCanners.Inspect
             }
 
 
-            PegiEditorOnly.isFoldedOutOrEntered = new StateToken(entered == thisOne);
+            FoldoutManager.isFoldedOutOrEntered = new StateToken(entered == thisOne);
 
-            return PegiEditorOnly.isFoldedOutOrEntered;
+            return FoldoutManager.isFoldedOutOrEntered;
         }
 
         public static StateToken IsConditionally_Entered(this TextLabel exitLabel, bool canEnter, bool showLabelIfTrue = true)
@@ -165,6 +167,34 @@ namespace QuizCanners.Inspect
             return PegiEditorOnly.isFoldedOutOrEntered;
         }
         */
+
+        public static ChangesToken Enter_Inspect(this TextLabel label, object target)
+        {
+            using (Context.IncrementDisposible(out bool canSkip))
+            {
+                if (canSkip)
+                    return ChangesToken.False;
+
+                var change = ChangeTrackStart();
+
+                Context.Internal_isEntered(label);
+
+                if (Context.IsEnteredCurrent)
+                {
+                    try
+                    {
+                        Try_Nested_Inspect(target);
+                    }
+                    catch (Exception ex)
+                    {
+                        Write_Exception(ex);
+                    }
+                }
+
+                return change;
+            }
+        }
+
 
         public static ChangesToken Enter_Inspect(this TextLabel label, Action inspectFunction)
         {
@@ -269,6 +299,53 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }*/
 
+        public static ChangesToken Enter_Inspect<T>(this TextLabel label, ref T val) where T : struct, IPEGI
+        {
+            using (Context.IncrementDisposible(out bool canSkip))
+            {
+                if (canSkip)
+                    return ChangesToken.False;
+
+                var change = ChangeTrackStart();
+
+                if (!Context.IsEnteredCurrent && val is IPEGI_ListInspect lst) 
+                {
+                    return Context.Internal_Enter_Inspect_AsList(lst, exitLabel: label.label);
+                }
+
+                Context.Internal_isEntered(label);
+                Nested_Inspect(ref val);
+                return change;
+            }
+        }
+
+        public static ChangesToken Enter_Inspect<T>(ref T var) where T : struct, IPEGI
+        {
+            using (Context.IncrementDisposible(out bool canSkip))
+            {
+                if (canSkip)
+                    return ChangesToken.False;
+
+                var change = ChangeTrackStart();
+
+                var lst = var as IPEGI_ListInspect;
+
+                if (lst != null)
+                    Context.Internal_Enter_Inspect_AsList(lst);
+                else
+                {
+                    var label = var.GetNameForInspector().PegiLabel();
+
+                    Context.Internal_isEntered(label);
+
+                    if (Context.IsEnteredCurrent)
+                        Nested_Inspect(ref var);
+                }
+
+                return change;
+            }
+        }
+
         public static ChangesToken Enter_Inspect<T>(this T var) where T : class, IPEGI
         {
             using (Context.IncrementDisposible(out bool canSkip))
@@ -370,7 +447,7 @@ namespace QuizCanners.Inspect
                 {
                     using (Styles.Background.ExitLabel.SetDisposible())
                     {
-                        var label =  new TextLabel(exitLabel.IsNullOrEmpty() ? var.GetNameForInspector() : exitLabel, tooltip: Icon.Exit.GetDescription(), style: Styles.ExitLabel);
+                        var label =  new TextLabel(exitLabel.IsNullOrEmpty() ? var.GetNameForInspector() : exitLabel, toolTip: Icon.Exit.GetDescription(), style: Styles.ExitLabel);
 
                         if (Icon.Exit.ClickUnFocus("{0} L {1}".F(Icon.Exit.GetText(), var)).IgnoreChanges(LatestInteractionEvent.Exit)
                             | label.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit))
@@ -383,7 +460,7 @@ namespace QuizCanners.Inspect
             else if (entered == thisOne)
                 entered = -1;
 
-            PegiEditorOnly.IsFoldedOutOrEntered = entered == thisOne;
+            IsFoldedOutOrEntered = entered == thisOne;
 
             return changed;
         }
@@ -434,9 +511,9 @@ namespace QuizCanners.Inspect
                     txt.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit))
                     state = !state;
 
-                PegiEditorOnly.isFoldedOutOrEntered = new StateToken(state);
+                FoldoutManager.isFoldedOutOrEntered = new StateToken(state);
 
-                return PegiEditorOnly.isFoldedOutOrEntered;
+                return FoldoutManager.isFoldedOutOrEntered;
             }
             internal static StateToken IsEntered(TextLabel txt, ref bool state, bool showLabelIfTrue = true) => IsEntered(Icon.Enter, txt, ref state, showLabelIfTrue);
 
@@ -473,7 +550,7 @@ namespace QuizCanners.Inspect
                 if (ico.Click(msg + el.GetNameForInspector()).IgnoreChanges(LatestInteractionEvent.Enter))
                 {
                     inspected = suggestedIndex;
-                    PegiEditorOnly.isFoldedOutOrEntered = StateToken.True;
+                    FoldoutManager.isFoldedOutOrEntered = StateToken.True;
                     return ChangesToken.True;
                 }
                 return ChangesToken.False;
@@ -511,7 +588,7 @@ namespace QuizCanners.Inspect
                 if (ico.Click(msg + el.GetNameForInspector()).IgnoreChanges(LatestInteractionEvent.Enter))
                 {
                     inspected = suggestedIndex;
-                    PegiEditorOnly.isFoldedOutOrEntered = StateToken.True;
+                    FoldoutManager.isFoldedOutOrEntered = StateToken.True;
                     return ChangesToken.True;
                 }
                 return ChangesToken.False;
@@ -549,7 +626,7 @@ namespace QuizCanners.Inspect
                 if (ico.Click(msg + el.GetNameForInspector()).IgnoreChanges(LatestInteractionEvent.Enter))
                 {
                     inspected = suggestedIndex;
-                    PegiEditorOnly.isFoldedOutOrEntered = StateToken.True;
+                    FoldoutManager.isFoldedOutOrEntered = StateToken.True;
                     return ChangesToken.True;
                 }
                 return ChangesToken.False;
@@ -623,9 +700,7 @@ namespace QuizCanners.Inspect
                 return Context.IsEnteredCurrent;
             }
 
-
         }
-
 
         private static StateToken IsEntered_ListIcon<T>(this TextLabel txt, List<T> list)
         {
@@ -654,35 +729,33 @@ namespace QuizCanners.Inspect
 
         private static string AddCount<T>(this string txt, ICollection<T> lst, bool entered = false)
         {
+            if (entered)
+                return txt;
+
             if (lst == null)
                 return "{0} is NULL".F(txt);
 
             if (lst.Count > 1)
-                return "{0} [{1}]".F(txt, lst.Count);
+                return "{0} {1}{2}".F(txt, X_SYMBOL, lst.Count);
 
             if (lst.Count == 0)
                 return "NO {0}".F(txt);
 
-            if (!entered)
+            var el = lst.GetElementAt(0);
+
+            if (!el.IsNullOrDestroyed_Obj())
             {
+                var n = el as IGotName;
 
-                var el = lst.GetElementAt(0);
+                if (n != null)
+                    return "{0}: {1}".F(txt, n.NameForInspector);
 
-                if (!el.IsNullOrDestroyed_Obj())
-                {
-                    var n = el as IGotName;
+                return "{0}: {1}".F(txt, el.GetNameForInspector());
 
-                    if (n != null)
-                        return "{0}: {1}".F(txt, n.NameForInspector);
-
-                    return "{0}: {1}".F(txt, el.GetNameForInspector());
-
-                }
-
-                return "{0} one Null Element".F(txt);
             }
 
-            return "{0} [1]".F(txt);
+            return "{0} one Null Element".F(txt);
+
         }
 
         #endregion
@@ -748,7 +821,7 @@ namespace QuizCanners.Inspect
 
         #region Array
 
-        public static ChangesToken Enter_Array<T>(this CollectionInspectorMeta meta, ref T[] array)
+        public static ChangesToken Enter_Array<T>(this CollectionInspectorMeta meta,ref  T[] array)
         {
             using (Context.IncrementDisposible(out bool canSkip))
             {

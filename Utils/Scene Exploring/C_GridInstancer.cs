@@ -93,7 +93,7 @@ namespace QuizCanners
             "X".PegiLabel(20).Edit(ref x_Max, 1, 100).Nl();
             "Y".PegiLabel(20).Edit(ref y_Max, 1, 100).Nl();
             "Z".PegiLabel(20).Edit(ref z_Max, 1, 100).Nl();
-            "Gap".PegiLabel(30).Edit(ref _gap, 0.1f, 3f).Nl();
+            "Gap".ConstLabel().Edit(ref _gap, 0.1f, 3f).Nl();
 
             if (changed && _prefab) 
             {

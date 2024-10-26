@@ -20,11 +20,15 @@ namespace QuizCanners.Inspect
 
     public interface IPEGI_ListInspect { void InspectInList(ref int edited, int index); }
 
+    public interface IPEGI_Context { void InspectContext(pegi.EnterExitContext context); }
+
     public interface IGotName { string NameForInspector { get; set; } }
 
     public interface IGotIndex { int IndexForInspector { get; set; } }
 
     public interface IGotCount { int GetCount(); }
+
+    public interface IPEGI_Reference { object GetReferencedObject(); }
 
     public interface ISearchable { System.Collections.IEnumerator SearchKeywordsEnumerator(); }
 
@@ -60,8 +64,7 @@ namespace QuizCanners.Inspect
         }
         
         // Some times user can change temporary fields, like delayed Edits
-        internal static int _elementIndex;
-        internal static int selectedFold = -1;
+
         internal static bool _horizontalStarted;
         private static readonly Color AttentionColor = new(1f, 0.7f, 0.7f, 1);
         private static readonly Color PreviousInspectedColor = new(0.3f, 0.7f, 0.3f, 1);
@@ -74,7 +77,7 @@ namespace QuizCanners.Inspect
         #else
             null;
         #endif
-        public static bool IsFoldedOut => PegiEditorOnly.isFoldedOutOrEntered;
+        public static bool IsFoldedOut => FoldoutManager.isFoldedOutOrEntered;
         public static string EnvironmentNl => Environment.NewLine;
 
 #region GUI Modes & Fitting
@@ -381,8 +384,8 @@ namespace QuizCanners.Inspect
 
             public static implicit operator bool(ChangesToken d) => d.IsChanged;
 
-            internal static ChangesToken False => new() { IsChanged = false };
-            internal static ChangesToken True => new() { IsChanged = true };
+            public static ChangesToken False => new() { IsChanged = false };
+            public static ChangesToken True => new() { IsChanged = true };
 
             public static ChangesToken operator |(ChangesToken a, ChangesToken b) 
             {
@@ -489,13 +492,13 @@ namespace QuizCanners.Inspect
 
         public static void Nl_ifEntered()
         {
-            if (PegiEditorOnly.isFoldedOutOrEntered)
+            if (FoldoutManager.isFoldedOutOrEntered)
                 Nl();
         }
 
         public static void Nl_ifNotEntered()
         {
-            if (PegiEditorOnly.isFoldedOutOrEntered == false)
+            if (FoldoutManager.isFoldedOutOrEntered == false)
                 Nl();
         }
 

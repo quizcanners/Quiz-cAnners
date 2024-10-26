@@ -5,13 +5,11 @@ using QuizCanners.Utils;
 using UnityEngine;
 using static QuizCanners.Inspect.LazyLocalization;
 
-namespace QuizCanners.Inspect {
-
-    // ReSharper disable InconsistentNaming
-    #pragma warning disable IDE1006 // Naming Styles
-
+namespace QuizCanners.Inspect
+{
     public enum Icon
     {
+        NO_ICON = 0,
         Alpha, Active, Add, Animation, Audio,
         Back, Book,
         Close, Condition, Config, Copy, Cut, Create, Clear, CPU, GPU,
@@ -19,8 +17,7 @@ namespace QuizCanners.Inspect {
         Edit, Enter, Exit, Email, Empty,
         False, FoldedOut, Folder,
         NewMaterial, NewTexture, Next,
-        On,
-        Off,
+        On, Off,
         Lock, Unlock, List, Link, UnLinked,
         Round, Record, Replace, Refresh,
         Search, Script, Square, Save, SaveAsNew, StateMachine, State, Show, SelectAll, Share, Size, ScreenGrab, Subtract, Swap,
@@ -28,36 +25,26 @@ namespace QuizCanners.Inspect {
         Painter,
         PreviewShader,
         OriginalShader,
-        Undo,
-        Redo,
-        UndoDisabled,
-        RedoDisabled,
+        Undo, Redo, UndoDisabled, RedoDisabled,
         Play,
         True,
         Load,
-        Pause, Ping,
-        Mesh,
-        Move,
-        Red,
-        Green,
-        Blue,
-        InActive,
-        Insert,
-        Hint,
-        Home,
-        Hide,
+        Pause, Ping, Pinned, UnPinned,
+        Mesh, Move,
+        Red, Green, Blue,
+        InActive, Insert,
+        Hint, Home, Hide,
         Paste,
         Up, UpLast, User,
-        Warning,
-        Wait
+        Warning, Wait,
+        
     }
 
-    #pragma warning restore IDE1006 // Naming Styles
-
-    public static class Icons_MGMT {
+    public static class Icons_MGMT 
+    {
         private const string FOLDER_NAME = "Inspector Icons";
 
-        private static readonly Countless<Texture2D> _managementIcons = new Countless<Texture2D>();
+        private static readonly Dictionary<int, Texture2D> _managementIcons = new();
 
         internal static bool TryGetTexture(this Icon icon, out Texture2D tex)
         {
@@ -70,10 +57,10 @@ namespace QuizCanners.Inspect {
 
             var ind = (int) icon;
 
-            var ico = _managementIcons[ind];
-
-            if (ico)
+            if (_managementIcons.TryGetValue(ind, out var ico))
                 return ico;
+
+   
 
             switch (icon) {
                 case Icon.Red: return ColorIcon(0) as Texture2D;
@@ -98,7 +85,7 @@ namespace QuizCanners.Inspect {
 
         private static Texture ColorIcon(int ind)
         {
-            if (_painterIcons == null) _painterIcons = new List<Texture2D>();
+            _painterIcons ??= new List<Texture2D>();
 
             while (_painterIcons.Count <= ind) 
                 _painterIcons.Add(null);
@@ -110,14 +97,14 @@ namespace QuizCanners.Inspect {
 
             string TryGetName() 
             {
-                switch (ind) 
+                return ind switch
                 {
-                    case 0: return "Red";
-                    case 1: return "Green";
-                    case 2:return "Blue";
-                    case 3:return "Alpha";
-                    default: return "Alpha";
-                }
+                    0 => "Red",
+                    1 => "Green",
+                    2 => "Blue",
+                    3 => "Alpha",
+                    _ => "Alpha",
+                };
             }
 
             return (_painterIcons[ind]);
@@ -132,7 +119,7 @@ namespace QuizCanners.Inspect {
     
     internal static class LazyLocalizationForIcons {
 
-        private static readonly TranslationsEnum iconTranslations = new TranslationsEnum();
+        private static readonly TranslationsEnum iconTranslations = new();
 
         public static LazyTranslation GetTranslations(this Icon msg, int lang = 0) 
         {
@@ -182,23 +169,23 @@ namespace QuizCanners.Inspect {
             return lt != null ? lt.details : msg.ToString();
         }
 
-        private static Countless<LazyTranslation> Translate(this Icon smg, string english)
+        private static Dictionary<int, LazyTranslation> Translate(this Icon smg, string english)
         {
             var org = iconTranslations[(int)smg];
             org[eng] = new LazyTranslation(english);
             return org;
         }
 
-        private static Countless<LazyTranslation> Translate(this Icon smg, string english, string englishDetails)
+        private static Dictionary<int, LazyTranslation> Translate(this Icon smg, string english, string englishDetails)
         {
             var org = iconTranslations[(int)smg];
             org[eng] = new LazyTranslation(english, englishDetails);
             return org;
         }
         
-        public static string F(this Icon msg, Msg other) =>  "{0} {1}".F(msg.GetText(), other.GetText());
+        public static string F(this Icon msg, pegi.Msg other) =>  "{0} {1}".F(msg.GetText(), other.GetText());
 
-        public static string F(this Msg msg, Icon other) => "{0} {1}".F(msg.GetText(), other.GetText());
+        public static string F(this pegi.Msg msg, Icon other) => "{0} {1}".F(msg.GetText(), other.GetText());
      
     }
 

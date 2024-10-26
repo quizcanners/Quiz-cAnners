@@ -5,16 +5,6 @@ using QuizCanners.Lerp;
 namespace QuizCanners.Utils
 {
 
-#pragma warning disable IDE0018 // Inline variable declaration
-
-    /*
-    public interface IGodModeCameraController
-    {
-        Vector3 GetTargetPosition();
-        Vector3 GetCameraOffsetPosition();
-        bool TryGetCameraHeight(out float height);
-    }*/
-
     [ExecuteInEditMode]
     public class Singleton_CameraOperatorGodMode : Singleton.BehaniourBase, IPEGI
     {
@@ -66,6 +56,30 @@ namespace QuizCanners.Utils
     false;
 #endif
 
+        public class PointedPositionState
+        {
+            public Gate.Frame _pointedPositionUpdateGate = new();
+            Vector3 _pointedPosition_Cached;
+            bool _isPositionPointed_Cached;
+
+            public bool TryGetPointedPosition(Camera cam, out Vector3 pos)
+            {
+                if (_pointedPositionUpdateGate.TryEnter())
+                {
+                    _isPositionPointed_Cached = Physics.Raycast(cam.ScreenPointToRay(Input.mousePosition), out var hit);
+                    _pointedPosition_Cached = hit.point;
+                }
+
+                pos = _pointedPosition_Cached;
+                return _isPositionPointed_Cached;
+            }
+        }
+
+        readonly PointedPositionState _pointedPosition = new();
+
+        public bool TryGetPointedPosition(out Vector3 pos)
+         => _pointedPosition.TryGetPointedPosition(Camera.main, out pos);
+
         public Camera MainCam
         {
             get
@@ -101,13 +115,10 @@ namespace QuizCanners.Utils
 
             if (downMMB)
             {
-                var ray = MainCam.ScreenPointToRay(Input.mousePosition);
-
-                RaycastHit hit;
-                if (Physics.Raycast(ray, out hit))
-                    spinCenter = hit.point;
-                else 
+                if (!TryGetPointedPosition(out var pos))
                     return;
+
+                spinCenter = pos;
 
                 var before = camTr.localRotation;
                 camTr.LookAt(spinCenter);
@@ -127,13 +138,10 @@ namespace QuizCanners.Utils
             if (_orbitDistance <= 0 || (!pressedMMB))
                 return;
 
-            if (LEGACY_INPUT)
+            if (LEGACY_INPUT && !downMMB)
             {
-                if (!downMMB)
-                {
-                    camOrbit.x += Input.GetAxis("Mouse X") * 5;
-                    camOrbit.y -= Input.GetAxis("Mouse Y") * 5;
-                }
+                camOrbit.x += Input.GetAxis("Mouse X") * 5;
+                camOrbit.y -= Input.GetAxis("Mouse Y") * 5;
             }
 
             if (camOrbit.y <= -360)
@@ -142,11 +150,7 @@ namespace QuizCanners.Utils
                 camOrbit.y -= 360;
 
             var rot2 = Quaternion.Euler(camOrbit.y, camOrbit.x, 0);
-            var campos = rot2 *
-                             (new Vector3(0.0f, 0.0f, -_orbitDistance)) +
-                             spinCenter;
-
-            //if (!mouseOutside)
+            var campos = rot2 * new Vector3(0.0f, 0.0f, -_orbitDistance) + spinCenter;
 
             transform.position = campos;
 
@@ -156,10 +160,10 @@ namespace QuizCanners.Utils
                 if (Quaternion.Angle(camTr.localRotation, rot2) < 1)
                     orbitingFocused = true;
             }
-            else camTr.localRotation = rot2;
+            else 
+                camTr.localRotation = rot2;
 
         }
-
 
         bool MouseOutsideOfView
         {
@@ -183,8 +187,6 @@ namespace QuizCanners.Utils
             var add = Vector3.zero;
             if (LEGACY_INPUT)
             {
-                mouseOutside = _mainCam.IsMouseOutsideViewArea(Input.mousePosition);
-
                 if (Input.GetKey(KeyCode.W)) add += camTf.forward;
                 if (Input.GetKey(KeyCode.A)) add -= camTf.right;
                 if (Input.GetKey(KeyCode.S)) add -= camTf.forward;
@@ -206,7 +208,6 @@ namespace QuizCanners.Utils
             return add;
         }
 
-
         public bool TryGetRelativeDirectionFromInput(float forward, float right, out Vector3 input)
         {
             if (forward == 0 && right == 0)
@@ -224,17 +225,11 @@ namespace QuizCanners.Utils
         protected virtual void OnUpdateInternal()
         {
             var operatorTf = transform;
-
             _mainCam.transform.localPosition = Vector3.zero;
-
             bool rightMouseButon = false;
-
             var add = GetNormalizedInput(out var SpeedUp);
-
             var mainCameraVelocity = (SpeedUp ? 3f : 1f) * speed * add;
-
             operatorTf.localPosition += mainCameraVelocity * Mathf.Min(Time.unscaledDeltaTime, 0.016f);
-
             operatorTf.localRotation = QcLerp.LerpBySpeed(operatorTf.localRotation, Quaternion.identity, 160, unscaledTime: true);
 
             if (!Application.isPlaying || _disableRotation)
@@ -245,6 +240,8 @@ namespace QuizCanners.Utils
                 rightMouseButon = Input.GetMouseButton(1) && !Input.GetMouseButtonDown(1); // Ignore delta during first frame
             }
 
+            if (TryDrag())
+                return;
 
             if (rotateWithoutRmb || rightMouseButon)
             {
@@ -252,7 +249,25 @@ namespace QuizCanners.Utils
             }
 
             SpinAround();
+           
+            UpdateScroll();
 
+            return;
+
+            void UpdateScroll()
+            {
+                float ScrollWheelChange = Input.GetAxisRaw("Mouse ScrollWheel");
+
+                if (!mouseOutside && ScrollWheelChange != 0 && TryGetPointedPosition(out var pos))
+                {
+                    var delta = (pos - transform.position);
+
+                    if (ScrollWheelChange > 0)
+                        transform.position += 0.5f * Mathf.Clamp01(ScrollWheelChange * 5f) * delta;
+                    else
+                        transform.position -= 0.5f * Mathf.Clamp01(-ScrollWheelChange * 5f) * delta;
+                }
+            }
         }
 
         const int MAX_ROTATION = 85;
@@ -324,7 +339,75 @@ namespace QuizCanners.Utils
             if (!_mainCam || (_onlyInEditor && !Application.isEditor))
                 return;
 
+            mouseOutside = _mainCam.IsMouseOutsideViewArea(Input.mousePosition);
+
             OnUpdateInternal();
+        }
+
+        [Header("Drag")]
+        [SerializeField] private float _dragCoefficient = 0.1f;
+
+        private class DragState
+        {
+            public Vector3 DragCenterLonLat;
+            public Vector2 Delta;
+            public Vector3 DeltaFromStartCenter;
+            public bool Started;
+
+            public Gate.Bool IsPressed = new();
+
+            public bool TryStart(Camera cam)
+            {
+                var ray = cam.ScreenPointToRay(Input.mousePosition);
+
+                Started = false;
+
+                if (!Physics.Raycast(ray, out RaycastHit hit))
+                    return false;
+
+                DragCenterLonLat = hit.point;
+                DeltaFromStartCenter = cam.transform.position - hit.point;
+                Delta = Vector2.zero;
+                Started = true;
+
+                return true;
+            }
+
+        }
+
+
+        private readonly DragState Drag = new();
+
+        public bool TryDrag()
+        {
+
+            bool pressedMB = Input.GetMouseButton(0) && Input.GetMouseButton(1);
+            mouseOutside = MouseOutsideOfView;
+
+            if (!mouseOutside && pressedMB && Drag.IsPressed.TryChange(true))
+            {
+                return Drag.TryStart(MainCam);
+            }
+
+            if (!Drag.Started)
+                return false;
+
+            if (!pressedMB)
+            {
+                Drag.IsPressed.TryChange(false);
+                return false;
+            }
+
+            Drag.Delta += new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+
+            float dragCoefficient = Drag.DeltaFromStartCenter.magnitude * _dragCoefficient * Mathf.Tan(Mathf.Deg2Rad * MainCam.fieldOfView);
+
+            transform.position = Drag.DragCenterLonLat
+                - Drag.Delta.x * dragCoefficient * MainCam.transform.right.Y(0).normalized
+                - Drag.Delta.y * dragCoefficient * MainCam.transform.forward.Y(0).normalized
+                + Drag.DeltaFromStartCenter;
+
+            return true;
         }
 
         #region Inspector
@@ -335,7 +418,7 @@ namespace QuizCanners.Utils
             pegi.Nl();
 
             if (MainCam)
-                "Main Camera".PegiLabel(width: 90).Edit(ref _mainCam).Nl();
+                "Main Camera".ConstLabel().Edit(ref _mainCam).Nl();
 
             if (!_mainCam)
             {

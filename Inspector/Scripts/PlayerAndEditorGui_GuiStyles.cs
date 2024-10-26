@@ -17,8 +17,8 @@ namespace QuizCanners.Inspect
 #endif
         ;
 
-            public static Color listReadabilityRed = new Color(1, 0.85f, 0.85f, 1);
-            public static Color listReadabilityBlue = new Color(0.9f, 0.9f, 1f, 1);
+            public static Color listReadabilityRed = new(1, 0.85f, 0.85f, 1);
+            public static Color listReadabilityBlue = new(0.9f, 0.9f, 1f, 1);
 
             public delegate GUIStyle CreateGUI();
 
@@ -39,27 +39,23 @@ namespace QuizCanners.Inspect
                         {
                             if (InList)
                             {
-                                if (playtimeInList == null)
-                                    playtimeInList = generator();
+                                playtimeInList ??= generator();
                                 return playtimeInList;
                             }
 
-                            if (playtime == null)
-                                playtime = generator();
+                            playtime ??= generator();
 
                             return playtime;
                         }
 
                         if (InList)
                         {
-                            if (editorGuiInList == null)
-                                editorGuiInList = generator();
+                            editorGuiInList ??= generator();
 
                             return editorGuiInList;
                         }
 
-                        if (editorGui == null)
-                            editorGui = generator();
+                        editorGui ??= generator();
 
                         return editorGui;
                     }
@@ -72,7 +68,7 @@ namespace QuizCanners.Inspect
 
                 #region Inspector
 
-                private readonly EnterExitContext _inspectedProperty = new EnterExitContext();
+                private readonly EnterExitContext _inspectedProperty = new();
 
                 void IPEGI.Inspect()
                 {
@@ -83,11 +79,11 @@ namespace QuizCanners.Inspect
 
                         var al = cur.alignment;
 
-                        if ("Allignment".PegiLabel(90).Edit_Enum(ref al).Nl())
+                        if ("Allignment".ConstLabel().Edit_Enum(ref al).Nl())
                             cur.alignment = al;
 
                         var fs = cur.fontSize;
-                        if ("Font Size".PegiLabel(90).Edit(ref fs).Nl())
+                        if ("Font Size".ConstLabel().Edit(ref fs).Nl())
                             cur.fontSize = fs;
 
                         if ("Padding".PegiLabel().IsFoldout().Nl())
@@ -113,13 +109,13 @@ namespace QuizCanners.Inspect
 
             #region Button
 
-            public static PegiGuiStyle ImageButton = new PegiGuiStyle(() => new GUIStyle(GUI.skin.button)
+            public static PegiGuiStyle ImageButton = new(() => new GUIStyle(GUI.skin.button)
             {
                 overflow = new RectOffset(-3, -3, 0, 0),
                 margin = new RectOffset(1, -3, 1, 1)
             });
 
-            public static PegiGuiStyle ClickableText = new PegiGuiStyle(() => new GUIStyle(GUI.skin.label)
+            public static PegiGuiStyle ClickableText = new(() => new GUIStyle(GUI.skin.label)
             {
                 wordWrap = false,
                 fontStyle = FontStyle.Bold,
@@ -134,7 +130,7 @@ namespace QuizCanners.Inspect
                 return _scalableBlueText;
             }
 
-            private static readonly PegiGuiStyle _scalableBlueText = new PegiGuiStyle(() => new GUIStyle(GUI.skin.label)
+            private static readonly PegiGuiStyle _scalableBlueText = new(() => new GUIStyle(GUI.skin.label)
             {
                 wordWrap = false,
                 fontStyle = FontStyle.Bold,
@@ -147,21 +143,21 @@ namespace QuizCanners.Inspect
 
             #region Toggle
 
-            public static PegiGuiStyle ToggleButton = new PegiGuiStyle(() => new GUIStyle(GUI.skin.button)
+            public static PegiGuiStyle ToggleButton = new(() => new GUIStyle(GUI.skin.button)
             {
                 overflow = new RectOffset(-3, -3, 0, 0),
                 margin = new RectOffset(-13, -13, -10, -10),
                 contentOffset = new Vector2(0, 6)
             });
 
-            private static readonly PegiGuiStyle ToggleLabel_Off = new PegiGuiStyle(() => new GUIStyle(GUI.skin.label)
+            private static readonly PegiGuiStyle ToggleLabel_Off = new(() => new GUIStyle(GUI.skin.label)
             {
                 contentOffset = new Vector2(0, 2),
                 wordWrap = true,
                 normal = { textColor = InGameView ? new Color32(255, 255, 255, 255) : new Color32(40, 40, 40, 255) }
             });
 
-            private static readonly PegiGuiStyle ToggleLabel_On = new PegiGuiStyle(() => new GUIStyle(GUI.skin.label)
+            private static readonly PegiGuiStyle ToggleLabel_On = new(() => new GUIStyle(GUI.skin.label)
             {
                 contentOffset = new Vector2(0, 2),
                 wordWrap = true
@@ -173,7 +169,7 @@ namespace QuizCanners.Inspect
 
             #region List
 
-            public static PegiGuiStyle ListLabel = new PegiGuiStyle(() => new GUIStyle(GUI.skin.label)
+            public static PegiGuiStyle ListLabel = new(() => new GUIStyle(GUI.skin.label)
             {
                 margin = new RectOffset(9, 1, 6, 1),
                 fontSize = 12,
@@ -192,21 +188,21 @@ namespace QuizCanners.Inspect
 
             #region Fold / Enter / Exit
 
-            public static PegiGuiStyle EnterLabel = new PegiGuiStyle(() => new GUIStyle
+            public static PegiGuiStyle EnterLabel = new(() => new GUIStyle
             {
                 padding = InGameView ? new RectOffset(0, 0, 4, 7) : new RectOffset(10, 10, 10, 0),
                 margin = InGameView ? new RectOffset(9, 0, 3, 3) : new RectOffset(9, 0, 0, 0),
                 fontSize = InGameView ? 14 : 12,
                 richText = true,
                 wordWrap = false,
-                clipping = TextClipping.Clip,
+                clipping = TextClipping.Overflow,
                 alignment = TextAnchor.MiddleLeft,
                 fontStyle = FontStyle.Bold,
                 contentOffset = InGameView ? new Vector2(0, 0) : new Vector2(0, -6),
                 normal = { textColor = InGameView ? new Color32(255, 255, 220, 255) : new Color32(43, 30, 77, 255) }
             });
 
-            public static PegiGuiStyle ExitLabel = new PegiGuiStyle(() => new GUIStyle
+            public static PegiGuiStyle ExitLabel = new(() => new GUIStyle
             {
                 padding = InGameView ? new RectOffset(0, 0, 4, 7) : new RectOffset(10, 10, 10, 0),
                 margin = InGameView ? new RectOffset(9, 0, 3, 3) : new RectOffset(9, 0, 0, 0),
@@ -220,7 +216,7 @@ namespace QuizCanners.Inspect
                 normal = { textColor = InGameView ? new Color32(160, 160, 160, 255) : new Color32(77, 77, 77, 255) }
             });
 
-            public static PegiGuiStyle FoldedOutLabel = new PegiGuiStyle(() => new GUIStyle
+            public static PegiGuiStyle FoldedOutLabel = new(() => new GUIStyle
             {
                 margin = new RectOffset(40, 10, 10, 10),
                 fontSize = 12,
@@ -237,7 +233,7 @@ namespace QuizCanners.Inspect
 
             #region Text
 
-            public static PegiGuiStyle HeaderText = new PegiGuiStyle(() => new GUIStyle(GUI.skin.label)
+            public static PegiGuiStyle HeaderText = new(() => new GUIStyle(GUI.skin.label)
             {
                 margin = new RectOffset(9, 1, 6, 1),
                 fontSize = 16,
@@ -252,25 +248,25 @@ namespace QuizCanners.Inspect
             }
             });
 
-            public static PegiGuiStyle BaldText = new PegiGuiStyle(() =>
+            public static PegiGuiStyle BaldText = new(() =>
                InList
                    ? ToGrayBg(new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold })
                    : new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
 
-            public static PegiGuiStyle ClippingText = new PegiGuiStyle(() =>
+            public static PegiGuiStyle ClippingText = new(() =>
                 InList
                     ? ToGrayBg(new GUIStyle(GUI.skin.label) { clipping = TextClipping.Clip })
                     : new GUIStyle(GUI.skin.label) { clipping = TextClipping.Clip });
 
 
-            public static PegiGuiStyle OverflowText = new PegiGuiStyle(() => new GUIStyle(GUI.skin.label)
+            public static PegiGuiStyle OverflowText = new(() => new GUIStyle(GUI.skin.label)
             {
                 clipping = TextClipping.Overflow,
                 wordWrap = true,
                 fontSize = 12
             });
 
-            public static PegiGuiStyle HintText = new PegiGuiStyle(() => new GUIStyle(GUI.skin.label)
+            public static PegiGuiStyle HintText = new(() => new GUIStyle(GUI.skin.label)
             {
                 clipping = TextClipping.Overflow,
                 wordWrap = true,
@@ -282,7 +278,7 @@ namespace QuizCanners.Inspect
             }
             });
 
-            public static PegiGuiStyle WarningText = new PegiGuiStyle(() => new GUIStyle(GUI.skin.label)
+            public static PegiGuiStyle WarningText = new(() => new GUIStyle(GUI.skin.label)
             {
                 clipping = TextClipping.Overflow,
                 wordWrap = true,
@@ -298,7 +294,7 @@ namespace QuizCanners.Inspect
 
             #region Line
 
-            public static PegiGuiStyle HorizontalLine = new PegiGuiStyle(() => new GUIStyle
+            public static PegiGuiStyle HorizontalLine = new(() => new GUIStyle
             {
 #if UNITY_EDITOR
                 normal = { background = UnityEditor.EditorGUIUtility.whiteTexture },
@@ -311,14 +307,14 @@ namespace QuizCanners.Inspect
 
             public static class Background
             {
-                public static BackgroundStyle ExitLabel = new BackgroundStyle(new Color(0.4f, 0.4f, 0.4f, 0.3f));
-                public static BackgroundStyle List = new BackgroundStyle(new Color(0.1f, 0.1f, 0.3f, 0.1f));
+                public static BackgroundStyle ExitLabel = new(new Color(0.4f, 0.4f, 0.4f, 0.3f));
+                public static BackgroundStyle List = new(new Color(0.1f, 0.1f, 0.3f, 0.1f));
 
 
                 public class BackgroundStyle
                 {
                     private Color _color;
-                    private readonly GUIStyle style = new GUIStyle();
+                    private readonly GUIStyle style = new();
                     private Texture2D texture; // = new Texture2D(1, 1);
 
 

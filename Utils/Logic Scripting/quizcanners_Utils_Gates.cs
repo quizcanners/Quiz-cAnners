@@ -17,6 +17,8 @@ namespace QuizCanners.Utils
 
             public T CurrentValue => previousValue;
 
+            public override string ToString() => ValueIsDefined ? previousValue.ToString() : "UNDEFINED {0}".F(typeof(T));
+
             protected void SetValue(T val) 
             {
                 previousValue = val;
@@ -325,6 +327,19 @@ namespace QuizCanners.Utils
 
             public Integer() {}
             public Integer(int initialValue)
+            {
+                SetValue(initialValue);
+            }
+
+            public override string ToString() => ValueIsDefined ? previousValue.ToString() : "NOT INIT";
+        }
+
+        public class UnsignedInteger : GateGenericBase<uint>
+        {
+            protected override bool DifferentFromPrevious(uint newValue) => newValue != previousValue;
+
+            public UnsignedInteger() { }
+            public UnsignedInteger(uint initialValue)
             {
                 SetValue(initialValue);
             }

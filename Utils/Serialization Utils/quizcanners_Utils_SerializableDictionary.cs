@@ -11,6 +11,7 @@ namespace QuizCanners.Utils
         [HideInInspector] [SerializeField] protected List<TValue> values;
 
         protected virtual bool CanAdd => true;
+        protected virtual bool ShowDictionaryKey => true;
         protected virtual string ElementName => "New "+this.GetNameForInspector();
 
         public virtual void OnBeforeSerialize()
@@ -52,7 +53,7 @@ namespace QuizCanners.Utils
         {
             get 
             {
-                _collectionMeta ??= new pegi.CollectionInspectorMeta(labelName: this.GetNameForInspector().Replace("Dictionary", ""), showAddButton: CanAdd)
+                _collectionMeta ??= new pegi.CollectionInspectorMeta(labelName: ToString().Replace("Dictionary", ""), showAddButton: CanAdd, showDictionaryKey: ShowDictionaryKey)
                     {
                         ElementName = ElementName
                     };
@@ -65,7 +66,11 @@ namespace QuizCanners.Utils
             CollectionMeta.Edit_Dictionary(this).Nl();
         }
 
-        public override string ToString() => "{0} [{1}]".F( QcSharp.AddSpacesToSentence(GetType().ToPegiStringType()), Count);
+        public override string ToString() =>
+            Count > 0
+            ? "{0} {1}{2}".F( QcSharp.AddSpacesToSentence(GetType().ToPegiStringType()), pegi.X_SYMBOL, Count)
+            : QcSharp.AddSpacesToSentence(GetType().ToPegiStringType())
+            ;
         #endregion
     }
 

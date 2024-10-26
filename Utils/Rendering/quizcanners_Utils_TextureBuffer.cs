@@ -2,7 +2,6 @@ using QuizCanners.Inspect;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 namespace QuizCanners.Utils
 {
     public static class OnDemandRenderTexture
@@ -90,31 +89,40 @@ namespace QuizCanners.Utils
 
         public enum PrecisionType { Regular, Half, Float }
 
-        public class DoubleBuffer : RenderTextureBufferBase, IPEGI
+        public class DoubleBuffer : RenderTextureBufferBase, IPEGI, IPEGI_ListInspect
         {
             private readonly string _name;
-            private readonly int _size;
+            private readonly int _width;
+            private readonly int _height;
             private PrecisionType _precision;
 
-            private bool _clearOnCreate;
-            private bool _isColor;
+            private readonly bool _clearOnCreate;
+            private readonly bool _isColor;
             private bool _latestIsZero;
-           
+
+            private static readonly ShaderProperty.TextureValue _PREVIOUS_TEXTURE = new("_PreviousTex");
+
+            public bool IsInitialized => _renderTextures != null && _renderTextures.Count > 0;
+
             public void Swap() => _latestIsZero = !_latestIsZero;
 
-            private bool IsTargetSet => OriginalSource != null && OriginalSource.Version == _OriginalTexturesVersion;
+            public ScreenSize OriginalScreenSizeSource { get; private set; }
+            public ShaderProperty.TextureValue ValueToUpdate { get; private set; }
+            private int _OriginalTexturesVersion;
+
+            private bool IsScreenSizeTargetSet => OriginalScreenSizeSource != null && OriginalScreenSizeSource.Version == _OriginalTexturesVersion;
 
             private void TryReturnPreviousSetNew(ScreenSize newTargetTexture)
             {
-                if (IsTargetSet && newTargetTexture != OriginalSource)
+                if (IsScreenSizeTargetSet && newTargetTexture != OriginalScreenSizeSource)
                 {
-                    BlitInternal(this, OriginalSource);
-                    ValueToUpdate.GlobalValue = OriginalSource.GetOrCreateTexture;
-                    OriginalSource = null;
+                    BlitInternal(this, OriginalScreenSizeSource);
+                    ValueToUpdate.GlobalValue = OriginalScreenSizeSource.GetOrCreateTexture;
+                    OriginalScreenSizeSource = null;
                     ValueToUpdate = null;
                 }
 
-                OriginalSource = newTargetTexture;
+                OriginalScreenSizeSource = newTargetTexture;
                 _OriginalTexturesVersion = newTargetTexture.Version;
             }
 
@@ -124,31 +132,27 @@ namespace QuizCanners.Utils
             {
                 get
                 {
-                    if (_renderTextures.IsNullOrEmpty())
+                    if (!_renderTextures.IsNullOrEmpty())
+                        return _renderTextures;
+
+                    _renderTextures = new List<RenderTexture>();
+                    for (int i = 0; i < 2; i++)
                     {
-                        _renderTextures = new List<RenderTexture>();
-                        for (int i = 0; i < 2; i++)
+                        RenderTexture tex = _precision switch
                         {
-                            RenderTexture tex;
-                            switch (_precision) 
-                            {
-                                case PrecisionType.Float:
-                                    tex = new RenderTexture(_size, _size, depth: 0, RenderTextureFormat.ARGBFloat, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear); break;
-                                case PrecisionType.Half:
-                                    tex = new RenderTexture(_size, _size, depth: 0, RenderTextureFormat.ARGBHalf, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear); break;
-                                case PrecisionType.Regular:
-                                default:
-                                    tex = new RenderTexture(_size, _size, depth: 0, RenderTextureFormat.ARGB32, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear); break;
-                            }
+                            PrecisionType.Float => new RenderTexture(width: _width, height: _height, depth: 0, RenderTextureFormat.ARGBFloat, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
+                            PrecisionType.Half => new RenderTexture(width: _width, height: _height, depth: 0, RenderTextureFormat.ARGBHalf, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
+                            _ => new RenderTexture(width: _width, height: _height, depth: 0, RenderTextureFormat.ARGB32, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
+                        };
 
-                            tex.name = "{0} {1}".F(_name, i);
+                        tex.name = "{0} {1}".F(_name, i);
 
-                            if (_clearOnCreate)
-                                tex.Clear(Color.clear);
+                        if (_clearOnCreate)
+                            tex.Clear(Color.clear);
 
-                            _renderTextures.Add(tex);
-                        }
+                        _renderTextures.Add(tex);
                     }
+                    
 
                     return _renderTextures;
                 }
@@ -190,13 +194,25 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public ScreenSize OriginalSource { get; private set; }
-            public ShaderProperty.TextureValue ValueToUpdate { get; private set; }
-            private int _OriginalTexturesVersion;
 
             public override RenderTexture GetOrCreateTexture => Target;
 
-            private static readonly ShaderProperty.TextureValue _PREVIOUS_TEXTURE = new("_PreviousTex");
+         
+            public void Blit(Material material, bool andRelease)
+            {
+                Swap();
+                material.Set(_PREVIOUS_TEXTURE, Previous);
+
+                Graphics.Blit(Previous, Target, material);
+
+                if (andRelease)
+                    Previous.Release();
+
+                if (IsScreenSizeTargetSet)
+                {
+                    ValueToUpdate.GlobalValue = Target;
+                }
+            }
 
             public void Blit(Shader shader, bool andRelease)
             {
@@ -209,7 +225,7 @@ namespace QuizCanners.Utils
                 if (andRelease)
                     Previous.Release();
 
-                if (IsTargetSet)
+                if (IsScreenSizeTargetSet)
                 {
                     ValueToUpdate.GlobalValue = Target;
                 }
@@ -277,19 +293,29 @@ namespace QuizCanners.Utils
             void IPEGI.Inspect()
             {
                 if (!_renderTextures.IsNullOrEmpty())
-                    "Render Textures".PegiLabel().Edit_List_UObj(_renderTextures).Nl();
-                else
-                    "Buffers not initialized".PegiLabel().Nl();
-
-                if ("Precision".PegiLabel().Edit_Enum(ref _precision).Nl())
                 {
-                    Clear();
+                    _name.PegiLabel().Edit_List_UObj(_renderTextures).Nl();
+                    if ("Precision".PegiLabel().Edit_Enum(ref _precision).Nl())
+                    {
+                        Clear();
+                    }
+                    Icon.Clear.Click(Clear);
+                    pegi.Click(Swap).Nl();
+                    pegi.Draw(Target, width: 256).Nl();
                 }
+                else
+                    "{0} not initialized".F(_name).PegiLabel().Nl();
 
-                Icon.Clear.Click(Clear);
-                pegi.Click(Swap).Nl();
+            
             }
             public override string ToString() => _name;
+
+            public void InspectInList(ref int edited, int index)
+            {
+                _name.PegiLabel().ClickEnter(ref edited, index);
+
+                 (IsInitialized ? Icon.Active : Icon.InActive).Draw();
+            }
             #endregion
 
             public DoubleBuffer(string name, int size, PrecisionType precision, bool clearOnCreate, bool isColor)
@@ -297,21 +323,22 @@ namespace QuizCanners.Utils
                 _clearOnCreate = clearOnCreate;
                 _precision = precision;
                 _name = name;
-                if (!Mathf.IsPowerOfTwo(size))
-                {
-                    Debug.LogError("Creating a Texture that is not a power of two: " + size);
-                    size = Mathf.ClosestPowerOfTwo(size);
-                }
-                _size = size;
+
+                CheckPowerOfTwo(ref size);
+
+                _width = size;
+                _height = size;
                 _isColor = isColor;
             }
 
-            public DoubleBuffer(string name, PrecisionType precision, bool clearOnCreate, bool isColor)
+            public DoubleBuffer(string name, int width, int height, PrecisionType precision, bool clearOnCreate, bool isColor)
             {
                 _clearOnCreate = clearOnCreate;
                 _precision = precision;
                 _name = name;
-                _size = 512;
+
+                _width = width;
+                _height = height;
                 _isColor = isColor;
             }
         }
@@ -319,12 +346,17 @@ namespace QuizCanners.Utils
         public class Single : IPEGI
         {
             private readonly string _name;
-            private readonly int _size;
+            private readonly int _width;
+            private readonly int _height;
             private readonly bool _floatBuffer;
             private readonly bool _singleChannel;
             private readonly bool _isColor;
+            private readonly DepthPrecision _depth;
+
 
             protected RenderTexture _renderTexture;
+
+            public bool IsInitialized() => _renderTexture;
 
             public void Blit(Shader shader)
             {
@@ -332,35 +364,53 @@ namespace QuizCanners.Utils
                 Graphics.Blit(null, GetRenderTexture(), mat);
             }
 
+            public void Blit(Texture tex, Material material) => Graphics.Blit(tex, GetRenderTexture(), material);
+
+            public void Blit(Material material) => Graphics.Blit(null, GetRenderTexture(), material);
+
+            public void Blit(Texture textureToCopyFrom) => Graphics.Blit(textureToCopyFrom, GetRenderTexture());
+
+
             public RenderTexture GetRenderTexture()
             {
                 if (_renderTexture)
                     return _renderTexture;
 
-                _renderTexture = new RenderTexture(_size, _size, depth: 0,
+                _renderTexture = new RenderTexture(width: _width, height: _height, depth: (int)_depth,
                     _singleChannel ? (_floatBuffer ? RenderTextureFormat.RFloat : RenderTextureFormat.RHalf) :
                     (_floatBuffer ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGBHalf),
                     _isColor ? RenderTextureReadWrite.sRGB: RenderTextureReadWrite.Linear
                     )
                 {
-                    name = "{0} {1}".F(_name, _size)
+                    name = "{0} {1}".F(_name, _height == _width ? _width : "{0}x{1}".F(_width, _height))
                 };
 
                 return _renderTexture;
             }
 
-            public Single(string name, int size, bool isFloat, bool isColor , bool singleChannel = false)
+            public Single(string name, int size, bool isFloat, bool isColor , bool singleChannel = false, DepthPrecision depth = DepthPrecision.None)
             {
+                _depth = depth;
                 _floatBuffer = isFloat;
                 _name = name;
                 _singleChannel = singleChannel;
                 _isColor = isColor;
-                if (!Mathf.IsPowerOfTwo(size))
-                {
-                    Debug.LogError("Creating a Texture that is not a power of two: " + size);
-                    size = Mathf.ClosestPowerOfTwo(size);
-                }
-                _size = size;
+                CheckPowerOfTwo(ref size);
+
+                _width = size;
+                _height = size;
+            }
+
+            public Single(string name, int width, int height, bool isFloat, bool isColor, bool singleChannel = false, DepthPrecision depth = DepthPrecision.None)
+            {
+                _depth = depth;
+                _floatBuffer = isFloat;
+                _name = name;
+                _singleChannel = singleChannel;
+                _isColor = isColor;
+
+                _width = width;
+                _height = height;
             }
 
             public void Clear() 
@@ -387,6 +437,16 @@ namespace QuizCanners.Utils
             #endregion
         }
 
+        private static void CheckPowerOfTwo(ref int size)
+        {
+            if (!Mathf.IsPowerOfTwo(size))
+            {
+                var previous = size;
+                size = Mathf.ClosestPowerOfTwo(size);
+                Debug.LogWarning("Changing size ({0}) to Power of Two: {1}".F(previous, size));
+            }
+        }
+
         public abstract class RenderTextureBufferBase
         {
             public int Version;
@@ -403,6 +463,36 @@ namespace QuizCanners.Utils
             }
         }
 
+        public enum DepthPrecision { None = 0, D_16 = 16, D_24 = 24, D_32 = 32 }
     }
 
+    public static class RenderTextureBlit
+    {
+        public static Material MaterialReuse(Shader shader) => MaterialInstancer.Get(shader);
+
+        private static readonly MaterialInstancer.ByShader MaterialInstancer = new();
+
+        public static void BlitGL(Texture source, RenderTexture destination, Material mat)
+        {
+            RenderTexture.active = destination;
+            mat.mainTexture = source;//("_MainTex", source);
+            GL.PushMatrix();
+            GL.LoadOrtho();
+            GL.invertCulling = true;
+            mat.SetPass(0);
+            GL.Begin(GL.QUADS);
+            GL.MultiTexCoord2(0, 0.0f, 0.0f);
+            GL.Vertex3(0.0f, 0.0f, 0.0f);
+            GL.MultiTexCoord2(0, 1.0f, 0.0f);
+            GL.Vertex3(1.0f, 0.0f, 0.0f);
+            GL.MultiTexCoord2(0, 1.0f, 1.0f);
+            GL.Vertex3(1.0f, 1.0f, 1.0f);
+            GL.MultiTexCoord2(0, 0.0f, 1.0f);
+            GL.Vertex3(0.0f, 1.0f, 0.0f);
+            GL.End();
+            GL.invertCulling = false;
+            GL.PopMatrix();
+        }
+
+    }
 }

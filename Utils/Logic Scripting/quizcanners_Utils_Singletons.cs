@@ -295,7 +295,7 @@ namespace QuizCanners.Utils
 
                         if (!enteredAnyCategory)
                         {
-                            "Search".PegiLabel(50).Edit(ref _searchText);
+                            "Search".ConstLabel().Edit(ref _searchText);
                             Icon.Clear.Click(() => _searchText = "");
                             pegi.Nl();
 

@@ -124,7 +124,7 @@ namespace QuizCanners.Utils
                 else
                 {
                     var typeName = _reflectCLassName.GetValue();
-                    "Class Name".PegiLabel(90).Edit_Delayed(ref typeName).OnChanged(() => _reflectCLassName.SetValue(typeName)).OnChanged(Clear).UnfocusOnChange().Nl();
+                    "Class Name".ConstLabel().Edit_Delayed(ref typeName).OnChanged(() => _reflectCLassName.SetValue(typeName)).OnChanged(Clear).UnfocusOnChange().Nl();
 
                     if (matches == null && !typeName.IsNullOrEmpty())
                     {

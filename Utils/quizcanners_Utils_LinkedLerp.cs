@@ -152,7 +152,7 @@ namespace QuizCanners.Lerp
 
                 ToString().PegiLabel().Write_ForCopy().Nl();
 
-                "Lerp Speed Mode ".PegiLabel(110).Edit_Enum(ref lerpMode).Nl();
+                "Lerp Speed Mode ".ConstLabel().Edit_Enum(ref lerpMode).Nl();
 
                 if (Application.isPlaying)
                     (Enabled ? Icon.Active : Icon.InActive).Nl(Enabled ? "Lerp Possible" : "Lerp Not Possible");
@@ -160,10 +160,10 @@ namespace QuizCanners.Lerp
                 switch (lerpMode)
                 {
                     case LerpSpeedMode.SpeedThreshold:
-                        ("Max Speed").PegiLabel(90).Edit(ref SpeedLimit);
+                        "Max Speed".ConstLabel().Edit(ref SpeedLimit);
                         break;
                     case LerpSpeedMode.UnlinkedSpeed:
-                        ("Speed").PegiLabel(90).Edit(ref SpeedLimit);
+                        "Speed".ConstLabel().Edit(ref SpeedLimit);
                         break;
                         //default:
                         //("Mode").editEnum(ref lerpMode).changes(ref changed);
@@ -579,7 +579,7 @@ namespace QuizCanners.Lerp
 
                 var tex = Current;
           
-                "On Start:".PegiLabel(60).Edit_Enum(ref _onStart).Nl();
+                "On Start:".ConstLabel().Edit_Enum(ref _onStart).Nl();
 
                 if ("Texture[{0}]".F(_targetTextures.Count).PegiLabel(90).Edit(ref tex).Nl())
                     TargetTexture = tex;
@@ -1367,10 +1367,10 @@ namespace QuizCanners.Lerp
 
             public sealed override float CurrentValue
             {
-                get => _property.latestValue;
+                get => _property.LatestValue;
                 set
                 {
-                    _property.latestValue = value;
+                    _property.LatestValue = value;
                     defaultSet = false;
                 }
             }
@@ -1393,7 +1393,7 @@ namespace QuizCanners.Lerp
                     mat.Set(_property);
                 
                 if (_property.GlobalValueSet || !mat)
-                    _property.GlobalValue = _property.latestValue;
+                    _property.GlobalValue = _property.LatestValue;
             }
 
             public ShaderFloat(string nName, float initialValue, float maxSpeed = 1, Renderer renderer = null,
@@ -1419,7 +1419,7 @@ namespace QuizCanners.Lerp
             {
                 if (Enabled && (!Mathf.Approximately(CurrentValue, targetValue) || !defaultSet))
                 {
-                    _property.latestValue = Mathf.Lerp(CurrentValue, targetValue, portion);
+                    _property.LatestValue = Mathf.Lerp(CurrentValue, targetValue, portion);
                     return true;
                 }
 
@@ -1432,9 +1432,9 @@ namespace QuizCanners.Lerp
             {
                 base.Inspect();
 
-                "Target".PegiLabel(70).Edit(ref targetValue).Nl();
+                "Target".ConstLabel().Edit(ref targetValue).Nl();
 
-                if ("Value".PegiLabel(60).Edit(ref _property.latestValue).Nl())
+                if ("Value".ConstLabel().Edit(ref _property.LatestValue).Nl())
                     Set();
             }
 
@@ -1475,10 +1475,10 @@ namespace QuizCanners.Lerp
 
             public sealed override Color CurrentValue
             {
-                get => _property.latestValue; 
+                get => _property.LatestValue; 
                 set
                 {
-                    _property.latestValue = value;
+                    _property.LatestValue = value;
                     defaultSet = false;
                 }
             }
@@ -1520,7 +1520,7 @@ namespace QuizCanners.Lerp
             {
                 if (CurrentValue != TargetValue || !defaultSet)
                 {
-                    _property.latestValue = Color.Lerp(CurrentValue, TargetValue, portion);
+                    _property.LatestValue = Color.Lerp(CurrentValue, TargetValue, portion);
                     return true;
                 }
 
@@ -1570,10 +1570,10 @@ namespace QuizCanners.Lerp
 
             public sealed override Vector4 CurrentValue
             {
-                get => _property.latestValue;
+                get => _property.LatestValue;
                 set
                 {
-                    _property.latestValue = value;
+                    _property.LatestValue = value;
                     defaultSet = false;
                 }
             }
@@ -1598,7 +1598,7 @@ namespace QuizCanners.Lerp
             {
                 if (CurrentValue != TargetValue || !defaultSet)
                 {
-                    _property.latestValue = Vector4.Lerp(CurrentValue, TargetValue, portion);
+                    _property.LatestValue = Vector4.Lerp(CurrentValue, TargetValue, portion);
                     return true;
                 }
 

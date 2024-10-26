@@ -14,6 +14,31 @@ namespace QuizCanners.Inspect
     {
         private static readonly TextToken TEXT_TOK = new();
 
+        private static readonly GUIContent _textAndToolTip = new();
+        internal static GUIContent ToGUIContext(this TextLabel text)
+        {
+            _textAndToolTip.text = text.label;
+            _textAndToolTip.tooltip = text.toolTip;
+            return _textAndToolTip;
+        }
+
+        public static TextLabel ConstLabel(this string label, Styles.PegiGuiStyle style)
+        {
+            var pgi = new TextLabel(label, style: style);
+
+            pgi.width = 10 + Mathf.CeilToInt(GUI.skin.label.CalcSize(pgi.ToGUIContext()).x);
+
+            return pgi;
+        }
+        public static TextLabel ConstLabel(this string label, string toolTip = null, Styles.PegiGuiStyle style = null) 
+        {
+            var pgi = new TextLabel(label, toolTip: toolTip, style: style);
+
+            pgi.width = 10 + Mathf.CeilToInt(GUI.skin.label.CalcSize(pgi.ToGUIContext()).x);
+
+            return pgi;
+        }
+
         public static TextLabel PegiLabel(this string label, float widthFraction) => new(label, null, Mathf.FloorToInt(widthFraction * Screen.width), null);
         public static TextLabel PegiLabel(this string label, int width) => new(label, null, width, null);
         public static TextLabel PegiLabel(this string label, Styles.PegiGuiStyle style) => new(label, null, -1, style);
@@ -131,10 +156,10 @@ namespace QuizCanners.Inspect
                 return TEXT_TOK;
             }
 
-            internal TextLabel(string label, string tooltip = null, int width = -1, Styles.PegiGuiStyle style = null) 
+            internal TextLabel(string label, string toolTip = null, int width = -1, Styles.PegiGuiStyle style = null) 
             {
                 this.label = label;
-                toolTip = tooltip;
+                this.toolTip = toolTip;
                 this.width = width;
                 this.style = style;
             }
@@ -331,51 +356,50 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static void Draw(this Sprite sprite, int width = defaultButtonSize, bool alphaBlend = false) =>
+        public static TextToken Draw(Sprite sprite, int width = defaultButtonSize, bool alphaBlend = true) =>
             Draw(sprite, Color.white, width: width, alphaBlend: alphaBlend);
         
-        public static void Draw(this Sprite sprite, Color color, int width = defaultButtonSize, bool alphaBlend = false)
+        public static TextToken Draw(Sprite sprite, Color color, int width = defaultButtonSize, bool alphaBlend = true)
         {
             if (!sprite)
             {
                 Icon.Empty.Draw(width);
+                return TEXT_TOK;
             }
-            else
+
+            CheckLine();
+
+            Rect c = sprite.textureRect;
+
+            float max = Mathf.Max(c.width, c.height);
+
+            float scale = width / max;
+            float spriteW = c.width * scale;
+            float spriteH = c.height * scale;
+            Rect rect = GUILayoutUtility.GetRect(spriteW, spriteH, GUILayout.ExpandWidth(false));
+
+            if (Event.current.type != EventType.Repaint)
+                return TEXT_TOK;
+
+            if (sprite.packed)
             {
+                var tex = sprite.texture;
+                c.xMin /= tex.width;
+                c.xMax /= tex.width;
+                c.yMin /= tex.height;
+                c.yMax /= tex.height;
 
-                CheckLine();
-
-                Rect c = sprite.textureRect;
-
-                float max = Mathf.Max(c.width, c.height);
-
-                float scale = defaultButtonSize / max;
-
-                float spriteW = c.width * scale;
-                float spriteH = c.height * scale;
-                Rect rect = GUILayoutUtility.GetRect(spriteW, spriteH,
-                    GUILayout.ExpandWidth(false));
-
-                if (Event.current.type == EventType.Repaint)
+                using (SetGuiColorDisposable(color))
                 {
-                    if (sprite.packed)
-                    {
-                        var tex = sprite.texture;
-                        c.xMin /= tex.width;
-                        c.xMax /= tex.width;
-                        c.yMin /= tex.height;
-                        c.yMax /= tex.height;
-                        GUI.DrawTextureWithTexCoords(rect, tex, c, alphaBlend);
-                    }
-
-                    else
-                    {
-                        GUI.DrawTexture(rect, sprite.texture, ScaleMode.ScaleToFit, alphaBlend, 1, color,
-                            Vector4.zero, Vector4.zero);
-                    }
+                    GUI.DrawTextureWithTexCoords(rect, tex, c, alphaBlend);
                 }
+                return TEXT_TOK;
             }
 
+            GUI.DrawTexture(rect, sprite.texture, ScaleMode.ScaleToFit, alphaBlend, 1, color,
+                Vector4.zero, Vector4.zero);
+
+            return TEXT_TOK;
         }
 
 
@@ -394,55 +418,50 @@ namespace QuizCanners.Inspect
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
+            {
                 PegiEditorOnly.Draw(img, width, alphaBlend: alphaBlend);
-
-            else
-#endif
-            {
-                SetBgColor(Color.clear);
-
-                Click(img, width);
-
-                RestoreBGColor();
+                return TEXT_TOK;
             }
-
+#endif
+            
+            SetBgColor(Color.clear);
+            Click(img, width);
+            RestoreBGColor();
+            
             return TEXT_TOK;
         }
 
-        public static TextToken Draw(this Texture img, string toolTip, int width = defaultButtonSize)
+        public static TextToken Draw(Texture img, string toolTip, int width = defaultButtonSize)
         {
-
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
+            {
                 PegiEditorOnly.Draw(img, toolTip, width, width);
-            else
-#endif
-            {
-
-                SetBgColor(Color.clear);
-                Click(img, toolTip, width, width);
-                RestoreBGColor();
+                return TEXT_TOK;
             }
+#endif
+
+            SetBgColor(Color.clear);
+            Click(img, toolTip, width, width);
+            RestoreBGColor();
+            
             return TEXT_TOK;
         }
 
-        public static TextToken Draw(this Texture img, string toolTip, int width, int height)
+        public static TextToken Draw(Texture img, string toolTip, int width, int height)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                PegiEditorOnly.Draw(img, toolTip, width, height);
-            else
-#endif
             {
-
-                SetBgColor(Color.clear);
-
-                Click(img, toolTip, width, height);
-
-                RestoreBGColor();
-
+                PegiEditorOnly.Draw(img, toolTip, width, height);
+                return TEXT_TOK;
             }
+#endif
+
+            SetBgColor(Color.clear);
+            Click(img, toolTip, width, height);
+            RestoreBGColor();
             return TEXT_TOK;
         }
 
@@ -459,6 +478,14 @@ namespace QuizCanners.Inspect
         #endregion
 
         #region String
+
+        public static TextToken WriteBig(this TextLabel text, string contents)
+        {
+            text.Nl();
+            contents.PegiLabel().WriteBig();
+            Nl();
+            return TEXT_TOK;
+        }
 
         public static TextToken WriteBig(this TextLabel text, TextLabel contents)
         {
@@ -478,9 +505,6 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Write_ForCopy(this TextLabel text, bool showCopyButton = false, bool writeAsEditField = false)
         {
-
-            var ret = false;
-
 #if UNITY_EDITOR
             if (!PaintingGameViewUI && !writeAsEditField)
                 PegiEditorOnly.Write_ForCopy(text);
@@ -488,19 +512,17 @@ namespace QuizCanners.Inspect
 #endif
             {
                 var tmp = text.label;
-                ret = Edit(ref tmp);
+                Edit(ref tmp);
             }
 
             if (showCopyButton && Icon.Copy.Click("Copy text to clipboard"))
                 SetCopyPasteBuffer(text.label);
 
-            return new ChangesToken(ret);
+            return ChangesToken.False;
         }
 
         public static ChangesToken Write_ForCopy(this TextLabel text, int width, bool showCopyButton = false)
         {
-            var ret = false;
-
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
                 PegiEditorOnly.Write_ForCopy(text);
@@ -508,13 +530,13 @@ namespace QuizCanners.Inspect
 #endif
             {
                 var tmp = text.label;
-                ret = Edit(ref tmp);
+                Edit(ref tmp);
             }
 
             if (showCopyButton && Icon.Copy.Click("Copy text to clipboard"))
                 SetCopyPasteBuffer(text.label);
 
-            return new ChangesToken(ret);
+            return ChangesToken.False;
 
         }
 

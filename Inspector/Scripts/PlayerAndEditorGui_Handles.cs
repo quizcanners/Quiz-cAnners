@@ -204,33 +204,7 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
-            public static ChangesToken Bazier(BezierCurve be, Vector3 startPoint, Vector3 endPoint, Color color, Texture2D texture = null, float width = 1)
-            {
-                #if UNITY_EDITOR
-                if (IsDrawingHandles)
-                {
-                    EditorGUI.BeginChangeCheck();
-
-                    be.StartVector = (Handles.PositionHandle(startPoint + be.StartVector, Quaternion.identity) - startPoint);
-                    be.EndVector = (Handles.PositionHandle(endPoint + be.EndVector, Quaternion.identity) - endPoint);
-
-                    Handles.DrawBezier(
-                        startPosition: startPoint, 
-                        endPosition: endPoint, 
-                        startTangent: startPoint + be.StartVector, 
-                        endTangent: endPoint + be.EndVector, 
-                        color: color, 
-                        texture: texture, 
-                        width: width);
-
-
-                    return EndClickCheck();
-                }
-                #endif
- 
-                return ChangesToken.False;
-            }
-
+        
             public static ChangesToken Position(Vector3 position, out Vector3 newPosition) 
             {
 #if UNITY_EDITOR
@@ -486,6 +460,33 @@ namespace QuizCanners.Inspect
 #endif
             }
 
+            public static ChangesToken Bazier(Vector3 startPoint, ref Vector3 startVector, Vector3 endPoint, ref Vector3 endVector, Color col, float width)
+            {
+                
+#if UNITY_EDITOR
+                if (IsDrawingHandles)
+                {
+                    var changed = ChangeTrackStart();
+                    EditorGUI.BeginChangeCheck();
+
+                    startVector = (Handles.PositionHandle(startPoint + startVector, Quaternion.identity) - startPoint);
+                    endVector = (Handles.PositionHandle(endPoint + endVector, Quaternion.identity) - endPoint);
+
+                    Handles.DrawBezier(
+                        startPosition: startPoint,
+                        endPosition: endPoint,
+                        startTangent: startPoint + startVector,
+                        endTangent: endPoint + endVector,
+                        color: col,
+                        texture: null,
+                        width: width);
+
+                    return EndClickCheck();
+                }
+#endif
+
+                return ChangesToken.False;
+            }
         }
 
         public static class Gizmo

@@ -329,7 +329,7 @@ namespace QuizCanners.Inspect
 
         private static Texture GetTexture_orEmpty(this Sprite sp) => sp ? sp.texture : Icon.Empty.GetIcon();
 
-        internal static ChangesToken Click(Sprite img, string toolTip, int size = defaultButtonSize)
+        public static ChangesToken Click(Sprite img, string toolTip = null, int size = defaultButtonSize)
             => Click(img.GetTexture_orEmpty(), toolTip, size);
 
         public static ChangesToken Click(Texture img, int size = defaultButtonSize)

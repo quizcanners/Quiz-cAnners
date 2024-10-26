@@ -34,82 +34,10 @@ namespace QuizCanners.Utils
             _inspector.Nested_Inspect();
         }
 
-        private class JsonTest : IPEGI
-        {
-            private string _testJson = "{ \"Name\" : \"John\" , \"Age\" : 16, \"Logic\" : " +
-                "   {" +
-                "       \"Type\" : \"A\",  " +
-                "       \"Data\" : " +
-                "       \"{" +
-                "        \\\"SecretData\\\" : \\\" Test\\\"" +
-                "       }\"  " +
-                "   }  " +
-                "}";
-            private readonly JsonTestClass _testParcedClass = new JsonTestClass();
-
-            private class JsonTestClass : IPEGI
-            {
-                [SerializeField] string Name;
-                [SerializeField] int Age;
-                //[SerializeReference] 
-                [SerializeField] private TestFactory Logic;
-
-                public override string ToString() => "Unity Json With Typed Test";
-
-                void IPEGI.Inspect()
-                {
-                    "Name".PegiLabel().Edit(ref Name).Nl();
-                    "Age".PegiLabel().Edit(ref Age).Nl();
-
-                    Logic.Nested_Inspect();
-                }
-
-                [Serializable] private class TestFactory : TypedInstance.JsonSerializable<Base> { }
-
-                private class A : Base { }
-
-                private class B : Base { }
-
-                private abstract class Base : IPEGI
-                {
-                    [SerializeField] string SecretData;
-
-                    void IPEGI.Inspect()
-                    {
-                        "Secret Data".PegiLabel().Edit(ref SecretData).Nl();
-                    }
-                }
-            }
-
-            void IPEGI.Inspect()
-            {
-
-                "Test Json".PegiLabel().Edit_Big(ref _testJson).Nl();
-
-                try
-                {
-                    JsonUtility.FromJsonOverwrite(_testJson, _testParcedClass);
-
-                    _testParcedClass.Nested_Inspect().Nl();
-
-
-                    if ("Serialize".PegiLabel().Click().Nl())
-                        Debug.Log(JsonUtility.ToJson(_testParcedClass));
-
-                }
-                catch (Exception ex)
-                {
-                    ex.ToString().PegiLabel().WriteWarning().Nl();
-                }
-            }
-
-        }
-
         private class DebugInspector : IPEGI
         {
             private readonly Migration.ICfgObjectExplorer iCfgExplorer = new();
             private readonly EncodedJsonInspector jsonInspector = new();
-            private readonly JsonTest jsonTest = new();
             private int _testSeed = 42;
 
             private readonly pegi.EnterExitContext _context = new(playerPrefId: "utlsDbCtx");
@@ -144,8 +72,6 @@ namespace QuizCanners.Utils
                     {
                         using (_testsContext.StartContext())
                         {
-                            "Json Parcing".PegiLabel().Enter_Inspect(jsonTest).Nl();
-
                             if ("Gui Styles".PegiLabel().IsEntered().Nl())
                             {
                                 pegi.Styles.Inspect();
@@ -154,7 +80,7 @@ namespace QuizCanners.Utils
 
                             if ("Random Seed Test".PegiLabel().IsEntered().Nl())
                             {
-                                "Seed".PegiLabel().Edit(ref _testSeed).Nl();
+                                "Seed".ConstLabel().Edit(ref _testSeed).Nl();
 
                                 using (QcMath.RandomBySeedDisposable(_testSeed))
                                 {

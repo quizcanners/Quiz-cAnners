@@ -9,6 +9,8 @@ using System.Reflection;
 using UnityEngine.SceneManagement;
 using QuizCanners.Inspect;
 using UnityEngine.AI;
+using static UnityEngine.GraphicsBuffer;
+
 
 #if UNITY_EDITOR
 using  UnityEditor;
@@ -490,7 +492,7 @@ namespace QuizCanners.Utils {
 
             if (!createdForSelection)
             {
-                var canvas = Object.FindObjectOfType<Canvas>();
+                var canvas = Object.FindFirstObjectByType<Canvas>();
 
                 if (!canvas)
                     canvas = new GameObject("Canvas").AddComponent<Canvas>();
@@ -1102,8 +1104,11 @@ namespace QuizCanners.Utils {
         {
 
 #if UNITY_EDITOR
-            var buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
-            var defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup).Split(';');
+            BuildTargetGroup buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+
+            var namedBuildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup);
+            var defines = PlayerSettings.GetScriptingDefineSymbols(namedBuildTarget).Split(';'); 
+            //GetScriptingDefineSymbolsForGroup(buildTargetGroup).Split(';');
 
             foreach (var s in defines)
             {
@@ -1122,20 +1127,44 @@ namespace QuizCanners.Utils {
         {
 
 #if UNITY_EDITOR
-            var buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
-            var defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
 
-            if (defines.Contains(val) == to)
+            BuildTargetGroup buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+
+            var namedBuildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup);
+            var definesUnsplit = PlayerSettings.GetScriptingDefineSymbols(namedBuildTarget);
+            var defines = definesUnsplit.Split(';');
+
+            //  var buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+            // var defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
+
+      
+            if (Contains(val) == to)
                 return;
 
             if (to)
-                defines += ";" + val;
+                definesUnsplit += ";" + val;
             else
             {
-                defines = defines.Replace(val, "").Replace(";;", ";");
+                definesUnsplit = definesUnsplit.Replace(val, "").Replace(";;", ";");
             }
 
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defines);
+            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, definesUnsplit);
+            //  PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defines);
+
+            return;
+
+            bool Contains(string valToSearch)
+            {
+                foreach (var s in defines)
+                {
+                    if (s.Equals(valToSearch))
+                        return true;
+                }
+
+                return false;
+            }
+
+
 #endif
         }
 
@@ -1411,6 +1440,20 @@ namespace QuizCanners.Utils {
             obj.name = name;
 
             return fullPath;
+        }
+
+        public static bool TryGetFullPath(Object obj, out string path) 
+        {
+#if UNITY_EDITOR
+            string assetPath = AssetDatabase.GetAssetPath(obj);
+
+            path = System.IO.Path.GetFullPath(assetPath);
+
+            return true;
+#else 
+            path = "";
+            return false;
+#endif
         }
 
         public static string GetAssetFolder(Object obj)

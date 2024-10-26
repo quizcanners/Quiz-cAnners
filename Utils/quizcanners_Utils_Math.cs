@@ -236,25 +236,27 @@ namespace QuizCanners.Utils
 
         public static float DistanceFromPointToALine(Vector3 point, Vector3 startp, Vector3 endp)
         {
+
+            var a = Vector3.Distance(point, endp);
+            var b = Vector3.Distance(point, startp);
+            var line = Vector3.Distance(startp, endp);
+
+            if (IsAcute(a, b, line)) 
+                return Mathf.Min(a, b);
+            else
+            {
+                float s = (a + b + line) / 2;
+                float h = 4 * s * (s - a) * (s - b) * (s - line) / (line * line);
+                return Mathf.Sqrt(h);
+            }
+
+            /*
+             ector3 point, Vector3 startp, Vector3 endp
             var a = Vector3.Distance(startp, endp);
             var b = Vector3.Distance(startp, point);
             var c = Vector3.Distance(endp, point);
             var s = (a + b + c) / 2;
-            return 2 * Mathf.Sqrt(s * (s - a) * (s - b) * (s - c)) / a;
-        }
-
-        public static Vector3 GetClosestPointOnALine(Vector3 lineA, Vector3 lineB, Vector3 point)
-        {
-            Vector3 a_to_p = point - lineA;
-            Vector3 a_to_b = lineB - lineA;
-
-            float atb2 = Vector3.Scale(a_to_b, a_to_b).magnitude;
-
-            var atp_dot_atb = Vector3.Dot(a_to_p, a_to_b);
-
-            float t = atp_dot_atb / atb2; // new Vector3(atp_dot_atb.x/ atb2.x, atp_dot_atb.y / atb2.y, atp_dot_atb.z / atb2.z) ;
-
-            return Vector3.Lerp(lineA, lineB, t);//lineA + Vector3.Scale( a_to_b; 
+            return 2 * Mathf.Sqrt(s * (s - a) * (s - b) * (s - c)) / a;*/
         }
 
         public static bool IsPointOnLine(float a, float b, float line, float percision)
@@ -272,6 +274,22 @@ namespace QuizCanners.Utils
 
             return dist < percision;
         }
+
+        public static Vector3 GetClosestPointOnALine(Vector3 lineA, Vector3 lineB, Vector3 point)
+        {
+            Vector3 a_to_p = point - lineA;
+            Vector3 a_to_b = lineB - lineA;
+
+            float atb2 = Vector3.Scale(a_to_b, a_to_b).magnitude;
+
+            var atp_dot_atb = Vector3.Dot(a_to_p, a_to_b);
+
+            float t = atp_dot_atb / atb2; // new Vector3(atp_dot_atb.x/ atb2.x, atp_dot_atb.y / atb2.y, atp_dot_atb.z / atb2.z) ;
+
+            return Vector3.Lerp(lineA, lineB, t);//lineA + Vector3.Scale( a_to_b; 
+        }
+
+
 
         public static bool IsPointOnLine(Vector3 a, Vector3 b, Vector3 point, float percision)
         {
@@ -483,6 +501,7 @@ namespace QuizCanners.Utils
         public static Vector4 ToVector4(this Vector2 v2xy, Vector2 v2zw) => new(v2xy.x, v2xy.y, v2zw.x, v2zw.y);
 
         public static Vector4 ToVector4(this Vector3 v3xyz, float w = 0) => new(v3xyz.x, v3xyz.y, v3xyz.z, w);
+        public static Vector4 W(this Vector3 v3xyz, float w) => new(v3xyz.x, v3xyz.y, v3xyz.z, w);
 
         public static Vector4 ToVector4(this Rect rect, bool useMinMax) =>
             useMinMax ? new Vector4(rect.xMin, rect.yMin, rect.xMax, rect.yMax) : new Vector4(rect.x, rect.y, rect.width, rect.height);
@@ -830,7 +849,7 @@ namespace QuizCanners.Utils
 
                     "[{0} : {1}] - {2}".F(dynamicMin, dynamicMax, "Focused Range").PegiLabel().Nl();
 
-                    "Range: [".PegiLabel(60).Write();
+                    "Range: [".ConstLabel().Write();
 
                     var before = min;
 

@@ -17,7 +17,7 @@ namespace QuizCanners.Migration
     public class TaggedTypes 
     {
         internal static int Version;
-        internal static Dictionary<Type, DerrivedList> _configs = new Dictionary<Type, DerrivedList>();
+        internal static Dictionary<Type, DerrivedList> _configs = new();
 
         private static void RegisterType(DerrivedList cfg, Type type)
         {
@@ -56,13 +56,14 @@ namespace QuizCanners.Migration
 
             private List<string> _keys;
 
-            public CountlessBool _disallowMultiplePerList = new CountlessBool();
+            //public CountlessBool _disallowMultiplePerList = new CountlessBool();
+            private readonly HashSet<int> _disallowMultiplePerList = new();
 
             public bool CanAdd(int typeIndex, IList toList)
             {
                 RefreshNodeTypesList();
 
-                if (!_disallowMultiplePerList[typeIndex])
+                if (!_disallowMultiplePerList.Contains(typeIndex))
                     return true;
 
                 var t = _types[typeIndex];
@@ -121,7 +122,8 @@ namespace QuizCanners.Migration
                         _displayNames.Add(att.displayName);
                         _keys.Add(att.tag);
                         _types.Add(t);
-                        _disallowMultiplePerList[cnt] = !att.allowDuplicates;
+                        if (!att.allowDuplicates)
+                            _disallowMultiplePerList.Add(cnt);
                         cnt++;
                     }
                 }
@@ -196,7 +198,7 @@ namespace QuizCanners.Migration
     public static class TaggedTypes<T>
     {
         private static TaggedTypes.DerrivedList _instance;
-        private static readonly Gate.Integer _versionGate = new Gate.Integer();
+        private static readonly Gate.Integer _versionGate = new();
         public static TaggedTypes.DerrivedList DerrivedList
         {
             get
@@ -217,7 +219,7 @@ namespace QuizCanners.Migration
         {
             var previousInstance = target;
 
-            CfgData previousData = new CfgData();
+            CfgData previousData = new();
 
             if (previousInstance is ICfg previousAsCfg)
                 previousData = previousAsCfg.Encode().CfgData;
@@ -262,7 +264,7 @@ namespace QuizCanners.Migration
     
     public class TaggedModulesList<T> : ICfg, IPEGI, IEnumerable<T> where T : class, IGotClassTag, ICfg {
         
-        protected List<T> modules = new List<T>();
+        protected List<T> modules = new();
         
         protected virtual List<T> Modules {
             get {
@@ -330,7 +332,7 @@ namespace QuizCanners.Migration
 
         #region Inspector
         
-        private readonly pegi.CollectionInspectorMeta modulesMeta = new pegi.CollectionInspectorMeta("Modules", allowDeleting: false, showAddButton:false, allowReordering: false, showEditListButton:false);
+        private readonly pegi.CollectionInspectorMeta modulesMeta = new("Modules", allowDeleting: false, showAddButton:false, allowReordering: false, showEditListButton:false);
 
         void IPEGI.Inspect()
         {

@@ -4,20 +4,14 @@ using QuizCanners.Utils;
 using UnityEngine;
 using Object = UnityEngine.Object;
 using QuizCanners.Migration;
-
-// ReSharper disable InconsistentNaming
-#pragma warning disable IDE1006 // Naming Styles
-#pragma warning disable IDE0019 // Use pattern matching
-#pragma warning disable IDE0018 // Inline variable declaration
-#pragma warning disable IDE0011 // Add braces
-#pragma warning disable IDE0008 // Use explicit type
+using System;
+using System.Linq;
 
 namespace QuizCanners.Inspect
 {
     public static partial class pegi
     {
         private const string NEW_ELEMENT = "new_element";
-
 
         #region Collection MGMT Functions 
 
@@ -43,7 +37,7 @@ namespace QuizCanners.Inspect
 
             var changed = InspectValueInCollection(ref el, index, ref inspected, listMeta);
 
-            if (changed && (typeof(T).IsValueType || typeof(Object).IsAssignableFrom(typeof(T))))
+            if (changed && ((el is string) || typeof(T).IsValueType || typeof(Object).IsAssignableFrom(typeof(T))))
                 list[index] = el;
 
             return changed;
@@ -153,9 +147,7 @@ namespace QuizCanners.Inspect
 
             bool TryUseListInspection(ref T el, ref int inspected)
             {
-                var pl = el as IPEGI_ListInspect;
-
-                if (pl == null)
+                if (el is not IPEGI_ListInspect pl)
                     return false;
 
                 try
@@ -164,6 +156,7 @@ namespace QuizCanners.Inspect
                 }
                 catch (System.Exception ex)
                 {
+                    pegi.Nl();
                     Write(ex);
                 }
 
@@ -178,9 +171,7 @@ namespace QuizCanners.Inspect
 
             bool TryInspectNamedElement(ref T el)
             {
-                var named = el as IGotName;
-
-                if (named == null)
+                if (el is not IGotName named)
                     return false;
 
                 var n = named.NameForInspector;
@@ -207,12 +198,10 @@ namespace QuizCanners.Inspect
 
                 var sb = new System.Text.StringBuilder();
 
-                var iind = el as IGotIndex;
-                if (iind != null)
+                if (el is IGotIndex iind)
                     sb.Append(iind.IndexForInspector.ToString() + ": ");
 
-                var count = el as IGotCount;
-                if (count != null)
+                if (el is IGotCount count)
                     sb.Append("[x{0}] ".F(count.GetCount()));
 
                 var label = sb.ToString();
@@ -225,30 +214,39 @@ namespace QuizCanners.Inspect
 
             void InspectNullElement(ref T el)
             {
-                var ed = listMeta?[index];
-                if (ed == null)
+                ElementData ed = listMeta?[index];
+            
+                if (typeof(Object).IsAssignableFrom(typeof(T)))
                 {
-                    if (typeof(Object).IsAssignableFrom(typeof(T)))
+                    if (ed != null)
                     {
+                        object obj = el;
+
+                        if (ed.PEGI_inList<T>(ref obj))
+                        {
+                            el = (T)obj;
+                            isPrevious = true;
+                        }
+                    }
+                    else
+                    {
+
                         var tmp = el as Object;
                         if (Edit(ref tmp, typeof(T), 200))//edit(ref tmp))
                             el = (T)(object)tmp;
                     }
-                    else
-                    {
-                        "{0}: NULL {1}".F(index, typeof(T).ToPegiStringType()).PegiLabel(150).Write();
-                    }
+                    return;
                 }
-                else
-                {
-                    object obj = el;
 
-                    if (ed.PEGI_inList<T>(ref obj))
-                    {
-                        el = (T)obj;
-                        isPrevious = true;
-                    }
+                if (typeof(string).IsAssignableFrom(typeof(T))) 
+                {
+                    if ("Instanciate string".PegiLabel().Click())
+                        el = (T)((object)"");
+                    return;
                 }
+               
+                "{0}: NULL {1}".F(index, typeof(T).ToPegiStringType()).PegiLabel(150).Write();
+
             }
 
             void FallbackNonUnityElementInspect(ref T el, ref int inspected)
@@ -256,13 +254,21 @@ namespace QuizCanners.Inspect
                 if (typeof(T).IsEnum) 
                 {
                     Edit_Enum(ref el);
-
                     if (Icon.Enter.Click()) 
                     {
                         inspected = index;
                         isPrevious = true;
                     }
+                    return;
+                }
 
+                if (el is string tmp) 
+                {
+                    if (Edit(ref tmp))
+                    {
+                        el = (T)(object)tmp;
+                        isPrevious = true;
+                    }
                     return;
                 }
 
@@ -296,7 +302,6 @@ namespace QuizCanners.Inspect
 
                 ClickHighlight(uo);
             }
-
 
             return changed;
         }
@@ -544,7 +549,9 @@ namespace QuizCanners.Inspect
 
             if (list == null)
             {
-                "List of {0} is null".F(listMeta == null ? typeof(T).ToPegiStringType() : listMeta.Label).PegiLabel().Write();
+                Icon.List.Draw();
+                Nl();
+                "List of {0} is null".F(listMeta == null ? typeof(T).ToPegiStringType() : listMeta.Label).PegiLabel().Write_Hint();
 
                 return changes;
             }
@@ -575,25 +582,21 @@ namespace QuizCanners.Inspect
                         {
                             int i = collectionInspector.Index;
 
+                            /*
                             if (el.IsNullOrDestroyed_Obj())
                             {
-                                var us = el as Object;
-
-                                if (Edit(ref us, typeof(T)))
-                                    list[i] = (T)((object)us);
-
-                                /*
-                                if (!Utils.IsMonoType(list, i))
+                                if (typeof(Object).IsAssignableFrom(typeof(T)))
                                 {
-                                    (typeof(T).IsSubclassOf(typeof(Object))
-                                        ? "use edit_List_UObj"
-                                        : "is NUll").PegiLabel().Write();
-                                }*/
+                                    var us = el as Object;
+
+                                    if (Edit(ref us, typeof(T), allowSceneObjects: listMeta==null ? true : listMeta.allowScreenObject))
+                                        list[i] = (T)((object)us);
+                                }
                             }
                             else
-                            {
+                            {*/
                                 InspectValueInList(el, list, i, ref inspected, listMeta);
-                            }
+                           // }
 
                             Nl();
                         }
@@ -615,6 +618,30 @@ namespace QuizCanners.Inspect
 
             return changes;
         }
+
+        public static ChangesToken Search_List<T>(this CollectionInspectorMeta listMeta, List<T> list)
+        {
+            var changed = ChangeTrackStart();
+
+
+
+            /*
+            using (collectionInspector.Write_Search_ListLabel(listMeta, list))
+            {
+                if (listMeta == null)
+                {
+                    "List Meta is Null".PegiLabel().WriteWarning(); Nl();
+                }
+                else
+                {
+                    
+                    Edit_List(list, ref listMeta.inspectedElement_Internal, out _, listMeta).OnChanged(listMeta.OnChanged);
+                }
+            }*/
+
+            return changed;
+        }
+
 
         #region Tagged Types
 
@@ -708,25 +735,25 @@ namespace QuizCanners.Inspect
 
         private static IList listElementsRoles;
 
-        private static Color lambda_Color(Color val)
+        private static Color Lambda_Color(Color val)
         {
             Edit(ref val);
             return val;
         }
 
-        private static Color32 lambda_Color(Color32 val)
+        private static Color32 Lambda_Color(Color32 val)
         {
             Edit(ref val);
             return val;
         }
 
-        private static int lambda_int(int val)
+        private static int Lambda_int(int val)
         {
             Edit(ref val);
             return val;
         }
 
-        private static string lambda_string_role(string val)
+        private static string Lambda_string_role(string val)
         {
             var role = listElementsRoles.TryGetObj(collectionInspector.Index);
             if (role != null)
@@ -736,23 +763,23 @@ namespace QuizCanners.Inspect
             return val;
         }
 
-        public static string lambda_string(string val)
+        public static string Lambda_string(string val)
         {
             Edit(ref val);
             return val;
         }
 
         public static ChangesToken Edit_List(this TextLabel label, List<int> list) =>
-            label.Edit_List(list, lambda_int);
+            label.Edit_List(list, Lambda_int);
 
         public static ChangesToken Edit_List(this TextLabel label, List<Color> list) =>
-            label.Edit_List(list, lambda_Color);
+            label.Edit_List(list, Lambda_Color);
 
         public static ChangesToken Edit_List(this TextLabel label, List<Color32> list) =>
-            label.Edit_List(list, lambda_Color);
+            label.Edit_List(list, Lambda_Color);
 
         public static ChangesToken Edit_List(this TextLabel label, List<string> list) =>
-            label.Edit_List(list, lambda_string);
+            label.Edit_List(list, Lambda_string);
         #endregion
 
         public static ChangesToken Edit_List<T>(this TextLabel label, List<T> list, System.Func<T, T> lambda) 
@@ -919,12 +946,12 @@ namespace QuizCanners.Inspect
         #endregion
 
         #region Dictionary Generic
-        internal interface iCollectionInspector<T>
+        internal interface ICollectionInspector<T>
         {
             void Set(T val);
         }
 
-        internal class KeyValuePairInspector<T,G> : iCollectionInspector<KeyValuePair<T,G>>, ISearchable, INeedAttention
+        internal class KeyValuePairInspector<T,G> : ICollectionInspector<KeyValuePair<T,G>>, ISearchable, INeedAttention
         {
             private KeyValuePair<T, G> _pair;
 
@@ -939,14 +966,9 @@ namespace QuizCanners.Inspect
 
             public string NeedAttention()
             {
-
-                string msg;// = null;
-
-                if (NeedsAttention(_pair.Value, out msg))
+                if (NeedsAttention(_pair.Value, out string msg))
                     "{0} at {1}".F(msg, _pair.Key.GetNameForInspector());
-
                 return msg;
-               
             }
 
             public IEnumerator SearchKeywordsEnumerator()
@@ -999,8 +1021,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken AddDictionaryPairOptions<TValue>(Dictionary<string, TValue> dic, string defaultElementName) 
         {
-            string newElementName;
-            if (!dictionaryNamesForAddNewElement.TryGetValue(typeof(TValue), out newElementName))
+            if (!dictionaryNamesForAddNewElement.TryGetValue(typeof(TValue), out string newElementName))
                 newElementName = defaultElementName;
 
             var changed = ChangeTrackStart();
@@ -1035,8 +1056,7 @@ namespace QuizCanners.Inspect
                         value = System.Activator.CreateInstance<TValue>();
                     
                     dic.Add(newElementName, value);
-                    var name = value as IGotName;
-                    if (name != null)
+                    if (value is IGotName name)
                         name.NameForInspector = newElementName;
 
                     newElementName = defaultElementName + " " + dic.Count;
@@ -1114,7 +1134,7 @@ namespace QuizCanners.Inspect
         {
             using (collectionInspector.Write_Search_DictionaryLabel(listMeta, dic))
             {
-                return Edit_Dictionary_Internal(dic, lambda_string, listMeta: listMeta);
+                return Edit_Dictionary_Internal(dic, Lambda_string, listMeta: listMeta);
             }
         }
         
@@ -1123,7 +1143,7 @@ namespace QuizCanners.Inspect
             int inspected = -1;
             using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
             {
-                return Edit_Dictionary_Internal(dic, lambda_string);
+                return Edit_Dictionary_Internal(dic, Lambda_string);
             }
         }
 
@@ -1133,7 +1153,7 @@ namespace QuizCanners.Inspect
             using (collectionInspector.Write_Search_DictionaryLabel(label, ref inspected, dic))
             {
                 listElementsRoles = roles;
-                var changes = Edit_Dictionary_Internal(dic, lambda_string_role, false);
+                var changes = Edit_Dictionary_Internal(dic, Lambda_string_role, false);
                 listElementsRoles = null;
                 return changes;
             }
@@ -1241,7 +1261,7 @@ namespace QuizCanners.Inspect
                     var itemKey = item.Key;
 
                     if ((listMeta == null || listMeta[CollectionInspectParams.allowDeleting]) 
-                        && Icon.Delete.ClickConfirm(confirmationTag: "DelDicEl"+collectionInspector.Index))
+                        && Icon.Delete.ClickConfirm(confirmationTag: "DelDicEl"+collectionInspector.Index, toolTip: "Delete {0} (ID: {1})".F(item.Value.ToString(), itemKey.ToString())))
                     {
                         dic.Remove(itemKey);
                         return ChangesToken.True;
@@ -1269,9 +1289,8 @@ namespace QuizCanners.Inspect
                             {
                                 bool keyHandled = false;
 
-                                var strKey = itemKey as string;
 
-                                if (strKey != null)
+                                if (itemKey is string strKey)
                                 {
                                     IGotName iGotName = item.IsNullOrDestroyed_Obj() ? null : item.Value as IGotName;
 
@@ -1451,7 +1470,6 @@ namespace QuizCanners.Inspect
         
         #region Searching
 
-    
         public static bool Try_SearchMatch_Obj(object obj, string searchText) => SearchMatch_Obj_Internal(obj, new[] { searchText });
 
         private static bool SearchMatch_Obj_Internal(this object obj, string[] text, int[] indexes = null)
@@ -1509,9 +1527,16 @@ namespace QuizCanners.Inspect
                 return false;
             }
 
+            private static int _reffRecursionBlock;
+
             public static bool MatchObjectToStrings(object obj, string[] text, ref bool[] matched)
             {
-               
+                if (_reffRecursionBlock > 16) 
+                {
+                    Debug.LogError("Reference recursion for " + obj);
+                    return false;
+                }
+
                 if (Internal_ByGotName(QcUnity.TryGetInterfaceFrom<IGotName>(obj), text, ref matched))
                     return true;
 
@@ -1523,7 +1548,24 @@ namespace QuizCanners.Inspect
 
                 if (Internal_String(obj.ToString(), text, ref matched))
                     return true;
+
+                if (Internal_ICollection(obj as ICollection, text, ref matched))
+                    return true;
                 
+                if (obj is IPEGI_Reference reff)
+                {
+                    _reffRecursionBlock++;
+                    using (QcSharp.DisposableAction(() => _reffRecursionBlock--))
+                    {
+                        var refObj = reff.GetReferencedObject();
+
+                        if (refObj != null)
+                        {
+                            return MatchObjectToStrings(refObj, text, ref matched);
+                        }
+                    }
+                }
+               
                 return false;
             }
 
@@ -1532,6 +1574,20 @@ namespace QuizCanners.Inspect
 
             private static bool Internal_ByGotName(IGotName gotName, string[] text, ref bool[] matched)
                 => Internal_String(gotName?.NameForInspector, text, ref matched);
+
+            public static bool Internal_ICollection(ICollection collection, string[] text, ref bool[] matched)
+            {
+                if (collection == null)
+                    return false;
+
+                foreach (var el in collection) 
+                {
+                    if (Match(el, text, ref matched))
+                        return true;
+                }
+            
+                return false;
+            }
 
             public static bool Internal_GotIndex(IGotIndex gotIndex, int[] indexes)
             {
@@ -1569,6 +1625,8 @@ namespace QuizCanners.Inspect
 
             }
 
+            private static bool _searchableLoopLogged = false;
+
             public static bool Internal_ByISearchable(ISearchable searchable, string[] text, ref bool[] matched)
             {
                 if (searchable == null) return false;
@@ -1601,6 +1659,21 @@ namespace QuizCanners.Inspect
                             var cur = enumerators[^1];
                             bool loopingEnumerator = true;
 
+                            if (enumerators.Count > 32) 
+                            {
+                                if (!_searchableLoopLogged)
+                                {
+                                    Debug.LogError("Enumerator recursion overflow. Logging all");
+                                    foreach (var e in enumerators) 
+                                    {
+                                        Debug.LogError(e.ToString());
+                                    }
+                                    _searchableLoopLogged = true;
+                                }
+
+                                return false;
+                            }
+
                             while (loopingEnumerator && !matched[i])
                             {
                                 object el;
@@ -1618,9 +1691,9 @@ namespace QuizCanners.Inspect
                                 if (el == null)
                                     continue;
 
-                                if (el is string) 
+                                if (el is string str) 
                                 {
-                                    var str = el as string;
+                                  //  var str = el as string;
                                     tmpStrings.Add(str);
 
                                     if (val.IsSubstringOf(str))
@@ -1666,7 +1739,6 @@ namespace QuizCanners.Inspect
         internal class SearchData 
         {
             private const string SEARCH_FIELD_FOCUS_NAME = "_pegiSearchField";
-
 
             public static bool UnityFocusNameWillWork; // Focus name bug on first focus
             public IEnumerable FilteredList;
@@ -1780,6 +1852,1631 @@ namespace QuizCanners.Inspect
         }
 
         #endregion
-        
+
+        #region Meta
+        [System.Flags]
+        internal enum CollectionInspectParams
+        {
+            None = 0,
+            allowDeleting = 1,
+            allowReordering = 2,
+            showAddButton = 4,
+            showEditListButton = 8,
+            showSearchButton = 16,
+            showDictionaryKey = 32,
+            allowDuplicates = 64,
+            showCopyPasteOptions = 128,
+            nameIsDictionaryKey = 256,
+        }
+
+        [Serializable]
+        public class CollectionInspectorMeta : IPEGI, ICfg
+        {
+            [NonSerialized] public string Label = "list";
+            [NonSerialized] private string _elementName;
+            public string ElementName { get => _elementName.IsNullOrEmpty() ? Label : _elementName; set => _elementName = value; }
+
+            [SerializeField] internal int inspectedElement_Internal = -1;
+            [NonSerialized] internal int previouslyInspectedElement = -1;
+            [SerializeField] internal int listSectionStartIndex;
+            [NonSerialized] internal bool useOptimalShowRange = true;
+            [NonSerialized] internal int itemsToShow = 10;
+            [NonSerialized] internal Dictionary<int, ElementData> elementDatas = new();
+            [NonSerialized] internal bool inspectListMeta = false;
+            [NonSerialized] private CollectionInspectParams _config;
+            [NonSerialized] internal readonly SearchData searchData = new();
+            [NonSerialized] internal bool allowScreenObject = true;
+
+            private readonly PlayerPrefValue.Int _playerPref = null;
+            private readonly Gate.Bool _playerPrefsChecked = new();
+
+            public int InspectedElement
+            {
+                get
+                {
+                    if (_playerPrefsChecked.TryChange(true)) 
+                    {
+                        if (_playerPref!= null)
+                            inspectedElement_Internal = _playerPref.GetValue();
+                    }
+
+                    return inspectedElement_Internal;
+                }
+                set
+                {
+                    inspectedElement_Internal = value;
+                    _playerPref?.SetValue(value);
+                }
+            }
+
+            internal bool this[CollectionInspectParams param]
+            {
+                get => (_config & param) == param;
+                set
+                {
+                    if (value)
+                    {
+                        _config |= param;
+                    }
+                    else
+                    {
+                        _config &= ~param;
+                    }
+                }
+            }
+            public ElementData this[int i]
+            {
+                get
+                {
+                    elementDatas.TryGetValue(i, out ElementData dta);
+                    return dta;
+                }
+            }
+
+            public bool IsAnyEntered
+            {
+                get => InspectedElement != -1;
+                set
+                {
+                    if (!value)
+                        InspectedElement = -1;
+                }
+            }
+
+            internal void OnChanged()
+            {
+                InspectedElement = inspectedElement_Internal;
+            }
+
+            internal List<int> GetSelectedElements()
+            {
+                var sel = new List<int>();
+                foreach (var e in elementDatas)
+                    if (e.Value.selected)
+                        sel.Add(e.Key);
+                return sel;
+            }
+
+            internal bool GetIsSelected(int ind)
+            {
+                if (elementDatas.TryGetValue(ind, out var el))
+                    return el.selected;
+                return el != null && el.selected;
+            }
+
+            internal void SetIsSelected(int ind, bool value)
+            {
+                if (elementDatas.TryGetValue(ind, out var el))
+                    el.selected = value;
+                else if (value)
+                {
+                    el = new ElementData
+                    {
+                        selected = true
+                    };
+                    elementDatas[ind] = el;
+                }
+            }
+
+            #region Inspector
+
+
+            [NonSerialized] private readonly EnterExitContext _context = new();
+
+            void IPEGI.Inspect()
+            {
+                using (_context.StartContext())
+                {
+                    Nl();
+                    if (!_context.IsAnyEntered)
+                    {
+                        "List Label".PegiLabel(70).Edit(ref Label).Nl();
+                        "Config".PegiLabel().Edit_EnumFlags(ref _config).Nl();
+                    }
+
+                    "Elements".PegiLabel().Edit_Dictionary(elementDatas);
+                }
+            }
+
+            public CfgEncoder Encode() => new CfgEncoder().Add_IfNotNegative("ind", InspectedElement);
+
+            public void DecodeTag(string key, CfgData data)
+            {
+                switch (key)
+                {
+                    case "ind": InspectedElement = data.ToInt(); break;
+                }
+            }
+            #endregion
+
+            public CollectionInspectorMeta()
+            {
+                this[CollectionInspectParams.showAddButton] = true;
+                this[CollectionInspectParams.allowDeleting] = true;
+                this[CollectionInspectParams.allowReordering] = true;
+            }
+
+            public CollectionInspectorMeta(string labelName,
+                bool allowDeleting = true,
+                bool allowReordering = true,
+                bool showAddButton = true,
+                bool showEditListButton = true,
+                bool showSearchButton = true,
+                bool showDictionaryKey = true,
+                bool showCopyPasteOptions = false,
+                bool nameIsDictionaryKey = true,
+                string playerPrefsIndex = null)
+            {
+
+                Label = labelName;
+
+                this[CollectionInspectParams.showAddButton] = showAddButton;
+                this[CollectionInspectParams.allowDeleting] = allowDeleting;
+                this[CollectionInspectParams.allowReordering] = allowReordering;
+                this[CollectionInspectParams.showEditListButton] = showEditListButton;
+                this[CollectionInspectParams.showSearchButton] = showSearchButton;
+                this[CollectionInspectParams.showDictionaryKey] = showDictionaryKey;
+                this[CollectionInspectParams.showCopyPasteOptions] = showCopyPasteOptions;
+                this[CollectionInspectParams.nameIsDictionaryKey] = nameIsDictionaryKey;
+
+                if (!playerPrefsIndex.IsNullOrEmpty())
+                {
+                    _playerPref = new PlayerPrefValue.Int("pegi/Col/" + playerPrefsIndex, defaultValue: -1);
+                }
+            }
+        }
+
+        public class ElementData
+        {
+            public bool selected;
+
+            internal bool PEGI_inList<T>(ref object obj)
+            {
+                var changed = ChangeTrackStart();
+
+                if (typeof(T).IsUnityObject())
+                {
+                    var uo = obj as UnityEngine.Object;
+                    if (Edit(ref uo))
+                        obj = uo;
+                }
+
+                return changed;
+            }
+        }
+        #endregion
+
+        #region Internal
+        internal class CollectionInspector : System.IDisposable
+        {
+            private const int SCROLL_ARROWS_WIDTH = 190;
+            private const int SCROLL_ARROWS_HEIGHT = 20;
+            private int DEFAULT_MAX_ELEMENTS_ON_SCREEN => PaintingGameViewUI ? 10 : 20;
+
+            public int Index { get; set; } = -1;
+            public IList reordering;
+            public TextLabel currentListLabel = new();
+            public System.Array _editingArrayOrder;
+            public readonly HashSet<int> selectedEls = new();
+            public object previouslyEntered;
+
+            private readonly Dictionary<IEnumerable, int> Indexes = new();
+            private bool _searching;
+            private List<int> filteredList;
+            private int _sectionSizeOptimal;
+            private int _count;
+            private List<int> _copiedElements = new();
+            private bool cutPaste;
+            private readonly Dictionary<int, int> SectionOptimal = new();
+            private static IList addingNewOptionsInspected;
+            private string addingNewNameHolder = "Name";
+            private bool exitOptionHandled;
+            private static IList listCopyBuffer;
+            private int _lastElementToShow;
+            private int _sectionStartIndex;
+            private SearchData searchData; // IN META
+            private bool _scrollDownRequested;
+            private bool allowDuplicants; // IN META
+            private readonly List<System.IDisposable> _toDispose = new();
+
+            public void Dispose() => End();
+            public void End()
+            {
+                currentListLabel = new TextLabel();
+                foreach (var toDisp in _toDispose)
+                    toDisp.Dispose();
+
+                _toDispose.Clear();
+            }
+            public IEnumerable<T> InspectionIndexes<T>(ICollection<T> collectionReference, CollectionInspectorMeta listMeta = null, ICollectionInspector<T> listElementInspector = null)
+            {
+                _toDispose.Add(Styles.Background.List.SetDisposible());
+
+                searchData = listMeta == null ? defaultSearchData : listMeta.searchData;
+
+                #region Inspect Start
+
+                var changed = ChangeTrackStart();
+
+                if (_scrollDownRequested)
+                    searchData.CloseSearch();
+
+                searchData.SearchString(collectionReference, out _searching, out string[] searchby);
+
+                _sectionStartIndex = 0;
+
+                if (_searching)
+                    _sectionStartIndex = searchData.InspectionIndexStart;
+                else if (listMeta != null)
+                    _sectionStartIndex = listMeta.listSectionStartIndex;
+                else if (!Indexes.TryGetValue(collectionReference, out _sectionStartIndex))
+                {
+                    if (Indexes.Count > 100)
+                    {
+                        Debug.LogError("Inspector Indexes > 100. Clearing");
+                        Indexes.Clear();
+                    }
+                    Indexes.Add(collectionReference, 0);
+                }
+
+                _count = collectionReference.Count;
+
+                _lastElementToShow = _count;
+
+                _sectionSizeOptimal = listMeta == null ? DEFAULT_MAX_ELEMENTS_ON_SCREEN : (listMeta.useOptimalShowRange ? GetOptimalSectionFor(_count) : listMeta.itemsToShow);
+
+                if (_scrollDownRequested)
+                {
+                    SkrollToBottomInternal();
+                }
+
+                /*
+                if (!_searching)
+                {
+                    while ((_sectionStartIndex > 0 && _sectionStartIndex >= _count))
+                    {
+                        _sectionStartIndex = Mathf.Max(0, _sectionStartIndex - _sectionSizeOptimal);
+                    }
+                }*/
+
+                if (_sectionStartIndex >= _count)
+                    _sectionStartIndex = Mathf.Max(0, _sectionStartIndex - _sectionSizeOptimal);
+
+                Nl();
+
+                if (_sectionStartIndex > 0)
+                {
+
+                    if (_sectionStartIndex > _sectionSizeOptimal && Icon.UpLast.ClickUnFocus("To First element"))
+                        _sectionStartIndex = 0;
+
+                    if (Icon.Up.Click("To previous elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
+                    {
+                        _sectionStartIndex = Mathf.Max(0, _sectionStartIndex - _sectionSizeOptimal + 1);
+                        if (_sectionStartIndex == 1)
+                            _sectionStartIndex = 0;
+                    }
+
+                    ".. {0}; ".F(_sectionStartIndex - 1).PegiLabel().Write();
+
+                }
+                else
+                    Icon.UpLast.Write("Is the first section of the list.", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
+
+                Nl();
+
+                #endregion
+
+                Styles.InList = true;
+
+                if (!_searching)
+                {
+                    _lastElementToShow = Mathf.Min(_count, _sectionStartIndex + _sectionSizeOptimal);
+                    Index = _sectionStartIndex;
+
+                    if (collectionReference is IList<T> list)
+                    {
+                        for (; Index < collectionReference.Count; Index++)
+                        {
+                            var lel = list[Index];
+                            SetListElementReadabilityBackground(Index);
+                            yield return lel;
+                            RestoreBGColor();
+
+                            if (Index >= _lastElementToShow)
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        foreach (var el in System.Linq.Enumerable.Skip(collectionReference, _sectionStartIndex))
+                        {
+                            SetListElementReadabilityBackground(Index);
+                            yield return el;
+                            RestoreBGColor();
+
+                            if (Index >= _lastElementToShow)
+                                break;
+
+                            Index++;
+                        }
+                    }
+
+                    if ((_sectionStartIndex > 0) || (_count > _lastElementToShow))
+                    {
+                        Nl();
+                        if (_count > _lastElementToShow)
+                        {
+                            if (Icon.Down.Click("To next elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
+                                _sectionStartIndex += _sectionSizeOptimal - 1;
+
+                            if (Icon.DownLast.ClickUnFocus("To Last element"))
+                                SkrollToBottomInternal();
+
+                            " {0}{1}".F(X_SYMBOL, _count - _lastElementToShow).PegiLabel().Write();
+                        }
+                        else if (_sectionStartIndex > 0)
+                            Icon.DownLast.Write("Is the last section of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
+                    }
+                }
+                else
+                {
+
+                    var sectionIndex = _sectionStartIndex;
+                    filteredList = searchData.GetFilteredList(_count);
+                    _lastElementToShow = Mathf.Min(_count, _sectionStartIndex + _sectionSizeOptimal);
+
+                    while (sectionIndex < _lastElementToShow)
+                    {
+                        Index = -1;
+
+                        if (filteredList.Count > sectionIndex)
+                            Index = filteredList[sectionIndex];
+                        else
+                            Index = GetNextFiltered(collectionReference, searchby, listElementInspector);
+
+                        if (Index != -1)
+                        {
+                            SetListElementReadabilityBackground(sectionIndex);
+                            yield return collectionReference.GetElementAt(Index);
+                            RestoreBGColor();
+                            sectionIndex++;
+                        }
+                        else break;
+                    }
+
+                    bool gotUnchecked = (searchData.UncheckedElement < _count - 1);
+                    bool gotToShow = (filteredList.Count > _lastElementToShow) || gotUnchecked;
+
+                    if (_sectionStartIndex > 0 || gotToShow)
+                    {
+                        Nl();
+                        if (gotToShow)
+                        {
+                            if (Icon.Down.Click("To next elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
+                                _sectionStartIndex += _sectionSizeOptimal - 1;
+
+                            if (Icon.DownLast.ClickUnFocus("To Last element"))
+                            {
+                                if (_searching)
+                                    while (GetNextFiltered(collectionReference, searchby, listElementInspector) != -1) { }
+
+                                SkrollToBottomInternal();
+                            }
+
+                            if (!gotUnchecked)
+                                "{0}{1}".F(X_SYMBOL, filteredList.Count - _lastElementToShow).PegiLabel().Write();
+
+                        }
+                        else if (_sectionStartIndex > 0)
+                            Icon.DownLast.Write("Is the last section of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
+                    }
+                }
+
+                Styles.InList = false;
+
+                if (changed)
+                    SaveSectionIndex(collectionReference, listMeta);
+            }
+            public void ListInstantiateNewName<T>()
+            {
+                Msg.New.GetText().PegiLabel(Msg.NameNewBeforeInstancing_1p.GetText().F(typeof(T).ToPegiStringType()), 30, Styles.ExitLabel).Write();
+                Edit(ref addingNewNameHolder);
+            }
+
+            private static string _listTypeSearch = "";
+
+            public bool TryShowListCreateNewOptions<T>(List<T> lst, ref T added, CollectionInspectorMeta ld)
+            {
+                if (ld != null && !ld[CollectionInspectParams.showAddButton])
+                    return false;
+
+                if (reordering != null && reordering == lst)
+                    return false;
+
+                var type = typeof(T);
+
+                var derrivedTypesExplicit = ICfgExtensions.TryGetDerivedClasses(type);
+
+                var tagTypes = TaggedTypes<T>.DerrivedList;
+
+                if (derrivedTypesExplicit == null && tagTypes == null)
+                {
+                    if (type.IsAbstract || type.IsInterface)
+                    {
+                        derrivedTypesExplicit = QcSharp.GetTypesAssignableFrom<T>();
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                var hasName = typeof(T).IsSubclassOf(typeof(Object)) || typeof(IGotName).IsAssignableFrom(typeof(T));
+
+                if (hasName)
+                    ListInstantiateNewName<T>();
+
+                if (!hasName || addingNewNameHolder.Length > 1)
+                {
+
+                    var selectingDerrived = lst == addingNewOptionsInspected;
+
+                    if (selectingDerrived)
+                        Line(); Nl();
+
+                    (derrivedTypesExplicit == null ? "Create new {0}".F(typeof(T).ToPegiStringType()) : "Create new {0}".F(typeof(T).ToPegiStringType())).PegiLabel(Styles.ClickableText).Write();
+
+                    Icon.Add.IsFoldout("Instantiate Class Options", ref selectingDerrived).Nl();
+
+                    if (selectingDerrived)
+                        addingNewOptionsInspected = lst;
+                    else if (addingNewOptionsInspected == lst)
+                        addingNewOptionsInspected = null;
+
+                    if (selectingDerrived)
+                    {
+                        if (derrivedTypesExplicit != null)
+                        {
+                            string searchString = "";
+
+                            if (derrivedTypesExplicit.Count > 5)
+                            {
+                                "Search".PegiLabel(width: 60, style: Styles.FoldedOutLabel).Edit(ref _listTypeSearch).Nl();
+                                searchString = _listTypeSearch;
+                            }
+
+                            foreach (var t in derrivedTypesExplicit)
+                            {
+                                string typeName = t.ToPegiStringType();
+
+                                if (searchString == null || typeName.Contains(searchString))
+                                {
+                                    typeName.PegiLabel().Write();
+                                    if (Icon.Create.ClickUnFocus().Nl())
+                                    {
+                                        added = (T)System.Activator.CreateInstance(t);
+                                        QcSharp.AddWithUniqueNameAndIndex(lst, added, addingNewNameHolder);
+                                        SkrollToBottom();
+                                    }
+                                }
+                            }
+                        }
+
+                        if (tagTypes != null)
+                        {
+                            var k = tagTypes.Keys;
+
+                            int availableOptions = 0;
+
+                            for (var i = 0; i < k.Count; i++)
+                            {
+                                if (tagTypes.CanAdd(i, lst))
+                                {
+                                    availableOptions++;
+
+                                    tagTypes.DisplayNames[i].PegiLabel().Write();
+                                    if (Icon.Create.ClickUnFocus().Nl())
+                                    {
+                                        added = (T)System.Activator.CreateInstance(tagTypes.TaggedTypes.GetValueOrDefault(k[i]));
+                                        QcSharp.AddWithUniqueNameAndIndex(lst, added, addingNewNameHolder);
+                                        SkrollToBottom();
+                                    }
+                                }
+
+                            }
+
+                            if (availableOptions == 0)
+                                (k.Count == 0 ? "There no types derrived from {0}".F(typeof(T).ToString()) :
+                                    "Existing types are restricted to one instance per list").PegiLabel().Write_Hint();
+
+                        }
+
+                    }
+                }
+                else
+                    Icon.Add.GetText("Input a name for a new element", 40).Write();
+                Nl();
+
+                return true;
+            }
+
+            public ChangesToken TryShowListCreateNewOptions<T>(List<T> lst, ref T added, TaggedTypes.DerrivedList types, CollectionInspectorMeta ld)
+            {
+                if (ld != null && !ld[CollectionInspectParams.showAddButton])
+                    return ChangesToken.False;
+
+                if (reordering != null && reordering == lst)
+                    return ChangesToken.False;
+
+                var changed = false;
+
+                var hasName = typeof(T).IsSubclassOf(typeof(Object)) || typeof(IGotName).IsAssignableFrom(typeof(T));
+
+                if (hasName)
+                    ListInstantiateNewName<T>();
+                else
+                    "Create new {0}".F(typeof(T).ToPegiStringType()).PegiLabel().Write();
+
+                if (!hasName || addingNewNameHolder.Length > 1)
+                {
+                    var selectingDerrived = lst == addingNewOptionsInspected;
+
+                    Icon.Add.IsFoldout("Instantiate Class Options", ref selectingDerrived).Nl();
+
+                    if (selectingDerrived)
+                        addingNewOptionsInspected = lst;
+                    else if (addingNewOptionsInspected == lst)
+                        addingNewOptionsInspected = null;
+
+                    if (selectingDerrived)
+                    {
+                        var k = types.Keys;
+                        for (var i = 0; i < k.Count; i++)
+                        {
+                            types.DisplayNames[i].PegiLabel().Write();
+                            if (Icon.Create.ClickUnFocus().Nl())
+                            {
+                                changed = true;
+                                added = (T)System.Activator.CreateInstance(types.TaggedTypes.GetValueOrDefault(k[i]));
+                                QcSharp.AddWithUniqueNameAndIndex(lst, added, addingNewNameHolder);
+                                SkrollToBottom();
+                            }
+                        }
+                    }
+                }
+                else
+                    Icon.Add.GetText("Input a name for a new element", 40).Write();
+                Nl();
+
+                return new ChangesToken(changed);
+            }
+            public void SkrollToBottom()
+            {
+                _scrollDownRequested = true;
+            }
+
+            private int GetOptimalSectionFor(int count)
+            {
+                int listShowMax = DEFAULT_MAX_ELEMENTS_ON_SCREEN;
+
+                if (count < listShowMax)
+                    return listShowMax;
+
+                if (count > listShowMax * 3)
+                    return listShowMax;
+
+                if (SectionOptimal.TryGetValue(count, out _sectionSizeOptimal))
+                    return _sectionSizeOptimal;
+
+                var minDiff = 999;
+
+                for (var i = listShowMax - 2; i < listShowMax + 2; i++)
+                {
+                    var difference = i - (count % i);
+
+                    if (difference >= minDiff) continue;
+                    _sectionSizeOptimal = i;
+                    minDiff = difference;
+                    if (difference == 0)
+                        break;
+                }
+
+                SectionOptimal[count] = _sectionSizeOptimal;
+                return _sectionSizeOptimal;
+            }
+            private int GetNextFiltered<T>(ICollection<T> collectionReference, string[] searchby, ICollectionInspector<T> inspector = null)
+            {
+                foreach (var reff in System.Linq.Enumerable.Skip(collectionReference, searchData.UncheckedElement))
+                {
+                    if (searchData.UncheckedElement >= _count)
+                        return -1;
+
+                    int index = searchData.UncheckedElement;
+
+                    searchData.UncheckedElement++;
+
+                    object target;
+
+                    if (inspector != null)
+                    {
+                        inspector.Set(reff);
+                        target = inspector;
+                    }
+                    else
+                        target = reff;
+
+                    var na = target as INeedAttention;
+
+                    var msg = na?.NeedAttention();
+
+                    if (!searchData.FilterByNeedAttention || !msg.IsNullOrEmpty())
+                    {
+                        if (searchby.IsNullOrEmpty() || target.SearchMatch_Obj_Internal(searchby))
+                        {
+                            filteredList.Add(index);
+                            return index;
+                        }
+                    }
+                }
+
+                return -1;
+            }
+            private void SaveSectionIndex<T>(ICollection<T> list, CollectionInspectorMeta listMeta)
+            {
+                if (_searching)
+                    searchData.InspectionIndexStart = _sectionStartIndex;
+                else if (listMeta != null)
+                    listMeta.listSectionStartIndex = _sectionStartIndex;
+                else
+                {
+                    if (Indexes.Count > 100)
+                    {
+                        Debug.LogError("Collection Inspector Indexes > 100. Clearing...");
+                        Indexes.Clear();
+                    }
+                    Indexes[list] = _sectionStartIndex;
+                }
+            }
+
+            private void SkrollToBottomInternal()
+            {
+
+                if (!_searching)
+                    _sectionStartIndex = _count - _sectionSizeOptimal;
+                else
+                    _sectionStartIndex = filteredList.Count - _sectionSizeOptimal;
+
+                _sectionStartIndex = Mathf.Max(0, _sectionStartIndex);
+
+                _scrollDownRequested = false;
+            }
+            private void SetListElementReadabilityBackground(int index)
+            {
+                switch (index % 4)
+                {
+                    case 1: SetBgColor(Styles.listReadabilityBlue); break;
+                    case 3: SetBgColor(Styles.listReadabilityRed); break;
+                }
+            }
+            internal TextLabel GetCurrentListLabel<T>(CollectionInspectorMeta ld = null) =>
+                ld != null
+                    ? ld.Label.PegiLabel() :
+                        (currentListLabel.IsInitialized ? currentListLabel : typeof(T).ToPegiStringType().PegiLabel());
+
+            internal CollectionInspector Write_Search_DictionaryLabel<K, V>(CollectionInspectorMeta collectionMeta, Dictionary<K, V> dic) =>
+                Write_Search_DictionaryLabel<K, V>(collectionMeta.Label.PegiLabel(), ref collectionMeta.inspectedElement_Internal, dic, collectionMeta.searchData);
+            internal CollectionInspector Write_Search_DictionaryLabel<K, V>(TextLabel label, ref int inspected, Dictionary<K, V> dic, SearchData sd = null)
+            {
+                currentListLabel = label;
+
+                bool inspecting = inspected != -1;
+
+                sd ??= defaultSearchData;
+
+                if (!inspecting)
+                    sd.ToggleSearch(dic, label);
+                else
+                {
+                    exitOptionHandled = true;
+                    if (Icon.List.ClickUnFocus("{0} {1}{2}".F(Msg.ReturnToCollection.GetText(), X_SYMBOL, dic.Count)))
+                        inspected = -1;
+                }
+
+                if (dic != null && inspected >= 0 && dic.Count > inspected)
+                {
+                    var el = dic.GetElementAt(inspected);
+
+                    var keyName = el.Key.GetNameForInspector();
+                    var valName = el.Value.GetNameForInspector();
+
+                    bool isSubset = false;
+                    string nameToShow = "";
+
+                    if (valName != null)
+                    {
+                        if (valName.Contains(keyName))
+                        {
+                            isSubset = true;
+                            nameToShow = valName;
+                        }
+                        else if (keyName.Contains(valName))
+                        {
+                            isSubset = true;
+                            nameToShow = keyName;
+                        }
+                    }
+
+                    // label = (isSubset ? "{0}->{1}".F(label, nameToShow) : "{0}->{1}:{2}".F(label, keyName, valName)).PegiLabel();
+                    label = (isSubset ? nameToShow : "{0}:{1}".F(keyName, valName)).PegiLabel();
+                }
+                else label = (dic == null || dic.Count < 6) ? label : label.AddCount(dic, true);
+
+                label.width = RemainingLength(defaultButtonSize * 2 + 10);
+                label.style = Styles.ListLabel;
+
+                if (label.ClickLabel() && inspected != -1)
+                    inspected = -1;
+
+
+                return this;
+            }
+            internal CollectionInspector Write_Search_ListLabel<T>(TextLabel label, ICollection<T> lst = null)
+            {
+                var notInsp = -1;
+                return collectionInspector.Write_Search_ListLabel(label, ref notInsp, lst);
+            }
+
+            internal CollectionInspector Write_Search_ListLabel<T>(TextLabel label, ref int inspected, ICollection<T> lst)
+            {
+                currentListLabel = label;
+
+                bool inspecting = inspected != -1;
+
+                if (!inspecting)
+                    defaultSearchData.ToggleSearch(lst, label);
+                else
+                {
+                    exitOptionHandled = true;
+                    if (Icon.List.ClickUnFocus("{0} {1}{2}".F(Msg.ReturnToCollection.GetText(), X_SYMBOL, lst.Count)))
+                        inspected = -1;
+                }
+
+                if (lst != null && inspected >= 0 && lst.Count > inspected)
+                    label = lst.GetElementAt(inspected).GetNameForInspector().PegiLabel();
+                else label = (lst == null || lst.Count < 6) ? label : label.AddCount(lst, true);
+
+                label.width = RemainingLength(defaultButtonSize * 2 + 10);
+                label.style = Styles.ListLabel;
+
+                if (label.ClickLabel() && inspected != -1)
+                    inspected = -1;
+
+                return this;
+            }
+            internal CollectionInspector Write_Search_ListLabel<T>(CollectionInspectorMeta ld, ICollection<T> lst)
+            {
+                if (ld == null)
+                {
+                    "Meta is Null. Could be due to ScriptableObject serializing private fields.".PegiLabel().WriteWarning();
+                    return this;
+                }
+
+                currentListLabel = ld.Label.PegiLabel();
+
+                if (!ld.IsAnyEntered && ld[CollectionInspectParams.showSearchButton])
+                    ld.searchData.ToggleSearch(lst, ld.Label);
+
+                if (lst != null && ld.InspectedElement >= 0 && lst.Count > ld.InspectedElement)
+                {
+                    var el = lst.GetElementAt(ld.InspectedElement);
+                    string nameToShow = el.GetNameForInspector();
+                    currentListLabel = "{0}->{1}".F(ld.Label, nameToShow).PegiLabel();
+                }
+                else currentListLabel = ((lst == null || lst.Count < 6) ? ld.Label : ld.Label.AddCount(lst, true)).PegiLabel();
+
+
+                if (ld.IsAnyEntered && lst != null)
+                {
+                    exitOptionHandled = true;
+                    if (Icon.List.ClickUnFocus("{0} {1} {2}{3}".F(Msg.ReturnToCollection.GetText(), currentListLabel, X_SYMBOL, lst.Count)))
+                        ld.IsAnyEntered = false;
+                }
+
+                currentListLabel.width = RemainingLength(defaultButtonSize * 2 + 10);
+                currentListLabel.style = Styles.ListLabel;
+
+                if (currentListLabel.ClickLabel() && ld.InspectedElement != -1)
+                    ld.InspectedElement = -1;
+
+                return this;
+            }
+            internal ChangesToken ExitOrDrawPEGI<T>(T[] array, ref int index, CollectionInspectorMeta ld = null)
+            {
+                var changed = ChangeTrackStart();
+
+                if (index >= 0)
+                {
+                    if (!exitOptionHandled && (array == null || index >= array.Length || Icon.List.ClickUnFocus("Return to {0} array".F(GetCurrentListLabel<T>(ld))).Nl()))
+                        index = -1;
+                    else
+                    {
+                        Nl();
+
+                        object obj = array[index];
+                        if (Nested_Inspect(ref obj))
+                            array[index] = (T)obj;
+                    }
+                }
+
+                exitOptionHandled = false;
+
+                return changed;
+            }
+            internal ChangesToken ExitOrDrawPEGI<K, T>(Dictionary<K, T> dic, ref int index, CollectionInspectorMeta ld = null)
+            {
+                var changed = ChangeTrackStart();
+
+                if (!exitOptionHandled && Icon.List.ClickUnFocus("{0}[{1}] of {2}".F(Msg.ReturnToCollection.GetText(), dic.Count, GetCurrentListLabel<T>(ld))).Nl())
+                    index = -1;
+                else
+                {
+                    Nl();
+
+                    var item = dic.GetElementAt(index);
+                    var key = item.Key;
+
+                    object obj = dic[key];
+                    if (Nested_Inspect(ref obj))
+                        dic[key] = (T)obj;
+                }
+
+                exitOptionHandled = false;
+
+                return changed;
+            }
+            internal ChangesToken ExitOrDrawPEGI<T>(List<T> list, ref int index, CollectionInspectorMeta ld = null)
+            {
+                var changed = ChangeTrackStart();
+
+                if (!exitOptionHandled && Icon.List.ClickUnFocus("{0}[{1}] of {2}".F(Msg.ReturnToCollection.GetText(), list.Count, GetCurrentListLabel<T>(ld))).Nl())
+                    index = -1;
+                else
+                {
+                    Nl();
+
+                    object obj = list[index];
+                    if (Nested_Inspect(ref obj))
+                        list[index] = (T)obj;
+                }
+
+                exitOptionHandled = false;
+
+                return changed;
+            }
+            internal bool CollectionIsNull<T, V>(Dictionary<T, V> list)
+            {
+                if (list == null)
+                {
+                    "Dictionary of {0} is null".F(typeof(T).ToPegiStringType()).PegiLabel().Write();
+
+                    /* if ("Initialize list".ClickUnFocus().nl())
+                         list = new List<T>();
+                     else*/
+                    return true;
+                }
+
+                return false;
+            }
+            internal bool CollectionIsNull<T>(List<T> list)
+            {
+                if (list == null)
+                {
+                    "List of {0} is null".F(typeof(T).ToPegiStringType()).PegiLabel().Write();
+
+                    /* if ("Initialize list".ClickUnFocus().nl())
+                         list = new List<T>();
+                     else*/
+                    return true;
+                }
+
+                return false;
+            }
+            internal ChangesToken List_DragAndDropOptions<T>(List<T> list, CollectionInspectorMeta meta = null) where T : Object
+            {
+                var changed = false;
+#if UNITY_EDITOR
+
+                var tracker = UnityEditor.ActiveEditorTracker.sharedTracker;
+
+                if (tracker.isLocked == false && Icon.Unlock.ClickUnFocus("Lock Inspector Window"))
+                    tracker.isLocked = true;
+
+                if (tracker.isLocked && Icon.Lock.ClickUnFocus("Unlock Inspector Window"))
+                {
+                    tracker.isLocked = false;
+
+                    var mb = PegiEditorOnly.SerObj.targetObject as MonoBehaviour;
+
+                    QcUnity.FocusOn(mb ? mb.gameObject : PegiEditorOnly.SerObj.targetObject);
+
+                }
+
+                var dpl = meta?[CollectionInspectParams.allowDuplicates] ?? allowDuplicants;
+
+                foreach (var ret in PegiEditorOnly.DropAreaGUI<T>())
+                {
+                    if (dpl || !list.Contains(ret))
+                    {
+                        list.Add(ret);
+                        changed = true;
+                    }
+                }
+
+
+
+#endif
+                return new ChangesToken(changed);
+            }
+
+            private void SetSelected<T>(CollectionInspectorMeta meta, List<T> list, bool val)
+            {
+                if (meta == null)
+                {
+                    for (var i = 0; i < list.Count; i++)
+                    {
+                        if (val)
+                            selectedEls.Add(i);
+                        else
+                            selectedEls.Remove(i);
+                    }
+                    return;
+                }
+
+                for (var i = 0; i < list.Count; i++)
+                    meta.SetIsSelected(i, val);
+            }
+            private void TryMoveCopiedElement<T>(List<T> list, bool isAllowDuplicants)
+            {
+                bool errorShown = false;
+
+                for (var i = _copiedElements.Count - 1; i >= 0; i--)
+                {
+                    var srcInd = _copiedElements[i];
+                    var e = listCopyBuffer.TryGetObj(srcInd);
+
+                    if (QcSharp.CanAdd(list, ref e, out T conv, !isAllowDuplicants))
+                    {
+                        list.Add(conv);
+                        listCopyBuffer.RemoveAt(srcInd);
+                    }
+                    else if (!errorShown)
+                    {
+                        errorShown = true;
+                        Debug.LogError("Couldn't add some of the elements");
+                    }
+                }
+
+                if (!errorShown)
+                    listCopyBuffer = null;
+            }
+            internal ChangesToken Edit_Array_Order<T>(ref T[] array, CollectionInspectorMeta listMeta = null)
+            {
+                var changed = ChangeTrackStart();
+
+                if (array != _editingArrayOrder)
+                {
+                    if ((listMeta == null || listMeta[CollectionInspectParams.showEditListButton]) && Icon.Edit.ClickUnFocus(Msg.MoveCollectionElements, 28))
+                        _editingArrayOrder = array;
+                }
+
+                else if (Icon.Done.ClickUnFocus(Msg.FinishMovingCollectionElements.GetText(), 28).Nl())
+                {
+                    _editingArrayOrder = null;
+                }
+
+                if (array != _editingArrayOrder) return changed;
+
+                var derivedClasses = ICfgExtensions.TryGetDerivedClasses(typeof(T));
+
+                for (var i = 0; i < array.Length; i++)
+                {
+                    if (listMeta == null || listMeta[CollectionInspectParams.allowReordering])
+                    {
+                        if (i > 0)
+                        {
+                            if (Icon.Up.ClickUnFocus("Move up"))
+                                QcSharp.Swap(ref array, i, i - 1);
+                        }
+                        else
+                            Icon.UpLast.Draw("Last");
+
+                        if (i < array.Length - 1)
+                        {
+                            if (Icon.Down.ClickUnFocus("Move down"))
+                                QcSharp.Swap(ref array, i, i + 1);
+                        }
+                        else Icon.DownLast.Draw();
+                    }
+
+                    var el = array[i];
+
+                    var isNull = el.IsNullOrDestroyed_Obj();
+
+                    if (listMeta == null || listMeta[CollectionInspectParams.allowDeleting])
+                    {
+                        if (!isNull && typeof(T).IsUnityObject())
+                        {
+                            if (Icon.Delete.ClickUnFocus(Msg.MakeElementNull))
+                                array[i] = default;
+                        }
+                        else
+                        {
+                            if (Icon.Close.ClickUnFocus(Msg.RemoveFromCollection))
+                            {
+                                QcSharp.Remove(ref array, i);
+                                i--;
+                            }
+                        }
+                    }
+
+                    if (!isNull && derivedClasses != null)
+                    {
+                        var ty = el.GetType();
+                        if (Select(ref ty, derivedClasses, el.GetNameForInspector()))
+                            array[i] = (el as ICfgCustom).TryDecodeInto<T>(ty);
+                    }
+
+                    if (!isNull)
+                        el.GetNameForInspector().PegiLabel().Write();
+                    else
+                        "{0} {1}".F(Icon.Empty.GetText(), typeof(T).ToPegiStringType()).PegiLabel().Write();
+
+                    Nl();
+                }
+
+                return changed;
+            }
+            internal bool Edit_List_Order<T>(List<T> list, CollectionInspectorMeta listMeta = null)
+            {
+                var changed = ChangeTrackStart();
+
+                var sd = listMeta == null ? defaultSearchData : listMeta.searchData;
+
+                if (list != collectionInspector.reordering)
+                {
+                    if (!ReferenceEquals(sd.FilteredList, list) && (listMeta == null || listMeta[CollectionInspectParams.showEditListButton]) &&
+                        Icon.Edit.ClickUnFocus(Msg.MoveCollectionElements, 28).IgnoreChanges(LatestInteractionEvent.Click))
+                        reordering = list;
+                }
+                else if (Icon.Done.ClickUnFocus(Msg.FinishMovingCollectionElements, 28))
+                    reordering = null;
+
+                if (list != collectionInspector.reordering)
+                    return changed;
+
+                if (!PaintingGameViewUI)
+                {
+                    Nl();
+#if UNITY_EDITOR
+                    PegiEditorOnly.Reorder_List(list, listMeta);
+                    Nl();
+#endif
+                }
+                else
+
+                #region Playtime UI reordering
+
+                {
+                    var derivedClasses = ICfgExtensions.TryGetDerivedClasses(typeof(T));
+
+                    foreach (var el in collectionInspector.InspectionIndexes(list, listMeta))
+                    {
+                        int i = collectionInspector.Index;
+
+                        if (listMeta == null || listMeta[CollectionInspectParams.allowReordering])
+                        {
+
+                            if (i > 0)
+                            {
+                                if (Icon.Up.ClickUnFocus("Move up"))
+                                    list.Swap(i - 1);
+
+                            }
+                            else
+                                Icon.UpLast.Draw("Last");
+
+                            if (i < list.Count - 1)
+                            {
+                                if (Icon.Down.ClickUnFocus("Move down"))
+                                    list.Swap(i);
+                            }
+                            else Icon.DownLast.Draw();
+                        }
+
+                        var isNull = el.IsNullOrDestroyed_Obj();
+
+                        if (listMeta == null || listMeta[CollectionInspectParams.allowDeleting])
+                        {
+
+                            if (!isNull && typeof(T).IsUnityObject())
+                            {
+                                if (Icon.Delete.ClickUnFocus(Msg.MakeElementNull))
+                                    list[i] = default;
+                            }
+                            else
+                            {
+                                if (Icon.Close.ClickUnFocus(Msg.RemoveFromCollection))
+                                {
+                                    list.RemoveAt(Index);
+                                    Index--;
+                                    _lastElementToShow--;
+                                }
+                            }
+                        }
+
+
+                        if (!isNull && derivedClasses != null)
+                        {
+                            var ty = el.GetType();
+                            if (Select(ref ty, derivedClasses, el.GetNameForInspector()))
+                                list[i] = (el as ICfgCustom).TryDecodeInto<T>(ty);
+                        }
+
+                        if (!isNull)
+                            el.GetNameForInspector().PegiLabel().Write();
+                        else
+                            "{0} {1}".F(Icon.Empty.GetText(), typeof(T).ToPegiStringType()).PegiLabel().Write();
+
+                        Nl();
+                    }
+
+                }
+
+                #endregion
+
+                #region Select
+
+                var selectedCount = 0;
+
+                if (listMeta == null)
+                {
+                    for (var i = 0; i < list.Count; i++)
+                        if (selectedEls.Contains(i))
+                            selectedCount++;
+                }
+                else
+                    for (var i = 0; i < list.Count; i++)
+                        if (listMeta.GetIsSelected(i))
+                            selectedCount++;
+
+                if (selectedCount > 0 && Icon.DeSelectAll.Click().IgnoreChanges(LatestInteractionEvent.Click))
+                    SetSelected(listMeta, list, false);
+
+                if (selectedCount == 0 && list.Count > 0 && Icon.SelectAll.Click().IgnoreChanges(LatestInteractionEvent.Click))
+                    SetSelected(listMeta, list, true);
+
+
+                #endregion
+
+                #region Copy, Cut, Paste, Move 
+
+                var duplicants = listMeta != null ? listMeta[CollectionInspectParams.allowDuplicates] : allowDuplicants;
+
+                if (list.Count > 1 && typeof(IGotIndex).IsAssignableFrom(typeof(T)))
+                {
+                    bool down = Icon.Down.Click("Sort Ascending");
+
+                    if (down || Icon.Up.Click("Sort Descending"))
+                    {
+                        list.Sort((emp1, emp2) =>
+                        {
+                            if (emp1 is not IGotIndex igc1 || emp2 is not IGotIndex igc2)
+                                return 0;
+
+                            return (down ? 1 : -1) * (igc1.IndexForInspector - igc2.IndexForInspector);
+
+                        });
+                    }
+                }
+
+                if (listCopyBuffer != null)
+                {
+
+                    if (Icon.Close.ClickUnFocus("Clean buffer").IgnoreChanges(LatestInteractionEvent.Exit))
+                        listCopyBuffer = null;
+
+                    bool same = listCopyBuffer == list;
+
+                    if (same && !cutPaste)
+                        "DUPLICATE:".PegiLabel("Selected elements are from this list", 60).Write();
+
+                    if (typeof(T).IsUnityObject())
+                    {
+                        if (!cutPaste && Icon.Paste.ClickUnFocus(same
+                                ? Msg.TryDuplicateSelected.GetText()
+                                : "{0} Of {1} to here".F(Msg.TryDuplicateSelected.GetText(),
+                                    listCopyBuffer.GetNameForInspector())))
+                        {
+                            foreach (var e in _copiedElements)
+                                list.TryAdd(listCopyBuffer.TryGetObj(e), !duplicants);
+                        }
+
+                        if (!same && cutPaste && Icon.Move.ClickUnFocus("Try Move References Of {0}".F(listCopyBuffer)))
+                            collectionInspector.TryMoveCopiedElement(list, duplicants);
+                    }
+                    else
+                    {
+
+                        if (!cutPaste && Icon.Paste.ClickUnFocus(same
+                                ? "Try to duplicate selected references"
+                                : "Try Add Deep Copy {0}".F(listCopyBuffer.GetNameForInspector())))
+                        {
+                            foreach (var e in _copiedElements)
+                            {
+                                var el = listCopyBuffer.TryGetObj(e);
+
+                                if (el != null)
+                                {
+                                    if (el is ICfgCustom istd)
+                                    {
+                                        var ret = (T)System.Activator.CreateInstance(el.GetType());
+
+                                        (ret as ICfgCustom).Decode(istd.Encode().CfgData);
+
+                                        list.TryAdd(ret);
+                                    }
+
+                                    //list.TryAdd(istd.CloneCfg());
+                                    else
+                                        list.TryAdd(JsonUtility.FromJson<T>(JsonUtility.ToJson(el)));
+                                }
+                            }
+                        }
+
+                        if (!same && cutPaste && Icon.Move.ClickUnFocus("Try Move {0}".F(listCopyBuffer)))
+                            collectionInspector.TryMoveCopiedElement(list, duplicants);
+                    }
+
+                }
+                else if (selectedCount > 0)
+                {
+                    var copyOrMove = false;
+
+                    if (Icon.Copy.ClickUnFocus("Copy selected elements").IgnoreChanges(LatestInteractionEvent.Click))
+                    {
+                        cutPaste = false;
+                        copyOrMove = true;
+                    }
+
+                    if (Icon.Cut.ClickUnFocus("Cut selected elements").IgnoreChanges(LatestInteractionEvent.Click))
+                    {
+                        cutPaste = true;
+                        copyOrMove = true;
+                    }
+
+                    if (copyOrMove)
+                    {
+                        listCopyBuffer = list;
+                        _copiedElements = listMeta != null ? listMeta.GetSelectedElements() : selectedEls.ToList();
+                    }
+                }
+
+                #endregion
+
+                #region Clean & Delete
+
+                if (list != listCopyBuffer)
+                {
+                    if ((listMeta == null || listMeta[CollectionInspectParams.allowDeleting]) && list.Count > 0)
+                    {
+                        var nullOrDestroyedCount = 0;
+
+                        for (var i = 0; i < list.Count; i++)
+                            if (list[i].IsNullOrDestroyed_Obj())
+                                nullOrDestroyedCount++;
+
+                        if (nullOrDestroyedCount > 0 && Icon.Refresh.ClickUnFocus("Remove all null elements"))
+                        {
+                            for (var i = list.Count - 1; i >= 0; i--)
+                                if (list[i].IsNullOrDestroyed_Obj())
+                                    list.RemoveAt(i);
+
+                            SetSelected(listMeta, list, false);
+                        }
+                    }
+
+                    if ((listMeta == null || listMeta[CollectionInspectParams.allowDeleting]) && list.Count > 0)
+                    {
+                        if (selectedCount > 0 &&
+                            Icon.Delete.ClickConfirm("delLstPegi", list, "Delete {0} Selected".F(selectedCount)))
+                        {
+                            if (listMeta == null)
+                            {
+                                for (var i = list.Count - 1; i >= 0; i--)
+                                    if (selectedEls.Contains(i))
+                                        list.RemoveAt(i);
+                            }
+                            else
+                                for (var i = list.Count - 1; i >= 0; i--)
+                                    if (listMeta.GetIsSelected(i))
+                                        list.RemoveAt(i);
+
+                            SetSelected(listMeta, list, false);
+                        }
+                    }
+                }
+
+                #endregion
+
+                if (listMeta != null)
+                {
+                    if (listMeta.inspectListMeta)
+                    {
+                        if (Icon.Exit.ClickUnFocus().IgnoreChanges(LatestInteractionEvent.Exit))
+                            listMeta.inspectListMeta = false;
+                    }
+                    else if (Icon.Config.ClickUnFocus().IgnoreChanges(LatestInteractionEvent.Enter))
+                        listMeta.inspectListMeta = true;
+                }
+
+
+                if (listMeta != null && listMeta.inspectListMeta)
+                    listMeta.Nested_Inspect();
+                else if (typeof(Object).IsAssignableFrom(typeof(T)) || !listCopyBuffer.IsNullOrEmpty())
+                {
+                    "Allow Duplicants".PegiLabel("Will add elements to the list even if they are already there", 120).Toggle(ref duplicants).IgnoreChanges(LatestInteractionEvent.Click);
+
+                    if (listMeta != null)
+                        listMeta[CollectionInspectParams.allowDuplicates] = duplicants;
+                    else allowDuplicants = duplicants;
+                }
+
+                return changed;
+            }
+            internal ChangesToken InspectClassInList<T>(List<T> list, int index, ref int inspected, CollectionInspectorMeta listMeta = null) where T : class
+            {
+                var el = list[index];
+                var changed = ChangeTrackStart();
+
+                var isPrevious = (listMeta != null && listMeta.previouslyInspectedElement == index)
+                                 || (listMeta == null && collectionInspector.previouslyEntered != null && el == collectionInspector.previouslyEntered);
+
+                if (isPrevious)
+                    SetBgColor(PreviousInspectedColor);
+
+                if (el is IPEGI_ListInspect pl)
+                {
+                    var chBefore = GUI.changed;
+
+                    pl.InspectInList(ref inspected, index);
+
+                    if (!chBefore && GUI.changed)
+                        pl.SetToDirty_Obj();
+
+                    if (changed || inspected == index)
+                        isPrevious = true;
+
+                }
+                else
+                {
+
+                    if (el.IsNullOrDestroyed_Obj())
+                    {
+                        var ed = listMeta?[index];
+                        if (ed == null)
+                            "{0}: NULL {1}".F(index, typeof(T).ToPegiStringType()).PegiLabel().Write();
+                        else
+                        {
+                            var elObj = (object)el;
+                            if (ed.PEGI_inList<T>(ref elObj))
+                            {
+                                isPrevious = true;
+                                list[index] = elObj as T;
+                            }
+
+                        }
+                    }
+                    else
+                    {
+                        var uo = el as Object;
+
+                        var pg = el as IPEGI;
+
+                        var need = el as INeedAttention;
+                        var warningText = need?.NeedAttention();
+
+                        if (warningText != null)
+                            SetBgColor(AttentionColor);
+
+                        var clickHighlightHandled = false;
+
+                        var iind = el as IGotIndex;
+
+                        iind?.IndexForInspector.ToString().PegiLabel(20).Write();
+
+                        if (el is IGotName named)
+                        {
+                            var so = uo as ScriptableObject;
+                            var n = named.NameForInspector;
+
+                            if (so)
+                            {
+                                if (Edit_Delayed(ref n))
+                                {
+                                    QcUnity.RenameAsset(so, n);
+                                    named.NameForInspector = n;
+                                    isPrevious = true;
+                                }
+                            }
+                            else if (Edit(ref n))
+                            {
+                                named.NameForInspector = n;
+                                isPrevious = true;
+                            }
+                        }
+                        else
+                        {
+                            if (!uo && pg == null && listMeta == null)
+                            {
+                                var label = el.GetNameForInspector().PegiLabel(toolTip: Msg.InspectElement.GetText(), width: RemainingLength(defaultButtonSize * 2 + 10));
+
+                                if (label.ClickLabel())
+                                {
+                                    inspected = index;
+                                    isPrevious = true;
+                                }
+                            }
+                            else
+                            {
+                                if (uo)
+                                {
+                                    if (Edit(ref uo))
+                                        list[index] = uo as T;
+
+                                    Texture tex = uo as Texture;
+
+                                    if (tex)
+                                    {
+                                        if (ClickHighlight(uo, tex))
+                                            isPrevious = true;
+
+                                        clickHighlightHandled = true;
+                                    }
+                                    //else if (Try_NameInspect(uo))
+                                    //  isPrevious = true;
+                                }
+                                else if (el.GetNameForInspector().PegiLabel(toolTip: "Inspect", width: RemainingLength(defaultButtonSize * 2 + 50)).ClickLabel())
+                                {
+                                    inspected = index;
+                                    isPrevious = true;
+                                }
+                            }
+                        }
+
+                        if ((warningText == null &&
+                             Icon.Enter.ClickUnFocus(Msg.InspectElement)) ||
+                            (warningText != null && Icon.Warning.ClickUnFocus(warningText)))
+                        {
+                            inspected = index;
+                            isPrevious = true;
+                        }
+
+                        if (!clickHighlightHandled && ClickHighlight(uo))
+                            isPrevious = true;
+                    }
+                }
+
+                RestoreBGColor();
+
+                if (listMeta != null)
+                {
+                    if (listMeta.InspectedElement != -1)
+                        listMeta.previouslyInspectedElement = listMeta.InspectedElement;
+                    else if (isPrevious)
+                        listMeta.previouslyInspectedElement = index;
+
+                }
+                else if (isPrevious)
+                    collectionInspector.previouslyEntered = el;
+
+                return changed;
+            }
+
+            internal void TryShowListAddNewOption<T>(List<T> list, ref T added, CollectionInspectorMeta ld = null)
+            {
+
+                if (ld != null && !ld[CollectionInspectParams.showAddButton])
+                    return;
+
+                var type = typeof(T);
+
+                if (type.IsInterface || (!type.IsUnityObject() && type.IsAbstract))
+                    return;
+
+                if (!type.IsNew())
+                {
+                    collectionInspector.ListAddEmptyClick(list, ld);
+                    return;
+                }
+
+                if (type.TryGetClassAttribute<DerivedListAttribute>() != null || typeof(IGotClassTag).IsAssignableFrom(type))
+                    return;
+
+                string name = null;
+
+                var sd = ld == null ? defaultSearchData : ld.searchData;
+
+                if (ReferenceEquals(sd.FilteredList, list))
+                    name = sd.SearchedText;
+
+                if (Icon.Add.ClickUnFocus(Msg.AddNewCollectionElement.GetText() + (name.IsNullOrEmpty() ? "" : " Named {0}".F(name))))
+                {
+                    if (typeof(T).IsSubclassOf(typeof(Object)))
+                        list.Add(default);
+                    else
+                        added = name.IsNullOrEmpty() ? QcSharp.AddWithUniqueNameAndIndex(list) : QcSharp.AddWithUniqueNameAndIndex(list, name);
+
+                    SkrollToBottom();
+                }
+
+                return;
+            }
+            internal StateToken ListAddEmptyClick<T>(IList<T> list, CollectionInspectorMeta ld = null)
+            {
+
+                if (ld != null && !ld[CollectionInspectParams.showAddButton])
+                    return StateToken.False;
+
+                var type = typeof(T);
+
+                if (!type.IsUnityObject() && (type.TryGetClassAttribute<DerivedListAttribute>() != null || typeof(IGotClassTag).IsAssignableFrom(type)))
+                    return StateToken.False;
+
+                if (Icon.Add.ClickUnFocus(Msg.AddNewCollectionElement.GetText()))
+                {
+                    list.Add(default);
+                    collectionInspector.SkrollToBottom();
+                    return StateToken.True;
+                }
+                return StateToken.False;
+            }
+        }
+
+        public static ChangesToken DragAndDrop_Area<T>(out List<T> droppedElements) where T : Object
+        {
+            droppedElements = new List<T>();
+
+#if UNITY_EDITOR
+            foreach (var ret in PegiEditorOnly.DropAreaGUI<T>())
+            {
+                droppedElements.Add(ret);
+            }
+#endif
+            return droppedElements.Count > 0 ? ChangesToken.True : ChangesToken.False; // ChangesToken.;
+
+        }
     }
+    #endregion
+
 }

@@ -41,7 +41,7 @@ namespace QuizCanners.Utils
                 pegi.Nl();
 
                 var ssName = _screenShotName.GetValue();
-                "Img Name".PegiLabel(90).Edit(ref ssName).OnChanged(() => _screenShotName.SetValue(ssName));
+                "Img Name".ConstLabel().Edit(ref ssName).OnChanged(() => _screenShotName.SetValue(ssName));
                 var path = System.IO.Path.Combine(QcFile.OutsideOfAssetsFolder, folderName);
                 if (Icon.Folder.Click("Open Screen Shots Folder : {0}".F(path)))
                     QcFile.Explorer.OpenPath(path);

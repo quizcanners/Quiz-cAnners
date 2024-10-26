@@ -6,7 +6,6 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 using System.Collections;
 using System.Reflection;
-using static UnityEngine.GraphicsBuffer;
 
 #pragma warning disable IDE0019 // Use pattern matching
 #pragma warning disable IDE0018 // Inline variable declaration
@@ -110,9 +109,8 @@ namespace QuizCanners.Inspect
 
         #endregion
 
-        internal static void Nested_Inspect_Attention_MessageOnly(IPEGI ipg)
+        internal static void TryShow_AttentionMessage(this INeedAttention na) 
         {
-            var na = ipg as INeedAttention;
             if (na != null)
             {
                 var msg = na.NeedAttention();
@@ -123,6 +121,8 @@ namespace QuizCanners.Inspect
                 }
             }
         }
+
+        internal static void Nested_Inspect_Attention_MessageOnly(IPEGI ipg) => (ipg as INeedAttention).TryShow_AttentionMessage();
 
         public static ChangesToken Nested_Inspect(Action function, Object target = null)
         {
@@ -201,6 +201,45 @@ namespace QuizCanners.Inspect
 
         }
 
+        public static ChangesToken Nested_Context<T>(this T pgi, EnterExitContext context, bool writeWhenNeedsAttention = true) where T : class, IPEGI_Context
+        {
+            if (pgi.IsNullOrDestroyed_Obj())
+            {
+                "NULL".F(typeof(T).ToPegiStringType()).PegiLabel().Write();
+                return ChangesToken.False;
+            }
+
+            var changes = Nested_Inspect_Internal(ref pgi, context, writeWhenNeedsAttention: writeWhenNeedsAttention);
+
+            if (changes)
+            {
+#if UNITY_EDITOR
+                PegiEditorOnly.ClearFromPooledSerializedObjects(pgi as Object);
+#endif
+                pgi.SetToDirty_Obj();
+            }
+
+            return changes;
+
+        }
+
+        public static ChangesToken Nested_Context<T>(ref T pgi, EnterExitContext context, bool writeWhenNeedsAttention = true) where T : struct, IPEGI_Context
+        {
+            if (pgi.IsNullOrDestroyed_Obj())
+            {
+                "NULL".F(typeof(T).ToPegiStringType()).PegiLabel().Write();
+                return ChangesToken.False;
+            }
+
+            var changes = Nested_Inspect_Internal(ref pgi, context, writeWhenNeedsAttention: writeWhenNeedsAttention);
+
+            if (changes)
+                pgi.SetToDirty_Obj();
+            
+            return changes;
+        }
+
+
         public static bool IsExitGUIException(Exception exception)
         {
             while (exception is System.Reflection.TargetInvocationException && exception.InnerException != null)
@@ -226,13 +265,13 @@ namespace QuizCanners.Inspect
 
                 var changed = ChangeTrackStart();
 
-                var isFOOE = PegiEditorOnly.isFoldedOutOrEntered;
+                var isFOOE = FoldoutManager.isFoldedOutOrEntered;
 
-                bool inDic = inspectionChain.TryGetValue(pgi, out int recurses);
+                bool inDic = IpegiInspectionChain.TryGetValue(pgi, out int recurses);
 
                 if (!inDic || recurses < 4)
                 {
-                    inspectionChain[pgi] = recurses + 1;
+                    IpegiInspectionChain[pgi] = recurses + 1;
 
                     var indent = IndentLevel;
 
@@ -264,22 +303,91 @@ namespace QuizCanners.Inspect
                     IndentLevel = indent;
 
                     int count;
-                    if (inspectionChain.TryGetValue(pgi, out count))
+                    if (IpegiInspectionChain.TryGetValue(pgi, out count))
                     {
                         if (count < 2)
-                            inspectionChain.Remove(pgi);
+                            IpegiInspectionChain.Remove(pgi);
                         else
-                            inspectionChain[pgi] = count - 1;
+                            IpegiInspectionChain[pgi] = count - 1;
                     }
                 }
                 else
                     "3rd recursion".PegiLabel().WriteWarning();
 
-                PegiEditorOnly.isFoldedOutOrEntered = isFOOE;
+                FoldoutManager.isFoldedOutOrEntered = isFOOE;
 
                 return changed;
             }
         }
+
+        private static ChangesToken Nested_Inspect_Internal<T>(ref T pgi, EnterExitContext context, bool writeWhenNeedsAttention = true) where T : IPEGI_Context
+        {
+            using (PegiEditorOnly.InspectorStarted ? null : PegiEditorOnly.StartInspector(pgi))
+            {
+
+                if (pgi == null)
+                {
+                    "NULL".PegiLabel().WriteWarning().Nl();
+                    return ChangesToken.False;
+                }
+
+                var changed = ChangeTrackStart();
+
+                var isFOOE = FoldoutManager.isFoldedOutOrEntered;
+
+                bool inDic = IpegiContInspectionChain.TryGetValue(pgi, out int recurses);
+
+                if (!inDic || recurses < 4)
+                {
+                    IpegiContInspectionChain[pgi] = recurses + 1;
+
+                    var indent = IndentLevel;
+
+                    try
+                    {
+                        pgi.InspectContext(context);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (IsExitGUIException(ex))
+                            throw ex;
+                        else
+                            Write_Exception(ex);
+                    }
+
+                    if (writeWhenNeedsAttention)
+                    {
+                        try
+                        {
+                            (pgi as INeedAttention).TryShow_AttentionMessage();
+                        }
+                        catch (Exception ex)
+                        {
+                            Write_Exception(ex);
+                        }
+                    }
+
+                    RestoreBGColor();
+                    IndentLevel = indent;
+
+                    int count;
+                    if (IpegiContInspectionChain.TryGetValue(pgi, out count))
+                    {
+                        if (count < 2)
+                            IpegiContInspectionChain.Remove(pgi);
+                        else
+                            IpegiContInspectionChain[pgi] = count - 1;
+                    }
+                }
+                else
+                    "3rd recursion".PegiLabel().WriteWarning();
+
+                FoldoutManager.isFoldedOutOrEntered = isFOOE;
+
+                return changed;
+            }
+        }
+
 
         public static ChangesToken InspectInList_Nested<T>(this T obj, ref int inspected, int current) where T : IPEGI_ListInspect
         {
@@ -496,7 +604,7 @@ namespace QuizCanners.Inspect
             return changes;
         }
 
-        public static ChangesToken TryReflectionInspect(object obj, EnterExitContext context = null)
+        public static ChangesToken TryReflectionInspect(object obj, EnterExitContext unstartedContext = null)
         {
             var changes = ChangeTrackStart();
 
@@ -506,7 +614,7 @@ namespace QuizCanners.Inspect
             {
                 try
                 {
-                    TryReflectionInspect_Inernal(obj, context);
+                    TryReflectionInspectFields_Inernal(obj, unstartedContext);
                 }
                 catch (Exception ex)
                 {
@@ -525,7 +633,7 @@ namespace QuizCanners.Inspect
             return changes;
         }
 
-        private static void TryReflectionInspect_Inernal(object obj, EnterExitContext context = null)
+        private static void TryReflectionInspectFields_Inernal(object obj, EnterExitContext context = null)
         {
             if (obj == null)
             {
@@ -535,197 +643,266 @@ namespace QuizCanners.Inspect
 
             using (context?.StartContext())
             {
-                foreach (var prop in obj.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+                foreach (FieldInfo prop in obj.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
-                    if (prop.GetCustomAttribute<HideInInspector>() != null)
-                        continue;
+                    //if (prop.GetCustomAttribute<HideInInspector>() != null)
+                      //  continue;
 
-                    var name = prop.Name;
+                    string name = prop.Name;
 
                     name = name.Replace("k__BackingField", "");
 
-                    var type = prop.FieldType;
-                    var value = prop.GetValue(obj);
+                    Type type = prop.FieldType;
+                    object value = prop.GetValue(obj);
 
-                    if (value == null)
+                    TryReflectionInspectElement(name, type, value, parentObject: obj, prop, context);
+                }
+            }
+        }
+
+        private static void TryReflectionInspectElement( string name, Type type, object value, object parentObject = null, FieldInfo prop = null, EnterExitContext context = null) 
+        {
+            bool IsEntered() => context != null && context.IsAnyEntered;
+
+            if (value == null)
+            {
+                if (!IsEntered())
+                    "NULL {0} ({1})".F(name, type.ToPegiStringType()).PegiLabel(Styles.BaldText).Nl();
+
+                return;
+            }
+
+            if (type == typeof(string))
+            {
+                if (IsEntered())
+                    return;
+
+                var val = value as string;
+
+                if (name.PegiLabel().Edit(ref val).Nl())
+                {
+                    prop?.SetValue(parentObject, val);
+                }
+
+                return;
+            }
+
+            if (type == typeof(byte[]))
+            {
+                if (IsEntered())
+                    return;
+
+                var val = QcSharp.ByteArrayToString(value as byte[]);
+
+                if (val.Length > 32)
+                    name.PegiLabel().Edit_Big(ref val).Nl();
+                else
+                    "{0} = {1}".F(name, val).PegiLabel().Nl();
+
+                return;
+            }
+
+            if (type.IsEnum)
+            {
+                if (IsEntered())
+                    return;
+
+                Write(name.PegiLabel(), 0.33f);
+
+                var underType = Enum.GetUnderlyingType(type);
+
+                if (underType == typeof(int))
+                {
+                    var asInt = (int)value;
+
+                    if (Edit_Enum(type, ref asInt).Nl() && prop != null)
+                        prop.SetValue(parentObject, asInt);
+                } else 
+                {
+                    "{0} ({1})".F(value, underType).PegiLabel().Nl();
+                }
+
+                return;
+            }
+
+            if (!type.IsPrimitive)
+            {
+                if (_reflectiveInspectionDepth.Count > 32)
+                {
+                    "Recursion LImit Reached: {0}".F(_reflectiveInspectionDepth).PegiLabel().WriteWarning();
+                    return;
+                }
+
+                if (_reflectiveInspectionDepth.Contains(value))
+                {
+                    "Recursive reference to {0} = {1}".F(name, value.ToString()).PegiLabel().Nl();
+                    return;
+                }
+
+                _reflectiveInspectionDepth.Add(value);
+
+                try
+                {
+                    if (typeof(EnterExitContext).IsAssignableFrom(type))
+                        return;
+
+                    if (typeof(CollectionInspectorMeta).IsAssignableFrom(type))
+                        return;
+
+                    var isCollection = typeof(ICollection).IsAssignableFrom(type);
+
+                    if (isCollection)
                     {
-                        "NULL {0} ({1})".F(name, type.ToPegiStringType()).PegiLabel(Styles.BaldText).Nl();
-                        continue;
+                        InspectCollection();
+                        return;
                     }
 
-                    if (type == typeof(string))
+                    InspectAsClass();
+
+                    return;
+
+                }
+                catch (Exception ex)
+                {
+                    if (IsExitGUIException(ex))
+                        throw (ex);
+                    else
+                        Write_Exception(ex);
+                }
+
+                _reflectiveInspectionDepth.Remove(value);
+
+                return;
+            }
+
+            if (IsEntered())
+                return;
+
+            if (type == typeof(bool))
+            {
+                var val = (bool)value;
+
+                if (name.PegiLabel().Toggle(ref val).Nl() && prop != null)
+                    prop.SetValue(parentObject, val);
+
+                return;
+            }
+
+            if (type == typeof(int))
+            {
+                var val = (int)value;
+
+                if (name.PegiLabel().Edit(ref val).Nl() && prop != null)
+                    prop.SetValue(parentObject, val);
+
+                return;
+            }
+
+            if (type == typeof(long))
+            {
+                var val = (long)value;
+
+                if (name.PegiLabel().Edit(ref val).Nl() && prop != null)
+                    prop.SetValue(parentObject, val);
+
+                return;
+            }
+
+            if (type == typeof(double))
+            {
+                var val = (double)value;
+
+                if (name.PegiLabel().Edit(ref val).Nl() && prop != null)
+                    prop.SetValue(parentObject, val);
+
+                return;
+            }
+
+            if (type == typeof(float))
+            {
+                var val = (float)value;
+
+                if (name.PegiLabel().Edit(ref val).Nl() && prop != null)
+                    prop.SetValue(parentObject, val);
+
+                return;
+            }
+            
+            "{0} = {1}".F(name, value).PegiLabel().Nl();
+
+            return;
+
+            void InspectAsClass()
+            {
+                var asPgi = value as IPEGI;
+
+                if (context != null)
+                {
+                    if (asPgi != null)
                     {
-                        var val = value as string;
-
-                        if (name.PegiLabel().Edit(ref val).Nl())
-                        {
-                            prop.SetValue(obj, val);
-                        }
-
-                        continue;
-                    }
-
-                    if (type.IsEnum)
-                    {
-                        Write(name.PegiLabel(), 0.33f);
-
-                        var asInt = (int)value;
-
-                        if (EditEnum_Internal(ref asInt, type).Nl())
-                        {
-                            prop.SetValue(obj, asInt);
-                        }
-
-                        continue;
-                    }
-
-
-                    if (!type.IsPrimitive)
-                    {
-                        if (_reflectiveInspectionDepth.Count > 32)
-                        {
-                            "Recursion LImit Reached: {0}".F(_reflectiveInspectionDepth).PegiLabel().WriteWarning();
-                            continue;
-                        }
-
-                        if (_reflectiveInspectionDepth.Contains(value))
-                        {
-                            "Recursive reference to {0} = {1}".F(name, value.ToString()).PegiLabel().Nl();
-                            continue;
-                        }
-
-                        _reflectiveInspectionDepth.Add(value);
-
-                        try
-                        {
-
-                            if (typeof(EnterExitContext).IsAssignableFrom(type))
-                                continue;
-
-                            if (typeof(CollectionInspectorMeta).IsAssignableFrom(type))
-                                continue;
-
-                            var isCollection = typeof(ICollection).IsAssignableFrom(type);
-
-                            if (isCollection)
-                            {
-                                var col = value as ICollection;
-
-                                "{0} ({1}) [{2} elements]".F(name, type.ToPegiStringType(), col.Count).PegiLabel(Styles.ListLabel).Nl();
-
-                                const int MAX_ELEMENTS_TO_SHOW = 64;
-
-                                int counter = MAX_ELEMENTS_TO_SHOW;
-
-                                foreach (var el in col)
-                                {
-                                    TryReflectionInspect_Inernal(el);
-
-                                    Nl();
-
-                                    counter--;
-                                    if (counter <= 0)
-                                    {
-                                        "+ {0} elements".F(col.Count - MAX_ELEMENTS_TO_SHOW).PegiLabel().Write_Hint().Nl();
-                                        break;
-                                    }
-                                }
-
-                                continue;
-                            }
-
-                            var asPgi = value as IPEGI;
-
-                            if (context != null)
-                            {
-                                if (asPgi != null)
-                                {
-                                    asPgi.Enter_Inspect().Nl();
-                                }
-                                else
-                                {
-
-                                    if (name.PegiLabel().IsEntered().Nl())
-                                        TryReflectionInspect_Inernal(value);
-                                }
-                            }
-                            else
-                            {
-                                "{0}: {1}".F(name, value.GetNameForInspector()).PegiLabel(Styles.BaldText).Nl();
-
-                                using (Indent())
-                                {
-                                    if (asPgi != null)
-                                    {
-                                        asPgi.Nested_Inspect();
-                                    }
-                                    else
-                                    {
-                                        TryReflectionInspect_Inernal(value);
-                                    }
-                                }
-
-                            }
-
-                        }
-                        catch (Exception ex)
-                        {
-                            if (IsExitGUIException(ex))
-                                throw (ex);
-                            else
-                                Write_Exception(ex);
-                        }
-
-                        _reflectiveInspectionDepth.Remove(value);
-
-                        continue;
-                    }
-
-
-                    if (type == typeof(bool))
-                    {
-                        var val = (bool)value;
-
-                        if (name.PegiLabel().Toggle(ref val).Nl())
-                        {
-                            prop.SetValue(obj, val);
-                        }
-                    }
-                    else if (type == typeof(int))
-                    {
-                        var val = (int)value;
-
-                        if (name.PegiLabel().Edit(ref val).Nl())
-                        {
-                            prop.SetValue(obj, val);
-                        }
-                    }
-                    else if (type == typeof(double))
-                    {
-                        var val = (double)value;
-
-                        if (name.PegiLabel().Edit(ref val).Nl())
-                        {
-                            prop.SetValue(obj, val);
-                        }
-                    }
-                    else if (type == typeof(float))
-                    {
-                        var val = (float)value;
-
-                        if (name.PegiLabel().Edit(ref val).Nl())
-                        {
-                            prop.SetValue(obj, val);
-                        }
+                        asPgi.Enter_Inspect().Nl();
                     }
                     else
                     {
-                        "{0} = {1}".F(name, value).PegiLabel().Nl();
+                        if ("{0}: {1}".F(name, value.ToString()).PegiLabel().IsEntered().Nl())
+                            TryReflectionInspectFields_Inernal(value);
+                    }
+                }
+                else
+                {
+                    "{0}: {1}".F(name, value.GetNameForInspector()).PegiLabel(Styles.BaldText).Nl();
+
+                    using (Indent())
+                    {
+                        if (asPgi != null)
+                        {
+                            asPgi.Nested_Inspect();
+                        }
+                        else
+                        {
+                            TryReflectionInspectFields_Inernal(value);
+                        }
                     }
                 }
             }
 
+            void InspectCollection()
+            {
+                var col = value as ICollection;
 
+                TextLabel listlabel = "{0} [{1} elements]".F(name, col.Count).PegiLabel(Styles.ListLabel);
+
+                if (context != null)
+                {
+                    if (!listlabel.IsEntered().Nl())
+                        return;
+                }
+                else
+                    listlabel.Nl();
+
+                const int MAX_ELEMENTS_TO_SHOW = 64;
+
+                int counter = MAX_ELEMENTS_TO_SHOW;
+                int index = 0;
+
+                foreach (var el in col)
+                {
+                    if (el != null)
+                        TryReflectionInspectElement(name: index.ToString(), type: el.GetType(), el);
+                    else
+                        "{0} = NULL".PegiLabel().Nl();
+                    //TryReflectionInspectFields_Inernal(el);
+
+                    Nl();
+
+                    counter--;
+                    if (counter <= 0)
+                    {
+                        "+ {0} elements".F(col.Count - MAX_ELEMENTS_TO_SHOW).PegiLabel().Write_Hint().Nl();
+                        break;
+                    }
+                }
+            }
         }
 
         public static ChangesToken Try_Nested_Inspect(object obj)
@@ -838,6 +1015,10 @@ namespace QuizCanners.Inspect
                     var str = obj as string;
                     if (str == null)
                         return "NULL String";
+
+                    if (str.Length == 0)
+                        return "Empty string";
+
                     return str;
                 }
 
@@ -933,10 +1114,14 @@ namespace QuizCanners.Inspect
             return obj;
         }
 
-        private static readonly Dictionary<IPEGI, int> inspectionChain = new();
+        private static readonly Dictionary<IPEGI, int> IpegiInspectionChain = new();
+        private static readonly Dictionary<IPEGI_Context, int> IpegiContInspectionChain = new();
 
-        internal static void ResetInspectedChain() => inspectionChain.Clear();
-
+        internal static void ResetInspectedChain()
+        {
+            IpegiInspectionChain.Clear();
+            IpegiContInspectionChain.Clear();
+        }
 #if UNITY_EDITOR
         private static readonly Dictionary<Object, UnityEditor.Editor> defaultEditors = new();
         private static UnityEditor.Editor GetEditorFor(Object obj)
@@ -1006,7 +1191,6 @@ namespace QuizCanners.Inspect
 
                 if (!warningMsg.IsNullOrEmpty())
                     warningMsg = "{0}: {1}".F(attention.GetNameForInspector(), warningMsg);
-                
             }
 
             return !warningMsg.IsNullOrEmpty();

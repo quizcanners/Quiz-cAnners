@@ -1,20 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Xml.Linq;
-using QuizCanners.Migration;
 using QuizCanners.Utils;
+using System;
 using UnityEngine;
-using Object = UnityEngine.Object;
-
-// ReSharper disable InconsistentNaming
-#pragma warning disable IDE0011 // Add braces
 
 namespace QuizCanners.Inspect
 {
     public static partial class pegi
     {
-        internal static void FoldInNow() => selectedFold = -1;
-
         public static StateToken IsFoldout(this TextLabel txt, ref bool state)
         {
 
@@ -29,9 +20,9 @@ namespace QuizCanners.Inspect
                 state = !state;
 
 
-            PegiEditorOnly.isFoldedOutOrEntered = new StateToken(state);
+            FoldoutManager.isFoldedOutOrEntered = new StateToken(state);
 
-            return PegiEditorOnly.isFoldedOutOrEntered;
+            return FoldoutManager.isFoldedOutOrEntered;
 
         }
 
@@ -45,20 +36,39 @@ namespace QuizCanners.Inspect
 
             CheckLine();
 
-            PegiEditorOnly.IsFoldedOutOrEntered = (selected == current);
+            IsFoldedOutOrEntered = (selected == current);
 
-            if (ClickUnFocus((PegiEditorOnly.isFoldedOutOrEntered ? "[Hide] {0}..." : ">{0} [Show]").F(txt.label).PegiLabel()).IgnoreChanges(LatestInteractionEvent.Enter))
+            if (ClickUnFocus((FoldoutManager.isFoldedOutOrEntered ? "[Hide] {0}..." : ">{0} [Show]").F(txt.label).PegiLabel()).IgnoreChanges(LatestInteractionEvent.Enter))
             {
-                if (PegiEditorOnly.isFoldedOutOrEntered)
+                if (FoldoutManager.isFoldedOutOrEntered)
                     selected = -1;
                 else
                     selected = current;
             }
 
-            PegiEditorOnly.IsFoldedOutOrEntered = selected == current;
+            IsFoldedOutOrEntered = selected == current;
 
-            return PegiEditorOnly.isFoldedOutOrEntered;
+            return FoldoutManager.isFoldedOutOrEntered;
 
+        }
+
+        public static StateToken IsFoldout(this Icon ico, string text)
+        {
+            using (FoldoutManager.StartFoldoutDisposable(out var isFoldedOut))
+            {
+                if (isFoldedOut)
+                {
+                    if (Icon.FoldedOut.ClickUnFocus(text, 30).IgnoreChanges(LatestInteractionEvent.Exit))
+                        FoldoutManager.FoldInNow();
+                }
+                else
+                {
+                    if (ico.Click(text).IgnoreChanges(LatestInteractionEvent.Enter))
+                        FoldoutManager.FoldOutNow();
+                }
+            }
+
+            return FoldoutManager.isFoldedOutOrEntered;
         }
 
         public static StateToken IsFoldout(this Icon ico, string text, ref bool state) => ico.GetIcon().IsFoldout(text, ref state);
@@ -70,11 +80,12 @@ namespace QuizCanners.Inspect
                 return PegiEditorOnly.Foldout(txt);
 #endif
 
-            IsFoldout(txt, ref selectedFold, _elementIndex);
+            using (FoldoutManager.StartFoldoutDisposable(out _))
+            {
+                IsFoldout(txt, ref FoldoutManager.selectedFold, _elementIndex);
+            }
 
-            _elementIndex++;
-
-            return PegiEditorOnly.isFoldedOutOrEntered;
+            return FoldoutManager.isFoldedOutOrEntered;
         }
 
         internal static StateToken IsFoldout(this Texture2D tex, string text, ref bool state)
@@ -93,7 +104,40 @@ namespace QuizCanners.Inspect
             return new StateToken(state);
         }
 
-      
+        internal static bool IsFoldedOutOrEntered
+        {
+            get => FoldoutManager.isFoldedOutOrEntered;
+            set => FoldoutManager.isFoldedOutOrEntered = new StateToken(value);
+        }
 
+        internal static int _elementIndex;
+
+        internal static class FoldoutManager 
+        {
+            internal static StateToken isFoldedOutOrEntered;
+
+           
+            internal static int selectedFold = -1;
+
+            internal static void FoldInNow() => selectedFold = -1;
+
+            internal static void FoldOutNow() => selectedFold = _elementIndex;
+
+            internal static bool IsNextFoldedOut => selectedFold == _elementIndex - 1;
+
+
+            internal static IDisposable StartFoldoutDisposable(out bool isFoldedOut) 
+            {
+                _elementIndex++;
+                IsFoldedOutOrEntered = selectedFold == _elementIndex;
+                isFoldedOut = IsFoldedOutOrEntered;
+
+                return QcSharp.DisposableAction(() => 
+                {
+                    IsFoldedOutOrEntered = (selectedFold == _elementIndex);
+                });
+
+            }
+        }
     }
 }

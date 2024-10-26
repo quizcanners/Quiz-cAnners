@@ -7,13 +7,6 @@ using QuizCanners.Utils;
 
 namespace QuizCanners.Migration
 {
-
-#pragma warning disable IDE0018 // Inline variable declaration
-
-   
-
-    #region Saved Cfg
-
     [Serializable]
     public class ICfgObjectExplorer : IGotCount
     {
@@ -33,7 +26,7 @@ namespace QuizCanners.Migration
 
             var changed = false;
 
-            "Load File:".PegiLabel(90).Write();
+            "Load File:".ConstLabel().Write();
             target.LoadCfgOnDrop(); pegi.Nl();
 
             if (Icon.Copy.Click("Copy Component Data").Nl())
@@ -52,9 +45,7 @@ namespace QuizCanners.Migration
             inspectedCfg = target;
             inspected = this;
 
-            CfgState added; 
-
-            "Saved CFGs:".PegiLabel().Edit_List(states, ref inspectedState, out added);
+            "Saved CFGs:".PegiLabel().Edit_List(states, ref inspectedState, out CfgState added);
 
             if (added != null && target != null)
             {
@@ -67,7 +58,7 @@ namespace QuizCanners.Migration
             {
                 Object myType = null;
                 
-                if ("From File:".PegiLabel(65).Edit(ref myType))
+                if ("From File:".ConstLabel().Edit(ref myType))
                 {
                     added = new CfgState();
 
@@ -296,7 +287,7 @@ namespace QuizCanners.Migration
                         if (dataExplorer.tag.Length == 0)
                             dataExplorer.tag = Cfg.GetNameForInspector() + " config";
 
-                        "Save To:".PegiLabel(50).Edit(ref Mgmt.fileFolderHolder);
+                        "Save To:".ConstLabel().Edit(ref Mgmt.fileFolderHolder);
 
                         var uObj = Cfg as Object;
 
@@ -340,8 +331,5 @@ namespace QuizCanners.Migration
 
             #endregion
         }
-
-
     }
-    #endregion
 }

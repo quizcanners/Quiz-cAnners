@@ -59,7 +59,7 @@ namespace QuizCanners.Utils
             }
 
             #region Inspector 
-            private readonly pegi.CollectionInspectorMeta coroutinesListMeta = new pegi.CollectionInspectorMeta("Managed Coroutines", showAddButton: false);
+            private readonly pegi.CollectionInspectorMeta coroutinesListMeta = new("Managed Coroutines", showAddButton: false);
 
             private Task _debugTask;
             void IPEGI.Inspect()
@@ -77,8 +77,7 @@ namespace QuizCanners.Utils
                     {
                         "Task status:{0}".F(_debugTask.Status).PegiLabel().Nl();
 
-                        if (_debugTask.Exception != null)
-                            _debugTask.Exception.ToString().PegiLabel().WriteBig();
+                        _debugTask.Exception?.ToString().PegiLabel().WriteBig();
 
                         if ("Clear".PegiLabel().Click())
                             _debugTask = null;

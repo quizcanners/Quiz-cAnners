@@ -32,12 +32,14 @@ namespace QuizCanners.Inspect.Examples
             protected void DrawExample(Action drawElement, string code)
             {
                 pegi.Line();
-                drawElement.Invoke(); pegi.Nl();
+                pegi.Nl();
 
                 using (pegi.Indent())
                 {
-                    code.PegiLabel().Write_ForCopy(writeAsEditField: true).Nl(); //DrawExample();
+                    code.PegiLabel(pegi.Styles.HintText).Write_ForCopy(showCopyButton: true, writeAsEditField: false).Nl(); //DrawExample();
+                    drawElement.Invoke();
                 }
+                pegi.Nl();
             }
 
             public virtual IEnumerator SearchKeywordsEnumerator()

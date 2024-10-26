@@ -8,7 +8,6 @@ namespace QuizCanners.Inspect
 {
     public static partial class pegi
     {
-        [Serializable]
         public class EnterExitContext : ICfgCustom, IPEGI
         {
             [NonSerialized] internal int _currentIndex = -1;
@@ -168,7 +167,7 @@ namespace QuizCanners.Inspect
                     return QcSharp.DisposableAction(() =>
                     {
                         context.contextUsed = false;
-                        PegiEditorOnly.IsFoldedOutOrEntered = IsEnteredCurrent;
+                        IsFoldedOutOrEntered = IsEnteredCurrent;
                     });
                 } else 
                 {
@@ -271,33 +270,38 @@ namespace QuizCanners.Inspect
                 return IsEnteredCurrent;
             }
 
-            internal static void Internal_Enter_Inspect_AsList(IPEGI_ListInspect var, string exitLabel = null)
+            internal static pegi.ChangesToken Internal_Enter_Inspect_AsList(IPEGI_ListInspect var, string exitLabel = null)
             {
-                if (!var.IsNullOrDestroyed_Obj())
+                var changed = ChangeTrackStart();
+                if (var.IsNullOrDestroyed_Obj())
                 {
-                    if (!IsEnteredCurrent)
-                    {
-                        int current = EnterExitContext.CurrentIndexer._currentIndex;
-                        int entered = EnterExitContext.CurrentIndexer.CurrentlyEntered;
-
-                        if (Nested_Inspect(() => var.InspectInList(ref entered, current), var as UnityEngine.Object))
-                        {
-                            EnterExitContext.CurrentIndexer.CurrentlyEntered = entered;
-                            new ChangesToken(IsEnteredCurrent).IgnoreChanges(LatestInteractionEvent.Enter);
-                        }
-                    }
-                    else
-                    {
-                        var label = new TextLabel(exitLabel.IsNullOrEmpty() ? var.GetNameForInspector() : exitLabel, style: Styles.ExitLabel);
-                        ExitClick(label, showLabelIfTrue: true);
-                        Try_Nested_Inspect(var);
-                    }
+                    if (IsEnteredCurrent)
+                        IsEnteredCurrent = StateToken.False;
+                    return changed;
                 }
-                else if (IsEnteredCurrent)
-                    IsEnteredCurrent = StateToken.False;
 
+                if (!IsEnteredCurrent)
+                {
+                    int current = EnterExitContext.CurrentIndexer._currentIndex;
+                    int entered = EnterExitContext.CurrentIndexer.CurrentlyEntered;
+
+                    if (Nested_Inspect(() => var.InspectInList(ref entered, current), var as UnityEngine.Object))
+                    {
+                        EnterExitContext.CurrentIndexer.CurrentlyEntered = entered;
+                        new ChangesToken(IsEnteredCurrent).IgnoreChanges(LatestInteractionEvent.Enter);
+                    }
+
+                    return changed;
+                }
+               
+                var label = new TextLabel(exitLabel.IsNullOrEmpty() ? var.GetNameForInspector() : exitLabel, style: Styles.ExitLabel);
+                ExitClick(label, showLabelIfTrue: true);
+                Try_Nested_Inspect(var);
+
+                return changed;
             }
 
+       
             private static void ExitClick(TextLabel text, bool showLabelIfTrue) 
             {
                 using (Styles.Background.ExitLabel.SetDisposible())

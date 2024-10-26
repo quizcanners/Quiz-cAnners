@@ -26,7 +26,7 @@ namespace QuizCanners.Utils
         {
             
             var tScale = Time.timeScale;
-            if ("Time.timescale".PegiLabel(toolTip: "For convenience will also modify Fixed Delta Time", 100).Edit(ref tScale, 0f, 4f))
+            if ("Time.timescale".ConstLabel(toolTip: "For convenience will also modify Fixed Delta Time").Edit(ref tScale, 0f, 4f))
             {
                 Time.timeScale = tScale;
                 Time.fixedDeltaTime = Mathf.Clamp(Time.timeScale / 60, min: 0.001f, max: 0.02f);
@@ -188,7 +188,7 @@ namespace QuizCanners.Utils
                     pegi.Nl();
 
                     var fTScale = Time.fixedDeltaTime;
-                    if ("Time.fixedDeltaTime".PegiLabel(120).Edit(ref fTScale, 0, 0.5f))
+                    if ("Time.fixedDeltaTime".ConstLabel().Edit(ref fTScale, 0, 0.5f))
                         Time.fixedDeltaTime = fTScale;
 
                     pegi.Nl();
@@ -208,7 +208,7 @@ namespace QuizCanners.Utils
                 if ("Graphics".PegiLabel().IsEntered().Nl()) 
                 {
                     var fr = Application.targetFrameRate;
-                    if ("Frame-Rate".PegiLabel().Edit(ref fr).Nl() && fr > 0)
+                    if ("Frame-Rate".ConstLabel().Edit(ref fr).Nl() && fr > 0)
                     {
                         Application.targetFrameRate = fr;
                     }
@@ -226,8 +226,8 @@ namespace QuizCanners.Utils
 
                     var changes = pegi.ChangeTrackStart();
 
-                    "Width".PegiLabel(60).Edit(ref width, 8, Display.main.renderingWidth).Nl();
-                    "Height".PegiLabel(60).Edit(ref height, 8, Display.main.renderingHeight).Nl();
+                    "Width".ConstLabel().Edit(ref width, 8, Display.main.renderingWidth).Nl();
+                    "Height".ConstLabel().Edit(ref height, 8, Display.main.renderingHeight).Nl();
 
                     if (changes)
                         Screen.SetResolution(width, height, fullscreen: true);

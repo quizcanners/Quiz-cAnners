@@ -168,7 +168,7 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                "Log:".PegiLabel(50).Write_ForCopy(Log, showCopyButton: true).Nl();
+                "Log:".ConstLabel().Write_ForCopy(Log, showCopyButton: true).Nl();
                 "Stack:".PegiLabel().Write_ForCopy_Big(Stack, showCopyButton: true).Nl();
             }
 
