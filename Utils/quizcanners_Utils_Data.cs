@@ -32,8 +32,8 @@ namespace QuizCanners.Utils
 
             internal string Extension => AsBytes ? BYTES_FILE_TYPE : TEXT_FILE_TYPE;
 
-            public void SaveGame(object saveData) => Save.ToPersistentPath.JsonTry(saveData, this);
-            public void LoadGame<T>(out T saveData)=> Load.FromPersistentPath.JsonTry(this, out saveData);
+            public bool SaveGame(object saveData) => Save.ToPersistentPath.JsonTry(saveData, this);
+            public bool LoadGame<T>(out T saveData)=> Load.FromPersistentPath.JsonTry(this, out saveData);
 
             public void Inspect()
             {
@@ -476,15 +476,18 @@ namespace QuizCanners.Utils
                 public void Inspect()
                 {
                     "File path".ConstLabel().Edit(ref FilePath);
+
+#if UNITY_EDITOR
                     if (Icon.Edit.Click())
                     {
                         var newPath = EditorUtility.OpenFolderPanel("Save {0}{1} to".F(_fileName, _extension), FilePath, "");
                         if (!newPath.IsNullOrEmpty())
                             FilePath = newPath;
                     }
+#endif
 
                     if (Icon.Folder.Click())
-                        QcFile.Explorer.OpenPath(FilePath);
+                        Explorer.OpenPath(FilePath);
                 }
 
                 public SystemLocation(string extension, string defaultFileName = "FILE_NAME")

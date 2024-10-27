@@ -47,6 +47,8 @@ namespace QuizCanners.Utils
 
             protected abstract Dictionary<string, TValue> GetEnities();
 
+            protected virtual bool ShowIndex => false;
+
             public virtual bool TryGetEntity(out TValue entity)
             {
                 if (Id != null)
@@ -149,7 +151,7 @@ namespace QuizCanners.Utils
                     "NO PROTS".ConstLabel().Write();
 
                 var id = Id;
-                pegi.Select(ref id, prots).OnChanged(() => Id = id);
+                pegi.Select(ref id, prots, showIndex: ShowIndex).OnChanged(() => Id = id);
                 
                 return changes;
             }

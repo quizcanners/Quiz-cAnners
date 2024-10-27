@@ -328,9 +328,12 @@ namespace QuizCanners.Inspect
 
         public static IDisposable StartDisabledGroup(bool disabled)
         {
+#if UNITY_EDITOR
             EditorGUI.BeginDisabledGroup(disabled);
-
             return QcSharp.DisposableAction(() => EditorGUI.EndDisabledGroup());
+#else
+            return QcSharp.DisposableAction(() => { });
+#endif
         }
 
         public class CopyPaste
