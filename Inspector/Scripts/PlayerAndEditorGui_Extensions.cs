@@ -988,7 +988,6 @@ namespace QuizCanners.Inspect
                     Type baseType = valueType.GetGenericTypeDefinition();
                     if (baseType == typeof(KeyValuePair<,>))
                     {
-                      //  Type[] argTypes = baseType.GetGenericArguments();
                         object kvpKey = valueType.GetProperty("Key").GetValue(value, null);
                         object kvpValue = valueType.GetProperty("Value").GetValue(value, null);
 
@@ -1013,11 +1012,17 @@ namespace QuizCanners.Inspect
                 if (obj is string)
                 {
                     var str = obj as string;
+
+                    if (str.IsNullOrEmpty())
+                        return "";
+
+                    // The following causes issues when F is used to generate request string
+                    /*
                     if (str == null)
                         return "NULL String";
 
                     if (str.Length == 0)
-                        return "Empty string";
+                        return "Empty string";*/
 
                     return str;
                 }
@@ -1025,8 +1030,7 @@ namespace QuizCanners.Inspect
                 if (obj.GetType().IsUnityObject())
                     return (obj as Object).GetNameForInspector_Uobj();
 
-                //string tmp;
-                return DefaultName();// (obj.ToPegiStringInterfacePart(out tmp)) ? tmp : obj.ToString().SimplifyTypeName();
+                return DefaultName();
             }
 
             string pairName = null;
@@ -1049,9 +1053,10 @@ namespace QuizCanners.Inspect
 
             if (!type.IsPrimitive)
             {
-               // string tmp;
-                return DefaultName(); // (obj.ToPegiStringInterfacePart(out tmp)) ? tmp : obj.ToString();
+                return DefaultName(); 
             }
+
+            return obj.ToString();
 
             string DefaultName() 
             {
@@ -1076,12 +1081,7 @@ namespace QuizCanners.Inspect
                     return "Error Getting name. " + ex.ToString();
                 }
             }
-            /*if (type == typeof(double))
-            {
-                return QcSharp.ToReadableString((double)((object)obj));
-            }*/
 
-            return obj.ToString();
         }
 
         public static T GetByIGotName<T>(this List<T> lst, string name) where T : IGotName

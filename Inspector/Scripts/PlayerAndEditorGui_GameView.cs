@@ -193,7 +193,7 @@ namespace QuizCanners.Inspect
                                 }
 
                                 Nl();
-                                _tooltip.PegiLabel(style: Styles.HintText).Nl();
+                                _tooltip.PegiLabel(toolTip: "This is the Tooltip text's tooltip",style: Styles.HintText).Nl();
                                 UnIndent();
                             }
 

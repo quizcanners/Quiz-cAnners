@@ -11,26 +11,38 @@ namespace QuizCanners.Utils
         {
             [SerializeField] public string ScenePath;
 
-#if UNITY_EDITOR
-            [SerializeField] private UnityEditor.SceneAsset _asset;
+            [SerializeField] private UnityEngine.Object _asset;//UnityEditor.SceneAsset _asset;
 
+#if UNITY_EDITOR
+
+            [NonSerialized] UnityEditor.SceneAsset _assetAsScene;
             [NonSerialized] private bool _triedToGet = false;
             private UnityEditor.SceneAsset Asset 
             {
                 get 
                 {
                     if (_triedToGet)
-                        return _asset;
+                        return _assetAsScene;
+
                     _triedToGet = true;
 
                     try
                     {
-                        _asset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEditor.SceneAsset>(ScenePath);
+                        if (_asset)
+                        {
+                            _assetAsScene = _asset as UnityEditor.SceneAsset;
+                        }
+
+                        if (_assetAsScene)
+                            return _assetAsScene;
+
+                        _assetAsScene = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEditor.SceneAsset>(ScenePath);
+                        _asset = _assetAsScene;
                     } catch (Exception ex) 
                     {
                         Debug.LogException(ex);
                     }
-                    return _asset;
+                    return _assetAsScene;
                 }
             }
 #endif
