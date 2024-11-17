@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using UnityEngine;
 
 namespace QuizCanners.Utils
 {
@@ -219,6 +220,31 @@ namespace QuizCanners.Utils
             bytes >>= 10;
             bytes /= 1024; // On new line to workaround IL2CPP bug
             return "{0} Mb".F(bytes.ToString());
+        }
+
+        public static string MetersToReadableString(float distance) 
+        {
+            if (distance < 2000)
+                return "{0} m".F(distance.ToString("F0"));
+
+            float kms = distance / 1000;
+
+            return "{0} km".F(GetKmNumber(distance));
+
+            static string GetKmNumber(float distance) 
+            {
+                float kms = distance / 1000;
+
+                if (kms > 10)
+                    return kms.ToString("F0");
+
+                float fraction = Mathf.Round((kms - Mathf.Floor(kms))*10)/10f;
+
+                if (fraction < 0.1f || fraction>0.9f)
+                    return kms.ToString("F0");
+
+                return kms.ToString("F1");
+            }
         }
 
         public static string ToRelativeString(this DateTime date, bool showHours)

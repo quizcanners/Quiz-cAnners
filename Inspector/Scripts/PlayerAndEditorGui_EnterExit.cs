@@ -35,7 +35,7 @@ namespace QuizCanners.Inspect
 
                     if (!hideTextWhenTrue)
                     {
-                        exitLabel.style = Styles.ExitLabel;
+                        exitLabel.style = Styles.Text.ExitLabel;
                         if (exitLabel.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit))
                             Context.IsEnteredCurrent = StateToken.False;
                     }
@@ -44,7 +44,7 @@ namespace QuizCanners.Inspect
                 {
                     if (toggle) 
                     {
-                        exitLabel.style = Styles.EnterLabel;
+                        exitLabel.style = Styles.Text.EnterLabel;
                         Icon.Enter.ClickUnFocus(exitLabel.label).IgnoreChanges(LatestInteractionEvent.Enter).OnChanged(() => Context.IsEnteredCurrent = StateToken.True);
                     }
 
@@ -79,14 +79,14 @@ namespace QuizCanners.Inspect
 
                     if (showLabelIfTrue)
                     {
-                        label.style = Styles.ExitLabel;
+                        label.style = Styles.Text.ExitLabel;
                         if (label.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit))
                             Context.IsEnteredCurrent = StateToken.False;
                     }
                 }
                 else
                 {
-                    label.style = enterLabelStyle ?? Styles.EnterLabel;
+                    label.style = enterLabelStyle ?? Styles.Text.EnterLabel;
                     (
                         Icon.Enter.ClickUnFocus(label.label).IgnoreChanges(LatestInteractionEvent.Enter)
                         | label.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter)
@@ -120,7 +120,7 @@ namespace QuizCanners.Inspect
 
             if ((showLabelIfTrue && IsCurrent) || outside) 
             {
-                txt.style = outside ? enterLabelStyle ?? Styles.EnterLabel : Styles.ExitLabel;
+                txt.style = outside ? enterLabelStyle ?? Styles.Text.EnterLabel : Styles.Text.ExitLabel;
                 if (txt.ClickLabel().IgnoreChanges(outside ? LatestInteractionEvent.Enter : LatestInteractionEvent.Exit))
                     entered = outside ? thisOne : -1;
             }
@@ -447,7 +447,7 @@ namespace QuizCanners.Inspect
                 {
                     using (Styles.Background.ExitLabel.SetDisposible())
                     {
-                        var label =  new TextLabel(exitLabel.IsNullOrEmpty() ? var.GetNameForInspector() : exitLabel, toolTip: Icon.Exit.GetDescription(), style: Styles.ExitLabel);
+                        var label =  new TextLabel(exitLabel.IsNullOrEmpty() ? var.GetNameForInspector() : exitLabel, toolTip: Icon.Exit.GetDescription(), style: Styles.Text.ExitLabel);
 
                         if (Icon.Exit.ClickUnFocus("{0} L {1}".F(Icon.Exit.GetText(), var)).IgnoreChanges(LatestInteractionEvent.Exit)
                             | label.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit))
@@ -505,7 +505,7 @@ namespace QuizCanners.Inspect
                 else if (ico.ClickUnFocus("{0} {1}".F(Icon.Enter.GetText(), txt)).IgnoreChanges(LatestInteractionEvent.Exit))
                     state = true;
 
-                txt.style = state ? Styles.ExitLabel : Styles.EnterLabel;
+                txt.style = state ? Styles.Text.ExitLabel : Styles.Text.EnterLabel;
 
                 if ((showLabelIfTrue || !state) &&
                     txt.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit))
@@ -660,7 +660,7 @@ namespace QuizCanners.Inspect
 
                     var before = Context.IsEnteredCurrent;
 
-                    meta.Label.PegiLabel().AddCount(dic, Context.IsEnteredCurrent).IsEntered(showLabelIfTrue, dic.Count == 0 ? Styles.ClippingText : null);
+                    meta.Label.PegiLabel().AddCount(dic, Context.IsEnteredCurrent).IsEntered(showLabelIfTrue, dic.Count == 0 ? Styles.Text.Clipping : null);
 
                     if (Context.IsEnteredCurrent && !before)
                         meta.InspectedElement = -1;

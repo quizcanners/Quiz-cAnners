@@ -1,4 +1,3 @@
-
 using QuizCanners.Inspect;
 using System;
 using UnityEngine;
@@ -7,7 +6,6 @@ namespace QuizCanners.Utils
 {
     public static class Fallback
     {
-
         public class FallbackValueGeneric<T> 
         {
             [SerializeField] public bool IsSet;
@@ -32,8 +30,6 @@ namespace QuizCanners.Utils
             public T Get(T defaultValue) => IsSet ? manualValue : defaultValue;
 
             public T Get(Func<T> defaultValueGetter) => IsSet ? manualValue : defaultValueGetter.Invoke();
-
-           // public T this[Func<T> defaultValueGetter] => Get(defaultValueGetter: defaultValueGetter);
         }
 
         [Serializable]
@@ -59,16 +55,15 @@ namespace QuizCanners.Utils
             }
         }
 
-        
         [Serializable]
-        public class EnumValueUndefined : FallbackValueGeneric<int>
+        public class EnumValue : FallbackValueGeneric<int>
         {
             public void SetManualEnum<T>(T value) => ManualValue = Convert.ToInt32(value);
             
             public T GetManualEnum<T>() => (T)Enum.ToObject(typeof(T), manualValue);
             
-            public EnumValueUndefined() { }
-            public EnumValueUndefined(int startValue) { ManualValue = startValue; }
+            public EnumValue() { }
+            public EnumValue(int startValue) { ManualValue = startValue; }
         }
     }
 }

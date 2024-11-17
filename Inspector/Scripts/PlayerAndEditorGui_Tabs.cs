@@ -359,7 +359,7 @@ namespace QuizCanners.Inspect
 
         public static void AddTab(Icon icon, string tabKey, Action action) => AddTab(icon, tabName: "", tabKey: tabKey, action);
         
-        public static void AddTab(Icon icon, IPEGI ipegi, Object objectToSetDirty) => AddTab(icon, "", tabKey: ipegi.ToString(), () =>
+        public static void AddTab(Icon icon, IPEGI ipegi, Object objectToSetDirty) => AddTab(icon, "", tabKey: ipegi == null ? icon.ToString() : ipegi.ToString(), () =>
             {
                 if (ipegi.Nested_Inspect())
                     objectToSetDirty.SetToDirty();

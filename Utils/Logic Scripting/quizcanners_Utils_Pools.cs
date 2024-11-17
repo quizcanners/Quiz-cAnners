@@ -10,7 +10,7 @@ namespace QuizCanners.Utils
         public static class MaxCount
         {
             private static float _byFramerateModifier = 1;
-            private static readonly Gate.Frame _byFrameRecalculateGate = new();
+            private static readonly Gate.Frame _byFrameRecalculateGate = new(Gate.InitialValue.StartArmed);
             public static float GetCoefficientFromFramerate()
             {
                 if (_byFrameRecalculateGate.TryEnter())

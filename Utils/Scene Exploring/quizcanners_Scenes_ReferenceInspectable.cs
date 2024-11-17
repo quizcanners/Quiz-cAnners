@@ -18,7 +18,7 @@ namespace QuizCanners.Utils
             public SerializableSceneReference SceneReference = new();
             public AsyncOperation LoadOperation;
 
-            private readonly Gate.Frame _onLoadedInitializationOneFrameDelay = new();
+            private readonly Gate.Frame _onLoadedInitializationOneFrameDelay = new(Gate.InitialValue.StartArmed);
             private int _framesSinceLoaded;
 
             public bool LoadingFailed { get; private set; }

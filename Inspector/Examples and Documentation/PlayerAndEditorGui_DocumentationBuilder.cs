@@ -12,7 +12,7 @@ namespace QuizCanners.Inspect.Examples
         private abstract class DocEntry : IPEGI, ISearchable
         {
 
-            protected pegi.CollectionInspectorMeta functionsList = new pegi.CollectionInspectorMeta("Functions", allowDeleting: false, showAddButton: false, showEditListButton: false);
+            protected pegi.CollectionInspectorMeta functionsList = new("Functions", allowDeleting: false, showAddButton: false, showEditListButton: false);
 
             public virtual void Inspect()
             {
@@ -36,7 +36,7 @@ namespace QuizCanners.Inspect.Examples
 
                 using (pegi.Indent())
                 {
-                    code.PegiLabel(pegi.Styles.HintText).Write_ForCopy(showCopyButton: true, writeAsEditField: false).Nl(); //DrawExample();
+                    code.PegiLabel(pegi.Styles.Text.Hint).Write_ForCopy(showCopyButton: true, writeAsEditField: false).Nl(); //DrawExample();
                     drawElement.Invoke();
                 }
                 pegi.Nl();
@@ -47,7 +47,7 @@ namespace QuizCanners.Inspect.Examples
                 yield return GetFunctions();
             }
 
-            protected virtual List<FunctionData> GetFunctions() => new List<FunctionData>();
+            protected virtual List<FunctionData> GetFunctions() => new();
 
             protected enum ReturnType { Void, Changes, Click, State, TextToken, ChangesTracker, SameReturnType }
 
@@ -70,19 +70,14 @@ namespace QuizCanners.Inspect.Examples
 
                 public override string ToString()
                 {
-                    string returnTypeString;
-
-                    switch (ReturnType)
+                    string returnTypeString = ReturnType switch
                     {
-                        case ReturnType.State:
-                        case ReturnType.Click:
-                        case ReturnType.ChangesTracker:
-                        case ReturnType.Changes: returnTypeString = "bool"; break;
-                        case ReturnType.SameReturnType: returnTypeString = "T"; break;
-                        default: returnTypeString = "void"; break;
-                    }
+                        ReturnType.State or ReturnType.Click or ReturnType.ChangesTracker or ReturnType.Changes => "bool",
+                        ReturnType.SameReturnType => "T",
+                        _ => "void",
+                    };
 
-                    StringBuilder sb = new StringBuilder();
+                    StringBuilder sb = new();
 
                     if (ExtendsPegiLabel)
                     {
@@ -151,7 +146,7 @@ namespace QuizCanners.Inspect.Examples
 
                 void IPEGI.Inspect()
                 {
-                    ((Optional ? "(Optional) " : "") + Name).PegiLabel(toolTip: "Parameter Name", style: pegi.Styles.BaldText).Nl();
+                    ((Optional ? "(Optional) " : "") + Name).PegiLabel(toolTip: "Parameter Name", style: pegi.Styles.Text.Bald).Nl();
 
                     using (pegi.Indent())
                     {
@@ -164,9 +159,9 @@ namespace QuizCanners.Inspect.Examples
             protected int exampleIndex = -1;
             protected string exampleKey = "none";
 
-            protected readonly List<TestClass> exampleList = new List<TestClass>() { new TestClass("A"), new TestClass("B"), new TestClass("C"), new TestClass("D"), new TestClass("E") };
+            protected readonly List<TestClass> exampleList = new() { new TestClass("A"), new TestClass("B"), new TestClass("C"), new TestClass("D"), new TestClass("E") };
 
-            protected readonly Dictionary<string, TestClass> exampleDictionary = new Dictionary<string, TestClass>()
+            protected readonly Dictionary<string, TestClass> exampleDictionary = new()
             {
                 {"a", new TestClass("Element A") },
                 {"b", new TestClass("Element B") },
@@ -199,7 +194,7 @@ namespace QuizCanners.Inspect.Examples
             private int lines;
             private bool _newLineRequested = false;
 
-            private readonly StringBuilder _sb = new StringBuilder();
+            private readonly StringBuilder _sb = new();
 
             private void Nl()
             {
@@ -237,7 +232,7 @@ namespace QuizCanners.Inspect.Examples
             {
                 using (pegi.Indent())
                 {
-                    _sb.ToString().PegiLabel(pegi.Styles.FoldedOutLabel).Write_ForCopy_Big(lines: lines);
+                    _sb.ToString().PegiLabel(pegi.Styles.Text.FoldedOut).Write_ForCopy_Big(lines: lines);
                 }
             }
 

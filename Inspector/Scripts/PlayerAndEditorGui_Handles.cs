@@ -105,7 +105,7 @@ namespace QuizCanners.Inspect
 
             public static bool IsLeftMouseButtonDown()
             {
-                if (globChanged)
+                if (GlobChanged)
                     return false;
 
 #if UNITY_EDITOR

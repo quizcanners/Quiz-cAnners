@@ -162,7 +162,7 @@ namespace QuizCanners.Utils
                 private List<TimerCollectionElements.Base> _sortedTimings = new();
                 protected readonly Stopwatch StopWatch = new();
 
-                private readonly Gate.Frame _tickRecalculateGate = new();
+                private readonly Gate.Frame _tickRecalculateGate = new(Gate.InitialValue.StartArmed);
                 private long _totalTicks;
 
                 internal long TotalTicks()
@@ -286,7 +286,7 @@ namespace QuizCanners.Utils
                 private Dictionary<string, TimerCollectionElements.Base> _timings = new();
                 private List<TimerCollectionElements.Base> _sortedTimings = new();
 
-                private readonly Gate.Frame _tickRecalculateGate = new();
+                private readonly Gate.Frame _tickRecalculateGate = new(Gate.InitialValue.StartArmed);
                 private long _totalTicks;
 
                 internal long TotalTicks()

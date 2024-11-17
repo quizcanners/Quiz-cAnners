@@ -105,6 +105,13 @@ namespace QuizCanners.Utils
                 return material;
             }
 
+            public MaterialInstancer.Base SetOn(MaterialInstancer.Base instancer, T value)
+            {
+                var mat = instancer.GetInstance();
+                SetOn(mat, value);
+                return instancer;
+            }
+
             public virtual Renderer SetOn(Renderer renderer, MaterialPropertyBlock block,  T value)
             {
                 LatestValue = value;
@@ -191,6 +198,19 @@ namespace QuizCanners.Utils
             property.SetOn(block, value);
             return block;
         }
+
+        public static MaterialInstancer.Base Set<T>(this MaterialInstancer.Base inst, IndexGeneric<T> property)
+        {
+            property.SetLatestValueOn(inst.GetInstance());
+            return inst;
+        }
+
+        public static MaterialInstancer.Base Set<T>(this MaterialInstancer.Base inst, IndexGeneric<T> property, T value)
+        {
+            property.SetOn(inst.GetInstance(), value);
+            return inst;
+        }
+
 
         public static Material Set<T>(this Material mat, IndexGeneric<T> property)
         {
@@ -1067,6 +1087,8 @@ namespace QuizCanners.Utils
         }
     }
 
+   
+
     public static class ShaderTagExtensions
     {
         public static string Get(this Material mat, ShaderTag tag, bool searchFallBacks = false, string defaultValue = "") =>
@@ -1091,7 +1113,7 @@ namespace QuizCanners.Utils
     #endregion
 
 
-    
+
 #if UNITY_EDITOR
 
     [UnityEditor.CustomPropertyDrawer(typeof(ShaderProperty.TextureValue))]

@@ -163,15 +163,14 @@ namespace QuizCanners.Utils
 
         public override void InspectInList(ref int edited, int ind)
         {
+            base.InspectInList(ref edited, ind);
+
             if (InstancesCount > 0)
             {
                 Icon.Clear.Click().OnChanged(ClearAll);
 
-                "{0}/{1}".F(InstancesCount, RECOMMENDED_INSTANCES).PegiLabel(60).Write();
+                "{0}/{1}".F(InstancesCount, MAX_INSTANCES).PegiLabel(60).Write();
             }
-
-
-            base.InspectInList(ref edited, ind);
         }
 
         #endregion

@@ -3,9 +3,7 @@ using QuizCanners.Migration;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using UnityEngine;
-using static UnityEngine.EventSystems.EventTrigger;
 
 namespace QuizCanners.Utils
 {
@@ -43,7 +41,7 @@ namespace QuizCanners.Utils
                 set => _id = value;
             }
 
-            protected virtual bool AllowEdit => true;
+            protected virtual bool AllowEdit => false;
 
             protected abstract Dictionary<string, TValue> GetEnities();
 
@@ -129,15 +127,15 @@ namespace QuizCanners.Utils
                 if (AllowEdit)
                     InspectSelectPart().Nl();
 
-                "REFERENCED OBJECT".PegiLabel(style: pegi.Styles.ListLabel).Nl();
+                using (pegi.Indent())
+                {
+                    TValue val = GetEntity();
 
-                TValue val = GetEntity();
-
-
-                if (val != null)
-                    pegi.Try_Nested_Inspect(val).Nl();
-                else
-                    ("ID {0} not found in Prototypes".F(Id)).PegiLabel().Nl();
+                    if (val != null)
+                        pegi.Try_Nested_Inspect(val).Nl();
+                    else
+                        ("ID {0} not found in Prototypes".F(Id)).PegiLabel().Nl();
+                }
 
             }
 
@@ -158,14 +156,21 @@ namespace QuizCanners.Utils
 
             public virtual void InspectInList(ref int edited, int ind)
             {
-                var th = this;
-                pegi.CopyPaste.InspectOptionsFor(ref th);
-
                 if (AllowEdit)
                 {
                     InspectSelectPart();
+                } else if (TryGetEntity(out var ent))
+                {
+                    if (ent is IPEGI_ListInspect lst)
+                    {
+                        lst.InspectInList(ref edited, ind);
+                        return;
+                    }
+                    
+                    if (ToString().PegiLabel(pegi.Styles.Text.EnterLabel).ClickLabel())
+                    edited = ind;
                 }
-                else if (ToString().PegiLabel(pegi.Styles.EnterLabel).ClickLabel())
+                else if (ToString().PegiLabel(pegi.Styles.Text.EnterLabel).ClickLabel())
                     edited = ind;
 
                 if (this.Click_Enter_Attention())
@@ -176,7 +181,7 @@ namespace QuizCanners.Utils
             public override string ToString()
             {
                 TValue ent = GetEntity();
-                return ent != null ? "{0}".F(ent.GetNameForInspector()) : "Target (Id: {0}) NOT FOUND".F(Id);
+                return ent != null ? "{0}".F(ent.GetNameForInspector()) : "NOT FOUND: {0}".F(Id);
             }
 
             public virtual string NeedAttention()
@@ -199,8 +204,6 @@ namespace QuizCanners.Utils
                     yield return val;
                 }
             }
-
-
 
             #endregion
 
@@ -261,6 +264,8 @@ namespace QuizCanners.Utils
                 return cachedValue;
             }
         }
+
+        public static bool IsValid<T>(this StringGeneric<T> id) where T:IGotName => id != null && !id.Id.IsNullOrEmpty();
 
         public abstract class IntGeneric<TValue> : Base, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable
         {
@@ -502,9 +507,9 @@ namespace QuizCanners.Utils
                 var prots = GetEnities();
 
                 if (prots == null)
-                    "NO PROTS".ConstLabel().Write();
-
-                pegi.Select(ref Id, prots);
+                    "NO Mission prototypes".ConstLabel().WriteWarning();
+                else 
+                    "Mission".ConstLabel().Select(ref Id, prots);
 
                 return changes;
             }

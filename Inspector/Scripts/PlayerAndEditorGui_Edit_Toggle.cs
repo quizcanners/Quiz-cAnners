@@ -3,14 +3,9 @@ using UnityEngine;
 
 namespace QuizCanners.Inspect
 {
-
-#pragma warning disable IDE1006 // Naming Styles
-#pragma warning disable IDE0011 // Add braces
-#pragma warning disable IDE0008 // Use explicit type
-
     public static partial class pegi
     {
-        private const int DefaultToggleIconSize = 34;
+        private const int DEFAULT_TOGGLE_BUTTON_SIZE = 30;
 
         public static ChangesToken ToggleInt(ref int val)
         {
@@ -39,16 +34,16 @@ namespace QuizCanners.Inspect
         private static ChangesToken Toggle(ref bool val, Icon TrueIcon, Icon FalseIcon, string tip, int width, Styles.PegiGuiStyle style)
             => Toggle(ref val, TrueIcon.GetIcon(), FalseIcon.GetIcon(), tip, width, style.Current);
 
-        public static ChangesToken Toggle(ref bool val, Icon TrueIcon, Icon FalseIcon, string tip, int width = defaultButtonSize)
+        public static ChangesToken Toggle(ref bool val, Icon TrueIcon, Icon FalseIcon, string tip, int width = DEFAULT_BUTTON_SIZE)
             => Toggle(ref val, TrueIcon.GetIcon(), FalseIcon.GetIcon(), tip, width);
 
-        public static ChangesToken Toggle(ref bool val, Icon TrueIcon, Icon FalseIcon, GUIStyle style = null) => Toggle(ref val, TrueIcon.GetIcon(), FalseIcon.GetIcon(), "", defaultButtonSize, style);
+        public static ChangesToken Toggle(ref bool val, Icon TrueIcon, Icon FalseIcon, GUIStyle style = null) => Toggle(ref val, TrueIcon.GetIcon(), FalseIcon.GetIcon(), "", DEFAULT_BUTTON_SIZE, style);
 
         public static ChangesToken ToggleIcon(ref bool val, string toolTip = "Toggle On/Off")
         {
             using (SetBgColorDisposable(Color.clear))
             {
-                return Toggle(ref val, Icon.True, Icon.False, toolTip, DefaultToggleIconSize, Styles.ToggleButton);
+                return Toggle(ref val, Icon.True, Icon.False, toolTip, DEFAULT_TOGGLE_BUTTON_SIZE, Styles.ToggleButton);
             }
         }
     
@@ -58,9 +53,8 @@ namespace QuizCanners.Inspect
 
             using (SetBgColorDisposable(Color.clear))
             {
-               Toggle(ref val, Icon.True, Icon.False, label.TooltipOrLabel, DefaultToggleIconSize, Styles.ToggleButton);
+               Toggle(ref val, Icon.True, Icon.False, label.TooltipOrLabel, DEFAULT_TOGGLE_BUTTON_SIZE, Styles.ToggleButton);
             }
-
             if ((!val || !hideTextWhenTrue))
             {
                 label.style = Styles.ToggleLabel(val);
@@ -78,7 +72,7 @@ namespace QuizCanners.Inspect
             var changed = ChangeTrackStart();
             using (SetBgColorDisposable(Color.clear))
             {
-                if ((val ? Icon.True : Icon.False).ClickConfirm(confirmationTag: confirmationTag, toolTip: tip, DefaultToggleIconSize))
+                if ((val ? Icon.True : Icon.False).ClickConfirm(confirmationTag: confirmationTag, toolTip: tip, DEFAULT_TOGGLE_BUTTON_SIZE))
                     val = !val;
             }
 
@@ -92,7 +86,7 @@ namespace QuizCanners.Inspect
             return changed;
         }
 
-        private static ChangesToken Toggle(ref bool val, Texture2D TrueIcon, Texture2D FalseIcon, string tip, int width = defaultButtonSize, GUIStyle style = null)
+        private static ChangesToken Toggle(ref bool val, Texture2D TrueIcon, Texture2D FalseIcon, string tip, int width = DEFAULT_BUTTON_SIZE, GUIStyle style = null)
         {
             if (ClickImage(ImageAndTip(val ? TrueIcon : FalseIcon, tip), width, style))
             {

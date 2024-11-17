@@ -10,15 +10,27 @@ namespace QuizCanners.Inspect
     {
         public class EnterExitContext : ICfgCustom, IPEGI
         {
+            internal static bool TryGetCurrent(out EnterExitContext cnt) => s_contexts.TryGetLast(out cnt);
+            internal static List<EnterExitContext> s_contexts = new();
+
+            internal static void Clear() 
+            {
+                if (s_contexts.Count > 0)
+                {
+                    Debug.LogError("Some Contexts were not cleared: " + s_contexts.Count);
+                    s_contexts.Clear();
+                }
+            }
+
+
             [NonSerialized] internal int _currentIndex = -1;
             [HideInInspector] [SerializeField] private int _currentlyEntered = -1;
-            private EnterExitContext _previous;
+
             [NonSerialized] internal bool contextUsed;
             private readonly PlayerPrefValue.Int _playerPref = null;
             private readonly LogicWrappers.Request checkPlayerPrefs = new();
             private bool insideUsinglock;
-            internal static EnterExitContext CurrentIndexer;
-
+           
             private void CheckUsingBlock(string function) 
             {
                 if (!insideUsinglock)
@@ -56,7 +68,6 @@ namespace QuizCanners.Inspect
                 {
                     _playerPref = new PlayerPrefValue.Int("pegi/EntExit/" + playerPrefId, defaultValue: -1);
                     checkPlayerPrefs.CreateRequest();
-
                 }
             }
 
@@ -85,12 +96,12 @@ namespace QuizCanners.Inspect
             public IDisposable StartContext()
             {
                 _currentIndex = -1;
-                _previous = CurrentIndexer;
-                CurrentIndexer = this;
+                s_contexts.Add(this);
                 insideUsinglock = true;
                 return QcSharp.DisposableAction(() =>
                 {
-                    CurrentIndexer = _previous;
+                    s_contexts.Remove(this);
+
                     if (CurrentlyEntered > _currentIndex)
                     {
                         Debug.LogWarning("Entered is outside the range, exiting");
@@ -103,7 +114,6 @@ namespace QuizCanners.Inspect
             #region Inspector
             void IPEGI.Inspect()
             {
-
                 "Currently Entered".PegiLabel().Edit(ref _currentlyEntered).Nl();
                 "Current Index".PegiLabel().Edit(ref _currentIndex).Nl();
             }
@@ -127,10 +137,7 @@ namespace QuizCanners.Inspect
                 this.DecodeTagsFrom(data);
             }
 
-         
-
             #endregion
-
         }
 
         internal static class Context
@@ -148,10 +155,10 @@ namespace QuizCanners.Inspect
 
             internal static IDisposable IncrementDisposible(out bool canSkip)
             {
-                canSkip = !TryGet(out var context);
-
-                if (context == null) 
+            
+                if (!TryGet(out var context)) 
                 {
+                    canSkip = true;
                     Nl();
                     Icon.Copy.Click(toolTip: "Log").OnChanged(()=> Debug.LogError("Check out this Stack Trace!")); ;
                     "You have forgotten to use Context".PegiLabel().WriteWarning().Nl();
@@ -162,29 +169,22 @@ namespace QuizCanners.Inspect
                 {
                     context.contextUsed = true;
                     context.Increment();
-                    canSkip |= context.CanSkipCurrent;
+                    canSkip = context.CanSkipCurrent;
 
                     return QcSharp.DisposableAction(() =>
                     {
                         context.contextUsed = false;
                         IsFoldedOutOrEntered = IsEnteredCurrent;
                     });
-                } else 
-                {
-                    if (context != null)
-                    {
-                        canSkip |= context.CanSkipCurrent;
-                    }
-
-                    return null;
                 }
 
+                canSkip = context.CanSkipCurrent;
+                return null;
             }
 
             private static bool TryGet(out EnterExitContext context)
             {
-                context = EnterExitContext.CurrentIndexer;
-                if (context == null)
+                if (!EnterExitContext.TryGetCurrent(out context)) //context == null)
                 {
                     "Indexer unset. wrap section in  using(EnterExitIndexes.StartContext()) {  }".PegiLabel().WriteWarning();
                     return false;
@@ -262,7 +262,7 @@ namespace QuizCanners.Inspect
                     ExitClick(txt, showLabelIfTrue: showLabelIfTrue);
                 else
                 {
-                    txt.style = Styles.EnterLabel;
+                    txt.style = Styles.Text.EnterLabel;
                     (Icon.Enter.ClickUnFocus(txt.label).IgnoreChanges(LatestInteractionEvent.Enter) |
                     txt.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter)).OnChanged(() => IsEnteredCurrent = StateToken.True);
                 }
@@ -270,7 +270,7 @@ namespace QuizCanners.Inspect
                 return IsEnteredCurrent;
             }
 
-            internal static pegi.ChangesToken Internal_Enter_Inspect_AsList(IPEGI_ListInspect var, string exitLabel = null)
+            internal static ChangesToken Internal_Enter_Inspect_AsList(IPEGI_ListInspect var, string exitLabel = null)
             {
                 var changed = ChangeTrackStart();
                 if (var.IsNullOrDestroyed_Obj())
@@ -280,21 +280,27 @@ namespace QuizCanners.Inspect
                     return changed;
                 }
 
-                if (!IsEnteredCurrent)
+                if (!EnterExitContext.TryGetCurrent(out var cnt))
                 {
-                    int current = EnterExitContext.CurrentIndexer._currentIndex;
-                    int entered = EnterExitContext.CurrentIndexer.CurrentlyEntered;
+                    "No Context".PegiLabel().WriteWarning().Nl();
+                    return changed;
+                }
+
+                if (!cnt.IsCurrentEntered) //!IsEnteredCurrent)
+                {
+                    int current = cnt._currentIndex;
+                    int entered = cnt.CurrentlyEntered;
 
                     if (Nested_Inspect(() => var.InspectInList(ref entered, current), var as UnityEngine.Object))
                     {
-                        EnterExitContext.CurrentIndexer.CurrentlyEntered = entered;
+                        cnt.CurrentlyEntered = entered;
                         new ChangesToken(IsEnteredCurrent).IgnoreChanges(LatestInteractionEvent.Enter);
                     }
 
                     return changed;
                 }
                
-                var label = new TextLabel(exitLabel.IsNullOrEmpty() ? var.GetNameForInspector() : exitLabel, style: Styles.ExitLabel);
+                var label = new TextLabel(exitLabel.IsNullOrEmpty() ? var.GetNameForInspector() : exitLabel, style: Styles.Text.ExitLabel);
                 ExitClick(label, showLabelIfTrue: true);
                 Try_Nested_Inspect(var);
 
@@ -307,7 +313,7 @@ namespace QuizCanners.Inspect
                 using (Styles.Background.ExitLabel.SetDisposible())
                 {
                     text.FallbackHint = ()=> Icon.Exit.GetDescription();
-                    text.style = Styles.ExitLabel;
+                    text.style = Styles.Text.ExitLabel;
                     (Icon.Exit.ClickUnFocus("{0} L {1}".F(Icon.Exit.GetText(), text)) |
                         (showLabelIfTrue ? text.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit) : ChangesToken.False)
                         ).OnChanged(() => IsEnteredCurrent = StateToken.False).IgnoreChanges();

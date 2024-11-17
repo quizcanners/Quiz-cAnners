@@ -67,11 +67,38 @@ namespace QuizCanners.Utils
             private int _frameIndex;
             private readonly SystemTime _editorGateTime = new(initialValue: InitialValue.StartArmed);
             private int _editorFrames;
+            private readonly InitialValue _initialValue;
+
+            public bool DoneThisFrame
+            {
+                get
+                {
+                    if (!ValueIsDefined)
+                        return false;
+
+                    return _frameIndex == CurrentFrame;
+                }
+                set
+                {
+                    ValueIsDefined = true;
+
+                    if (value)
+                        _frameIndex = CurrentFrame;
+                    else
+                        _frameIndex = CurrentFrame - 1;
+                }
+            }
+
 
             public bool TryEnterIfFramesPassed(int framesCount) 
             {
                 if (!IsFramesPassed(framesCount))
+                {
+                    if (!ValueIsDefined)
+                        DoneThisFrame = true;
+
                     return false;
+                }
 
                 DoneThisFrame = true;
                 return true;
@@ -86,7 +113,13 @@ namespace QuizCanners.Utils
                 return true;
             }
 
-            public bool IsFramesPassed(int frameCount) => (CurrentFrame - _frameIndex) >= frameCount;
+            public bool IsFramesPassed(int frameCount) 
+            { 
+                if (!ValueIsDefined && _initialValue == InitialValue.StartArmed)
+                    return true;
+
+                return (CurrentFrame - _frameIndex) >= frameCount;
+            }
 
             public bool TryEnter(out bool wasInitialized)
             {
@@ -112,24 +145,10 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public bool DoneThisFrame
+       
+            public Frame(InitialValue initialValue) 
             {
-                get
-                {
-                    if (!ValueIsDefined)
-                        return false;
-
-                    return _frameIndex == CurrentFrame;
-                }
-                set
-                {
-                    ValueIsDefined = true;
-
-                    if (value)
-                        _frameIndex = CurrentFrame;
-                    else
-                        _frameIndex = CurrentFrame - 1;
-                }
+                _initialValue = initialValue;
             }
         }
 
@@ -637,7 +656,7 @@ namespace QuizCanners.Utils
 
             private bool _isSet;
 
-            private static readonly PerformanceTurnTable.Token _performanceToken = new(delay: 0.1f);
+            private static readonly PerformanceTurnTable.Token _performanceToken = new(delay: 0.1f, initialValue: InitialValue.Uninitialized);
 
             public bool IsDirty => !_isSet || Screen.width != _width || Screen.height != _height;
 
@@ -654,7 +673,6 @@ namespace QuizCanners.Utils
                     return false;
 
                 Change();
-
                 return true;
             }
 
@@ -672,7 +690,6 @@ namespace QuizCanners.Utils
 
                 return true;
             }
-
         }
 
         public class DirtyVersion 
@@ -691,7 +708,6 @@ namespace QuizCanners.Utils
                 return false;
             }
 
-
             public bool TryClear(int versionDifference)
             {
                 if ((Version - _clearedVersion) >= versionDifference)
@@ -702,7 +718,6 @@ namespace QuizCanners.Utils
 
                 return false;
             }
-
 
             public bool IsDirty
             {
@@ -715,7 +730,6 @@ namespace QuizCanners.Utils
                         _clearedVersion = Version;
                 }
             }
-
         }
     }
 }

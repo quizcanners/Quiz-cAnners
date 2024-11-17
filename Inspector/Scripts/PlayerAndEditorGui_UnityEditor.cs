@@ -1,6 +1,5 @@
 ﻿#if UNITY_EDITOR
     using UnityEditor;
-    using System.Collections.Generic;
     using System.Linq.Expressions;
     using Type = System.Type;
     using ReorderableList = UnityEditorInternal.ReorderableList;
@@ -8,6 +7,7 @@
 #endif
 
 using System;
+using System.Collections.Generic;
 using Object = UnityEngine.Object;
 using QuizCanners.Utils;
 using UnityEngine;
@@ -19,7 +19,7 @@ namespace QuizCanners.Inspect
 
     internal static partial class PegiEditorOnly {
 
-        internal static Styles.Background.BackgroundStyle nextBgStyle;
+        internal static List<Styles.Background.BackgroundStyle> nextBgStyle = new();
         internal static Object inspectedUnityObject;
         internal static object inspectedTarget;
         internal static bool InspectorStarted;
@@ -33,7 +33,7 @@ namespace QuizCanners.Inspect
 
             _elementIndex = 0;
             _horizontalStarted = false;
-            globChanged = false;
+            GlobChanged = false;
 
             inspectedTarget = obj;
             inspectedUnityObject = obj as Object;
@@ -47,7 +47,7 @@ namespace QuizCanners.Inspect
 
             InspectorStarted = false;
 
-            if (globChanged)
+            if (GlobChanged)
             {
 #if UNITY_EDITOR
 
@@ -63,6 +63,7 @@ namespace QuizCanners.Inspect
             }
             inspectedTarget = null;
             inspectedUnityObject = null;
+            nextBgStyle.Clear();
             Nl();
         }
 
@@ -133,7 +134,7 @@ namespace QuizCanners.Inspect
                     if (change)
                         ClearFromPooledSerializedObjects(o);
 
-                    if (globChanged && o)
+                    if (GlobChanged && o)
                         PrefabUtility.RecordPrefabInstancePropertyModifications(o);
                 }
                 
@@ -147,11 +148,11 @@ namespace QuizCanners.Inspect
                 editor.DrawDefaultInspector();
                 if (EditorGUI.EndChangeCheck())
                 {
-                    globChanged = true;
+                    GlobChanged = true;
                 }
             }
 
-            if (globChanged)
+            if (GlobChanged)
             {
                 if (!Application.isPlaying)
                     UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(go ? go.scene : SceneManager.GetActiveScene());
@@ -226,7 +227,7 @@ namespace QuizCanners.Inspect
                 changed = !FullWindow.ShowingPopup() && editor.Inspect(mat);
             }
 
-            return new ChangesToken(globChanged || changed);
+            return new ChangesToken(GlobChanged || changed);
         }
         
         public static bool ToggleDefaultInspector(Object target)
@@ -243,7 +244,7 @@ namespace QuizCanners.Inspect
                     "Toggle Between regular and PEGI Material inspector", PEGI_Inspector_Material.drawDefaultInspector ? ICON_SIZE_FOR_DEFAULT : ICON_SIZE_FOR_CUSTOM);
 
                 if (PEGI_Inspector_Material.drawDefaultInspector &&
-                    BACK_TO_CUSTOM.PegiLabel(style: Styles.ExitLabel).ClickLabel().Nl())
+                    BACK_TO_CUSTOM.PegiLabel(style: Styles.Text.ExitLabel).ClickLabel().Nl())
                     PEGI_Inspector_Material.drawDefaultInspector = false;
             }
             else
@@ -257,7 +258,7 @@ namespace QuizCanners.Inspect
                         "Toggle Between regular and PEGI inspector", isDefault ? ICON_SIZE_FOR_DEFAULT : ICON_SIZE_FOR_CUSTOM))
                         DrawDefaultInspector = isDefault ? target : null;
 
-                    if (isDefault && BACK_TO_CUSTOM.PegiLabel(style: Styles.ExitLabel).ClickLabel().Nl())
+                    if (isDefault && BACK_TO_CUSTOM.PegiLabel(style: Styles.Text.ExitLabel).ClickLabel().Nl())
                         DrawDefaultInspector = null;
                 }
                 else
@@ -279,11 +280,11 @@ namespace QuizCanners.Inspect
 
         private static ChangesToken FeedChanges_Internal(this bool result) 
         { 
-            globChanged |= result;
+            GlobChanged |= result;
             return new ChangesToken(result); 
         }
 
-        private static ChangesToken FeedChanged() { globChanged = true; return ChangesToken.True; }
+        private static ChangesToken FeedChanged() { GlobChanged = true; return ChangesToken.True; }
 
         private static void START() 
         {
@@ -294,7 +295,7 @@ namespace QuizCanners.Inspect
         private static ChangesToken END()
         {
             var val = EditorGUI.EndChangeCheck();
-            globChanged |= val;
+            GlobChanged |= val;
             return new ChangesToken(val);
         }
 
@@ -303,8 +304,8 @@ namespace QuizCanners.Inspect
             if (_horizontalStarted) 
                 return;
 
-            if (nextBgStyle != null)
-                EditorGUILayout.BeginHorizontal(nextBgStyle.Get());
+            if (nextBgStyle.TryGetLast(out var style))
+                EditorGUILayout.BeginHorizontal(style.Get());
             else
                 EditorGUILayout.BeginHorizontal();
             
@@ -328,9 +329,6 @@ namespace QuizCanners.Inspect
         private static readonly GUIContent _textAndToolTip = new();
 
         //TextLabel
-
-        
-       
 
         #region Foldout
         private static StateToken StylizedFoldOut(bool foldedOut, TextLabel label, string hint = "FoldIn/FoldOut")
@@ -907,6 +905,39 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
+        public static ChangesToken Edit(ref long val, long min, long max)
+        {
+            START();
+
+           
+
+            if (Math.Abs(val) < float.MaxValue && Math.Abs(min) < float.MaxValue && Math.Abs(max) < float.MaxValue)
+            {
+                float tmpVal = EditorGUILayout.Slider((float)val, (float)min, (float)max);
+
+                if (END())
+                {
+                    val = (long)tmpVal;
+                    return ChangesToken.True;
+                }
+            }
+            else
+            {
+                long gap = max - min;
+                var in01Range = (val - min) / gap; // Remap to 01 range
+                float tmpVal = EditorGUILayout.Slider(in01Range, 0f, 1f);
+
+                if (END())
+                {
+                    val = (long)(tmpVal * gap) + min;
+                    return ChangesToken.True;
+                }
+            }
+
+            return ChangesToken.False;
+        }
+
+
         public static ChangesToken Edit(ref Color col)
         {
 
@@ -1317,27 +1348,27 @@ namespace QuizCanners.Inspect
             CheckLine_Editor();
 
             if (label.GotWidth)
-                return GUILayout.Button(label.ToGUIContext(), GUILayout.MaxWidth(label.width)).FeedChanges_Internal();
+                return GUILayout.Button(label.ToGUIContext(), GUILayout.MaxWidth(label.width), GUILayout.MaxHeight(DEFAULT_BUTTON_SIZE)).FeedChanges_Internal();
             else
-                return GUILayout.Button(label.ToGUIContext()).FeedChanges_Internal();
+                return GUILayout.Button(label.ToGUIContext(), GUILayout.MaxHeight(DEFAULT_BUTTON_SIZE)).FeedChanges_Internal();
         }
 
         public static ChangesToken Click(GUIContent content)
         {
             CheckLine_Editor();
-            return GUILayout.Button(content).FeedChanges_Internal();
+            return GUILayout.Button(content, GUILayout.MaxHeight(DEFAULT_BUTTON_SIZE)).FeedChanges_Internal();
         }
 
         public static ChangesToken Click(GUIContent content, GUIStyle style)
         {
             CheckLine_Editor();
-            return GUILayout.Button(content, style).FeedChanges_Internal();
+            return GUILayout.Button(content, style, GUILayout.MaxHeight(DEFAULT_BUTTON_SIZE)).FeedChanges_Internal();
         }
 
         public static ChangesToken Click(GUIContent content, int width, GUIStyle style)
         {
             CheckLine_Editor();
-            return GUILayout.Button(content, style, GUILayout.MaxWidth(width)).FeedChanges_Internal();
+            return GUILayout.Button(content, style, GUILayout.MaxWidth(width+5), GUILayout.MaxHeight(DEFAULT_BUTTON_SIZE)).FeedChanges_Internal();
         }
 
         public static ChangesToken Click(Texture image, int width, GUIStyle style = null)
@@ -1345,18 +1376,23 @@ namespace QuizCanners.Inspect
             style ??= Styles.ImageButton.Current;
 
             CheckLine_Editor();
-            return GUILayout.Button(image, style, GUILayout.MaxHeight(width), GUILayout.MaxWidth(width)).FeedChanges_Internal();
+            return GUILayout.Button(image, style, GUILayout.MaxWidth(width + 5), GUILayout.MaxHeight(DEFAULT_BUTTON_SIZE)).FeedChanges_Internal();
         }
 
-        public static ChangesToken ClickImage(GUIContent cnt, int width, GUIStyle style = null) => ClickImage(cnt, width, width, style);
+        public static ChangesToken ClickImage(GUIContent cnt, int size, GUIStyle style = null)
+        {
+            int height = size;
+            int width = Mathf.CeilToInt(((cnt.image.width)/ ((float)cnt.image.height)) * size);
 
+            return ClickImage(cnt, width + 5, height, style);
+        }
         public static ChangesToken ClickImage(GUIContent cnt, int width, int height, GUIStyle style = null)
         {
             style ??= Styles.ImageButton.Current;
 
             CheckLine_Editor();
 
-            return GUILayout.Button(cnt, style, GUILayout.MaxWidth(width + 10), GUILayout.MaxHeight(height)).FeedChanges_Internal();
+            return GUILayout.Button(cnt, style, GUILayout.MaxWidth(width), GUILayout.MaxHeight(height)).FeedChanges_Internal();
         }
 
         #endregion
@@ -1404,7 +1440,7 @@ namespace QuizCanners.Inspect
         public static void Write(GUIContent cnt)
         {
             CheckLine_Editor();
-            EditorGUILayout.LabelField(cnt, Styles.ClippingText.Current);
+            EditorGUILayout.LabelField(cnt, Styles.Text.Clipping.Current);
         }
 
         public static void Draw(Texture tex, string tip, int width, int height)
@@ -1429,14 +1465,14 @@ namespace QuizCanners.Inspect
         public static void Write(GUIContent cnt, int width)
         {
             CheckLine_Editor();
-            EditorGUILayout.LabelField(cnt, Styles.ClippingText.Current, GUILayout.MaxWidth(width));
+            EditorGUILayout.LabelField(cnt, Styles.Text.Clipping.Current, GUILayout.MaxWidth(width));
         }
 
         public static void Write_ForCopy(TextLabel text)
         {
             CheckLine_Editor();
 
-            var style = text.GotStyle ? text.style.Current : Styles.ClippingText.Current;
+            var style = text.GotStyle ? text.style.Current : Styles.Text.Clipping.Current;
 
             if (text.GotWidth)
             {

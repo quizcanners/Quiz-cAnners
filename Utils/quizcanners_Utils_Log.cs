@@ -108,8 +108,8 @@ namespace QuizCanners.Utils
 
             #region Inspector
 
-            private readonly List<LogData> logs = new List<LogData>();
-            private readonly pegi.CollectionInspectorMeta _logMeta = new pegi.CollectionInspectorMeta(labelName: "Logs", showAddButton: false, showEditListButton: false, showCopyPasteOptions: true); // _inspectedLog = -1;
+            private readonly List<LogData> logs = new();
+            private readonly pegi.CollectionInspectorMeta _logMeta = new(labelName: "Logs", showAddButton: false, showEditListButton: false, showCopyPasteOptions: true); // _inspectedLog = -1;
             void IPEGI.Inspect()
             {
                 var sub = SavingLogs;

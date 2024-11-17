@@ -1,5 +1,4 @@
 ﻿using QuizCanners.Utils;
-using System;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -12,7 +11,7 @@ namespace QuizCanners.Inspect
 {
     public static partial class pegi
     {
-        public const int defaultButtonSize = 26;
+        public const int DEFAULT_BUTTON_SIZE = 28;
 
         public static class EditorView
         {
@@ -116,7 +115,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken ClickConfirm(this TextLabel label, Action action)
+        public static ChangesToken ClickConfirm(this TextLabel label, System.Action action)
         {
             string confirmationTag = "{0}()".F(action.Method.Name);
 
@@ -137,7 +136,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken ClickConfirm(Action action)
+        public static ChangesToken ClickConfirm(System.Action action)
         {
             string confirmationTag = "{0}()".F(action.Method.Name);
 
@@ -171,7 +170,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken ClickConfirm(this TextLabel label) => label.ClickConfirm(confirmationTag: label.label);
 
-        public static ChangesToken ClickConfirm(this Icon icon, string confirmationTag, string toolTip = "", int width = defaultButtonSize)
+        public static ChangesToken ClickConfirm(this Icon icon, string confirmationTag, string toolTip = "", int width = DEFAULT_BUTTON_SIZE)
         {
             if (ConfirmationDialogue.IsRequestedFor(confirmationTag))
                 return ConfirmClick();
@@ -182,13 +181,27 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken ClickConfirm(this Icon icon, string confirmationTag, object obj, string toolTip = "", int width = defaultButtonSize)
+        public static ChangesToken ClickConfirm(this Icon icon, string confirmationTag, object obj, string toolTip = "", int width = DEFAULT_BUTTON_SIZE)
         {
             if (ConfirmationDialogue.IsRequestedFor(confirmationTag, obj))
                 return ConfirmClick();
 
             if (icon.ClickUnFocus(toolTip, width))
                 ConfirmationDialogue.Request(confirmationTag, obj, toolTip.IsNullOrEmpty() ? icon.GetTranslations().text : toolTip);
+
+            return ChangesToken.False;
+        }
+
+        public static ChangesToken ClickConfirm(Sprite sprite, string confirmationTag, object obj, string toolTip = "", int width = DEFAULT_BUTTON_SIZE)
+            => ClickConfirm(sprite.GetTexture_orEmpty(), confirmationTag: confirmationTag, obj: obj, toolTip: toolTip, width: width);
+
+        public static ChangesToken ClickConfirm(Texture tex, string confirmationTag, object obj, string toolTip = "", int width = DEFAULT_BUTTON_SIZE)
+        {
+            if (ConfirmationDialogue.IsRequestedFor(confirmationTag, obj))
+                return ConfirmClick();
+
+            if (Click(tex, toolTip, width).UnfocusOnChange())
+                ConfirmationDialogue.Request(confirmationTag, obj, toolTip.IsNullOrEmpty() ? tex.name : toolTip);
 
             return ChangesToken.False;
         }
@@ -251,7 +264,7 @@ namespace QuizCanners.Inspect
         public static ChangesToken ClickEnter(this TextLabel label, ref int edited, int ind) 
         {
             if (!label.GotStyle)
-                label.style = Styles.EnterLabel;
+                label.style = Styles.Text.EnterLabel;
 
             if (Icon.Enter.Click() | label.ClickLabel())
             {
@@ -303,6 +316,18 @@ namespace QuizCanners.Inspect
             return GUILayout.Button(content, GUILayout.MaxWidth(width + 5), GUILayout.MaxHeight(width)).FeedChanges_Internal(LatestInteractionEvent.Click);
         }
 
+        private static ChangesToken ClickImage(this GUIContent content, int width, int height, GUIStyle style)
+        {
+
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.ClickImage(content, width, style);
+#endif
+            CheckLine();
+
+            return GUILayout.Button(content, GUILayout.MaxWidth(width), GUILayout.MaxHeight(height)).FeedChanges_Internal(LatestInteractionEvent.Click);
+        }
+
         public static ChangesToken Click(System.Action action)
         {
             string name = "{0}()".F(QcSharp.AddSpacesInsteadOfCapitals(action.Method.Name));
@@ -329,10 +354,10 @@ namespace QuizCanners.Inspect
 
         private static Texture GetTexture_orEmpty(this Sprite sp) => sp ? sp.texture : Icon.Empty.GetIcon();
 
-        public static ChangesToken Click(Sprite img, string toolTip = null, int size = defaultButtonSize)
+        public static ChangesToken Click(Sprite img, string toolTip = null, int size = DEFAULT_BUTTON_SIZE)
             => Click(img.GetTexture_orEmpty(), toolTip, size);
 
-        public static ChangesToken Click(Texture img, int size = defaultButtonSize)
+        public static ChangesToken Click(Texture img, int size = DEFAULT_BUTTON_SIZE)
         {
 
             if (!img) img = Icon.Empty.GetIcon();
@@ -347,7 +372,7 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken Click(Texture img, string toolTip, int size = defaultButtonSize)
+        public static ChangesToken Click(Texture img, string toolTip, int size = DEFAULT_BUTTON_SIZE)
         {
 
             if (!img)
@@ -387,7 +412,22 @@ namespace QuizCanners.Inspect
         }
 
         public static ChangesToken Click(this Icon icon, System.Action onClick, string toolTip) => icon.Click(toolTip: toolTip).OnChanged(onClick);
-        
+
+        public static ChangesToken Click_Selected(this Icon icon)
+        {
+            using (SetBgColorDisposable(SELECTED_COLOR))
+            {
+                return icon.Click();
+            }
+        }
+
+        public static ChangesToken Click_Selected(this Icon icon, System.Action onClick)
+        {
+            using (SetBgColorDisposable(SELECTED_COLOR))
+            {
+                return icon.Click().OnChanged(onClick);
+            }
+        }
         public static ChangesToken Click(this Icon icon, System.Action onClick)
         {
             var hint = onClick.Method.Name;
@@ -413,7 +453,7 @@ namespace QuizCanners.Inspect
             return Click(tex, icon.GetText().label).UnfocusOnChange();
         }
 
-        public static ChangesToken ClickUnFocus(this Icon icon, string toolTip, int size = defaultButtonSize)
+        public static ChangesToken ClickUnFocus(this Icon icon, string toolTip, int size = DEFAULT_BUTTON_SIZE)
         {
             if (toolTip.IsNullOrEmpty())
                 toolTip = icon.GetText().label;
@@ -436,7 +476,7 @@ namespace QuizCanners.Inspect
             return Click(tex, size);
         }
 
-        public static ChangesToken Click(this Icon icon, string toolTip, int size = defaultButtonSize)
+        public static ChangesToken Click(this Icon icon, string toolTip, int size = DEFAULT_BUTTON_SIZE)
         {
             if (!icon.TryGetTexture(out var tex))
                 return icon.GetText(toolTip).Click();
@@ -455,7 +495,7 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static ChangesToken ClickHighlight(Sprite sp, int width = defaultButtonSize)
+        public static ChangesToken ClickHighlight(Sprite sp, int width = DEFAULT_BUTTON_SIZE)
         {
 #if UNITY_EDITOR
             if (sp && Click(sp, Msg.HighlightElement.GetText(), width).IgnoreChanges(LatestInteractionEvent.Click))
@@ -467,7 +507,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken ClickHighlight(Texture tex, int width = defaultButtonSize)
+        public static ChangesToken ClickHighlight(Texture tex, int width = DEFAULT_BUTTON_SIZE)
         {
 #if UNITY_EDITOR
             if (tex && Click(tex, Msg.HighlightElement.GetText(), width).IgnoreChanges())
@@ -480,10 +520,10 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken ClickHighlight(Object obj, int width = defaultButtonSize) =>
+        public static ChangesToken ClickHighlight(Object obj, int width = DEFAULT_BUTTON_SIZE) =>
            ClickHighlight(obj, Icon.Ping.GetIcon(), width).IgnoreChanges();
 
-        public static ChangesToken ClickHighlight(Object obj, Texture tex, int width = defaultButtonSize)
+        public static ChangesToken ClickHighlight(Object obj, Texture tex, int width = DEFAULT_BUTTON_SIZE)
         {
 #if UNITY_EDITOR
             if (obj && pegi.Click(tex, Msg.HighlightElement.GetText()).IgnoreChanges())
@@ -496,7 +536,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken ClickHighlight(Object obj, string hint, int width = defaultButtonSize)
+        public static ChangesToken ClickHighlight(Object obj, string hint, int width = DEFAULT_BUTTON_SIZE)
         {
 #if UNITY_EDITOR
             if (obj && Icon.Ping.Click(hint).IgnoreChanges(LatestInteractionEvent.Click))
@@ -528,7 +568,7 @@ namespace QuizCanners.Inspect
                 if (Icon.Warning.Click("Copy to Clipboard"))
                     SetCopyPasteBuffer(warningMsg);
 
-                warningMsg.PegiLabel(Styles.WarningText).Write();
+                warningMsg.PegiLabel(Styles.Text.Warning).Write();
                 return StateToken.True;
             }
 

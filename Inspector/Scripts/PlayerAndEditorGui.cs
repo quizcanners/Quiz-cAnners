@@ -4,13 +4,6 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using QuizCanners.Utils;
 using UnityEngine;
 
-
-// ReSharper disable InconsistentNaming
-#pragma warning disable IDE1006 // Naming Styles
-#pragma warning disable IDE0019 // Use pattern matching
-#pragma warning disable IDE0011 // Add braces
-#pragma warning disable IDE0008 // Use explicit type
-
 namespace QuizCanners.Inspect
 {
 
@@ -49,7 +42,7 @@ namespace QuizCanners.Inspect
 
         private static bool _globChanged = false;
 
-        internal static bool globChanged 
+        internal static bool GlobChanged 
         {
             get => _globChanged;
             set 
@@ -87,7 +80,7 @@ namespace QuizCanners.Inspect
         {
             var changed = UnityEditor.EditorGUI.EndChangeCheck();
             if (changed)
-                globChanged = true;
+                GlobChanged = true;
 
             return new ChangesToken(changed);
         }
@@ -108,7 +101,7 @@ namespace QuizCanners.Inspect
 
         private static PegiPaintingMode currentMode = PegiPaintingMode.EditorInspector;
 
-        private static int letterSizeInPixels => PaintingGameViewUI ? 10 : 9;
+        private static int LetterSizeInPixels => PaintingGameViewUI ? 10 : 9;
 
 
         private static int RemainingLength(int otherElements) => PaintingGameViewUI ? PLAYTIME_GUI_WIDTH - otherElements : Screen.width - otherElements;
@@ -188,9 +181,8 @@ namespace QuizCanners.Inspect
         {
             msg = null;
 
-            var need = el as INeedAttention;
 
-            if (need == null) 
+            if (el is not INeedAttention need)
                 return false;
 
             msg = need.NeedAttention();
@@ -342,14 +334,14 @@ namespace QuizCanners.Inspect
         public class ChangesTracker
         {
             private bool _wasAlreadyChanged;
-            public bool Changed => !_wasAlreadyChanged && globChanged;
+            public bool Changed => !_wasAlreadyChanged && GlobChanged;
             
             public void Feed(bool isChanged) 
             {
                 if (isChanged)
                 {
                     _wasAlreadyChanged = false;
-                    globChanged = true;
+                    GlobChanged = true;
                 }
             }
 
@@ -359,7 +351,7 @@ namespace QuizCanners.Inspect
 
             internal ChangesTracker()
             {
-                _wasAlreadyChanged = globChanged;
+                _wasAlreadyChanged = GlobChanged;
             }
         }
 
@@ -551,13 +543,13 @@ namespace QuizCanners.Inspect
 
         public static void Nl(this TextToken value) => Nl();
         
-        public static void Nl(this Icon icon, int size = defaultButtonSize)
+        public static void Nl(this Icon icon, int size = DEFAULT_BUTTON_SIZE)
         {
             icon.Draw(size);
             Nl();
         }
 
-        public static void Nl(this Icon icon, string hint, int size = defaultButtonSize)
+        public static void Nl(this Icon icon, string hint, int size = DEFAULT_BUTTON_SIZE)
         {
             icon.Draw(hint, size);
             Nl();

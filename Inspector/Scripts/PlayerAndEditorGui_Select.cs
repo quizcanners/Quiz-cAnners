@@ -298,7 +298,7 @@ namespace QuizCanners.Inspect
             }
 
             if (shownCount < from.Length)
-                "...{0} more items".F(from.Length- shownCount).PegiLabel(Styles.HeaderText).Nl();
+                "...{0} more items".F(from.Length- shownCount).PegiLabel(Styles.Text.Header).Nl();
 
             GUILayout.Space(10);
             return ChangesToken.False;
@@ -650,7 +650,7 @@ namespace QuizCanners.Inspect
         #endregion
 
         #region Select Index
-        public static ChangesToken Select_Index<T>(this TextLabel text, ref int ind, List<T> lst, bool showIndex = false)
+        public static ChangesToken Select<T>(this TextLabel text, ref int ind, List<T> lst, bool showIndex = false)
         {
             Write(text);
             return Select_Index(ref ind, lst, showIndex);
@@ -955,13 +955,27 @@ namespace QuizCanners.Inspect
 
         private static class SelectCaching 
         {
-            public static ICollection collectionFiltered;
+            public static IDictionary collectionFiltered;
             public static ICollection keys;
+            public static object cachedKeyValue;
             public static string[] names;
             public static int elementIndex;
 
             public static Gate.UnityTimeUnScaled SearchGate = new(Gate.InitialValue.StartArmed);
 
+            public static bool SameKey<T>(T key) 
+            {
+                if (SearchGate.TryUpdateIfTimePassed(10))
+                    return false;
+
+                if (key == null && elementIndex == -1)
+                    return true;
+
+                if (elementIndex >= keys.Count)
+                    return false;
+
+                return key.Equals(cachedKeyValue);
+            }
             public static void Clear() 
             {
                 collectionFiltered = null;
@@ -1015,7 +1029,7 @@ namespace QuizCanners.Inspect
 
             void GetArrayAndInd(out string[] arr, ref int elementIndex)
             {
-                if (SelectCaching.collectionFiltered == from && !SelectCaching.SearchGate.TryUpdateIfTimePassed(10))
+                if (SelectCaching.collectionFiltered == from && SelectCaching.SameKey(tmpCurValue))
                 {
                     arr = SelectCaching.names;
                     keysList = (List<TKey>)SelectCaching.keys;
@@ -1056,6 +1070,7 @@ namespace QuizCanners.Inspect
                 SelectCaching.keys = keysList;
                 SelectCaching.names = arr;
                 SelectCaching.elementIndex = elementIndex;
+                SelectCaching.cachedKeyValue = tmpCurValue;
 
                 return;
 
@@ -1117,7 +1132,7 @@ namespace QuizCanners.Inspect
 
             void GetArrayAndInd(out string[] arr, ref int elementIndex)
             {
-                if (SelectCaching.collectionFiltered == from && !SelectCaching.SearchGate.TryUpdateIfTimePassed(10)) 
+                if (SelectCaching.collectionFiltered == from && SelectCaching.SameKey(tmpCurKey) && !SelectCaching.SearchGate.TryUpdateIfTimePassed(10)) 
                 {
                     arr = SelectCaching.names;
                     keysList = (List<TKey>)SelectCaching.keys;
@@ -1134,7 +1149,7 @@ namespace QuizCanners.Inspect
                 {
                     for (var i = 0; i < from.Count; i++)
                     {
-                        var pair = from.GetElementAt(i);
+                        KeyValuePair<TKey, TValue> pair = from.GetElementAt(i);
 
                         if (exclude != null && exclude.Contains(pair.Key))
                             continue;
@@ -1254,7 +1269,7 @@ namespace QuizCanners.Inspect
             return changed;
         }
         public static ChangesToken Select_or_edit<T>(this TextLabel name, ref int val, List<T> list, bool showIndex = false) =>
-       list.IsNullOrEmpty() ? name.Edit(ref val) : name.Select_Index(ref val, list, showIndex);
+       list.IsNullOrEmpty() ? name.Edit(ref val) : name.Select(ref val, list, showIndex);
 
         public static ChangesToken Select_or_edit<T>(ref T obj, List<T> list, bool showIndex = false) where T : Object
             => Select_or_edit(new TextLabel(), ref obj, list, showIndex);

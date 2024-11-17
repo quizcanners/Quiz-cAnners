@@ -1,6 +1,7 @@
 using QuizCanners.Inspect;
 using System.Collections.Generic;
 using UnityEngine;
+using static QuizCanners.Utils.MaterialInstancer;
 
 namespace QuizCanners.Utils
 {
@@ -92,8 +93,8 @@ namespace QuizCanners.Utils
         public class DoubleBuffer : RenderTextureBufferBase, IPEGI, IPEGI_ListInspect
         {
             private readonly string _name;
-            private readonly int _width;
-            private readonly int _height;
+            public readonly int Width;
+            public readonly int Height;
             private PrecisionType _precision;
 
             private readonly bool _clearOnCreate;
@@ -140,9 +141,9 @@ namespace QuizCanners.Utils
                     {
                         RenderTexture tex = _precision switch
                         {
-                            PrecisionType.Float => new RenderTexture(width: _width, height: _height, depth: 0, RenderTextureFormat.ARGBFloat, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
-                            PrecisionType.Half => new RenderTexture(width: _width, height: _height, depth: 0, RenderTextureFormat.ARGBHalf, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
-                            _ => new RenderTexture(width: _width, height: _height, depth: 0, RenderTextureFormat.ARGB32, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
+                            PrecisionType.Float => new RenderTexture(width: Width, height: Height, depth: 0, RenderTextureFormat.ARGBFloat, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
+                            PrecisionType.Half => new RenderTexture(width: Width, height: Height, depth: 0, RenderTextureFormat.ARGBHalf, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
+                            _ => new RenderTexture(width: Width, height: Height, depth: 0, RenderTextureFormat.ARGB32, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
                         };
 
                         tex.name = "{0} {1}".F(_name, i);
@@ -212,6 +213,16 @@ namespace QuizCanners.Utils
                 {
                     ValueToUpdate.GlobalValue = Target;
                 }
+            }
+
+            public void Blit(Texture from, Material mat, bool andRelease)
+            {
+                Swap();
+                mat.Set(_PREVIOUS_TEXTURE, Previous);
+                Graphics.Blit(from, Target, mat);
+
+                if (andRelease)
+                    Previous.Release();
             }
 
             public void Blit(Shader shader, bool andRelease)
@@ -326,8 +337,8 @@ namespace QuizCanners.Utils
 
                 CheckPowerOfTwo(ref size);
 
-                _width = size;
-                _height = size;
+                Width = size;
+                Height = size;
                 _isColor = isColor;
             }
 
@@ -337,8 +348,8 @@ namespace QuizCanners.Utils
                 _precision = precision;
                 _name = name;
 
-                _width = width;
-                _height = height;
+                Width = width;
+                Height = height;
                 _isColor = isColor;
             }
         }
@@ -346,8 +357,8 @@ namespace QuizCanners.Utils
         public class Single : IPEGI
         {
             private readonly string _name;
-            private readonly int _width;
-            private readonly int _height;
+            public readonly int Width;
+            public readonly int Height;
             private readonly bool _floatBuffer;
             private readonly bool _singleChannel;
             private readonly bool _isColor;
@@ -364,6 +375,7 @@ namespace QuizCanners.Utils
                 Graphics.Blit(null, GetRenderTexture(), mat);
             }
 
+            public void Blit(Texture tex, Base material) => Graphics.Blit(tex, GetRenderTexture(), material.GetInstance());
             public void Blit(Texture tex, Material material) => Graphics.Blit(tex, GetRenderTexture(), material);
 
             public void Blit(Material material) => Graphics.Blit(null, GetRenderTexture(), material);
@@ -376,13 +388,13 @@ namespace QuizCanners.Utils
                 if (_renderTexture)
                     return _renderTexture;
 
-                _renderTexture = new RenderTexture(width: _width, height: _height, depth: (int)_depth,
+                _renderTexture = new RenderTexture(width: Width, height: Height, depth: (int)_depth,
                     _singleChannel ? (_floatBuffer ? RenderTextureFormat.RFloat : RenderTextureFormat.RHalf) :
                     (_floatBuffer ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGBHalf),
                     _isColor ? RenderTextureReadWrite.sRGB: RenderTextureReadWrite.Linear
                     )
                 {
-                    name = "{0} {1}".F(_name, _height == _width ? _width : "{0}x{1}".F(_width, _height))
+                    name = "{0} {1}".F(_name, Height == Width ? Width : "{0}x{1}".F(Width, Height))
                 };
 
                 return _renderTexture;
@@ -397,8 +409,8 @@ namespace QuizCanners.Utils
                 _isColor = isColor;
                 CheckPowerOfTwo(ref size);
 
-                _width = size;
-                _height = size;
+                Width = size;
+                Height = size;
             }
 
             public Single(string name, int width, int height, bool isFloat, bool isColor, bool singleChannel = false, DepthPrecision depth = DepthPrecision.None)
@@ -409,8 +421,8 @@ namespace QuizCanners.Utils
                 _singleChannel = singleChannel;
                 _isColor = isColor;
 
-                _width = width;
-                _height = height;
+                Width = width;
+                Height = height;
             }
 
             public void Clear() 

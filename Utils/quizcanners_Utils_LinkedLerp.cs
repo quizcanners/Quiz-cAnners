@@ -509,7 +509,13 @@ namespace QuizCanners.Lerp
 
             public virtual Texture TargetTexture
             {
-                get { return _targetTextures.TryGetLast(); }
+                get 
+                { 
+                    if (_targetTextures.TryGetLast(out var t))
+                        return t;
+
+                    return null;
+                }
 
                 set
                 {

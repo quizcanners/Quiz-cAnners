@@ -47,8 +47,18 @@ namespace QuizCanners.Inspect
         public static TextLabel PegiLabel(this string label, string toolTip, float widthFraction, Styles.PegiGuiStyle style = null) => new(label, toolTip, Mathf.FloorToInt(widthFraction * Screen.width), style);
         public static TextLabel PegiLabel(this string label, string toolTip = null, int width = -1, Styles.PegiGuiStyle style = null) => new(label, toolTip, width, style);
 
-        public static TextToken Write(this TextLabel label) => label.TryWrite();
-
+        public static TextToken Write(this TextLabel label)
+        {
+            return label.TryWrite();
+        }
+        public static TextToken Write_Selected(this TextLabel label)
+        {
+            using (SetBgColorDisposable(SELECTED_COLOR))
+            {
+                label.style = Styles.Text.Selected;
+                return label.TryWrite();
+            }
+        }
         internal static TextToken Write(TextLabel label, float defaultWidthFraction)
         {
             label.FallbackWidthFraction = defaultWidthFraction;
@@ -112,10 +122,12 @@ namespace QuizCanners.Inspect
                 return true;
             }
 
-            public readonly TextToken TryWrite() 
+            public TextToken TryWrite() 
             {
                 if (IsInitialized == false)
                     return TEXT_TOK;
+
+                style ??= Styles.Text.Normal;
 
                 if (GotWidth)
                 {
@@ -356,10 +368,17 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static TextToken Draw(Sprite sprite, int width = defaultButtonSize, bool alphaBlend = true) =>
+        public static TextToken Draw(Sprite sprite, int width = DEFAULT_BUTTON_SIZE, bool alphaBlend = true) =>
             Draw(sprite, Color.white, width: width, alphaBlend: alphaBlend);
-        
-        public static TextToken Draw(Sprite sprite, Color color, int width = defaultButtonSize, bool alphaBlend = true)
+
+        private static Color SELECTED_COLOR = new(0.27f, 0.37f, 0.48f, 1f);
+
+        public static TextToken Draw_Selected(Sprite sprite, int width = DEFAULT_BUTTON_SIZE, bool alphaBlend = true) =>
+            Draw_Selected(sprite.GetTexture_orEmpty(), width, alphaBlend: alphaBlend);
+
+   
+
+        public static TextToken Draw(Sprite sprite, Color color, int width = DEFAULT_BUTTON_SIZE, bool alphaBlend = true)
         {
             if (!sprite)
             {
@@ -403,6 +422,14 @@ namespace QuizCanners.Inspect
         }
 
 
+        public static TextToken Draw_Selected(Texture tex, int width = DEFAULT_BUTTON_SIZE, bool alphaBlend = true)
+        {
+            using (SetBgColorDisposable(SELECTED_COLOR))
+                Click(tex, width);
+            return TEXT_TOK;
+            //return Draw(sprite, Color.white, width: width, alphaBlend: alphaBlend);
+        }
+
         public static TextToken Draw(this TextLabel text, Texture image, bool alphaBlend = false) 
         {
             text.Write().Nl();
@@ -411,7 +438,7 @@ namespace QuizCanners.Inspect
             return ret;
         }
 
-        public static TextToken Draw(Texture img, int width = defaultButtonSize, bool alphaBlend = false)
+        public static TextToken Draw(Texture img, int width = DEFAULT_BUTTON_SIZE, bool alphaBlend = false)
         {
             if (!img)
                 return TEXT_TOK;
@@ -431,7 +458,7 @@ namespace QuizCanners.Inspect
             return TEXT_TOK;
         }
 
-        public static TextToken Draw(Texture img, string toolTip, int width = defaultButtonSize)
+        public static TextToken Draw(Texture img, string toolTip, int width = DEFAULT_BUTTON_SIZE)
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
@@ -469,9 +496,11 @@ namespace QuizCanners.Inspect
 
         #region Icon
 
-        public static TextToken Draw(this Icon icon, int size = defaultButtonSize) => Draw(icon.GetIcon(), size, alphaBlend: true);
+        public static TextToken Draw_Selected(this Icon icon, int size = DEFAULT_BUTTON_SIZE) => Draw_Selected(icon.GetIcon(), size, alphaBlend: true);
 
-        public static TextToken Draw(this Icon icon, string toolTip, int size = defaultButtonSize) => Draw(icon.GetIcon(), toolTip, size);
+        public static TextToken Draw(this Icon icon, int size = DEFAULT_BUTTON_SIZE) => Draw(icon.GetIcon(), size, alphaBlend: true);
+
+        public static TextToken Draw(this Icon icon, string toolTip, int size = DEFAULT_BUTTON_SIZE) => Draw(icon.GetIcon(), toolTip, size);
 
         public static TextToken Write(this Icon icon, string toolTip, int width, int height) => Draw(icon.GetIcon(), toolTip, width, height);
 
@@ -497,7 +526,7 @@ namespace QuizCanners.Inspect
 
         public static TextToken WriteBig(this TextLabel text)
         {
-            text.style = Styles.OverflowText;
+            text.style = Styles.Text.Overflow;
             text.Write();
             Nl();
             return TEXT_TOK;
@@ -656,7 +685,7 @@ namespace QuizCanners.Inspect
 #endif
 
             CheckLine();
-            GUILayout.Label(text.label, Styles.WarningText.Current, Utils.GuiMaxWidthOption);
+            GUILayout.Label(text.label, Styles.Text.Warning.Current, Utils.GuiMaxWidthOption);
             Nl();
             return TEXT_TOK;
 
@@ -676,7 +705,7 @@ namespace QuizCanners.Inspect
 #endif
 
             CheckLine();
-            GUILayout.Label(text.label, Styles.HintText.Current, Utils.GuiMaxWidthOption);
+            GUILayout.Label(text.label, Styles.Text.Hint.Current, Utils.GuiMaxWidthOption);
             if (startNewLineAfter)
                 Nl();
 
@@ -703,7 +732,7 @@ namespace QuizCanners.Inspect
 #endif
             {
                 CheckLine();
-                GUILayout.Label(text.label, Styles.HintText.Current, Utils.GuiMaxWidthOption);
+                GUILayout.Label(text.label, Styles.Text.Hint.Current, Utils.GuiMaxWidthOption);
             }
 
             if (Icon.Done.ClickUnFocus("Got it").Nl()) 
@@ -717,20 +746,23 @@ namespace QuizCanners.Inspect
         #region Progress Bar
 
 
-        public static TextToken DrawProgressBar(this TextLabel text, float value)
+        public static TextToken DrawProgressBar(this TextLabel text, float value, bool addPercentage = false)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                PegiEditorOnly.ProgressBar(text, value);
-            else
-#endif
             {
-                CheckLine();
-                text.label = "{0}: {1}%".F(text, Mathf.FloorToInt(value * 100));
-                text.Write();
-                //GUILayout.Label(cnt, GuiMaxWidthOption);
+                if (addPercentage)
+                    text.label = "{0}: {1}%".F(text, Mathf.FloorToInt(value * 100));
+
+                PegiEditorOnly.ProgressBar(text, value);
+                return TEXT_TOK;
             }
+#endif
+            
+            CheckLine();
+            text.label = "{0}: {1}%".F(text, Mathf.FloorToInt(value * 100));
+            text.Write();
 
             return TEXT_TOK;
         }

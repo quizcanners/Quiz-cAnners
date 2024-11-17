@@ -1,5 +1,4 @@
 using QuizCanners.Inspect;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -17,14 +16,12 @@ namespace QuizCanners.Utils
         {
             protected string name;
 
-  
             public abstract void Reset(Animator animator);
 
             public Base(string name)
             {
                 this.name = name;
             }
-
         }
 
         public class Trigger : Base
@@ -174,7 +171,5 @@ namespace QuizCanners.Utils
         public static float Get(this Animator animator, Float param) => param.GetFrom(animator);
         public static int Get(this Animator animator, Integer param) => param.GetFrom(animator);
         public static bool Get(this Animator animator, Bool param) => param.GetFrom(animator);
-
-
     }
 }

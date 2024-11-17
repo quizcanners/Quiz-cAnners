@@ -7,19 +7,6 @@ namespace QuizCanners.Utils
 {
     public static class Singleton
     {
-        public static TSingleton GetOrCreate<TSingleton>() where TSingleton : ClassBase, new()
-        {
-            var inst = Get<TSingleton>();
-
-            if (inst == null) 
-            {
-                inst = new TSingleton();
-                Debug.Log("Creating "+nameof(TSingleton));
-            }
-
-            return inst;
-        }
-
         public static TSingleton Get<TSingleton>() where TSingleton : IQcSingleton => SingletonGeneric<TSingleton>.Instance;
 
         public static List<TInterface> GetAll<TInterface>() => CollectionSingleton<TInterface>.Instances;
@@ -125,6 +112,9 @@ namespace QuizCanners.Utils
 
         private static bool IsValid<T>(T srv, bool logWarning) where T : IQcSingleton
         {
+          //  if (!Application.isEditor)
+               // return true;
+
             if (QcUnity.IsNullOrDestroyed_Obj(srv))
             {
                 if (logWarning)
@@ -193,19 +183,6 @@ namespace QuizCanners.Utils
 
         public static class Collector
         {
-            public static pegi.StateToken InspectionWarningIfMissing<TService>() where TService: BehaniourBase 
-            {
-                var val = Get<TService>();
-                if (QcUnity.IsNullOrDestroyed_Obj(val))
-                {
-                    "Service {0} is needed".F(typeof(TService).ToPegiStringType()).PegiLabel().WriteWarning();
-                    pegi.Nl();
-                    return pegi.StateToken.True;
-                }
-
-                return pegi.StateToken.False;
-            }
-
             internal static int Version;
 
             private static readonly Dictionary<Type, object> _services = new();
@@ -376,7 +353,7 @@ namespace QuizCanners.Utils
 
                         using (pegi.Styles.Background.ExitLabel.SetDisposible())
                         {
-                            if (Icon.Exit.Click() | s.GetNameForInspector().PegiLabel(style: pegi.Styles.ExitLabel).ClickLabel().Nl())
+                            if (Icon.Exit.Click() | s.GetNameForInspector().PegiLabel(style: pegi.Styles.Text.ExitLabel).ClickLabel().Nl())
                                 inspectedService = -1;
                         }
 
@@ -549,7 +526,7 @@ namespace QuizCanners.Utils
 
                             if (destroy && deprecated)
                             {
-                                Debug.Log("{0}: {1} ({2})".F(SingletonCollisionSolution.ToString().SimplifyTypeName(), deprecated.gameObject.name, GetType().ToPegiStringType()), gameObject);
+                                //Debug.Log("{0}: {1} ({2})".F(SingletonCollisionSolution.ToString().SimplifyTypeName(), deprecated.gameObject.name, GetType().ToPegiStringType()), gameObject);
                                 Destroy(deprecated.gameObject);
                             }
 
@@ -614,7 +591,7 @@ namespace QuizCanners.Utils
             public virtual void InspectInList(ref int edited, int ind)
             {
               
-                if (this.Click_Enter_Attention() | ToString().PegiLabel(pegi.Styles.EnterLabel).ClickLabel())
+                if (this.Click_Enter_Attention() | ToString().PegiLabel(pegi.Styles.Text.EnterLabel).ClickLabel())
                     edited = ind;
 
                 pegi.ClickHighlight(this);

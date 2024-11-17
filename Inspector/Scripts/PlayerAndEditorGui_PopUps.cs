@@ -24,7 +24,7 @@ namespace QuizCanners.Inspect
 
             private static object _popUpTarget;
             private static string _understoodPopUpText = "Got it";
-            private static readonly List<string> _gotItTexts = new List<string>
+            private static readonly List<string> _gotItTexts = new()
             {
                 "I understand",
                 "Clear as day",
@@ -62,7 +62,7 @@ namespace QuizCanners.Inspect
 
 
             };
-            private static readonly List<string> _gotItTextsWeird = new List<string>
+            private static readonly List<string> _gotItTextsWeird = new()
             {
                 "Nice, this is easier then opening a documentation",
                 "So convenient, thanks!",
@@ -80,14 +80,13 @@ namespace QuizCanners.Inspect
             {
                 _popUpTarget = PegiEditorOnly.inspectedTarget;
 
-                switch (_textsShown)
+                _understoodPopUpText = _textsShown switch
                 {
-                    case 0: _understoodPopUpText = "OK"; break;
-                    case 1: _understoodPopUpText = "Got it!"; break;
-                    case 666: _understoodPopUpText = "By clicking I confirm to selling my kidney"; break;
-                    default: _understoodPopUpText = (_textsShown < 20 ? _gotItTexts : _gotItTextsWeird).GetRandom(); break;
-                }
-
+                    0 => "OK",
+                    1 => "Got it!",
+                    666 => "By clicking I confirm to selling my kidney",
+                    _ => (_textsShown < 20 ? _gotItTexts : _gotItTextsWeird).GetRandom(),
+                };
                 _textsShown++;
             }
 
@@ -289,8 +288,8 @@ namespace QuizCanners.Inspect
             {
                 Nl();
                 "Didn't get the answer you need?".PegiLabel().Write();
-                Icon.Discord.Click(() => Application.OpenURL(DISCORD_SERVER));
-                Icon.Email.Click(() => QcUnity.SendEmail(
+                "Discord".PegiLabel().ClickLink(DISCORD_SERVER);
+                "Email".PegiLabel().Click(() => QcUnity.SendEmail(
                         email: SUPPORT_EMAIL, 
                         subject: "About this hint",
                         body: "The toolTip:{0}***{0} {1} {0}***{0} haven't answered some of the questions I had on my mind. Specifically: {0}".F(EnvironmentNl, popUpText)));

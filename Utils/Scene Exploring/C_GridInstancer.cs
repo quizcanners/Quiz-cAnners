@@ -76,7 +76,7 @@ namespace QuizCanners
 
             if (InstanceCount > 0)
             {
-                "Total Count: {0}".F(Count).PegiLabel(pegi.Styles.BaldText).Write();
+                "Total Count: {0}".F(Count).PegiLabel(pegi.Styles.Text.Bald).Write();
 
                 if (Icon.Delete.Click().IgnoreChanges()) 
                 {

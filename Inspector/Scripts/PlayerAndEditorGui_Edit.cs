@@ -16,14 +16,14 @@ namespace QuizCanners.Inspect
 
         public static ChangesTracker ChangeTrackStart() => new();
         
-        private static ChangesToken SetChangedTrue_Internal() { globChanged = true; return ChangesToken.True; }
+        private static ChangesToken SetChangedTrue_Internal() { GlobChanged = true; return ChangesToken.True; }
 
         private static ChangesToken FeedChanges_Internal(this bool changed, LatestInteractionEvent evnt)
         {
             if (changed)
             {
                 GameView.LatestEvent = evnt;
-                globChanged = true;
+                GlobChanged = true;
             }
 
             return new ChangesToken(changed);
@@ -33,7 +33,7 @@ namespace QuizCanners.Inspect
         {
             if (changed)
             {
-                globChanged = false;
+                GlobChanged = false;
                 GameView.LatestEvent = evnt;
             }
             return changed;
@@ -49,7 +49,7 @@ namespace QuizCanners.Inspect
         public static ChangesToken IgnoreChanges(this ChangesToken changed)
         {
             if (changed)
-                globChanged = false;
+                GlobChanged = false;
             return changed;
         }
 
@@ -65,10 +65,10 @@ namespace QuizCanners.Inspect
         {
             if (!wasChangedBefore) 
             {
-                globChanged |= GUI.changed;
+                GlobChanged |= GUI.changed;
             }
 
-            return new ChangesToken(globChanged && !wasChangedBefore);
+            return new ChangesToken(GlobChanged && !wasChangedBefore);
         }
         #endregion
 

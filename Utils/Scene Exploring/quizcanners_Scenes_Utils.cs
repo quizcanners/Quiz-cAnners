@@ -20,7 +20,7 @@ namespace QuizCanners.Utils
                     return false;
 #endif
 
-                if (!_afterLastLoad.IsFramesPassed(2))
+                if (!_afterLastLoad.IsFramesPassed(3))
                     return true;
 
                 if (s_currentlyLoadingScene != null || s_scenesInQueueForLoading.Count > 0)
@@ -32,7 +32,7 @@ namespace QuizCanners.Utils
                 return false;
             }
         }
-        private static readonly Gate.Frame _afterLastLoad = new();
+        private static readonly Gate.Frame _afterLastLoad = new(Gate.InitialValue.StartArmed);
 
         private static void LoadNextScene(AsyncOperation previous)
         {

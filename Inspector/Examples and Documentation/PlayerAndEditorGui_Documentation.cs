@@ -97,7 +97,7 @@ namespace QuizCanners.Inspect.Examples
 
                 static void WriteInterface<T>() 
                 {
-                    typeof(T).ToPegiStringType().PegiLabel(style: pegi.Styles.BaldText).Write_ForCopy(writeAsEditField: true).Nl();
+                    typeof(T).ToPegiStringType().PegiLabel(style: pegi.Styles.Text.Bald).Write_ForCopy(writeAsEditField: true).Nl();
                 }
 
             }
@@ -114,7 +114,7 @@ namespace QuizCanners.Inspect.Examples
             public override void Inspect_About()
             {
                 "{0} extension creates a structure that includes text with optional: width, tooltip & GuiStyle. As arguments you can add tooltip, width and GuiStyle. Most other pegi functions are extensions on top of this fucntions.".F(nameof(pegi.PegiLabel)).PegiLabel().Write_Hint().Nl();
-                "SomeText.PegiLabel(toolTip, width, stype);".PegiLabel(toolTip: "tip", width: 310, style: pegi.Styles.BaldText).Nl();
+                "SomeText.PegiLabel(toolTip, width, stype);".PegiLabel(toolTip: "tip", width: 310, style: pegi.Styles.Text.Bald).Nl();
 
                 DrawExample(() => "label".PegiLabel().Write(),
                                     "\"label\".PegiLabel().Write();");
@@ -122,10 +122,10 @@ namespace QuizCanners.Inspect.Examples
                 DrawExample(() => "label".PegiLabel(toolTip: "tooltip").Edit(ref Test_Text),
                                     "\"label\".PegiLabel(toolTip: tooltip).Edit(ref Test_Text);");
 
-                DrawExample(() => "label".PegiLabel(toolTip: "tooltip", width: 50, style: pegi.Styles.BaldText).Select(ref exampleKey, exampleDictionary),
-                                    "\"label\".PegiLabel(toolTip: tooltip, width: 50, style: pegi.Styles.BaldText).Select(ref exampleKey, exampleDictionary);");
+                DrawExample(() => "label".PegiLabel(toolTip: "tooltip", width: 50, style: pegi.Styles.Text.Bald).Select(ref exampleKey, exampleDictionary),
+                                    "\"label\".PegiLabel(toolTip: tooltip, width: 50, style: pegi.Styles.Text.Text_Bald).Select(ref exampleKey, exampleDictionary);");
 
-                "If label text will not change and there are more elements that need space next to it, consider using ConstLabel (added recently)".PegiLabel(pegi.Styles.BaldText).Nl();
+                "If label text will not change and there are more elements that need space next to it, consider using ConstLabel (added recently)".PegiLabel(pegi.Styles.Text.Bald).Nl();
 
                 DrawExample(() => "const label".ConstLabel(toolTip: "toolTip").Edit(ref _testInt),
                                     "\"const label\".ConstLabel(toolTip: \"toolTip\").Edit(ref _testInt);");
@@ -161,20 +161,20 @@ namespace QuizCanners.Inspect.Examples
 
                 pegi.Line();
 
-                "Label Example 2".PegiLabel(toolTip: "description text", width: 90, pegi.Styles.BaldText).Write().Nl();
+                "Label Example 2".PegiLabel(toolTip: "description text", width: 90, pegi.Styles.Text.Bald).Write().Nl();
 
                 new CodeStringBuilder()
-                   .AppendLine("label2.PegiLabel(toolTip: description, width: 90, pegi.Styles.BaldText).write().nl()")
+                   .AppendLine("label2.PegiLabel(toolTip: description, width: 90, pegi.Styles.Text.Text_Bald).write().nl()")
                    .DrawExample();
 
                 pegi.Line();
 
-                "Handling Long Text".PegiLabel(pegi.Styles.HeaderText).Nl();
+                "Handling Long Text".PegiLabel(pegi.Styles.Text.Header).Nl();
 
                 ("Line 1 write {0}" + "Line 2 write {0}" + "Line 3 write {0}").F(pegi.EnvironmentNl).PegiLabel().Write();
                 pegi.Nl();
 
-                nameof(pegi.WriteBig).PegiLabel(pegi.Styles.BaldText).Nl();
+                nameof(pegi.WriteBig).PegiLabel(pegi.Styles.Text.Bald).Nl();
                 ("Line 1 writeBig {0}" + "Line 2 writeBig {0}" + "Line 3 writeBig {0}").F(pegi.EnvironmentNl).PegiLabel().WriteBig();
                 
             }

@@ -529,14 +529,28 @@ namespace QuizCanners.Utils
             return true;
         }
 
-        public static T TryGetLast<T>(this IList<T> list)
+        public static bool TryGetLast<T>(this IList<T> list, out T el)
         {
-
             if (list == null || list.Count == 0)
-                return default;
+            {
+                el = default;
+                return false;
+            }
 
-            return list[list.Count - 1];
+            el = list[list.Count - 1];
+            return true;
+        }
 
+        public static bool TryGetValue<T>(this List<T> list, int index, out T result)
+        {
+            if (list == null || index < 0 || index >= list.Count)
+            {
+                result = default;
+                return false;
+            }
+
+            result = list[index];
+            return true;
         }
 
         public static T TryGet<T>(this List<T> list, int index, T defaultValue = default)

@@ -420,6 +420,13 @@ namespace QuizCanners.Utils
                     if (StringTry(location, out string data))
                     {
                         result = JsonUtility.FromJson<T>(data);
+
+                        if (result == null) 
+                        {
+                            Debug.LogError("Loaded {0} was null".F(typeof(T).ToString()));
+                            return false;
+                        }
+
                         return true;
                     }
 

@@ -9,7 +9,7 @@ namespace QuizCanners.Inspect
 
         public static class GameView
         {
-            private static readonly Gate.Frame _interactionFrame = new Gate.Frame();
+            private static readonly Gate.Frame _interactionFrame = new(Gate.InitialValue.StartArmed);
             private static LatestInteractionEvent _latestEvent;
 
 
@@ -193,7 +193,7 @@ namespace QuizCanners.Inspect
                                 }
 
                                 Nl();
-                                _tooltip.PegiLabel(toolTip: "This is the Tooltip text's tooltip",style: Styles.HintText).Nl();
+                                _tooltip.PegiLabel(toolTip: "This is the Tooltip text's tooltip",style: Styles.Text.Hint).Nl();
                                 UnIndent();
                             }
 

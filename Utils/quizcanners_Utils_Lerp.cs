@@ -487,7 +487,7 @@ namespace QuizCanners.Lerp
 
         }
 
-        public static Color LerpHeatmapColors(Color[] colors, float value01)
+        public static Color LerpHeatmapColors(this Color[] colors, float value01)
         {
             int count = colors.Length;
 
@@ -507,7 +507,7 @@ namespace QuizCanners.Lerp
                 private readonly float _speed = 1;
                 private float _totalFraction;
                 private float _deltaFraction;
-                private readonly Gate.Frame _frameGate = new();
+                private readonly Gate.Frame _frameGate = new(Gate.InitialValue.StartArmed);
 
                 public bool IsDone => _totalFraction >= 1f;
 

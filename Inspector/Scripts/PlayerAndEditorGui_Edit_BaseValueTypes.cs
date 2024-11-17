@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using QuizCanners.Utils;
 using UnityEngine;
 namespace QuizCanners.Inspect
@@ -407,6 +408,20 @@ namespace QuizCanners.Inspect
             return Edit(ref val);
             // Write(label);
             // return Edit(ref val);
+        }
+
+        public static ChangesToken Edit(ref long val, long min, long max)
+        {
+            #if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.Edit(ref val, min, max);
+            #endif
+
+            _START();
+            double tmp = val;
+            val = (long)GUILayout.HorizontalSlider(val, min, max, Utils.GuiMaxWidthOption);
+            return _END();
+
         }
 
         #endregion
@@ -1064,6 +1079,35 @@ namespace QuizCanners.Inspect
                 val = DateTime.Now;
 
             return ChangesToken.False;
+        }
+
+        #endregion
+
+        #region URL
+
+        public static ChangesToken Edit_FullAssetPath(ref string path)
+        {
+            #if !UNITY_EDITOR
+            return ChangesToken.False;
+            #else
+
+            var changes = ChangeTrackStart();
+
+            string projectPath = NormalizedPath(Application.dataPath);
+
+            UnityEngine.Object tmp = null;
+
+            if (!path.IsNullOrEmpty() && NormalizedPath(path).StartsWith(projectPath))
+                tmp = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets" + path[projectPath.Length..]);
+         
+            if (Edit(ref tmp) &&  QcUnity.TryGetFullPath(tmp, out var newpath))
+                path = newpath;
+
+            return changes;
+
+            static string NormalizedPath(string path) => Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).ToLowerInvariant();
+            
+            #endif
         }
 
         #endregion

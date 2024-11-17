@@ -295,7 +295,7 @@ namespace QuizCanners.Utils {
 
         #region Rendering
 
-        private static readonly Gate.Frame _cameraCullingCache = new();
+        private static readonly Gate.Frame _cameraCullingCache = new(Gate.InitialValue.StartArmed);
 
         private static readonly Dictionary<Camera, Dictionary<Vector3, bool>> s_camsCulling = new();
 

@@ -124,6 +124,49 @@ namespace QuizCanners.Inspect
 
         internal static void Nested_Inspect_Attention_MessageOnly(IPEGI ipg) => (ipg as INeedAttention).TryShow_AttentionMessage();
 
+        public static ChangesToken Nested_Inspect(this UnityEngine.Video.VideoPlayer player) 
+        {
+            if (!player) 
+            {
+                "Player not assigned".PegiLabel().WriteWarning().Nl();
+                return ChangesToken.False;
+            }
+
+            var changed = ChangeTrackStart();
+            var clip = player.clip;
+            "Video".ConstLabel().Edit(ref clip).OnChanged(() => player.clip = clip);
+
+            if (player.clip)
+            {
+                if (!player.isPlaying)
+                    Icon.Play.Click(() => player.Play());
+                else
+                    Icon.Stop.Click(() => player.Stop());// Draw_Selected();
+
+                if (!player.isPrepared)
+                {
+                    using (StartDisabledGroup(disabled: true))
+                    {
+                        Icon.Pause.Draw();
+                    }
+                } else if (!player.isPaused)
+                    Icon.Pause.Click(() => player.Pause());
+                else
+                    Icon.Pause.Click_Selected().OnChanged(() => player.Play());
+
+                if (player.isLooping)
+                    Icon.Refresh.Click("Loop").OnChanged(() => player.isLooping = false);
+                else
+                    Icon.Next.Click("No loop").OnChanged(() => player.isLooping = true);
+                Nl();
+
+                double time = player.time;
+                Edit(ref time, 0, player.clip.length).Nl(() => player.time = time);
+            }
+            Nl();
+            return changed;
+        }
+
         public static ChangesToken Nested_Inspect(Action function, Object target = null)
         {
             using (PegiEditorOnly.InspectorStarted ? null : PegiEditorOnly.StartInspector(target))
@@ -542,6 +585,7 @@ namespace QuizCanners.Inspect
             }
 #endif
 
+            TryReflectionInspect(uObj);
 
             return ChangesToken.False;
 
@@ -667,7 +711,7 @@ namespace QuizCanners.Inspect
             if (value == null)
             {
                 if (!IsEntered())
-                    "NULL {0} ({1})".F(name, type.ToPegiStringType()).PegiLabel(Styles.BaldText).Nl();
+                    "NULL {0} ({1})".F(name, type.ToPegiStringType()).PegiLabel(Styles.Text.Bald).Nl();
 
                 return;
             }
@@ -850,7 +894,7 @@ namespace QuizCanners.Inspect
                 }
                 else
                 {
-                    "{0}: {1}".F(name, value.GetNameForInspector()).PegiLabel(Styles.BaldText).Nl();
+                    "{0}: {1}".F(name, value.GetNameForInspector()).PegiLabel(Styles.Text.Bald).Nl();
 
                     using (Indent())
                     {
@@ -974,6 +1018,10 @@ namespace QuizCanners.Inspect
             if (mbeh)
                 return obj.ToString();
 
+            var so = obj as ScriptableObject;
+            if (so)
+                return so.ToString();
+
             var cmp = obj as Component;
             return cmp ? "{0} ({1})".F(cmp.gameObject.name, cmp.GetType().ToPegiStringType()) : obj.name;
         }
@@ -1084,16 +1132,19 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static T GetByIGotName<T>(this List<T> lst, string name) where T : IGotName
+        public static bool TryGetByIGotName<T>(this List<T> lst, string name, out T value) where T : IGotName
         {
 
             if (lst != null)
                 foreach (var el in lst)
                     if (!el.IsNullOrDestroyed_Obj() && el.NameForInspector.SameAs(name))
-                        return el;
+                    {
+                        value = el;
+                        return true;
+                    }
 
-
-            return default;
+            value = default;
+            return false;
         }
 
         internal static V TryGetElementByIndex<T, V>(this Dictionary<T, V> list, int index, V defaultValue = default)

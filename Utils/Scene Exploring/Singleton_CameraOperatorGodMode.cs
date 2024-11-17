@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using QuizCanners.Inspect;
 using QuizCanners.Lerp;
+using static UnityEditor.PlayerSettings;
 
 namespace QuizCanners.Utils
 {
@@ -20,6 +21,7 @@ namespace QuizCanners.Utils
         private float _orbitDistance;
         public bool orbitingFocused;
         public float spinStartTime;
+        private bool _spinStarted;
 
 
         [SerializeField] protected Camera _mainCam;
@@ -58,7 +60,7 @@ namespace QuizCanners.Utils
 
         public class PointedPositionState
         {
-            public Gate.Frame _pointedPositionUpdateGate = new();
+            public Gate.Frame _pointedPositionUpdateGate = new(Gate.InitialValue.StartArmed);
             Vector3 _pointedPosition_Cached;
             bool _isPositionPointed_Cached;
 
@@ -116,26 +118,18 @@ namespace QuizCanners.Utils
             if (downMMB)
             {
                 if (!TryGetPointedPosition(out var pos))
+                {
+                    _spinStarted = false;
                     return;
+                }
 
-                spinCenter = pos;
-
-                var before = camTr.localRotation;
-                camTr.LookAt(spinCenter);
-                var rot = camTr.localRotation.eulerAngles;
-                camOrbit.x = rot.y;
-                camOrbit.y = rot.x;
-                _orbitDistance = (spinCenter - transform.position).magnitude;
-
-                camTr.rotation = before;
-                orbitingFocused = false;
-                spinStartTime = Time.time;
+                StartSpin(pos);
             }
 
-            if (upMMB)
-                _orbitDistance = -1;
+            if (upMMB || !pressedMMB)
+                _spinStarted = false;
 
-            if (_orbitDistance <= 0 || (!pressedMMB))
+            if (!_spinStarted)
                 return;
 
             if (LEGACY_INPUT && !downMMB)
@@ -162,6 +156,25 @@ namespace QuizCanners.Utils
             }
             else 
                 camTr.localRotation = rot2;
+
+            return;
+
+            void StartSpin(Vector3 pos)
+            {
+                spinCenter = pos;
+
+                var before = camTr.localRotation;
+                camTr.LookAt(spinCenter);
+                var rot = camTr.localRotation.eulerAngles;
+                camOrbit.x = rot.y;
+                camOrbit.y = rot.x;
+                _orbitDistance = (spinCenter - transform.position).magnitude;
+
+                camTr.rotation = before;
+                orbitingFocused = false;
+                spinStartTime = Time.time;
+                _spinStarted = true;
+            }
 
         }
 

@@ -272,7 +272,7 @@ namespace QuizCanners.Inspect
                     return;
                 }
 
-                if (!isShown && el.GetNameForInspector().PegiLabel(toolTip: Msg.InspectElement.GetText(), RemainingLength(otherElements: defaultButtonSize * 2 + 10)).ClickLabel())
+                if (!isShown && el.GetNameForInspector().PegiLabel(toolTip: Msg.InspectElement.GetText(), RemainingLength(otherElements: DEFAULT_BUTTON_SIZE * 2 + 10)).ClickLabel())
                 {
                     inspected = index;
                     isPrevious = true;
@@ -294,7 +294,7 @@ namespace QuizCanners.Inspect
                     }
                 }
 
-                if (el.GetNameForInspector().PegiLabel("Inspect", RemainingLength(defaultButtonSize * 2 + 10)).ClickLabel())
+                if (el.GetNameForInspector().PegiLabel("Inspect", RemainingLength(DEFAULT_BUTTON_SIZE * 2 + 10)).ClickLabel())
                 {
                     inspected = index;
                     isPrevious = true;
@@ -351,6 +351,7 @@ namespace QuizCanners.Inspect
             return Edit_or_select_List_UObj(list, ref edited);
         }
 
+        
         public static ChangesToken Edit_List_UObj<T>(List<T> list, System.Func<T, T> lambda) where T : Object
         {
             var changed = ChangeTrackStart();
@@ -574,7 +575,7 @@ namespace QuizCanners.Inspect
                     if (list.Count == 0)
                     {
                         Nl();
-                        "Empty List of {0}".F(listMeta == null ? typeof(T).ToPegiStringType() : listMeta.Label).PegiLabel(Styles.HeaderText).Nl();
+                        "Empty List of {0}".F(listMeta == null ? typeof(T).ToPegiStringType() : listMeta.Label).PegiLabel(Styles.Text.Header).Nl();
                     }
                     else
                     {
@@ -1768,9 +1769,9 @@ namespace QuizCanners.Inspect
                 UnFocus();
             }
 
-            public void ToggleSearch(IEnumerable collection, TextLabel label) => ToggleSearch(collection, label.label);
+            public void ToggleSearch(IEnumerable collection, TextLabel label, bool showSearchByWarning = false) => ToggleSearch(collection, label.label, showSearchByWarning: showSearchByWarning);
 
-            public void ToggleSearch(IEnumerable collection, string label = "")
+            public void ToggleSearch(IEnumerable collection, string label = "", bool showSearchByWarning = false)
             {
 
                 if (collection == null)
@@ -1792,7 +1793,7 @@ namespace QuizCanners.Inspect
                     FocusedName = SEARCH_FIELD_FOCUS_NAME;
                 }
 
-                if (active)
+                if (active && showSearchByWarning)
                 {
                     Icon.Warning.Draw(toolTip: "Filter by warnings");
                     if (ToggleIcon(ref FilterByNeedAttention))
@@ -2107,11 +2108,11 @@ namespace QuizCanners.Inspect
                     toDisp.Dispose();
 
                 _toDispose.Clear();
+
+                Space();
             }
             public IEnumerable<T> InspectionIndexes<T>(ICollection<T> collectionReference, CollectionInspectorMeta listMeta = null, ICollectionInspector<T> listElementInspector = null)
             {
-                _toDispose.Add(Styles.Background.List.SetDisposible());
-
                 searchData = listMeta == null ? defaultSearchData : listMeta.searchData;
 
                 #region Inspect Start
@@ -2164,143 +2165,154 @@ namespace QuizCanners.Inspect
 
                 Nl();
 
-                if (_sectionStartIndex > 0)
+                bool needScrollArrows = _sectionStartIndex > 0 || _sectionSizeOptimal < _count;
+
+                if (needScrollArrows)
                 {
-
-                    if (_sectionStartIndex > _sectionSizeOptimal && Icon.UpLast.ClickUnFocus("To First element"))
-                        _sectionStartIndex = 0;
-
-                    if (Icon.Up.Click("To previous elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
+                    if (_sectionStartIndex > 0)
                     {
-                        _sectionStartIndex = Mathf.Max(0, _sectionStartIndex - _sectionSizeOptimal + 1);
-                        if (_sectionStartIndex == 1)
+
+                        if (_sectionStartIndex > _sectionSizeOptimal && Icon.UpLast.ClickUnFocus("To First element"))
                             _sectionStartIndex = 0;
+
+                        if (Icon.Up.Click("To previous elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
+                        {
+                            _sectionStartIndex = Mathf.Max(0, _sectionStartIndex - _sectionSizeOptimal + 1);
+                            if (_sectionStartIndex == 1)
+                                _sectionStartIndex = 0;
+                        }
+
+                        ".. {0}; ".F(_sectionStartIndex - 1).PegiLabel().Write();
+
                     }
-
-                    ".. {0}; ".F(_sectionStartIndex - 1).PegiLabel().Write();
-
+                    else
+                        Icon.UpLast.Write("Is the first section of the list.", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
+               
+                    Nl();
                 }
-                else
-                    Icon.UpLast.Write("Is the first section of the list.", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
-
-                Nl();
 
                 #endregion
 
                 Styles.InList = true;
 
-                if (!_searching)
+                using (QcSharp.DisposableAction(() => Styles.InList = false))
                 {
-                    _lastElementToShow = Mathf.Min(_count, _sectionStartIndex + _sectionSizeOptimal);
-                    Index = _sectionStartIndex;
+                    _toDispose.Add(Styles.Background.List.SetDisposible());
 
-                    if (collectionReference is IList<T> list)
+                    if (!_searching)
                     {
-                        for (; Index < collectionReference.Count; Index++)
-                        {
-                            var lel = list[Index];
-                            SetListElementReadabilityBackground(Index);
-                            yield return lel;
-                            RestoreBGColor();
+                        _lastElementToShow = Mathf.Min(_count, _sectionStartIndex + _sectionSizeOptimal);
+                        Index = _sectionStartIndex;
 
-                            if (Index >= _lastElementToShow)
-                                break;
+                        if (collectionReference is IList<T> list)
+                        {
+                            for (; Index < collectionReference.Count; Index++)
+                            {
+                                var lel = list[Index];
+                                using (SetListElementReadabilityBackground(Index))
+                                {
+                                    yield return lel;
+                                }
+
+                                if (Index >= _lastElementToShow)
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            foreach (var el in System.Linq.Enumerable.Skip(collectionReference, _sectionStartIndex))
+                            {
+                                using (SetListElementReadabilityBackground(Index))
+                                {
+                                    yield return el;
+                                }
+
+                                if (Index >= _lastElementToShow)
+                                    break;
+
+                                Index++;
+                            }
+                        }
+
+                        if ((_sectionStartIndex > 0) || (_count > _lastElementToShow))
+                        {
+                            Nl();
+                            if (_count > _lastElementToShow)
+                            {
+                                if (Icon.Down.Click("To next elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
+                                    _sectionStartIndex += _sectionSizeOptimal - 1;
+
+                                if (Icon.DownLast.ClickUnFocus("To Last element"))
+                                    SkrollToBottomInternal();
+
+                                " {0}{1}".F(X_SYMBOL, _count - _lastElementToShow).PegiLabel().Write();
+                            }
+                            else if (_sectionStartIndex > 0)
+                                Icon.DownLast.Write("Is the last section of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
                         }
                     }
                     else
                     {
-                        foreach (var el in System.Linq.Enumerable.Skip(collectionReference, _sectionStartIndex))
+
+                        var sectionIndex = _sectionStartIndex;
+                        filteredList = searchData.GetFilteredList(_count);
+                        _lastElementToShow = Mathf.Min(_count, _sectionStartIndex + _sectionSizeOptimal);
+
+                        while (sectionIndex < _lastElementToShow)
                         {
-                            SetListElementReadabilityBackground(Index);
-                            yield return el;
-                            RestoreBGColor();
+                            Index = -1;
 
-                            if (Index >= _lastElementToShow)
-                                break;
+                            if (filteredList.Count > sectionIndex)
+                                Index = filteredList[sectionIndex];
+                            else
+                                Index = GetNextFiltered(collectionReference, searchby, listElementInspector);
 
-                            Index++;
-                        }
-                    }
-
-                    if ((_sectionStartIndex > 0) || (_count > _lastElementToShow))
-                    {
-                        Nl();
-                        if (_count > _lastElementToShow)
-                        {
-                            if (Icon.Down.Click("To next elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
-                                _sectionStartIndex += _sectionSizeOptimal - 1;
-
-                            if (Icon.DownLast.ClickUnFocus("To Last element"))
-                                SkrollToBottomInternal();
-
-                            " {0}{1}".F(X_SYMBOL, _count - _lastElementToShow).PegiLabel().Write();
-                        }
-                        else if (_sectionStartIndex > 0)
-                            Icon.DownLast.Write("Is the last section of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
-                    }
-                }
-                else
-                {
-
-                    var sectionIndex = _sectionStartIndex;
-                    filteredList = searchData.GetFilteredList(_count);
-                    _lastElementToShow = Mathf.Min(_count, _sectionStartIndex + _sectionSizeOptimal);
-
-                    while (sectionIndex < _lastElementToShow)
-                    {
-                        Index = -1;
-
-                        if (filteredList.Count > sectionIndex)
-                            Index = filteredList[sectionIndex];
-                        else
-                            Index = GetNextFiltered(collectionReference, searchby, listElementInspector);
-
-                        if (Index != -1)
-                        {
-                            SetListElementReadabilityBackground(sectionIndex);
-                            yield return collectionReference.GetElementAt(Index);
-                            RestoreBGColor();
-                            sectionIndex++;
-                        }
-                        else break;
-                    }
-
-                    bool gotUnchecked = (searchData.UncheckedElement < _count - 1);
-                    bool gotToShow = (filteredList.Count > _lastElementToShow) || gotUnchecked;
-
-                    if (_sectionStartIndex > 0 || gotToShow)
-                    {
-                        Nl();
-                        if (gotToShow)
-                        {
-                            if (Icon.Down.Click("To next elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
-                                _sectionStartIndex += _sectionSizeOptimal - 1;
-
-                            if (Icon.DownLast.ClickUnFocus("To Last element"))
+                            if (Index != -1)
                             {
-                                if (_searching)
-                                    while (GetNextFiltered(collectionReference, searchby, listElementInspector) != -1) { }
-
-                                SkrollToBottomInternal();
+                                using (SetListElementReadabilityBackground(sectionIndex))
+                                {
+                                    yield return collectionReference.GetElementAt(Index);
+                                }
+                                sectionIndex++;
                             }
-
-                            if (!gotUnchecked)
-                                "{0}{1}".F(X_SYMBOL, filteredList.Count - _lastElementToShow).PegiLabel().Write();
-
+                            else break;
                         }
-                        else if (_sectionStartIndex > 0)
-                            Icon.DownLast.Write("Is the last section of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
+
+                        bool gotUnchecked = (searchData.UncheckedElement < _count - 1);
+                        bool gotToShow = (filteredList.Count > _lastElementToShow) || gotUnchecked;
+
+                        if (_sectionStartIndex > 0 || gotToShow)
+                        {
+                            Nl();
+                            if (gotToShow)
+                            {
+                                if (Icon.Down.Click("To next elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
+                                    _sectionStartIndex += _sectionSizeOptimal - 1;
+
+                                if (Icon.DownLast.ClickUnFocus("To Last element"))
+                                {
+                                    if (_searching)
+                                        while (GetNextFiltered(collectionReference, searchby, listElementInspector) != -1) { }
+
+                                    SkrollToBottomInternal();
+                                }
+
+                                if (!gotUnchecked)
+                                    "{0}{1}".F(X_SYMBOL, filteredList.Count - _lastElementToShow).PegiLabel().Write();
+
+                            }
+                            else if (_sectionStartIndex > 0)
+                                Icon.DownLast.Write("Is the last section of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
+                        }
                     }
+
+                    if (changed)
+                        SaveSectionIndex(collectionReference, listMeta);
                 }
-
-                Styles.InList = false;
-
-                if (changed)
-                    SaveSectionIndex(collectionReference, listMeta);
             }
             public void ListInstantiateNewName<T>()
             {
-                Msg.New.GetText().PegiLabel(Msg.NameNewBeforeInstancing_1p.GetText().F(typeof(T).ToPegiStringType()), 30, Styles.ExitLabel).Write();
+                Msg.New.GetText().PegiLabel(Msg.NameNewBeforeInstancing_1p.GetText().F(typeof(T).ToPegiStringType()), 30, Styles.Text.ExitLabel).Write();
                 Edit(ref addingNewNameHolder);
             }
 
@@ -2362,7 +2374,7 @@ namespace QuizCanners.Inspect
 
                             if (derrivedTypesExplicit.Count > 5)
                             {
-                                "Search".PegiLabel(width: 60, style: Styles.FoldedOutLabel).Edit(ref _listTypeSearch).Nl();
+                                "Search".PegiLabel(width: 60, style: Styles.Text.FoldedOut).Edit(ref _listTypeSearch).Nl();
                                 searchString = _listTypeSearch;
                             }
 
@@ -2571,13 +2583,14 @@ namespace QuizCanners.Inspect
 
                 _scrollDownRequested = false;
             }
-            private void SetListElementReadabilityBackground(int index)
+            private IDisposable SetListElementReadabilityBackground(int index)
             {
-                switch (index % 4)
+                return (index % 4) switch
                 {
-                    case 1: SetBgColor(Styles.listReadabilityBlue); break;
-                    case 3: SetBgColor(Styles.listReadabilityRed); break;
-                }
+                    1 => SetBgColorDisposable(Styles.listReadabilityBlue),
+                    3 => SetBgColorDisposable(Styles.listReadabilityRed),
+                    _ => null,
+                };
             }
             internal TextLabel GetCurrentListLabel<T>(CollectionInspectorMeta ld = null) =>
                 ld != null
@@ -2585,7 +2598,7 @@ namespace QuizCanners.Inspect
                         (currentListLabel.IsInitialized ? currentListLabel : typeof(T).ToPegiStringType().PegiLabel());
 
             internal CollectionInspector Write_Search_DictionaryLabel<K, V>(CollectionInspectorMeta collectionMeta, Dictionary<K, V> dic) =>
-                Write_Search_DictionaryLabel<K, V>(collectionMeta.Label.PegiLabel(), ref collectionMeta.inspectedElement_Internal, dic, collectionMeta.searchData);
+                Write_Search_DictionaryLabel(collectionMeta.Label.PegiLabel(), ref collectionMeta.inspectedElement_Internal, dic, collectionMeta.searchData);
             internal CollectionInspector Write_Search_DictionaryLabel<K, V>(TextLabel label, ref int inspected, Dictionary<K, V> dic, SearchData sd = null)
             {
                 currentListLabel = label;
@@ -2594,8 +2607,10 @@ namespace QuizCanners.Inspect
 
                 sd ??= defaultSearchData;
 
+               // _toDispose.Add(Styles.Background.ListLabel.SetDisposible());
+
                 if (!inspecting)
-                    sd.ToggleSearch(dic, label);
+                    sd.ToggleSearch(dic, label, showSearchByWarning: typeof(INeedAttention).IsAssignableFrom(typeof(V)));
                 else
                 {
                     exitOptionHandled = true;
@@ -2632,7 +2647,7 @@ namespace QuizCanners.Inspect
                 }
                 else label = (dic == null || dic.Count < 6) ? label : label.AddCount(dic, true);
 
-                label.width = RemainingLength(defaultButtonSize * 2 + 10);
+                label.width = RemainingLength(DEFAULT_BUTTON_SIZE * 2 + 10);
                 label.style = Styles.ListLabel;
 
                 if (label.ClickLabel() && inspected != -1)
@@ -2654,7 +2669,7 @@ namespace QuizCanners.Inspect
                 bool inspecting = inspected != -1;
 
                 if (!inspecting)
-                    defaultSearchData.ToggleSearch(lst, label);
+                    defaultSearchData.ToggleSearch(lst, label, showSearchByWarning: typeof(INeedAttention).IsAssignableFrom(typeof(T)));
                 else
                 {
                     exitOptionHandled = true;
@@ -2666,7 +2681,7 @@ namespace QuizCanners.Inspect
                     label = lst.GetElementAt(inspected).GetNameForInspector().PegiLabel();
                 else label = (lst == null || lst.Count < 6) ? label : label.AddCount(lst, true);
 
-                label.width = RemainingLength(defaultButtonSize * 2 + 10);
+                label.width = RemainingLength(DEFAULT_BUTTON_SIZE * 2 + 10);
                 label.style = Styles.ListLabel;
 
                 if (label.ClickLabel() && inspected != -1)
@@ -2682,10 +2697,12 @@ namespace QuizCanners.Inspect
                     return this;
                 }
 
+               // _toDispose.Add(Styles.Background.ListLabel.SetDisposible());
+
                 currentListLabel = ld.Label.PegiLabel();
 
                 if (!ld.IsAnyEntered && ld[CollectionInspectParams.showSearchButton])
-                    ld.searchData.ToggleSearch(lst, ld.Label);
+                    ld.searchData.ToggleSearch(lst, ld.Label, showSearchByWarning: typeof(INeedAttention).IsAssignableFrom(typeof(T)));
 
                 if (lst != null && ld.InspectedElement >= 0 && lst.Count > ld.InspectedElement)
                 {
@@ -2703,7 +2720,7 @@ namespace QuizCanners.Inspect
                         ld.IsAnyEntered = false;
                 }
 
-                currentListLabel.width = RemainingLength(defaultButtonSize * 2 + 10);
+                currentListLabel.width = RemainingLength(DEFAULT_BUTTON_SIZE * 2 + 10);
                 currentListLabel.style = Styles.ListLabel;
 
                 if (currentListLabel.ClickLabel() && ld.InspectedElement != -1)
@@ -3339,7 +3356,7 @@ namespace QuizCanners.Inspect
                         {
                             if (!uo && pg == null && listMeta == null)
                             {
-                                var label = el.GetNameForInspector().PegiLabel(toolTip: Msg.InspectElement.GetText(), width: RemainingLength(defaultButtonSize * 2 + 10));
+                                var label = el.GetNameForInspector().PegiLabel(toolTip: Msg.InspectElement.GetText(), width: RemainingLength(DEFAULT_BUTTON_SIZE * 2 + 10));
 
                                 if (label.ClickLabel())
                                 {
@@ -3366,7 +3383,7 @@ namespace QuizCanners.Inspect
                                     //else if (Try_NameInspect(uo))
                                     //  isPrevious = true;
                                 }
-                                else if (el.GetNameForInspector().PegiLabel(toolTip: "Inspect", width: RemainingLength(defaultButtonSize * 2 + 50)).ClickLabel())
+                                else if (el.GetNameForInspector().PegiLabel(toolTip: "Inspect", width: RemainingLength(DEFAULT_BUTTON_SIZE * 2 + 50)).ClickLabel())
                                 {
                                     inspected = index;
                                     isPrevious = true;
