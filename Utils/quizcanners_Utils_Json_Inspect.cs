@@ -42,7 +42,7 @@ namespace QuizCanners.Utils
                 {
                     if (!foldedOut)
                     {
-                        name.PegiLabel().Write_ForCopy();
+                        name.PL().Write_ForCopy();
                         //if (name.Length > 15 && Icon.Copy.Click("Copy name to clipboard", 20))
                         //  GUIUtility.systemCopyBuffer = name;
                         pegi.Edit(ref str.data);
@@ -61,7 +61,7 @@ namespace QuizCanners.Utils
                         }
                     }
                 }
-                else if (foldedOut && "Decode 1 layer".PegiLabel().Click())
+                else if (foldedOut && "Decode 1 layer".PL().Click())
                     TryDecode(ref j);
                 
                 pegi.Nl();
@@ -128,11 +128,11 @@ namespace QuizCanners.Utils
                 jsonDestination = "";
             }
 
-            if (!triedToDecodeAll && "Decode All".PegiLabel().Click())
+            if (!triedToDecodeAll && "Decode All".PL().Click())
                 TryToDecodeAll();
 
             if (jsonDestination.Length > 5)
-                jsonDestination.PegiLabel().Write();
+                jsonDestination.PL().Write();
 
             pegi.Nl();
 
@@ -205,7 +205,7 @@ namespace QuizCanners.Utils
 
                 if (data.Length > 500)
                 {
-                    "String is too long to show: {0} chars".F(data.Length).PegiLabel().Write_Hint();
+                    "String is too long to show: {0} chars".F(data.Length).PL().Write_Hint();
 
                     if (Icon.Copy.Click("TO Copy Paste Buffer"))
                     {
@@ -473,7 +473,7 @@ namespace QuizCanners.Utils
                 if (data.GetCount() > 0)
                 {
                     if (data.HasNestedData)
-                        (name + " " + data.ToString()).PegiLabel().IsFoldout(ref foldedOut);
+                        (name + " " + data.ToString()).PL().IsFoldout(ref foldedOut);
 
                     using (new PathAdd_ErrorDebug(ToString()))
                     {
@@ -481,7 +481,7 @@ namespace QuizCanners.Utils
                     }
                 }
                 else
-                    (name + " " + data.ToString()).PegiLabel().Write();
+                    (name + " " + data.ToString()).PL().Write();
 
                 pegi.Nl();
 
@@ -497,6 +497,8 @@ namespace QuizCanners.Utils
 
             private string previewValue = "";
             private bool previewFoldout;
+            private int showElementsStart = 0;
+            private const int MAX_ELEMENTS = 32;
 
             public override int GetCount() => elements.Count;
 
@@ -517,9 +519,9 @@ namespace QuizCanners.Utils
 
                             if (previewFoldout)
                             {
-                                "Select value to preview:".PegiLabel().Nl();
+                                "Select value to preview:".PL().Nl();
 
-                                if (previewValue.Length > 0 && "NO PREVIEW VALUE".PegiLabel().Click().Nl())
+                                if (previewValue.Length > 0 && "NO PREVIEW VALUE".PL().Click().Nl())
                                 {
                                     previewValue = "";
                                     previewFoldout = false;
@@ -530,10 +532,10 @@ namespace QuizCanners.Utils
                                     if (p.name.Equals(previewValue))
                                     {
                                         Icon.Next.Draw();
-                                        if ("CURRENT: {0}".F(previewValue).PegiLabel().ClickUnFocus().Nl())
+                                        if ("CURRENT: {0}".F(previewValue).PL().ClickUnFocus().Nl())
                                             previewFoldout = false;
                                     }
-                                    else if (p.name.PegiLabel().Click().Nl())
+                                    else if (p.name.PL().Click().Nl())
                                     {
                                         previewValue = p.name;
                                         previewFoldout = false;
@@ -560,7 +562,28 @@ namespace QuizCanners.Utils
                         }
                     }
 
-                    for (int i = 0; i < elements.Count; i++)
+                    if (elements.Count > MAX_ELEMENTS)
+                    {
+                        if (showElementsStart > 0)
+                        {
+                            if (Icon.Up.Click())
+                                showElementsStart = Mathf.Max(0, showElementsStart - MAX_ELEMENTS);
+                        }
+                        else Icon.UpLast.Draw();
+
+                        if (showElementsStart + MAX_ELEMENTS < elements.Count)
+                        {
+                            if (Icon.Down.Click())
+                                showElementsStart += MAX_ELEMENTS;
+                        }
+                        else Icon.DownLast.Draw();
+
+                        pegi.Nl();
+                    }
+
+                    int last = Math.Min(showElementsStart + MAX_ELEMENTS, elements.Count);
+
+                    for (int i = showElementsStart; i < last; i++)
                     {
 
                         var val = elements[i];
@@ -584,7 +607,7 @@ namespace QuizCanners.Utils
                                     preview = "missing";
                             }
 
-                            ((preview.Length > 0 && !contains) ? "{1} ({0})".F(previewValue, preview) : "[{0} {1}]".F(nameForElemenet, i)).PegiLabel().IsFoldout(ref contains);
+                            ((preview.Length > 0 && !contains) ? "{1} ({0})".F(previewValue, preview) : "[{0} {1}]".F(nameForElemenet, i)).PL().IsFoldout(ref contains);
                             foldedOut.SetContains(i, contains: contains);
                         }
 

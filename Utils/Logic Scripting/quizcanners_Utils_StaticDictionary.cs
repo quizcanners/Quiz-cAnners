@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace QuizCanners.Utils
 {
-    public class StaticDictionaryGeneric<T>: IPEGI where T : IGotName
+    public class StaticDictionaryGeneric<T>: IPEGI where T : IGotStringId
     {
         public Dictionary<string, T> AllElements;
 
@@ -11,13 +11,13 @@ namespace QuizCanners.Utils
         {
             AllElements = new Dictionary<string, T>();
             foreach (var el in elements)
-                AllElements.Add(el.NameForInspector, el);
+                AllElements.Add(el.StringId, el);
         }
 
         private int _inspectedElement = -1;
         void IPEGI.Inspect()
         {
-            typeof(T).ToPegiStringType().PegiLabel().Edit_Dictionary(AllElements, ref _inspectedElement).Nl();
+            typeof(T).ToPegiStringType().PL().Edit_Dictionary(AllElements, ref _inspectedElement).Nl();
         }
     }
 }

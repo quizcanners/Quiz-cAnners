@@ -89,13 +89,13 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                if (!Application.isPlaying && "Max Count".ConstLabel().Edit_Delayed(ref _maxCount).Nl())
+                if (!Application.isPlaying && "Max Count".ConstL().Edit_Delayed(ref _maxCount).Nl())
                     _maxCount = Math.Max(1, _maxCount);
 
                 if (IsFinished)
-                    "Finished".ConstLabel().Nl();
+                    "Finished".ConstL().Nl();
                 else
-                    "{0}% ({1}/{2})".F(_count*100 / _maxCount, _count, _maxCount).PegiLabel().Nl();
+                    "{0}% ({1}/{2})".F(_count*100 / _maxCount, _count, _maxCount).PL().Nl();
             }
 
             public CountUpToMax(int maxCount) 
@@ -134,10 +134,10 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                if (!Application.isPlaying && "Count".ConstLabel().Edit_Delayed(ref _maxCount).Nl())
+                if (!Application.isPlaying && "Count".ConstL().Edit_Delayed(ref _maxCount).Nl())
                     _maxCount = Math.Max(1, _maxCount);
 
-                ToString().PegiLabel().Nl();
+                ToString().PL().Nl();
             }
 
             public override string ToString()
@@ -272,7 +272,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class TaskResultWaiter<T> : IPEGI, IPEGI_ListInspect, IGotName
+        public class TaskResultWaiter<T> : IPEGI, IPEGI_ListInspect, IGotStringId
         {
             private string _name;
             private Task<T> _task;
@@ -307,7 +307,7 @@ namespace QuizCanners.Utils
 
             public enum StatusEnum { Ready, NotStarted, Yielding, Other }
 
-            public string NameForInspector { get => _name; set => _name = value; }
+            public string StringId { get => _name; set => _name = value; }
 
             public bool TryGetValue(out T val)
             {
@@ -347,7 +347,7 @@ namespace QuizCanners.Utils
                 }
                 else
                 {
-                    Status.PegiLabel().Nl();
+                    Status.PL().Nl();
                 }
             }
 
@@ -371,7 +371,7 @@ namespace QuizCanners.Utils
                     }
                 }
 
-                if (ToString().PegiLabel().ClickLabel() | Icon.Enter.Click())
+                if (ToString().PL().ClickLabel() | Icon.Enter.Click())
                     edited = index;
             }
 

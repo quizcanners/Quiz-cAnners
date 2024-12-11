@@ -21,11 +21,11 @@ namespace QuizCanners.Utils
             {
                 pegi.Nl();
 
-                "Camera ".PegiLabel().SelectInScene(ref cameraToTakeScreenShotFrom);
+                "Camera ".PL().SelectInScene(ref cameraToTakeScreenShotFrom);
 
                 pegi.Nl();
 
-                "Transparent Background".PegiLabel().ToggleIcon(ref AlphaBackground);
+                "Transparent Background".PL().ToggleIcon(ref AlphaBackground);
 
                 if (!AlphaBackground && cameraToTakeScreenShotFrom)
                 {
@@ -41,24 +41,24 @@ namespace QuizCanners.Utils
                 pegi.Nl();
 
                 var ssName = _screenShotName.GetValue();
-                "Img Name".ConstLabel().Edit(ref ssName).OnChanged(() => _screenShotName.SetValue(ssName));
+                "Img Name".ConstL().Edit(ref ssName).OnChanged(() => _screenShotName.SetValue(ssName));
                 var path = System.IO.Path.Combine(QcFile.OutsideOfAssetsFolder, folderName);
                 if (Icon.Folder.Click("Open Screen Shots Folder : {0}".F(path)))
                     QcFile.Explorer.OpenPath(path);
 
                 pegi.Nl();
 
-                "Up Scale".PegiLabel("Resolution of the texture will be multiplied by a given value", 60).Edit(ref UpScale);
+                "Up Scale".PL("Resolution of the texture will be multiplied by a given value", 60).Edit(ref UpScale);
 
                 if (UpScale <= 0)
-                    "Scale value needs to be positive".PegiLabel().WriteWarning();
+                    "Scale value needs to be positive".PL().WriteWarning();
                 else
                 if (cameraToTakeScreenShotFrom)
                 {
 
                     if (UpScale > 4)
                     {
-                        if ("Take Very large ScreenShot".PegiLabel("This will try to take a very large screen shot. Are we sure?").ClickConfirm("tbss"))
+                        if ("Take Very large ScreenShot".PL("This will try to take a very large screen shot. Are we sure?").ClickConfirm("tbss"))
                             RenderToCameraAndSave();
                     }
                     else if (Icon.ScreenGrab.Click("Render Screenshoot from camera").Nl())
@@ -71,23 +71,23 @@ namespace QuizCanners.Utils
 
                 pegi.Nl();
 
-                if ("Other Options".PegiLabel().IsFoldout(ref _showAdditionalOptions).Nl())
+                if ("Other Options".PL().IsFoldout(ref _showAdditionalOptions).Nl())
                 {
 
                     if (!grab)
                     {
-                        if ("On Post Render()".PegiLabel().Click())
+                        if ("On Post Render()".PL().Click())
                             grab = true;
                     }
                     else
                         ("To grab screen-shot from Post-Render, OnPostRender() of this class should be called from OnPostRender() of the script attached to a camera." +
-                         " Refer to Unity documentation to learn more about OnPostRender() call").PegiLabel()
+                         " Refer to Unity documentation to learn more about OnPostRender() call").PL()
                             .Write_Hint();
 
 
                     pegi.Nl();
 
-                    if ("ScreenCapture.CaptureScreenshot".PegiLabel().Click())
+                    if ("ScreenCapture.CaptureScreenshot".PL().Click())
                         CaptureByScreenCaptureUtility();
 
 

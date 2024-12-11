@@ -315,15 +315,52 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(this TextLabel label, ref int val)
         {
-#if UNITY_EDITOR
-            if (!PaintingGameViewUI)
-                return PegiEditorOnly.Edit(label, ref val);
-#endif
-            label.TryWrite();
-            return Edit(ref val);
+            switch (currentMode) 
+            {
+                #if UNITY_EDITOR
+                case PegiPaintingMode.EditorInspector:
+                    return PegiEditorOnly.Edit(label, ref val);
+                #endif
 
-          //  Write(label);
-           // return Edit(ref val);
+                case PegiPaintingMode.GameViewGUI:
+                    label.TryWrite();
+                    return Edit(ref val);
+
+                case PegiPaintingMode.UI_Toolkit:
+                    Toolkit.Write("Use Edit(Action<int>)...", "wrong method");
+                    return ChangesToken.False;
+
+                default:
+
+                    QcLog.ChillLogger.LogErrorOnce(QcLog.CaseNotImplemented(currentMode, "Edit Int"), key: "edItMd");
+                    
+                    return ChangesToken.False;
+            }
+        }
+
+        public static ChangesToken Edit(this TextLabel label, ref int val, Action<int> onChanged)
+        {
+            switch (currentMode)
+            {
+#if UNITY_EDITOR
+                case PegiPaintingMode.EditorInspector:
+                    return PegiEditorOnly.Edit(label, ref val);
+#endif
+
+                case PegiPaintingMode.GameViewGUI:
+                    label.TryWrite();
+                    return Edit(ref val);
+
+                case PegiPaintingMode.UI_Toolkit:
+                    Toolkit.Edit(label, val, onChanged);
+                    return ChangesToken.False;
+
+                default:
+
+                    QcLog.ChillLogger.LogErrorOnce(QcLog.CaseNotImplemented(currentMode, "Edit Int"), key: "edItMd");
+
+                    return ChangesToken.False;
+            }
         }
 
         public static ChangesToken Edit(this TextLabel label, ref int val, int minInclusiven, int maxInclusive)
@@ -346,7 +383,7 @@ namespace QuizCanners.Inspect
             if (Edit_Delayed(ref from))
                 to = Mathf.Max(from, to);
 
-            "-".PegiLabel(10).Write();
+            "-".PL(10).Write();
 
             if (Edit_Delayed(ref to))
                 from = Mathf.Min(from, to);
@@ -410,8 +447,17 @@ namespace QuizCanners.Inspect
             // return Edit(ref val);
         }
 
+        public static ChangesToken Edit(this TextLabel label, ref long val, long min, long max)
+        {
+            label.FallbackWidthFraction = 0.3f;
+            label.SliderText_Internal(val);
+            return Edit(ref val, min, max);
+        }
+
         public static ChangesToken Edit(ref long val, long min, long max)
         {
+            max = Math.Max(max, val);
+
             #if UNITY_EDITOR
             if (!PaintingGameViewUI)
                 return PegiEditorOnly.Edit(ref val, min, max);
@@ -421,7 +467,6 @@ namespace QuizCanners.Inspect
             double tmp = val;
             val = (long)GUILayout.HorizontalSlider(val, min, max, Utils.GuiMaxWidthOption);
             return _END();
-
         }
 
         #endregion
@@ -581,7 +626,7 @@ namespace QuizCanners.Inspect
             if (Edit_Delayed(ref from))
                 to = Mathf.Max(from, to);
 
-            "-".PegiLabel(10).Write(); 
+            "-".PL(10).Write(); 
 
             if (Edit_Delayed(ref to))
                 from = Mathf.Min(from, to);
@@ -930,7 +975,7 @@ namespace QuizCanners.Inspect
                 return false;
             }
 
-            if (Icon.Copy.Click() | "Too long: {0}".F(subtext).PegiLabel().Click())
+            if (Icon.Copy.Click() | "Too long: {0}".F(subtext).PL().Click())
                 SetCopyPasteBuffer(text);
 
             return true;
@@ -1001,20 +1046,29 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit_Big(ref string val, int height = 100)
         {
-
             Nl();
 
+            switch (currentMode) 
+            {
 #if UNITY_EDITOR
-            if (!PaintingGameViewUI)
-                return PegiEditorOnly.EditBig(ref val, height).Nl();
+                case PegiPaintingMode.EditorInspector:
+                    return PegiEditorOnly.EditBig(ref val, height).Nl();
 #endif
 
-            _START();
-            val = GUILayout.TextArea(val, GUILayout.MaxHeight(height), Utils.GuiMaxWidthOption);
-            return _END();
+                case PegiPaintingMode.GameViewGUI:
+                    _START();
+                    val = GUILayout.TextArea(val, GUILayout.MaxHeight(height), Utils.GuiMaxWidthOption);
+                    return _END();
 
+                case PegiPaintingMode.UI_Toolkit:
+                    return Toolkit.Edit_Big(ref val, height);
+
+                default: return ChangesToken.False;
+
+            }
         }
 
+        /*
         public static ChangesToken Edit_Delayed_CopyPaste(this TextLabel label, ref string val, bool clearOnPaste = true) 
         {
             var valueChanged = ChangeTrackStart();
@@ -1048,7 +1102,7 @@ namespace QuizCanners.Inspect
 
             return valueChanged;
         }
-
+        */
 
         #endregion
 
@@ -1075,7 +1129,7 @@ namespace QuizCanners.Inspect
                     val += TimeSpan.FromDays(1);
             }
 
-            if ("Now".PegiLabel().ClickUnFocus())
+            if ("Now".PL().ClickUnFocus())
                 val = DateTime.Now;
 
             return ChangesToken.False;
@@ -1085,7 +1139,13 @@ namespace QuizCanners.Inspect
 
         #region URL
 
-        public static ChangesToken Edit_FullAssetPath(ref string path)
+        public static ChangesToken Edit_FullAssetPath(this TextLabel label, ref string path, bool showEditorFolderButton = true) 
+        {
+            label.TryWrite();
+            return Edit_FullAssetPath(ref path, showEditorFolderButton: showEditorFolderButton);
+        }
+
+        public static ChangesToken Edit_FullAssetPath(ref string path, bool showEditorFolderButton = true)
         {
             #if !UNITY_EDITOR
             return ChangesToken.False;
@@ -1099,9 +1159,18 @@ namespace QuizCanners.Inspect
 
             if (!path.IsNullOrEmpty() && NormalizedPath(path).StartsWith(projectPath))
                 tmp = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets" + path[projectPath.Length..]);
-         
+
+            if (!tmp)
+                Edit(ref path);
+
             if (Edit(ref tmp) &&  QcUnity.TryGetFullPath(tmp, out var newpath))
                 path = newpath;
+
+            if (Application.isEditor && showEditorFolderButton && Icon.Folder.Click())
+            {
+                if (QcFile.Select.TrySelectPath_EditorOnly(out string newPath))
+                    path = newPath;
+            }
 
             return changes;
 

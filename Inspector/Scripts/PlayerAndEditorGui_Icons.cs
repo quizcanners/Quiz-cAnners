@@ -13,15 +13,16 @@ namespace QuizCanners.Inspect
         Alpha, Active, Add, Animation, Audio,
         Back,
         Close, Condition, Config, Copy, Cut, Create, Clear,
-        Delete, Done, Download, Down, DownLast, Debug, DeSelectAll, Dice,
+        Delete, Done, Download, Down, DownLast, Debug, Dice,
         Edit, Enter, Exit, Empty,
         False, FoldedOut, Folder,
         Next,
         On, Off,
         Lock, Unlock, List, Link, UnLinked,
         Record, Replace, Refresh,
-        Search, Script, Save, SaveAsNew, StateMachine, State, Show, SelectAll, Share, Size, ScreenGrab, Subtract, Swap,
+        Search, Script, Save, SaveAsNew, StateMachine, State, Show, Share, Size, ScreenGrab, Subtract, Swap,
         Stop,
+        Selected, UnSelected,
         Question,
         Painter,
         Undo, Redo, UndoDisabled, RedoDisabled,
@@ -134,8 +135,8 @@ namespace QuizCanners.Inspect
                 case Icon.Enter:        msg.Translate("Enter", "Click to enter"); break;
                 case Icon.Exit:         msg.Translate("Exit", "Click to exit"); break;
                 case Icon.Empty:        msg.Translate("Empty"); break;
-                case Icon.SelectAll:    msg.Translate("Select All"); break;
-                case Icon.DeSelectAll:  msg.Translate("Deselect All"); break;
+                case Icon.Selected:    msg.Translate("Select All"); break;
+                case Icon.UnSelected:  msg.Translate("Deselect All"); break;
                 case Icon.Search:       msg.Translate("Serch"); break;
                 case Icon.Show:         msg.Translate("Show"); break;
                 case Icon.Hide:         msg.Translate("Hide"); break;

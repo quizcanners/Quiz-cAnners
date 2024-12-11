@@ -222,12 +222,12 @@ namespace QuizCanners.Inspect
         public static string F(this Msg msg, Msg other) =>
             msg.GetText() + " " + other.GetText();
         public static void DocumentationClick(this Msg msg) => msg.Get().DocumentationClick();
-        public static void Nl(this Msg m) { m.GetText().PegiLabel().Nl(); }
-        public static void Nl(this Msg m, int width) { m.GetText().PegiLabel(width: width).Nl(); }
-        public static void Nl(this Msg m, string tip, int width) { m.GetText().PegiLabel(tip, width).Nl(); }
-        public static void Write(this Msg m) { m.GetText().PegiLabel().Write(); }
-        public static void Write(this Msg m, int width) { m.GetText().PegiLabel(width).Write(); }
-        public static void Write(this Msg m, string tip, int width) { m.GetText().PegiLabel(tip, width).Write(); }
+        public static void Nl(this Msg m) { m.GetText().PL().Nl(); }
+        public static void Nl(this Msg m, int width) { m.GetText().PL(width: width).Nl(); }
+        public static void Nl(this Msg m, string tip, int width) { m.GetText().PL(tip, width).Nl(); }
+        public static void Write(this Msg m) { m.GetText().PL().Write(); }
+        public static void Write(this Msg m, int width) { m.GetText().PL(width).Write(); }
+        public static void Write(this Msg m, string tip, int width) { m.GetText().PL(tip, width).Write(); }
         public static pegi.ChangesToken Click(this Icon icon, Msg text) => icon.ClickUnFocus(text.GetText());
         //  public static bool Click(this icon icon, Msg text, ref bool changed) => icon.ClickUnFocus(text.GetText()).changes(ref changed);
         public static pegi.ChangesToken ClickUnFocus(this Icon icon, Msg text, int size = pegi.DEFAULT_BUTTON_SIZE) => pegi.Click(icon.GetIcon(), text.GetText(), size).UnfocusOnChange();
@@ -392,7 +392,7 @@ namespace QuizCanners.Inspect
                 {
                     Nl();
 
-                    "Copy Paste: {0}".F(buff.CopyPasteJsonSourceName).PegiLabel().Write();
+                    "Copy Paste: {0}".F(buff.CopyPasteJsonSourceName).PL().Write();
                     if (Icon.Clear.Click())
                         _copyPasteBuffs.Remove(type);
 

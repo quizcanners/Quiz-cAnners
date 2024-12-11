@@ -1,5 +1,8 @@
 ﻿using QuizCanners.Migration;
 using QuizCanners.Utils;
+//using System;
+
+//using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +14,6 @@ namespace QuizCanners.Inspect
 #pragma warning disable IDE1006 // Naming Styles
     public static partial class pegi
     {
-  
-       /* private static T filterEditorDropdown<T>(this T obj)
-        {
-            var edd = obj as IInspectorDropdown;
-            return (edd == null || edd.ShowInInspectorDropdown()) ? obj : default;
-        }*/
-
         private static string CompileSelectionName<T>(int index, T obj, bool showIndex, bool stripSlashesAndDots = false, bool dotsToSlashes = true)
         {
             var st = obj.GetNameForInspector();
@@ -30,28 +26,6 @@ namespace QuizCanners.Inspect
 
             return (showIndex || st.Length == 0) ? "{0}: {1}".F(index, st) : st;
         }
-
-        /*
-        private static ChangesToken selectFinal_Internal<T>(T val, ref int index)
-        {
-            var count = namesList.Count;
-
-            if (index == -1 && !val.IsNullOrDestroyed_Obj())
-            {
-                index = namesList.Count;
-                namesList.Add("[{0}]".F(val.GetNameForInspector()));
-            }
-
-            var tmp = index;
-
-            if (Select(ref tmp, namesList.ToArray()) && tmp < count)
-            {
-                index = tmp;
-                return ChangesToken.True;
-            }
-
-            return ChangesToken.False;
-        }*/
 
         private static ChangesToken selectFinal_InternalDeprecated<T>(T val, ref int index,  List<string> namesList)
         {
@@ -156,19 +130,19 @@ namespace QuizCanners.Inspect
         {
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
-                return from.IsNullOrEmpty() ? "Selecting from null:".ConstLabel().Edit(ref no) : PegiEditorOnly.Select(ref no, from.ToArray());
+                return from.IsNullOrEmpty() ? "Selecting from null:".ConstL().Edit(ref no) : PegiEditorOnly.Select(ref no, from.ToArray());
 #endif
 
             if (from.IsNullOrEmpty()) return ChangesToken.False;
 
-            IsFoldout(QcSharp.TryGet(from, no, "...").PegiLabel());
+            IsFoldout(QcSharp.TryGet(from, no, "...").PL());
 
             if (FoldoutManager.isFoldedOutOrEntered)
             {
                 if (from.Count > 1)
                     Nl();
                 for (var i = 0; i < from.Count; i++)
-                    if (i != no && "{0}: {1}".F(i, from[i]).PegiLabel().ClickUnFocus().Nl())
+                    if (i != no && "{0}: {1}".F(i, from[i]).PL().ClickUnFocus().Nl())
                     {
                         no = i;
                         FoldoutManager.FoldInNow();
@@ -196,7 +170,7 @@ namespace QuizCanners.Inspect
                 return width > 0 ? PegiEditorOnly.SelectFlags(ref no, from, width) : PegiEditorOnly.SelectFlags(ref no, from);
 #endif
 
-            "Flags Only in Editor for now".PegiLabel().Write();
+            "Flags Only in Editor for now".PL().Write();
 
             return ChangesToken.False;
         }
@@ -227,13 +201,13 @@ namespace QuizCanners.Inspect
 
         
             if (!PaintingGameViewUI)
-                " ".PegiLabel(10).Write();
+                " ".PL(10).Write();
 
             using (FoldoutManager.StartFoldoutDisposable(out var isFoldedOut))
             {
                 if (!isFoldedOut)
                 {
-                    if (display.ConstLabel().ClickLabel() | Icon.Search.Click())
+                    if (display.ConstL().ClickLabel() | Icon.Search.Click())
                         FoldoutManager.FoldOutNow();
                 }
                 else
@@ -286,7 +260,7 @@ namespace QuizCanners.Inspect
                 {
                     shownCount++;
 
-                    if (from[i].PegiLabel().ClickUnFocus().Nl())
+                    if (from[i].PL().ClickUnFocus().Nl())
                     {
                         current = i;
                         return ChangesToken.True;
@@ -298,7 +272,7 @@ namespace QuizCanners.Inspect
             }
 
             if (shownCount < from.Length)
-                "...{0} more items".F(from.Length- shownCount).PegiLabel(Styles.Text.Header).Nl();
+                "...{0} more items".F(from.Length- shownCount).PL(Styles.Text.Header).Nl();
 
             GUILayout.Space(10);
             return ChangesToken.False;
@@ -307,7 +281,7 @@ namespace QuizCanners.Inspect
             {
                 using (SetGuiColorDisposable(Color.yellow))
                 {
-                    "[{0}]".F(from[tmpCurrent]).PegiLabel().ClickUnFocus().Nl(FoldoutManager.FoldInNow);
+                    "[{0}]".F(from[tmpCurrent]).PL().ClickUnFocus().Nl(FoldoutManager.FoldInNow);
                 }
                 shownCount++;
                 currentShown = true;
@@ -332,9 +306,9 @@ namespace QuizCanners.Inspect
             string hint = FoldoutManager.IsNextFoldedOut ? "{0} ... " : "{0} ... (foldout to select)";
 
             if (!PaintingGameViewUI)
-                " ".PegiLabel(10).Write();
+                " ".PL(10).Write();
 
-            from.TryGet(no, hint.F(no)).ConstLabel().IsFoldout();
+            from.TryGet(no, hint.F(no)).ConstL().IsFoldout();
 
             if (FoldoutManager.isFoldedOutOrEntered)
             {
@@ -342,7 +316,7 @@ namespace QuizCanners.Inspect
                     Nl();
 
                 if (needSearch)
-                    "Search".PegiLabel(70).Edit(ref tmpSelectSearch).Nl();
+                    "Search".PL(70).Edit(ref tmpSelectSearch).Nl();
 
                 bool searching = needSearch && !tmpSelectSearch.IsNullOrEmpty();
 
@@ -353,7 +327,7 @@ namespace QuizCanners.Inspect
                 {
                     if (i == no)
                     {
-                        "[{0}]".F(from[i]).PegiLabel().ClickUnFocus().Nl();
+                        "[{0}]".F(from[i]).PL().ClickUnFocus().Nl();
                         continue;
                     }
 
@@ -361,7 +335,7 @@ namespace QuizCanners.Inspect
                     {
                         shownIndex++;
 
-                        if (from[i].PegiLabel().ClickUnFocus().Nl())
+                        if (from[i].PL().ClickUnFocus().Nl())
                         {
                             no = i;
                             return ChangesToken.True;
@@ -391,7 +365,7 @@ namespace QuizCanners.Inspect
         {
             if (lst.IsNullOrEmpty())
             {
-                "{0} selecting from Empty list".F(val).PegiLabel().Write();
+                "{0} selecting from Empty list".F(val).PL().Write();
                 return ChangesToken.False;
             }
 
@@ -414,7 +388,7 @@ namespace QuizCanners.Inspect
 
             if (!anyValue)
             {
-                "Can't select {0}. All values are empty.".F(val).PegiLabel().Write();
+                "Can't select {0}. All values are empty.".F(val).PL().Write();
                 return ChangesToken.False;
             }
 
@@ -600,7 +574,7 @@ namespace QuizCanners.Inspect
                     lst.Add(val);
             }
             else
-                val.GetNameForInspector().PegiLabel().Write();
+                val.GetNameForInspector().PL().Write();
 
             return changed;
 
@@ -863,7 +837,7 @@ namespace QuizCanners.Inspect
         {
             if (cfg == null)
             {
-                "No Types Holder".PegiLabel().WriteWarning();
+                "No Types Holder".PL().WriteWarning();
                 return ChangesToken.False;
             }
 
@@ -963,18 +937,40 @@ namespace QuizCanners.Inspect
 
             public static Gate.UnityTimeUnScaled SearchGate = new(Gate.InitialValue.StartArmed);
 
+            public static void UpdateCachedValues(IDictionary collection, ICollection newKeys, string[] filteredNames, int index, object cachedKey) 
+            {
+                collectionFiltered = collection;
+                keys = newKeys;
+                names = filteredNames;
+                elementIndex = index;
+                cachedKeyValue = cachedKey;
+            }
+
             public static bool SameKey<T>(T key) 
             {
                 if (SearchGate.TryUpdateIfTimePassed(10))
                     return false;
 
                 if (key == null && elementIndex == -1)
+                {
+                    //Debug.Log("Key is {0}, index is {1}".F(key, elementIndex));
                     return true;
+                }
 
-                if (elementIndex >= keys.Count)
+                if (keys.IsNullOrEmpty() || elementIndex >= keys.Count)
+                {
+                    //Debug.Log("Index is above Count");
                     return false;
+                }
 
-                return key.Equals(cachedKeyValue);
+                if (cachedKeyValue is T val)
+                {
+                    return key.Equals(val);
+                }
+
+
+                //Debug.Log("Key is of different type. New: {0} Old:{1}".F(key, cachedKeyValue));
+                return false;
             }
             public static void Clear() 
             {
@@ -984,13 +980,13 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static ChangesToken Select<TKey, TValue>(ref TValue currentValue, Dictionary<TKey, TValue> from, bool showIndex = false)
+        public static ChangesToken Select<TKey, TValue>(ref TValue currentValue, Dictionary<TKey, TValue> from, bool showIndex = false, System.Func<TValue, string> nameGenerator = null)
         {
             CheckLine();
 
             if (from == null)
             {
-                "Dictionary of {0} for {1} is null ".F(typeof(TValue).ToPegiStringType(), typeof(TKey).ToPegiStringType()).PegiLabel().Write();
+                "Dictionary of {0} for {1} is null ".F(typeof(TValue).ToPegiStringType(), typeof(TKey).ToPegiStringType()).PL().Write();
                 return ChangesToken.False;
             }
 
@@ -999,8 +995,10 @@ namespace QuizCanners.Inspect
             int current = -1;
 
             string display;
-
-            if (tmpCurValue == null)
+            if (nameGenerator!= null) 
+            {
+                display = nameGenerator(currentValue);
+            } else if (tmpCurValue == null)
                 display = "";
             else
             {
@@ -1018,6 +1016,7 @@ namespace QuizCanners.Inspect
                 } else 
                 display = tmpCurValue.ToString();
             }
+
             if (Select(ref current, display: display, from.Count, GetArrayAndInd))
             {
                 SelectCaching.Clear();
@@ -1066,17 +1065,26 @@ namespace QuizCanners.Inspect
 
                 arr = namesList.ToArray();
 
+                SelectCaching.UpdateCachedValues(from, keysList, arr, elementIndex, tmpCurValue);
+
+                /*
                 SelectCaching.collectionFiltered = from;
                 SelectCaching.keys = keysList;
                 SelectCaching.names = arr;
                 SelectCaching.elementIndex = elementIndex;
                 SelectCaching.cachedKeyValue = tmpCurValue;
-
+                */
                 return;
 
                 void CreateEntry(KeyValuePair<TKey, TValue> pair)
                 {
                     keysList.Add(pair.Key);
+
+                    if (nameGenerator != null)
+                    {
+                        namesList.Add(nameGenerator(pair.Value));
+                        return;
+                    }
 
                     var valueName = pair.Value.GetNameForInspector();
 
@@ -1098,13 +1106,13 @@ namespace QuizCanners.Inspect
         }
 
         public static ChangesToken Select<TKey, TValue>(ref TKey currentKey, Dictionary<TKey, TValue> from, bool showIndex = false, 
-            List<TKey> exclude = null, System.Func<KeyValuePair<TKey,TValue>, bool> optionValidator = null)
+            List<TKey> exclude = null, System.Func<KeyValuePair<TKey,TValue>, bool> optionValidator = null, System.Func<TValue, string> nameGenerator = null)
         {
             CheckLine();
 
             if (from == null)
             {
-                "Dictionary of {0} for {1} is null ".F(typeof(TValue).ToPegiStringType(), typeof(TKey).ToPegiStringType()).PegiLabel().Write();
+                "Dictionary of {0} for {1} is null ".F(typeof(TValue).ToPegiStringType(), typeof(TKey).ToPegiStringType()).PL().Write();
                 return ChangesToken.False;
             }
 
@@ -1114,7 +1122,12 @@ namespace QuizCanners.Inspect
 
             string display;
 
-            if (tmpCurKey == null)
+            if (nameGenerator!= null)
+            {
+                from.TryGetValue(currentKey, out TValue val);
+                display = nameGenerator(val);
+            }
+            else if (tmpCurKey == null)
                 display = "";
             else if (from.TryGetValue(tmpCurKey, out var val))
                 display = showIndex ? "{0} : {1}".F(tmpCurKey.ToString(), val.ToString()) : val.ToString();
@@ -1132,13 +1145,25 @@ namespace QuizCanners.Inspect
 
             void GetArrayAndInd(out string[] arr, ref int elementIndex)
             {
-                if (SelectCaching.collectionFiltered == from && SelectCaching.SameKey(tmpCurKey) && !SelectCaching.SearchGate.TryUpdateIfTimePassed(10)) 
+                if (from.Count > 32)
                 {
-                    arr = SelectCaching.names;
-                    keysList = (List<TKey>)SelectCaching.keys;
-                    elementIndex = SelectCaching.elementIndex;
-                    return;
+                    bool sameCollection = SelectCaching.collectionFiltered == from;
+                    bool sameKey = SelectCaching.SameKey(tmpCurKey);
+                    bool timeOut = SelectCaching.SearchGate.TryUpdateIfTimePassed(10);
+
+                    if (sameCollection && sameKey && !timeOut)
+                    {
+                        arr = SelectCaching.names;
+                        keysList = (List<TKey>)SelectCaching.keys;
+                        elementIndex = SelectCaching.elementIndex;
+                        SelectCaching.SearchGate.Update();
+                        return;
+                    }
+
+                    Debug.Log("Recreating chache. Same collection: {0}. Same key: {1}. TimeOut: {2}".F(sameCollection, sameKey, timeOut));
                 }
+
+              
 
                 var namesList = new List<string>(from.Count + 1);
                 keysList = new List<TKey>(from.Count);
@@ -1184,16 +1209,26 @@ namespace QuizCanners.Inspect
 
                 arr = namesList.ToArray();
 
+                SelectCaching.UpdateCachedValues(from, keysList, arr, elementIndex, tmpCurKey);
+                
+                /*
                 SelectCaching.collectionFiltered = from;
                 SelectCaching.keys = keysList;
                 SelectCaching.names = arr;
                 SelectCaching.elementIndex = elementIndex;
+                SelectCaching.cachedKeyValue = tmpCurKey;
+                */
 
                 return;
 
                 void CreateEntry(KeyValuePair<TKey, TValue> pair)
                 {
                     keysList.Add(pair.Key);
+
+                    if (nameGenerator!= null) 
+                    {
+                        namesList.Add(nameGenerator(pair.Value));
+                    }
 
                     var valueName = pair.Value.GetNameForInspector();
 
@@ -1386,7 +1421,7 @@ namespace QuizCanners.Inspect
             return Select_iGotDisplayName(ref name, lst);
         }
 
-        public static ChangesToken Select_iGotName<T>(this TextLabel label, ref string name, List<T> lst) where T : IGotName
+        public static ChangesToken Select_iGotName<T>(this TextLabel label, ref string name, List<T> lst) where T : IGotStringId
         {
            
             Write(label);
@@ -1395,7 +1430,7 @@ namespace QuizCanners.Inspect
             return Select_iGotName(ref name, lst);
         }
 
-        public static ChangesToken Select_iGotName<T>(ref string val, List<T> lst) where T : IGotName
+        public static ChangesToken Select_iGotName<T>(ref string val, List<T> lst) where T : IGotStringId
         {
 
             if (lst == null)
@@ -1408,7 +1443,7 @@ namespace QuizCanners.Inspect
             foreach (var el in lst)
                 if (!el.IsNullOrDestroyed_Obj())
                 {
-                    var name = el.NameForInspector;
+                    var name = el.StringId;
 
                     if (name == null) continue;
 

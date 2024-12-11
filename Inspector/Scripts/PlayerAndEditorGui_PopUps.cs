@@ -78,7 +78,7 @@ namespace QuizCanners.Inspect
 
             internal static void InitiatePopUp()
             {
-                _popUpTarget = PegiEditorOnly.inspectedTarget;
+                _popUpTarget = pegi.inspectedTarget;
 
                 _understoodPopUpText = _textsShown switch
                 {
@@ -219,7 +219,7 @@ namespace QuizCanners.Inspect
             #region Elements
             public static bool ShowingPopup()
             {
-                if (_popUpTarget == null || _popUpTarget != PegiEditorOnly.inspectedTarget)
+                if (_popUpTarget == null || _popUpTarget != pegi.inspectedTarget)
                     return false;
 
                 if (areYouSureFunk != null)
@@ -244,7 +244,7 @@ namespace QuizCanners.Inspect
 
                     Nl();
 
-                    popUpText.PegiLabel().WriteBig();
+                    popUpText.PL().WriteBig();
 
                     return true;
 
@@ -269,11 +269,11 @@ namespace QuizCanners.Inspect
 
                     WriteHeaderIfAny().Nl();
 
-                    popUpText.PegiLabel(
+                    popUpText.PL(
                         toolTip: "Click the blue text below to close this toolTip. This is basically a toolTip for a toolTip. It is the world we are living in now.")
                         .WriteBig();
 
-                    if (!relatedLink.IsNullOrEmpty() && relatedLinkName.PegiLabel().ClickText(14))
+                    if (!relatedLink.IsNullOrEmpty() && relatedLinkName.PL().ClickText(14))
                         Application.OpenURL(relatedLink);
 
                     ConfirmLabel();
@@ -287,9 +287,9 @@ namespace QuizCanners.Inspect
             private static void ContactOptions()
             {
                 Nl();
-                "Didn't get the answer you need?".PegiLabel().Write();
-                "Discord".PegiLabel().ClickLink(DISCORD_SERVER);
-                "Email".PegiLabel().Click(() => QcUnity.SendEmail(
+                "Didn't get the answer you need?".PL().Write();
+                "Discord".PL().ClickLink(DISCORD_SERVER);
+                "Email".PL().Click(() => QcUnity.SendEmail(
                         email: SUPPORT_EMAIL, 
                         subject: "About this hint",
                         body: "The toolTip:{0}***{0} {1} {0}***{0} haven't answered some of the questions I had on my mind. Specifically: {0}".F(EnvironmentNl, popUpText)));
@@ -299,7 +299,7 @@ namespace QuizCanners.Inspect
             {
                 Nl();
 
-                if (_understoodPopUpText.PegiLabel().ClickText(15).Nl())
+                if (_understoodPopUpText.PL().ClickText(15).Nl())
                     ClosePopUp();
 
                 ContactOptions();
@@ -309,7 +309,7 @@ namespace QuizCanners.Inspect
             {
                 if (!popUpHeader.IsNullOrEmpty())
                 {
-                    popUpHeader.PegiLabel(Styles.ListLabel).Write();
+                    popUpHeader.PL(Styles.ListLabel).Write();
                     return StateToken.True;
                 }
 

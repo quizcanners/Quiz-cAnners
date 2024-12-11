@@ -1,5 +1,6 @@
 using QuizCanners.Utils;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace QuizCanners.Inspect
 {
@@ -62,7 +63,7 @@ namespace QuizCanners.Inspect
 
             public static bool MouseOverUI
             {
-                get { return _mouseOverUi >= Time.frameCount - 1; }
+                get => Toolkit.MouseOverUI || (_mouseOverUi >= Time.frameCount - 1); // || EventSystem.current.IsPointerOverGameObject();
                 set
                 {
                     if (value) _mouseOverUi = Time.frameCount;
@@ -126,17 +127,13 @@ namespace QuizCanners.Inspect
                 protected bool UseWindow => Mathf.Approximately(Upscale, 1);
                 private void DrawFunctionWrapper(int windowID)
                 {
-                    PaintingGameViewUI = true;
                     bool matrixOverride = false;
                     Matrix4x4 matrix = new();
 
                     using (QcSharp.DisposableAction(() =>
                     {
-                        PaintingGameViewUI = false;
-
                         if (matrixOverride)
-                            GUI.matrix = matrix;
-                            
+                            GUI.matrix = matrix;       
                     }))
                     {
                         try
@@ -193,7 +190,7 @@ namespace QuizCanners.Inspect
                                 }
 
                                 Nl();
-                                _tooltip.PegiLabel(toolTip: "This is the Tooltip text's tooltip",style: Styles.Text.Hint).Nl();
+                                _tooltip.PL(toolTip: "This is the Tooltip text's tooltip",style: Styles.Text.Hint).Nl();
                                 UnIndent();
                             }
 
@@ -228,7 +225,7 @@ namespace QuizCanners.Inspect
                 public void Render(IPEGI p, string windowName) => Render(p, p.Inspect, windowName);
                 public void Render(IPEGI target, WindowFunction doWindow, string c_windowName)
                 {
-                    using (PegiEditorOnly.StartInspector(target))
+                    using (StartInspector(target, PegiPaintingMode.GameViewGUI))
                     {
                         if (!_customUpscale)
                         {

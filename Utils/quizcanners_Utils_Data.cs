@@ -3,19 +3,16 @@ using System.IO;
 using QuizCanners.Inspect;
 using UnityEngine;
 using System.Runtime.Serialization.Formatters.Binary;
-
 using Object = UnityEngine.Object;
 using System;
-using UnityEditor;
-
 
 #if UNITY_EDITOR
+using UnityEditor;
 using AssetDatabase = UnityEditor.AssetDatabase;
 #endif
 
 namespace QuizCanners.Utils
 {
-
     public static class QcFile
     {
         private const string TEXT_FILE_TYPE = ".txt";
@@ -37,7 +34,7 @@ namespace QuizCanners.Utils
 
             public void Inspect()
             {
-                if ("Open {0} Save location".F(FolderName).PegiLabel().Click())
+                if ("Open {0} Save location".F(FolderName).PL().Click())
                     Explorer.OpenPersistentFolder(FolderName);
             }
 
@@ -53,6 +50,21 @@ namespace QuizCanners.Utils
 
         public static readonly string OutsideOfAssetsFolder =
             Application.dataPath[..^6];
+
+        public static class Select 
+        {
+            public static bool TrySelectPath_EditorOnly(out string filePath) 
+            {
+#if UNITY_EDITOR
+                filePath = EditorUtility.OpenFilePanel("Select File", "", "");
+                if (!filePath.IsNullOrEmpty())
+                    return true;
+#endif
+
+                filePath = "";
+                return false;
+            }
+        }
 
         public static class Explorer
         {
@@ -162,7 +174,6 @@ namespace QuizCanners.Utils
                         pegi.GameView.ShowNotification("{0} not found".F(path));
                     }
                 }
-
             }
 
             public static void FromResources(string assetFolder, string insideAssetFolderAndName, bool asBytes = DEFAULT_IS_BINARY)
@@ -182,15 +193,14 @@ namespace QuizCanners.Utils
 #endif
             }
 
-
             private static bool DeleteInternal(string fullPath, bool showNotificationIn3DView = false)
             {
-                if (System.IO.File.Exists(fullPath)) {
-                    
+                if (File.Exists(fullPath)) 
+                {    
                     if (showNotificationIn3DView && Application.isEditor)
                         pegi.GameView.ShowNotification("Deleting " + fullPath);
-                    
-                    System.IO.File.Delete(fullPath);
+
+                    File.Delete(fullPath);
                     return true;
                 }
 
@@ -199,7 +209,6 @@ namespace QuizCanners.Utils
 
                 return false;
             }
-            
         }
 
         public static class Load
@@ -482,7 +491,7 @@ namespace QuizCanners.Utils
 
                 public void Inspect()
                 {
-                    "File path".ConstLabel().Edit(ref FilePath);
+                    "File path".ConstL().Edit(ref FilePath);
 
 #if UNITY_EDITOR
                     if (Icon.Edit.Click())

@@ -44,13 +44,13 @@ namespace QuizCanners.Utils
                 {
                     Icon.Clear.Click(() => IsSet = false, toolTip: "Switch to default value");
 
-                    if (label.PegiLabel(70).Edit(ref manualValue, 60))
+                    if (label.PL(70).Edit(ref manualValue, 60))
                         ManualValue = manualValue;
                 }
                 else
                 {
                     Icon.Edit.Click(() => ManualValue = fallbackValue, toolTip: "Input value manually");
-                    "{0}: {1}".F(label, fallbackValue).PegiLabel().Write();
+                    "{0}: {1}".F(label, fallbackValue).PL().Write();
                 }
             }
         }

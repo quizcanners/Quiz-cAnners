@@ -70,7 +70,7 @@ namespace QuizCanners.Utils
             void IPEGI.Inspect()
             {
                 var tmp = GetValue();
-                if (key.PegiLabel().Edit(ref tmp))
+                if (key.PL().Edit(ref tmp))
                     SetValue(tmp);
             }
         }
@@ -84,7 +84,7 @@ namespace QuizCanners.Utils
             void IPEGI.Inspect()
             {
                 var tmp = GetValue();
-                if (key.PegiLabel().Edit(ref tmp))
+                if (key.PL().Edit(ref tmp))
                     SetValue(tmp);
             }
         }
@@ -98,7 +98,7 @@ namespace QuizCanners.Utils
             void IPEGI.Inspect()
             {
                 var tmp = GetValue();
-                if (key.PegiLabel().Edit(ref tmp))
+                if (key.PL().Edit(ref tmp))
                     SetValue(tmp);
             }
         }
@@ -116,7 +116,7 @@ namespace QuizCanners.Utils
             void IPEGI.Inspect()
             {
                 var tmp = GetValue();
-                if (key.PegiLabel().ToggleIcon(ref tmp))
+                if (key.PL().ToggleIcon(ref tmp))
                     SetValue(tmp);
             }
         }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
 using QuizCanners.Utils;
 using UnityEngine;
 
@@ -15,7 +14,7 @@ namespace QuizCanners.Inspect
 
     public interface IPEGI_Context { void InspectContext(pegi.EnterExitContext context); }
 
-    public interface IGotName { string NameForInspector { get; set; } }
+    public interface IGotStringId { string StringId { get; set; } }
 
     public interface IGotIndex { int IndexForInspector { get; set; } }
 
@@ -66,14 +65,57 @@ namespace QuizCanners.Inspect
 
         public static UnityEngine.Object InspectedUnityObject =>
         #if UNITY_EDITOR
-            PegiEditorOnly.inspectedUnityObject;
+            inspectedUnityObject;
         #else
             null;
         #endif
         public static bool IsFoldedOut => FoldoutManager.isFoldedOutOrEntered;
         public static string EnvironmentNl => Environment.NewLine;
 
-#region GUI Modes & Fitting
+        internal static UnityEngine.Object inspectedUnityObject;
+        internal static object inspectedTarget;
+        internal static bool InspectorStarted;
+
+        internal static IDisposable StartInspector(object obj, PegiPaintingMode mode)
+        {
+            if (InspectorStarted)
+                Debug.LogError("Inspector was aleady started");
+
+            currentMode = mode;
+
+            InspectorStarted = true;
+
+            _elementIndex = 0;
+            _horizontalStarted = false;
+            GlobChanged = false;
+
+            inspectedTarget = obj;
+            inspectedUnityObject = obj as UnityEngine.Object;
+            ResetInspectedChain();
+
+            return QcSharp.DisposableAction(() => EndInspector());
+        }
+
+        internal static List<Styles.Background.BackgroundStyle> nextBgStyle = new();
+        
+        private static void EndInspector()
+        {
+            InspectorStarted = false;
+
+            if (GlobChanged)
+            {
+#if UNITY_EDITOR
+                PegiEditorOnly.OnEndInspector();
+#endif
+            }
+            inspectedTarget = null;
+            inspectedUnityObject = null;
+            nextBgStyle.Clear();
+            Nl();
+        }
+
+
+        #region GUI Modes & Fitting
 
 #if UNITY_EDITOR
         private static ChangesToken EditorOnly_EndChangeCheck()
@@ -87,19 +129,20 @@ namespace QuizCanners.Inspect
 #endif
 
 
-    public static bool PaintingGameViewUI
+        public static bool PaintingGameViewUI
         {
-            get { return currentMode == PegiPaintingMode.PlayAreaGui; }
-            private set { currentMode = value ? PegiPaintingMode.PlayAreaGui : PegiPaintingMode.EditorInspector; }
+            get { return currentMode == PegiPaintingMode.GameViewGUI; }
         }
 
-        private enum PegiPaintingMode
+        internal enum PegiPaintingMode
         {
+            Nothing,
             EditorInspector,
-            PlayAreaGui
+            GameViewGUI,
+            UI_Toolkit
         }
 
-        private static PegiPaintingMode currentMode = PegiPaintingMode.EditorInspector;
+        internal static PegiPaintingMode currentMode = PegiPaintingMode.EditorInspector;
 
         private static int LetterSizeInPixels => PaintingGameViewUI ? 10 : 9;
 
@@ -373,6 +416,7 @@ namespace QuizCanners.Inspect
         public struct ChangesToken 
         {
             private bool IsChanged;
+            public UnityEngine.UIElements.CallbackEventHandler Handler;
 
             public static implicit operator bool(ChangesToken d) => d.IsChanged;
 
@@ -388,6 +432,13 @@ namespace QuizCanners.Inspect
             public ChangesToken(bool value) 
             {
                 IsChanged = value;
+                Handler = null;
+            }
+
+            public ChangesToken(UnityEngine.UIElements.CallbackEventHandler handler) 
+            {
+                IsChanged = false;
+                this.Handler = handler;
             }
         }
 
@@ -467,18 +518,28 @@ namespace QuizCanners.Inspect
 
         public static void Nl()
         {
-#if UNITY_EDITOR
-            if (!PaintingGameViewUI)
+            switch (currentMode) 
             {
-                PegiEditorOnly.NewLine_Editor();
-                return;
-            }
-#endif
+                case PegiPaintingMode.Nothing: Debug.LogError("Current mode is none"); return;
 
-            if (_horizontalStarted)
-            {
-                _horizontalStarted = false;
-                GUILayout.EndHorizontal();
+#if UNITY_EDITOR
+                case PegiPaintingMode.EditorInspector:
+                    PegiEditorOnly.NewLine_Editor();
+                    break;
+#endif
+                case PegiPaintingMode.GameViewGUI:
+                    if (_horizontalStarted)
+                    {
+                        _horizontalStarted = false;
+                        GUILayout.EndHorizontal();
+                    }
+                    break;
+                case PegiPaintingMode.UI_Toolkit:
+                    Toolkit.NewLine();
+                    break;
+                default:
+                    Debug.LogError(QcLog.CaseNotImplemented(currentMode));
+                    break;
             }
         }
 

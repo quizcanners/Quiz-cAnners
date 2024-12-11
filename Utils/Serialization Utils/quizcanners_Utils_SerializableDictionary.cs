@@ -12,7 +12,7 @@ namespace QuizCanners.Utils
 
         protected virtual bool CanAdd => true;
         protected virtual bool ShowDictionaryKey => true;
-        protected virtual string ElementName => "New "+this.GetNameForInspector();
+        protected virtual string DefaultNewItemName => "New "+this.GetNameForInspector();
 
         public virtual void OnBeforeSerialize()
         {
@@ -55,7 +55,7 @@ namespace QuizCanners.Utils
             {
                 _collectionMeta ??= new pegi.CollectionInspectorMeta(labelName: ToString().Replace("Dictionary", ""), showAddButton: CanAdd, showDictionaryKey: ShowDictionaryKey)
                     {
-                        ElementName = ElementName
+                        ElementName = DefaultNewItemName
                     };
                 return _collectionMeta;
             }
@@ -91,14 +91,14 @@ namespace QuizCanners.Utils
 
             if (value == null)
             {
-                if ("Create {0}".F(name).PegiLabel().Click())
+                if ("Create {0}".F(name).PL().Click())
                     Create(key);
             }
             else
             {
                 if (value is IPEGI_ListInspect pgi)
                 {
-                    if (name.PegiLabel("Click to Copy to Clipboard", width: 90).ClickLabel())
+                    if (name.PL("Click to Copy to Clipboard", width: 90).ClickLabel())
                         pegi.SetCopyPasteBuffer(name);
                     var change = pegi.ChangeTrackStart();
 
@@ -111,7 +111,7 @@ namespace QuizCanners.Utils
                 }
                 else
                 {
-                    name.PegiLabel().Try_Enter_Inspect(value, ref CollectionMeta.inspectedElement_Internal, index).OnChanged(CollectionMeta.OnChanged);
+                    name.PL().Try_Enter_Inspect(value, ref CollectionMeta.inspectedElement_Internal, index).OnChanged(CollectionMeta.OnChanged);
                 }
             }
         }
@@ -122,7 +122,7 @@ namespace QuizCanners.Utils
 
             if (element == null)
             {
-                "NULL".PegiLabel().Write();
+                "NULL".PL().Write();
                 return;
             }
 
@@ -136,14 +136,14 @@ namespace QuizCanners.Utils
         {
             var type = typeof(TKey);
 
-            type.ToString().PegiLabel(style: pegi.Styles.ListLabel).Nl();
+            type.ToString().PL(style: pegi.Styles.ListLabel).Nl();
 
             TKey[] Keys = (TKey[])System.Enum.GetValues(typeof(TKey));
 
             if (CollectionMeta.IsAnyEntered)
             {
                 var key = Keys[CollectionMeta.InspectedElement];
-                if (key.ToString().SimplifyTypeName().PegiLabel().IsEntered(ref CollectionMeta.inspectedElement_Internal, CollectionMeta.InspectedElement).Nl())
+                if (key.ToString().SimplifyTypeName().PL().IsEntered(ref CollectionMeta.inspectedElement_Internal, CollectionMeta.InspectedElement).Nl())
                 {
                     CollectionMeta.OnChanged();
                     InspectElement(key);

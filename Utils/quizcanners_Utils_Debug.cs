@@ -48,16 +48,16 @@ namespace QuizCanners.Utils
             {
                 using (_context.StartContext())
                 {
-                    "Json Inspector".PegiLabel().Enter_Inspect(jsonInspector).Nl();
+                    "Json Inspector".PL().Enter_Inspect(jsonInspector).Nl();
 
-                    if ("ICfg Inspector".PegiLabel().IsEntered().Nl())
+                    if ("ICfg Inspector".PL().IsEntered().Nl())
                         iCfgExplorer.Inspect(null);
 
-                    if ("Blockers [0]".F(InspectableBlock.allBlocks.Count).PegiLabel().IsEntered().Nl()) 
+                    if ("Blockers [0]".F(InspectableBlock.allBlocks.Count).PL().IsEntered().Nl()) 
                     {
                         _blockersMeta.Edit_List(InspectableBlock.allBlocks).Nl();
 
-                        if ("Create Test Blocks".PegiLabel().Click().Nl()) 
+                        if ("Create Test Blocks".PL().Click().Nl()) 
                         {
                             new InspectableBlock("Test A");
                             new InspectableBlock("Test B");
@@ -65,59 +65,59 @@ namespace QuizCanners.Utils
                         }
                     }
 
-                    if ("Managed Coroutines [{0}]".F(QcAsync.DefaultCoroutineManager.GetActiveCoroutinesCount).PegiLabel().IsEntered().Nl())
+                    if ("Managed Coroutines [{0}]".F(QcAsync.DefaultCoroutineManager.GetActiveCoroutinesCount).PL().IsEntered().Nl())
                         QcAsync.DefaultCoroutineManager.Nested_Inspect();
 
-                    if ("Tests".PegiLabel().IsEntered().Nl())
+                    if ("Tests".PL().IsEntered().Nl())
                     {
                         using (_testsContext.StartContext())
                         {
-                            if ("Gui Styles".PegiLabel().IsEntered().Nl())
+                            if ("Gui Styles".PL().IsEntered().Nl())
                             {
                                 pegi.Styles.Inspect();
                                 pegi.Nl();
                             }
 
-                            if ("Random Seed Test".PegiLabel().IsEntered().Nl())
+                            if ("Random Seed Test".PL().IsEntered().Nl())
                             {
-                                "Seed".ConstLabel().Edit(ref _testSeed).Nl();
+                                "Seed".ConstL().Edit(ref _testSeed).Nl();
 
                                 using (QcMath.RandomBySeedDisposable(_testSeed))
                                 {
                                     for (int i = 0; i < 4; i++)
-                                        "Value {0}: {1}".F(i, UnityEngine.Random.value * 100).PegiLabel().Nl();
+                                        "Value {0}: {1}".F(i, UnityEngine.Random.value * 100).PL().Nl();
                                 }
 
                                 using (QcMath.RandomBySeedDisposable(_testSeed))
                                 {
                                     for (int i = 0; i < 4; i++)
-                                        "B Value {0}: {1}".F(i, UnityEngine.Random.value * 100).PegiLabel().Nl();
+                                        "B Value {0}: {1}".F(i, UnityEngine.Random.value * 100).PL().Nl();
                                 }
                             }
 
-                            if ("Probability Calculator".PegiLabel().IsEntered().Nl())
+                            if ("Probability Calculator".PL().IsEntered().Nl())
                             {
                                 Percentages = QcMath.NormalizeToPercentage(probabilities, prob => prob.Chances);
-                                "Probabilities".PegiLabel().Edit_List(probabilities).Nl();
+                                "Probabilities".PL().Edit_List(probabilities).Nl();
                             }
                         }
                     }
 
-                    if ("Scenes".PegiLabel().IsEntered().Nl()) 
+                    if ("Scenes".PL().IsEntered().Nl()) 
                     {
                         for (int i=0; i< SceneManager.sceneCount; i++) 
                         {
                             var s = SceneManager.GetSceneAt(i);
                             if (s.isLoaded)
                                 Icon.Done.Draw();
-                            s.path.PegiLabel().Nl();
+                            s.path.PL().Nl();
                         }
                     }
 
                     if (_context.IsAnyEntered == false)
                     {
                         var release = IsRelease;
-                        if ("Release".PegiLabel().ToggleIcon(ref release).Nl())
+                        if ("Release".PL().ToggleIcon(ref release).Nl())
                             IsRelease = release;
                     }
                 }
@@ -179,7 +179,7 @@ namespace QuizCanners.Utils
             {
                 if (allBlocks.Count > 0) 
                 {
-                    "Blocking In Progress".PegiLabel().WriteWarning().Nl();
+                    "Blocking In Progress".PL().WriteWarning().Nl();
 
                     _context.Edit_List(allBlocks).Nl();
                 }
@@ -187,7 +187,7 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                if (_blocked && "Load {0}".F(_loadingStage).PegiLabel().Click().Nl())
+                if (_blocked && "Load {0}".F(_loadingStage).PL().Click().Nl())
                     _blocked = false;
             }
 
@@ -203,7 +203,7 @@ namespace QuizCanners.Utils
                 if (_blocked && Icon.Play.Click())
                     Unblock();
 
-                if (_loadingStage.PegiLabel().ClickLabel() | Icon.Enter.Click())
+                if (_loadingStage.PL().ClickLabel() | Icon.Enter.Click())
                     edited = index;
             }
             #endregion
@@ -235,7 +235,7 @@ namespace QuizCanners.Utils
                 pegi.Edit(ref name);
                 pegi.Edit(ref Chances);
 
-                "= {0}%".F(Percentages[index].ToString()).PegiLabel().Nl();
+                "= {0}%".F(Percentages[index].ToString()).PL().Nl();
             }
         }
         #endregion

@@ -19,55 +19,21 @@ namespace QuizCanners.Inspect
 
     internal static partial class PegiEditorOnly {
 
-        internal static List<Styles.Background.BackgroundStyle> nextBgStyle = new();
-        internal static Object inspectedUnityObject;
-        internal static object inspectedTarget;
-        internal static bool InspectorStarted;
+      
 
-        internal static IDisposable StartInspector(object obj)
+#if UNITY_EDITOR
+
+        internal static void OnEndInspector() 
         {
-            if (InspectorStarted)
-                Debug.LogError("Inspector was aleady started");
+            if (!Application.isPlaying)
+                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
 
-            InspectorStarted = true;
-
-            _elementIndex = 0;
-            _horizontalStarted = false;
-            GlobChanged = false;
-
-            inspectedTarget = obj;
-            inspectedUnityObject = obj as Object;
-            ResetInspectedChain();
-
-            return QcSharp.DisposableAction(() => EndInspector());
-        }
-
-        private static void EndInspector()
-        {
-
-            InspectorStarted = false;
-
-            if (GlobChanged)
+            if (inspectedUnityObject)
             {
-#if UNITY_EDITOR
-
-                if (!Application.isPlaying)
-                    UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-
-                if (inspectedUnityObject)
-                {
-                    ClearFromPooledSerializedObjects(inspectedUnityObject);
-                    EditorUtility.SetDirty(inspectedUnityObject);
-                }
-#endif
+                ClearFromPooledSerializedObjects(inspectedUnityObject);
+                EditorUtility.SetDirty(inspectedUnityObject);
             }
-            inspectedTarget = null;
-            inspectedUnityObject = null;
-            nextBgStyle.Clear();
-            Nl();
         }
-
-#if UNITY_EDITOR
 
         public static SerializedObject SerObj;
         private static Editor _editor;
@@ -171,7 +137,7 @@ namespace QuizCanners.Inspect
 
             if (!scrObj)
             {
-                "Target is not Scriptable Object. Check your PEGI_Inspector_OS.".PegiLabel().WriteWarning();
+                "Target is not Scriptable Object. Check your PEGI_Inspector_OS.".PL().WriteWarning();
                 editor.DrawDefaultInspector();
                 return;
             }
@@ -222,7 +188,7 @@ namespace QuizCanners.Inspect
             var mat = editor.unityMaterialEditor.target as Material;
             var changed = false;
 
-            using (StartInspector(editor.unityMaterialEditor.target))
+            using (StartInspector(editor.unityMaterialEditor.target, PegiPaintingMode.EditorInspector))
             {
                 changed = !FullWindow.ShowingPopup() && editor.Inspect(mat);
             }
@@ -244,7 +210,7 @@ namespace QuizCanners.Inspect
                     "Toggle Between regular and PEGI Material inspector", PEGI_Inspector_Material.drawDefaultInspector ? ICON_SIZE_FOR_DEFAULT : ICON_SIZE_FOR_CUSTOM);
 
                 if (PEGI_Inspector_Material.drawDefaultInspector &&
-                    BACK_TO_CUSTOM.PegiLabel(style: Styles.Text.ExitLabel).ClickLabel().Nl())
+                    BACK_TO_CUSTOM.PL(style: Styles.Text.ExitLabel).ClickLabel().Nl())
                     PEGI_Inspector_Material.drawDefaultInspector = false;
             }
             else
@@ -258,7 +224,7 @@ namespace QuizCanners.Inspect
                         "Toggle Between regular and PEGI inspector", isDefault ? ICON_SIZE_FOR_DEFAULT : ICON_SIZE_FOR_CUSTOM))
                         DrawDefaultInspector = isDefault ? target : null;
 
-                    if (isDefault && BACK_TO_CUSTOM.PegiLabel(style: Styles.Text.ExitLabel).ClickLabel().Nl())
+                    if (isDefault && BACK_TO_CUSTOM.PL(style: Styles.Text.ExitLabel).ClickLabel().Nl())
                         DrawDefaultInspector = null;
                 }
                 else
@@ -639,6 +605,25 @@ namespace QuizCanners.Inspect
 
         #region Values
 
+        public static ChangesToken Edit_Range(TextLabel label, ref float from, ref float to, float min, float max)
+        {
+            START();
+            /*if (label.GotWidth)
+                EditorGUILayout.MinMaxSlider(label.ToGUIContext(), ref from, ref to, minLimit: min, maxLimit: max, GUILayout.MaxWidth(label.width));
+            else*/
+                EditorGUILayout.MinMaxSlider(label.ToGUIContext(), ref from, ref to, minLimit: min, maxLimit: max);
+
+            return END();
+        }
+
+        public static ChangesToken Edit_Range(ref float from, ref float to, float min, float max)
+        {
+            START();
+            EditorGUILayout.MinMaxSlider(ref from, ref to, minLimit: min, maxLimit: max);
+            return END();
+        }
+
+
         public static ChangesToken Edit_Scene(ref string path)
         {
             START();
@@ -761,9 +746,7 @@ namespace QuizCanners.Inspect
             }
 
             START();
-
             val = EditorGUILayout.IntField(label.ToGUIContext(), val);
-            //  val = EditorGUILayout.FloatField(val);
             return END();
         }
 
@@ -776,9 +759,7 @@ namespace QuizCanners.Inspect
             }
 
             START();
-
             val = EditorGUILayout.LongField(label.ToGUIContext(), val);
-            //  val = EditorGUILayout.FloatField(val);
             return END();
         }
 
@@ -791,9 +772,7 @@ namespace QuizCanners.Inspect
             }
 
             START();
-
             val = EditorGUILayout.FloatField(label.ToGUIContext(), val);
-              //  val = EditorGUILayout.FloatField(val);
             return END();
         }
 
@@ -806,7 +785,6 @@ namespace QuizCanners.Inspect
             }
 
             START();
-
             val = EditorGUILayout.FloatField(label.ToGUIContext(), val, GUILayout.MaxWidth(valueWidth));
             return END();
         }
@@ -1055,7 +1033,7 @@ namespace QuizCanners.Inspect
             return END();
         }
 
-        public static ChangesToken Edit(ref Vector4 val) => "X".PegiLabel(15).Edit(ref val.x).Nl() | "Y".PegiLabel(15).Edit(ref val.y).Nl() | "Z".PegiLabel(15).Edit(ref val.z).Nl() | "W".PegiLabel(15).Edit(ref val.w).Nl();
+        public static ChangesToken Edit(ref Vector4 val) => "X".PL(15).Edit(ref val.x).Nl() | "Y".PL(15).Edit(ref val.y).Nl() | "Z".PL(15).Edit(ref val.z).Nl() | "W".PL(15).Edit(ref val.w).Nl();
         #endregion
 
         #region Delayed
@@ -1194,7 +1172,7 @@ namespace QuizCanners.Inspect
 
             if (serializedObject == null)
             {
-                "No SerObj".ConstLabel().Write();
+                "No SerObj".ConstL().Write();
                 return ChangesToken.False;
             }
 
@@ -1228,7 +1206,7 @@ namespace QuizCanners.Inspect
         {
             if (serializedObject == null)
             {
-                "No SerObj".ConstLabel().Write();
+                "No SerObj".ConstL().Write();
                 return null;
             }
 
@@ -1240,7 +1218,7 @@ namespace QuizCanners.Inspect
             var property = serializedObject.FindProperty(name);
 
             if (property == null)
-                "{0} not found".F(name).PegiLabel().Write();
+                "{0} not found".F(name).PL().Write();
 
             return property;
         }
@@ -1249,7 +1227,7 @@ namespace QuizCanners.Inspect
         {
             if (serializedProperty == null)
             {
-                "No SerProp".ConstLabel().Write();
+                "No SerProp".ConstL().Write();
                 return null;
             }
 
@@ -1266,7 +1244,7 @@ namespace QuizCanners.Inspect
             var property = serializedProperty.FindPropertyRelative(name); 
 
             if (property == null)
-                "{0} not found".F(name).PegiLabel(90).Write();
+                "{0} not found".F(name).PL(90).Write();
 
             return property;
         }
@@ -1418,14 +1396,20 @@ namespace QuizCanners.Inspect
 
         public static void Write(TextLabel label)
         {
+
+            label.TryWrite();
+
+            /*
+            var style = label.style == null ? EditorStyles.miniLabel : label.style.Current;
+
             CheckLine_Editor();
             if (label.GotWidth)
             {
-                EditorGUILayout.LabelField(label.ToGUIContext(), EditorStyles.miniLabel, GUILayout.MaxWidth(label.width));
+                EditorGUILayout.LabelField(label.ToGUIContext(), style, GUILayout.MaxWidth(label.width));
             } else 
             {
-                EditorGUILayout.LabelField(label.ToGUIContext(), EditorStyles.miniLabel);
-            }
+                EditorGUILayout.LabelField(label.ToGUIContext(), style);
+            }*/
         }
 
         public static void ProgressBar(TextLabel label, float value) {

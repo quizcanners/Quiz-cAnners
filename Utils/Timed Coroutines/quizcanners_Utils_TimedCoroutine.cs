@@ -8,7 +8,7 @@ using Debug = UnityEngine.Debug;
 
 namespace QuizCanners.Utils
 {
-    public class TimedCoroutine : IPEGI_ListInspect, IPEGI, IGotName
+    public class TimedCoroutine : IPEGI_ListInspect, IPEGI, IGotStringId
     {
 
         public static CallAgainRequest CallAgain => new();
@@ -392,7 +392,7 @@ namespace QuizCanners.Utils
             ResetInternal(enumerator);
             _state = "Resetting: " + enumerator;
             TryAdd(onExitAction: onExitAction, onDoneFullyAction: onDoneFullyAction);
-            NameForInspector = nameForInspector.IsNullOrEmpty() ? enumerator.ToString() : nameForInspector;
+            StringId = nameForInspector.IsNullOrEmpty() ? enumerator.ToString() : nameForInspector;
 
             return this;
         }
@@ -400,7 +400,7 @@ namespace QuizCanners.Utils
         public TimedCoroutine(bool logUnoptimizedSections = false, string nameForInspector = "")
         {
             _logUnoptimizedSections = logUnoptimizedSections;
-            NameForInspector = nameForInspector;
+            StringId = nameForInspector;
         }
 
         public TimedCoroutine(IEnumerator enumerator, bool logUnoptimizedSections = false, string nameForInspector = "")
@@ -416,7 +416,7 @@ namespace QuizCanners.Utils
         private int _yields;
         private int _frames;
 
-        public string NameForInspector { get; set; }
+        public string StringId { get; set; }
 
         public void InspectInList(ref int edited, int ind)
         {
@@ -432,22 +432,22 @@ namespace QuizCanners.Utils
                 _frames, // 1
                 EnumeratorVersion > 1 ? ("v: " + EnumeratorVersion) : "", //2
                 _task == null ? "[CORO]" : "[TASK]", //3
-                NameForInspector, // 4
+                StringId, // 4
                 _state // 5
                 ) // 4
-                .PegiLabel(_state).Write();
+                .PL(_state).Write();
                 
         }
 
         void IPEGI.Inspect()
         {
-            if (!Exited && !_stopAndCancel && "Stop & Cancel".PegiLabel().Click().Nl())
+            if (!Exited && !_stopAndCancel && "Stop & Cancel".PL().Click().Nl())
                 _stopAndCancel = true;
 
-            if (!Exited && "Yield".PegiLabel().Click().Nl())
+            if (!Exited && "Yield".PL().Click().Nl())
                 MoveNext();
 
-            _state.PegiLabel().WriteBig();
+            _state.PL().WriteBig();
 
         }
         #endregion

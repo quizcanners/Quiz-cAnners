@@ -34,7 +34,7 @@ namespace QuizCanners.Utils
                 var changes = pegi.ChangeTrackStart();
                 //base.Inspect(animator);
 
-                if (name.PegiLabel().Click())
+                if (name.PL().Click())
                     SetOn(animator);
 
                 return changes;
@@ -93,7 +93,7 @@ namespace QuizCanners.Utils
                 var changed = base.Inspect(animator);
 
                 var val = LatestValue;
-                if (name.PegiLabel(90).Edit(ref val))
+                if (name.PL(90).Edit(ref val))
                     SetOn(LatestValue, animator);
 
                 return changed;
@@ -115,7 +115,7 @@ namespace QuizCanners.Utils
                 var changed = pegi.ChangeTrackStart();//base.Inspect(animator);
 
                 var val = LatestValue;
-                if (name.PegiLabel(90).ToggleIcon(ref val))
+                if (name.PL(90).ToggleIcon(ref val))
                     SetOn(val, animator);
 
                 return changed;
@@ -135,7 +135,7 @@ namespace QuizCanners.Utils
                 var changed = base.Inspect(animator);
 
                 var val = LatestValue;
-                if (name.PegiLabel(90).Edit(ref val))
+                if (name.PL(90).Edit(ref val))
                     SetOn(LatestValue, animator);
 
                 return changed;

@@ -16,7 +16,7 @@ namespace QuizCanners.Inspect
 
             CheckLine();
 
-            if (ClickUnFocus((state ? "[Hide] {0}..." : ">{0} [Show]").F(txt).PegiLabel()))
+            if (ClickUnFocus((state ? "[Hide] {0}..." : ">{0} [Show]").F(txt).PL()))
                 state = !state;
 
 
@@ -38,7 +38,7 @@ namespace QuizCanners.Inspect
 
             IsFoldedOutOrEntered = (selected == current);
 
-            if (ClickUnFocus((FoldoutManager.isFoldedOutOrEntered ? "[Hide] {0}..." : ">{0} [Show]").F(txt.label).PegiLabel()).IgnoreChanges(LatestInteractionEvent.Enter))
+            if (ClickUnFocus((FoldoutManager.isFoldedOutOrEntered ? "[Hide] {0}..." : ">{0} [Show]").F(txt.label).PL()).IgnoreChanges(LatestInteractionEvent.Enter))
             {
                 if (FoldoutManager.isFoldedOutOrEntered)
                     selected = -1;

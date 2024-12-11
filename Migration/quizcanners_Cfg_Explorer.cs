@@ -26,7 +26,7 @@ namespace QuizCanners.Migration
 
             var changed = false;
 
-            "Load File:".ConstLabel().Write();
+            "Load File:".ConstL().Write();
             target.LoadCfgOnDrop(); pegi.Nl();
 
             if (Icon.Copy.Click("Copy Component Data").Nl())
@@ -45,12 +45,12 @@ namespace QuizCanners.Migration
             inspectedCfg = target;
             inspected = this;
 
-            "Saved CFGs:".PegiLabel().Edit_List(states, ref inspectedState, out CfgState added);
+            "Saved CFGs:".PL().Edit_List(states, ref inspectedState, out CfgState added);
 
             if (added != null && target != null)
             {
                 added.dataExplorer.data = target.Encode().CfgData;
-                added.NameForInspector = target.GetNameForInspector();
+                added.StringId = target.GetNameForInspector();
                 added.comment = DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture);
             }
 
@@ -58,7 +58,7 @@ namespace QuizCanners.Migration
             {
                 Object myType = null;
                 
-                if ("From File:".ConstLabel().Edit(ref myType))
+                if ("From File:".ConstL().Edit(ref myType))
                 {
                     added = new CfgState();
 
@@ -68,7 +68,7 @@ namespace QuizCanners.Migration
 
                     added.dataExplorer.data = new CfgData(QcFile.Load.TryLoadAsTextAsset(myType));
 
-                    added.NameForInspector = myType.name;
+                    added.StringId = myType.name;
                     added.comment = DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture);
                     states.Add(added);
                 }
@@ -106,7 +106,7 @@ namespace QuizCanners.Migration
         #endregion
 
         [Serializable]
-        private class ICfgProperty : ICfgCustom, IPEGI, IGotName, IPEGI_ListInspect, IGotCount
+        private class ICfgProperty : ICfgCustom, IPEGI, IGotStringId, IPEGI_ListInspect, IGotCount
         {
 
             public string tag;
@@ -139,7 +139,7 @@ namespace QuizCanners.Migration
 
             public int GetCount() => _tags.IsNullOrEmpty() ? data.ToString().Length : _tags.CountForInspector();
 
-            public string NameForInspector
+            public string StringId
             {
                 get { return tag; }
                 set { tag = value; }
@@ -153,7 +153,7 @@ namespace QuizCanners.Migration
                 var changes = pegi.ChangeTrackStart();
 
                 if (_tags != null)
-                    tag.PegiLabel().Edit_List(_tags, ref inspectedTag);
+                    tag.PL().Edit_List(_tags, ref inspectedTag);
 
                 if (inspectedTag == -1)
                 {
@@ -190,7 +190,7 @@ namespace QuizCanners.Migration
 
             public void InspectInList(ref int edited, int ind)
             {
-                GetCount().ToString().PegiLabel(50).Write();
+                GetCount().ToString().PL(50).Write();
 
                 if (data.IsEmpty == false && data.ToString().Contains("|"))
                 {
@@ -254,7 +254,7 @@ namespace QuizCanners.Migration
         }
 
         [Serializable]
-        private class CfgState : IPEGI, IGotName, IPEGI_ListInspect, IGotCount
+        private class CfgState : IPEGI, IGotStringId, IPEGI_ListInspect, IGotCount
         {
             private static ICfg Cfg => inspectedCfg;
 
@@ -262,7 +262,7 @@ namespace QuizCanners.Migration
             public ICfgProperty dataExplorer = new("", new CfgData());
 
             #region Inspector
-            public string NameForInspector { get { return dataExplorer.tag; } set { dataExplorer.tag = value; } }
+            public string StringId { get { return dataExplorer.tag; } set { dataExplorer.tag = value; } }
 
             public static ICfgObjectExplorer Mgmt => inspected;
 
@@ -287,7 +287,7 @@ namespace QuizCanners.Migration
                         if (dataExplorer.tag.Length == 0)
                             dataExplorer.tag = Cfg.GetNameForInspector() + " config";
 
-                        "Save To:".ConstLabel().Edit(ref Mgmt.fileFolderHolder);
+                        "Save To:".ConstL().Edit(ref Mgmt.fileFolderHolder);
 
                         var uObj = Cfg as Object;
 
@@ -297,7 +297,7 @@ namespace QuizCanners.Migration
                         pegi.ClickHighlight(uObj).Nl();
                     }
 
-                    if ("Description".PegiLabel().IsFoldout().Nl())
+                    if ("Description".PL().IsFoldout().Nl())
                     {
                         pegi.Edit_Big(ref comment).Nl();
                     }
@@ -312,7 +312,7 @@ namespace QuizCanners.Migration
                 if (dataExplorer.data.ToString().IsNullOrEmpty() == false && Icon.Copy.Click())
                     pegi.SetCopyPasteBuffer(dataExplorer.data.ToString());
                 
-                GetCount().ToString().PegiLabel(60).Edit(ref dataExplorer.tag);
+                GetCount().ToString().PL(60).Edit(ref dataExplorer.tag);
 
                 if (Cfg != null)
                 {

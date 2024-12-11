@@ -113,19 +113,19 @@ namespace QuizCanners.Utils
             void IPEGI.Inspect()
             {
                 var sub = SavingLogs;
-                if ("Save Logs".PegiLabel().ToggleIcon(ref sub).Nl())
+                if ("Save Logs".PL().ToggleIcon(ref sub).Nl())
                     SavingLogs = sub;
 
                 if (!_logMeta.IsAnyEntered)
                 {
                     if (logs.Count > 10)
                     {
-                        if ("Clear All But 5".PegiLabel().ClickConfirm(confirmationTag: "Del Logs").Nl())
+                        if ("Clear All But 5".PL().ClickConfirm(confirmationTag: "Del Logs").Nl())
                             logs.RemoveRange(0, logs.Count - 5);
                     }
                     else
                     {
-                        if (SavingLogs && "Create Test Logs".PegiLabel().Click().Nl())
+                        if (SavingLogs && "Create Test Logs".PL().Click().Nl())
                         {
                             Debug.Log("Debug Log");
                             Debug.LogWarning("Log Warning");
@@ -144,7 +144,7 @@ namespace QuizCanners.Utils
                 }
 
                 if (logs.Count == 0)
-                    "NO LOGS YET".PegiLabel().Nl();
+                    "NO LOGS YET".PL().Nl();
                 else
                     _logMeta.Edit_List(logs);
             }
@@ -162,14 +162,14 @@ namespace QuizCanners.Utils
 
             public void InspectInList(ref int edited, int ind)
             {
-                if (this.Click_Enter_Attention() | ToString().PegiLabel().ClickLabel())
+                if (this.Click_Enter_Attention() | ToString().PL().ClickLabel())
                     edited = ind;
             }
 
             void IPEGI.Inspect()
             {
-                "Log:".ConstLabel().Write_ForCopy(Log, showCopyButton: true).Nl();
-                "Stack:".PegiLabel().Write_ForCopy_Big(Stack, showCopyButton: true).Nl();
+                "Log:".ConstL().Write_ForCopy(Log, showCopyButton: true).Nl();
+                "Stack:".PL().Write_ForCopy_Big(Stack, showCopyButton: true).Nl();
             }
 
             public string NeedAttention()

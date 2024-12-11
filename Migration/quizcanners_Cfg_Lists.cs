@@ -56,7 +56,7 @@ namespace QuizCanners.Migration
 
    
 
-        public override void Inspect() => "Configurations".PegiLabel().Edit_List(configurations);
+        public override void Inspect() => "Configurations".PL().Edit_List(configurations);
 
         public CfgEncoder Encode()
         {
@@ -81,7 +81,7 @@ namespace QuizCanners.Migration
             var changes = pegi.ChangeTrackStart();
             if (configurations.Count == 0)
             {
-                if ("New {0}".F(typeof(T).ToPegiStringType()).PegiLabel().Click())
+                if ("New {0}".F(typeof(T).ToPegiStringType()).PL().Click())
                     configurations.Add(new T());
             }
             else
@@ -146,7 +146,7 @@ namespace QuizCanners.Migration
             }
             else
             {
-                "Configs".ConstLabel().Edit(ref configs);
+                "Configs".ConstL().Edit(ref configs);
 
                 if (Icon.Create.Click("Create new Config"))
                     configs = QcUnity.CreateScriptableObjectAsset<T>("ScriptableObjects/Configs", "Config");
@@ -159,7 +159,7 @@ namespace QuizCanners.Migration
     }
 
     [Serializable]
-    public abstract class Configuration : IPEGI_ListInspect, IGotName
+    public abstract class Configuration : IPEGI_ListInspect, IGotStringId
     {
         public string name;
         public CfgData data;
@@ -190,7 +190,7 @@ namespace QuizCanners.Migration
 
         #region Inspect
 
-        public string NameForInspector
+        public string StringId
         {
             get { return name; }
             set { name = value; }

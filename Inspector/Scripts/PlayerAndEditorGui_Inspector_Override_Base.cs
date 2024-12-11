@@ -68,7 +68,7 @@ namespace QuizCanners.Inspect {
     {
         public override void OnInspectorGUI()
         {
-            using (PegiEditorOnly.StartInspector(target))
+            using (pegi.StartInspector(target, pegi.PegiPaintingMode.EditorInspector))
             {
                 if (target != PegiEditorOnly.DrawDefaultInspector)
                 {
@@ -139,9 +139,7 @@ namespace QuizCanners.Inspect {
 
         public override Texture2D RenderStaticPreview(string assetPath, UnityEngine.Object[] subAssets, int width, int height)
         {
-            var asPrev = target as IPEGI_Preview;
-
-            if (asPrev == null)
+            if (target is not IPEGI_Preview asPrev)
                 return null;
 
             var rt = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);

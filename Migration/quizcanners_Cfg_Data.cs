@@ -64,7 +64,7 @@ namespace QuizCanners.Migration
             pegi.CopyPaste.InspectOptionsFor(ref this);
 
             if (_value != null)
-                "{0} characters".PegiLabel().Write();
+                "{0} characters".PL().Write();
         }
 
         private readonly int ToIntInternal(string text)

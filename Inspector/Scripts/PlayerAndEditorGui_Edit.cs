@@ -41,9 +41,25 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken OnChanged(this ChangesToken changed, System.Action onChanged) 
         {
-            if (changed)
-                onChanged?.Invoke();
-            return changed;
+            switch (currentMode)
+            {
+                case PegiPaintingMode.UI_Toolkit:
+
+                    if (changed.Handler is UnityEngine.UIElements.Button)
+                    {
+                        changed.Handler.RegisterCallback<UnityEngine.UIElements.ClickEvent>(evnt => onChanged());
+                    }
+                    else Debug.LogError("Event not implemented for " + changed.Handler.GetType());
+
+                    return ChangesToken.False;
+
+                default:
+                    if (changed)
+                        onChanged?.Invoke();
+                    return changed;
+            }
+
+           
         }
 
         public static ChangesToken IgnoreChanges(this ChangesToken changed)
@@ -74,7 +90,7 @@ namespace QuizCanners.Inspect
 
         #region Edit
 
-        #region Vectors & Rects
+        #region Values
 
         public static ChangesToken Edit(this TextLabel label, ref AnimationCurve curve)
         {
@@ -127,7 +143,7 @@ namespace QuizCanners.Inspect
             if (!PaintingGameViewUI)
                 return PegiEditorOnly.Edit(ref val);
 #endif
-            return "X".PegiLabel(15).Edit(ref val.x) | "Y".PegiLabel(15).Edit(ref val.y) | "Z".PegiLabel(15).Edit(ref val.z) | "W".PegiLabel(15).Edit(ref val.w);
+            return "X".PL(15).Edit(ref val.x) | "Y".PL(15).Edit(ref val.y) | "Z".PL(15).Edit(ref val.z) | "W".PL(15).Edit(ref val.w);
         }
 
         public static ChangesToken Edit_01(ref float val) => Edit(ref val, 0, 1);
@@ -151,10 +167,10 @@ namespace QuizCanners.Inspect
             var size = val.size;
 
             if (
-                "X".PegiLabel(30).Edit_01(ref center.x).Nl() |
-                "Y".PegiLabel(30).Edit_01(ref center.y).Nl() |
-                "W".PegiLabel(30).Edit_01(ref size.x).Nl() |
-                "H".PegiLabel(30).Edit_01(ref size.y).Nl())
+                "X".PL(30).Edit_01(ref center.x).Nl() |
+                "Y".PL(30).Edit_01(ref center.y).Nl() |
+                "W".PL(30).Edit_01(ref size.x).Nl() |
+                "H".PL(30).Edit_01(ref size.y).Nl())
             {
                 var half = size * 0.5f;
                 val.min = center - half;
@@ -163,7 +179,70 @@ namespace QuizCanners.Inspect
             }
 
             return ChangesToken.False;
+
         }
+
+        public static ChangesToken Edit(this TextLabel label, ref Rect val, float min, float max)
+        {
+            Write(label).Nl();
+            return Edit(ref val, min, max);
+        }
+
+        public static ChangesToken Edit(ref Rect val, float min, float max)
+        {
+            float x = val.min.x;
+            float y = val.min.y;
+            float x2 = val.max.x;
+            float y2 = val.max.y;
+
+            var changes = ChangeTrackStart();
+
+            "X".ConstL().Write(); Edit_Range(ref x, ref x2, min, max).Nl();
+            "Y".ConstL().Write(); Edit_Range(ref y, ref y2, min, max).Nl();
+
+            if (changes) 
+            {
+                val.min = new Vector2(x, y);
+                val.max = new Vector2(x2, y2);
+            }
+
+            return changes;
+        }
+
+        public static ChangesToken Edit_Range(this TextLabel label, ref float from, ref float to, float min, float max)
+        {
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.Edit_Range(label, ref from, ref to, min: min, max: max);
+#endif
+
+            var changes = ChangeTrackStart();
+            label.TryWrite().Nl();
+            using (Indent())
+            {
+                "From".ConstL().Edit(ref from, min, to).Nl();
+                "To".ConstL().Edit(ref to, from, max).Nl();
+            }
+            return changes;
+        }
+
+        public static ChangesToken Edit_Range(ref float from, ref float to, float min, float max)
+        {
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.Edit_Range(ref from, ref to, min: min, max: max);
+#endif
+
+            var changes = ChangeTrackStart();
+            using (Indent())
+            {
+                "From".ConstL().Edit(ref from, min, to).Nl();
+                "To".ConstL().Edit(ref to, from, max).Nl();
+            }
+            return changes;
+        }
+
+
 
         public static ChangesToken Edit_01(this TextLabel label, ref Vector2 val)
         {
@@ -185,12 +264,12 @@ namespace QuizCanners.Inspect
 
 
         public static ChangesToken Edit_01(ref Vector2 val) =>
-            "X".PegiLabel(20).Edit_01(ref val.x).Nl() |
-            "Y".PegiLabel(20).Edit_01(ref val.y).Nl();
+            "X".PL(20).Edit_01(ref val.x).Nl() |
+            "Y".PL(20).Edit_01(ref val.y).Nl();
 
         public static ChangesToken Edit_N1_1(ref Vector2 val) =>
-            "X".PegiLabel(20).Edit_N1_1(ref val.x).Nl() |
-            "Y".PegiLabel(20).Edit_N1_1(ref val.y).Nl();
+            "X".PL(20).Edit_N1_1(ref val.x).Nl() |
+            "Y".PL(20).Edit_N1_1(ref val.y).Nl();
 
         public static ChangesToken Edit(this TextLabel label, ref Rect val)
         {
@@ -213,10 +292,10 @@ namespace QuizCanners.Inspect
             int right = val.right;
 
             if (
-                "Left".PegiLabel(70).Edit(ref left, min, max).Nl() |
-                "Right".PegiLabel(70).Edit(ref right, min, max).Nl() |
-                "Top".PegiLabel(70).Edit(ref top, min, max).Nl() |
-                "Bottom".PegiLabel(70).Edit(ref bottom, min, max).Nl())
+                "Left".PL(70).Edit(ref left, min, max).Nl() |
+                "Right".PL(70).Edit(ref right, min, max).Nl() |
+                "Top".PL(70).Edit(ref top, min, max).Nl() |
+                "Bottom".PL(70).Edit(ref bottom, min, max).Nl())
             {
                 val = new RectOffset(left: left, right: right, top: top, bottom: bottom);
 
@@ -234,10 +313,10 @@ namespace QuizCanners.Inspect
             int right = val.right;
 
             if (
-                "Left".PegiLabel(70).Edit(ref left).Nl() |
-                "Right".PegiLabel(70).Edit(ref right).Nl() |
-                "Top".PegiLabel(70).Edit(ref top).Nl() |
-                "Bottom".PegiLabel(70).Edit(ref bottom).Nl())
+                "Left".PL(70).Edit(ref left).Nl() |
+                "Right".PL(70).Edit(ref right).Nl() |
+                "Top".PL(70).Edit(ref top).Nl() |
+                "Bottom".PL(70).Edit(ref bottom).Nl())
             {
                 val = new RectOffset(left: left, right: right, top: top, bottom: bottom);
 
@@ -265,7 +344,7 @@ namespace QuizCanners.Inspect
         }
 
         public static ChangesToken Edit(ref Vector3 val) =>
-           "X".PegiLabel(15).Edit(ref val.x) | "Y".PegiLabel(15).Edit(ref val.y) | "Z".PegiLabel(15).Edit(ref val.z);
+           "X".PL(15).Edit(ref val.x) | "Y".PL(15).Edit(ref val.y) | "Z".PL(15).Edit(ref val.z);
 
         public static ChangesToken Edit(this TextLabel label, ref Vector3 val)
         {
@@ -301,13 +380,13 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(this TextLabel label, ref Vector2 val, float min, float max)
         {
-            "{0} [X: {1} Y: {2}]".F(label, val.x.RoundTo(2), val.y.RoundTo(2)).PegiLabel().Nl();
+            "{0} [X: {1} Y: {2}]".F(label, QcSharp.RoundTo(val.x, 2), QcSharp.RoundTo(val.y, 2)).PL().Nl();
             return Edit(ref val, min, max);
         }
 
         public static ChangesToken Edit(ref Vector2 val, float min, float max) =>
-            "X".PegiLabel(10).Edit(ref val.x, min, max) |
-            "Y".PegiLabel(10).Edit(ref val.y, min, max);
+            "X".PL(10).Edit(ref val.x, min, max) |
+            "Y".PL(10).Edit(ref val.y, min, max);
 
         public static ChangesToken Edit(this TextLabel label, ref Vector2Int val)
         {
@@ -325,7 +404,7 @@ namespace QuizCanners.Inspect
         {
             var x = val.x;
             var y = val.y;
-            if ("X".PegiLabel(35).Edit(ref x) | "Y".PegiLabel(35).Edit(ref y))
+            if ("X".PL(35).Edit(ref x) | "Y".PL(35).Edit(ref y))
             {
                 val = new Vector2Int(x, y);
                 return ChangesToken.True;
@@ -358,7 +437,7 @@ namespace QuizCanners.Inspect
      
             using (SetBgColorDisposable(col))
             {
-                if ("Color".PegiLabel().IsFoldout())
+                if ("Color".PL().IsFoldout())
                 {
                     Nl();
 
@@ -387,7 +466,7 @@ namespace QuizCanners.Inspect
             var changed = ChangeTrackStart();
 
             if (channel < 0 || channel > 3)
-                "Color has no channel {0} ".F(channel).PegiLabel().WriteWarning();
+                "Color has no channel {0} ".F(channel).PL().WriteWarning();
             else
             {
                 var chan = col[channel];
@@ -405,7 +484,7 @@ namespace QuizCanners.Inspect
             var changed = ChangeTrackStart();
 
             if (channel < 0 || channel > 3)
-                "{0} color does not have {1}'th channel".F(label, channel).PegiLabel().WriteWarning();
+                "{0} color does not have {1}'th channel".F(label, channel).PL().WriteWarning();
             else
             {
                 var chan = col[channel];
@@ -527,8 +606,8 @@ namespace QuizCanners.Inspect
 
             } catch (System.Exception ex)
             {
-                "Can't convert {0} to Enum".F(typeof(T).Name).PegiLabel().WriteWarning().Nl();
-                if ("Log to Console".PegiLabel().Click())
+                "Can't convert {0} to Enum".F(typeof(T).Name).PL().WriteWarning().Nl();
+                if ("Log to Console".PL().Click())
                     Debug.LogException(ex);
 
                 return ChangesToken.False;
@@ -707,7 +786,7 @@ namespace QuizCanners.Inspect
 
             if (actualType != typeof(int)) 
             {
-                "Inspection of {0} not implemented.".F(actualType).PegiLabel().Nl();
+                "Inspection of {0} not implemented.".F(actualType).PL().Nl();
                 return ChangesToken.False;
             }
 

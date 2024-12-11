@@ -114,8 +114,8 @@ namespace QuizCanners.Inspect
             #region Inspector
             void IPEGI.Inspect()
             {
-                "Currently Entered".PegiLabel().Edit(ref _currentlyEntered).Nl();
-                "Current Index".PegiLabel().Edit(ref _currentIndex).Nl();
+                "Currently Entered".PL().Edit(ref _currentlyEntered).Nl();
+                "Current Index".PL().Edit(ref _currentIndex).Nl();
             }
             #endregion
 
@@ -142,15 +142,32 @@ namespace QuizCanners.Inspect
 
         internal static class Context
         {
+            internal static void OnExitClick() 
+            {
+                if (TryGet(out var context))
+                    context.IsCurrentEntered = StateToken.False;
+
+                if (currentMode == PegiPaintingMode.UI_Toolkit) 
+                    Toolkit.CurrentState.SetDirty();
+            }
+
+            internal static void OnEnterClick()
+            {
+                if (TryGet(out var context))
+                    context.IsCurrentEntered = StateToken.True;
+
+                if (currentMode == PegiPaintingMode.UI_Toolkit)
+                    Toolkit.CurrentState.SetDirty();
+            }
+
             internal static StateToken IsEnteredCurrent
             {
                 get => TryGet(out var context) ? context.IsCurrentEntered : StateToken.False;
-                set
+                /*set
                 {
-
                     if (TryGet(out var context))
                         context.IsCurrentEntered = value;
-                }
+                }*/
             }
 
             internal static IDisposable IncrementDisposible(out bool canSkip)
@@ -161,7 +178,7 @@ namespace QuizCanners.Inspect
                     canSkip = true;
                     Nl();
                     Icon.Copy.Click(toolTip: "Log").OnChanged(()=> Debug.LogError("Check out this Stack Trace!")); ;
-                    "You have forgotten to use Context".PegiLabel().WriteWarning().Nl();
+                    "You have forgotten to use Context".PL().WriteWarning().Nl();
                     return null;
                 }
 
@@ -186,7 +203,7 @@ namespace QuizCanners.Inspect
             {
                 if (!EnterExitContext.TryGetCurrent(out context)) //context == null)
                 {
-                    "Indexer unset. wrap section in  using(EnterExitIndexes.StartContext()) {  }".PegiLabel().WriteWarning();
+                    "Indexer unset. wrap section in  using(EnterExitIndexes.StartContext()) {  }".PL().WriteWarning();
                     return false;
                 }
                 return true;
@@ -198,7 +215,7 @@ namespace QuizCanners.Inspect
                     Internal_isEntered(label, showLabelIfTrue: showLabelIfTrue);
                 else
                 if (IsEnteredCurrent)
-                    IsEnteredCurrent = StateToken.False;
+                    OnExitClick();//IsEnteredCurrent = StateToken.False;
 
                 return IsEnteredCurrent;
             }
@@ -208,7 +225,7 @@ namespace QuizCanners.Inspect
                 if (collectionInspector.CollectionIsNull(list))
                 {
                     if (IsEnteredCurrent)
-                        IsEnteredCurrent = StateToken.False;
+                        OnExitClick();
                     return;
                 }
 
@@ -224,7 +241,7 @@ namespace QuizCanners.Inspect
                         inspected = -1;
                 }
                 else
-                    EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => IsEnteredCurrent = StateToken.True);
+                    EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => OnEnterClick());
             }
 
             internal static void Internal_isEntered_ListIcon<T>(TextLabel txt, List<T> list, ref int inspected)
@@ -232,7 +249,7 @@ namespace QuizCanners.Inspect
                 if (collectionInspector.CollectionIsNull(list))
                 {
                     if (IsEnteredCurrent)
-                        IsEnteredCurrent = StateToken.False;
+                        OnExitClick();
                     return;
                 }
 
@@ -247,7 +264,7 @@ namespace QuizCanners.Inspect
                     if (!before && IsEnteredCurrent)
                         inspected = -1;
                 } else 
-                    EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => IsEnteredCurrent = StateToken.True);
+                    EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => OnEnterClick());
             }
 
             internal static void Internal_exitOptionOnly(TextLabel txt, bool showLabelIfTrue = true)
@@ -264,25 +281,25 @@ namespace QuizCanners.Inspect
                 {
                     txt.style = Styles.Text.EnterLabel;
                     (Icon.Enter.ClickUnFocus(txt.label).IgnoreChanges(LatestInteractionEvent.Enter) |
-                    txt.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter)).OnChanged(() => IsEnteredCurrent = StateToken.True);
+                    txt.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter)).OnChanged(() => OnEnterClick());
                 }
 
                 return IsEnteredCurrent;
             }
 
-            internal static ChangesToken Internal_Enter_Inspect_AsList(IPEGI_ListInspect var, string exitLabel = null)
+            internal static ChangesToken Internal_Enter_Inspect_AsList<T>(T var, string exitLabel = null) where T : class, IPEGI_ListInspect
             {
                 var changed = ChangeTrackStart();
                 if (var.IsNullOrDestroyed_Obj())
                 {
                     if (IsEnteredCurrent)
-                        IsEnteredCurrent = StateToken.False;
+                        OnExitClick();
                     return changed;
                 }
 
                 if (!EnterExitContext.TryGetCurrent(out var cnt))
                 {
-                    "No Context".PegiLabel().WriteWarning().Nl();
+                    "No Context".PL().WriteWarning().Nl();
                     return changed;
                 }
 
@@ -307,7 +324,42 @@ namespace QuizCanners.Inspect
                 return changed;
             }
 
-       
+            internal static ChangesToken Internal_Enter_Inspect_AsList<T>(ref T var, string exitLabel = null) where T : IPEGI_ListInspect
+            {
+                var changed = ChangeTrackStart();
+
+                if (!EnterExitContext.TryGetCurrent(out var cnt))
+                {
+                    "No Context".PL().WriteWarning().Nl();
+                    return changed;
+                }
+
+                if (!cnt.IsCurrentEntered)
+                {
+                    int current = cnt._currentIndex;
+                    int entered = cnt.CurrentlyEntered;
+
+                    var.InspectInList(ref entered, current);
+
+                    if (changed)
+                    {
+                        cnt.CurrentlyEntered = entered;
+                        new ChangesToken(IsEnteredCurrent).IgnoreChanges(LatestInteractionEvent.Enter);
+                    }
+
+                    return changed;
+                }
+
+                var label = new TextLabel(exitLabel.IsNullOrEmpty() ? var.GetNameForInspector() : exitLabel, style: Styles.Text.ExitLabel);
+                ExitClick(label, showLabelIfTrue: true);
+
+                NestedOrReflection_Inspect(ref var);
+                //Nested_Inspect_Value(ref var);
+                //Nested_Inspect_Value(ref var);
+
+                return changed;
+            }
+
             private static void ExitClick(TextLabel text, bool showLabelIfTrue) 
             {
                 using (Styles.Background.ExitLabel.SetDisposible())
@@ -316,7 +368,7 @@ namespace QuizCanners.Inspect
                     text.style = Styles.Text.ExitLabel;
                     (Icon.Exit.ClickUnFocus("{0} L {1}".F(Icon.Exit.GetText(), text)) |
                         (showLabelIfTrue ? text.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit) : ChangesToken.False)
-                        ).OnChanged(() => IsEnteredCurrent = StateToken.False).IgnoreChanges();
+                        ).OnChanged(() => OnExitClick()).IgnoreChanges();
                 }
             }
 

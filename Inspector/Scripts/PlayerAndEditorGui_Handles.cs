@@ -192,7 +192,7 @@ namespace QuizCanners.Inspect
                     }
 
                     if (!label.IsNullOrEmpty()) 
-                    Label(label, pos, Styles.ClickableText);
+                    Label(label, pos, Styles.Text.ClickableText);
 
                     var rotation = direction == default ? CameraRotation : Quaternion.LookRotation(direction);
 

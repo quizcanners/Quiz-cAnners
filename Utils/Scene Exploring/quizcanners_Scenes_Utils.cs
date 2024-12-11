@@ -67,17 +67,17 @@ namespace QuizCanners.Utils
         {
             if (s_currentlyLoadingScene == null && s_scenesInQueueForLoading.Count ==0)
             {
-                "All Scenes Loaded".PegiLabel().Nl();
+                "All Scenes Loaded".PL().Nl();
                 return;
             }
 
             if (s_currentlyLoadingScene == null)
-                "No current loading".PegiLabel().Nl();
+                "No current loading".PL().Nl();
             else
                 s_currentlyLoadingScene.InspectInList_Nested().Nl();
 
             if (s_scenesInQueueForLoading.Count == 0)
-                "No scenes in queue".PegiLabel().Nl();
+                "No scenes in queue".PL().Nl();
             else 
                 _loadingQueue.Edit_List(s_scenesInQueueForLoading).Nl();
         }

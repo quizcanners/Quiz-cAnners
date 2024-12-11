@@ -51,7 +51,7 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                "Instance".PegiLabel().Edit(ref _materialInstance).Nl();
+                "Instance".PL().Edit(ref _materialInstance).Nl();
             }
         }
 
@@ -87,12 +87,12 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                "Material User".PegiLabel().Edit_List(materialUsers).Nl();
+                "Material User".PL().Edit_List(materialUsers).Nl();
 
                 if (materialUsers.Count > 0 && materialUsers[0])
-                    "Is Part of the PRefab: {0} ".F(QcUnity.IsPartOfAPrefab(materialUsers[0].gameObject)).PegiLabel().Nl();
+                    "Is Part of the PRefab: {0} ".F(QcUnity.IsPartOfAPrefab(materialUsers[0].gameObject)).PL().Nl();
 
-                "Instance".PegiLabel().Edit(ref materialInstance).Nl();
+                "Instance".PL().Edit(ref materialInstance).Nl();
             }
 
             public override Material GetInstance()
@@ -156,10 +156,10 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                 "Source Material".ConstLabel().Edit(ref sourceMaterial).Nl(Clear);
+                 "Source Material".ConstL().Edit(ref sourceMaterial).Nl(Clear);
 
                 if (instance)
-                    "Instance".PegiLabel().Edit(ref instance).Nl();
+                    "Instance".PL().Edit(ref instance).Nl();
 
             }
 
@@ -214,7 +214,7 @@ namespace QuizCanners.Utils
             #region Inspector
             void IPEGI.Inspect()
             {
-                "Shader to Use: ".PegiLabel().Edit(ref shaderToUse).Nl(Clear);
+                "Shader to Use: ".PL().Edit(ref shaderToUse).Nl(Clear);
                 //"Material Instance".PegiLabel().Edit(ref instance).Nl();
             }
 

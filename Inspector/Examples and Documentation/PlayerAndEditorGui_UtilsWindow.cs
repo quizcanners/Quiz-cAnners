@@ -22,7 +22,10 @@ namespace QuizCanners.Inspect.Examples
         {
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Width(Screen.width-3), GUILayout.Height(Screen.height - 50));
 
-            pegi.Nested_Inspect(QcUtils.InspectAllUtils);
+            using (pegi.StartInspector(null, pegi.PegiPaintingMode.EditorInspector))
+            {
+                pegi.Nested_Inspect(QcUtils.InspectAllUtils);
+            }
 
             EditorGUILayout.EndScrollView();
         }

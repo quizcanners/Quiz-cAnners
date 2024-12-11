@@ -169,7 +169,7 @@ namespace QuizCanners.Utils
             {
                 Icon.Clear.Click().OnChanged(ClearAll);
 
-                "{0}/{1}".F(InstancesCount, MAX_INSTANCES).PegiLabel(60).Write();
+                "{0}/{1}".F(InstancesCount, MAX_INSTANCES).PL(60).Write();
             }
         }
 
@@ -331,7 +331,7 @@ namespace QuizCanners.Utils
         private readonly pegi.TabContext _tab = new();
         public override void Inspect()
         {
-            "Pool of {0}".F(typeof(T).Name).PegiLabel(pegi.Styles.ListLabel).Write();
+            "Pool of {0}".F(typeof(T).Name).PL(pegi.Styles.ListLabel).Write();
 
             if (Application.isPlaying && Icon.Play.Click())
                 TrySpawn(Vector3.zero, out _);
@@ -342,14 +342,14 @@ namespace QuizCanners.Utils
             pegi.Nl();
 
             bool isPooling = !DisablePooling;
-            "Pooling".PegiLabel().ToggleIcon(ref isPooling).OnChanged(() => DisablePooling = !isPooling).Nl();
+            "Pooling".PL().ToggleIcon(ref isPooling).OnChanged(() => DisablePooling = !isPooling).Nl();
 
             using (_tab.StartContext())
             {
                 pegi.AddTab("Prefabs", ()=>
                 {
-                    "Prefabs".PegiLabel(60).Edit_List_UObj(prefabs).Nl();
-                    "Capacity: {0}/{1}".F(pool.Count + instances.Count, MAX_INSTANCES).PegiLabel().Nl();
+                    "Prefabs".PL(60).Edit_List_UObj(prefabs).Nl();
+                    "Capacity: {0}/{1}".F(pool.Count + instances.Count, MAX_INSTANCES).PL().Nl();
                 });
 
                 pegi.AddTab("Instance", ()=> _active.Edit_List(instances).Nl());
@@ -560,7 +560,7 @@ namespace QuizCanners.Utils
             if (InstancesCount > 0)
                 Icon.Delete.Click().OnChanged(ClearAll);
 
-            "Pool of {0}".F(typeof(T).Name).PegiLabel(pegi.Styles.ListLabel).Write();
+            "Pool of {0}".F(typeof(T).Name).PL(pegi.Styles.ListLabel).Write();
 
             pegi.Nl();
 
@@ -570,7 +570,7 @@ namespace QuizCanners.Utils
                 {
                     _prefabsMeta.Edit_List(prefabs).Nl();
                     if (Application.isPlaying)
-                        "Capacity: {0}/{1} ({2})".F(InstancesCount, RECOMMENDED_INSTANCES, MAX_INSTANCES).PegiLabel().Nl();
+                        "Capacity: {0}/{1} ({2})".F(InstancesCount, RECOMMENDED_INSTANCES, MAX_INSTANCES).PL().Nl();
                 });
 
                 pegi.AddTab("Instance", ()=>
@@ -583,8 +583,8 @@ namespace QuizCanners.Utils
                     if (Application.isPlaying && Icon.Play.Click())
                         TrySpawn(Vector3.zero, out _);
 
-                    "First Inactive:{0}".F(_firstInactiveIndex).PegiLabel().Nl();
-                    "Last Active: {0}".F(_maxActiveIndex).PegiLabel().Nl();
+                    "First Inactive:{0}".F(_firstInactiveIndex).PL().Nl();
+                    "Last Active: {0}".F(_maxActiveIndex).PL().Nl();
                 });
             }
         }

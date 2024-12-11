@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using QuizCanners.Inspect;
 using QuizCanners.Lerp;
-using static UnityEditor.PlayerSettings;
 
 namespace QuizCanners.Utils
 {
@@ -77,10 +76,33 @@ namespace QuizCanners.Utils
             }
         }
 
+        public class CenterPointedPositionState
+        {
+            public Gate.Frame _pointedPositionUpdateGate = new(Gate.InitialValue.StartArmed);
+            Vector3 _pointedPosition_Cached;
+            bool _isPositionPointed_Cached;
+
+            public bool TryGetCenterPointedPosition(Camera cam, out Vector3 pos)
+            {
+                if (_pointedPositionUpdateGate.TryEnter())
+                {
+                    _isPositionPointed_Cached = Physics.Raycast(cam.ScreenPointToRay(new Vector2(Screen.width/2f,Screen.height/2f)), out var hit);
+                    _pointedPosition_Cached = hit.point;
+                }
+
+                pos = _pointedPosition_Cached;
+                return _isPositionPointed_Cached;
+            }
+        }
+
         readonly PointedPositionState _pointedPosition = new();
+        readonly CenterPointedPositionState _centerPointedPosition = new();
 
         public bool TryGetPointedPosition(out Vector3 pos)
          => _pointedPosition.TryGetPointedPosition(Camera.main, out pos);
+
+        public bool TryGetCenterPointedPosition(out Vector3 pos)
+       => _centerPointedPosition.TryGetCenterPointedPosition(Camera.main, out pos);
 
         public Camera MainCam
         {
@@ -431,22 +453,22 @@ namespace QuizCanners.Utils
             pegi.Nl();
 
             if (MainCam)
-                "Main Camera".ConstLabel().Edit(ref _mainCam).Nl();
+                "Main Camera".ConstL().Edit(ref _mainCam).Nl();
 
             if (!_mainCam)
             {
-                "Main Camera".PegiLabel().SelectInScene(ref _mainCam).Nl();
-                "Camera is missing, spin around will not work".PegiLabel().WriteWarning();
+                "Main Camera".PL().SelectInScene(ref _mainCam).Nl();
+                "Camera is missing, spin around will not work".PL().WriteWarning();
             }
             else
             {
                 if (_mainCam.transform == transform)
                 {
-                    "Camera should be a Child Object of the Camera Operator".PegiLabel().WriteWarning().Nl();
+                    "Camera should be a Child Object of the Camera Operator".PL().WriteWarning().Nl();
                 } else if (!_mainCam.transform.IsChildOf(transform)) 
                 {
-                    "Camera should be a child of this transform".PegiLabel().WriteWarning().Nl();
-                    if ("Move Camera".PegiLabel().Click().Nl())
+                    "Camera should be a child of this transform".PL().WriteWarning().Nl();
+                    if ("Move Camera".PL().Click().Nl())
                     {
                         _mainCam.transform.parent = transform;
                     }
@@ -455,21 +477,21 @@ namespace QuizCanners.Utils
 
             pegi.Nl();
 
-            "Speed:".PegiLabel("Speed of movement", 50).Edit(ref speed).Nl();
+            "Speed:".PL("Speed of movement", 50).Edit(ref speed).Nl();
 
-            "Sensitivity:".PegiLabel("How fast camera will rotate", 50).Edit(ref sensitivity).Nl();
+            "Sensitivity:".PL("How fast camera will rotate", 50).Edit(ref sensitivity).Nl();
 
-            "Flying".PegiLabel("Looking up/down will make camera move up/down.").ToggleIcon(ref simulateFlying).Nl();
+            "Flying".PL("Looking up/down will make camera move up/down.").ToggleIcon(ref simulateFlying).Nl();
 
-            "Disable Rotation".PegiLabel().ToggleIcon(ref _disableRotation).Nl();
+            "Disable Rotation".PL().ToggleIcon(ref _disableRotation).Nl();
 
             if (!_disableRotation)
-                "Rotate without RMB".PegiLabel().ToggleIcon(ref rotateWithoutRmb).Nl();
+                "Rotate without RMB".PL().ToggleIcon(ref rotateWithoutRmb).Nl();
 
 
             pegi.Nl();
 
-            "Editor Only".PegiLabel().ToggleIcon(ref _onlyInEditor).Nl();
+            "Editor Only".PL().ToggleIcon(ref _onlyInEditor).Nl();
         }
 
         #endregion

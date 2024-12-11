@@ -39,18 +39,18 @@ namespace QuizCanners.Inspect
                         if (sourceEvent.GetPersistentListenerState(i) == UnityEventCallState.Off)
                         {
                             Icon.Warning.Draw("Listener is off");
-                            if ("Activate".PegiLabel().Click())
+                            if ("Activate".PL().Click())
                                 sourceEvent.SetPersistentListenerState(i, UnityEventCallState.RuntimeOnly);
                         } else 
                             Icon.Done.Draw();
 #endif
                     }
 
-                    "{0} on {1}".F(n.IsNullOrEmpty() ? "NULL" : n, t ? t.name : "NULL").PegiLabel().Nl();
+                    "{0} on {1}".F(n.IsNullOrEmpty() ? "NULL" : n, t ? t.name : "NULL").PL().Nl();
                 }
             }
 
-            if (!included && "Add {0} to Button".F(action.Method.Name).PegiLabel().Click())
+            if (!included && "Add {0} to Button".F(action.Method.Name).PL().Click())
                 UnityEditor.Events.UnityEventTools.AddPersistentListener(sourceEvent, action);
 
             if (changed && target)

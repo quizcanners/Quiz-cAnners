@@ -71,10 +71,10 @@ namespace QuizCanners.Utils
         {
             pegi.Nl();
 
-            "Role".ConstLabel().Edit_Enum(ref _role).Nl();
-            "On Conflict".ConstLabel().Edit_Enum(ref _conflictResolve).Nl();
+            "Role".ConstL().Edit_Enum(ref _role).Nl();
+            "On Conflict".ConstL().Edit_Enum(ref _conflictResolve).Nl();
 
-            "Object to enable (Optional)".ConstLabel().Edit(ref _child);
+            "Object to enable (Optional)".ConstL().Edit(ref _child);
 
 
 
@@ -91,17 +91,17 @@ namespace QuizCanners.Utils
             {
                 if (gameObject == _child)
                 {
-                    "Should be child of this object".PegiLabel().WriteWarning().Nl();
+                    "Should be child of this object".PL().WriteWarning().Nl();
                 }
                 else
                 {
                     if (!_child.transform.IsChildOf(transform))
-                        "Child is not a child of this object. Could be a mistake".PegiLabel().WriteWarning().Nl();
+                        "Child is not a child of this object. Could be a mistake".PL().WriteWarning().Nl();
 
                     if (_child.activeSelf)
                     {
-                        "Child object probably needs to be disabled".PegiLabel().WriteWarning().Nl();
-                        if ("Disable".PegiLabel().Click().Nl())
+                        "Child object probably needs to be disabled".PL().WriteWarning().Nl();
+                        if ("Disable".PL().Click().Nl())
                             _child.SetActive(false);
                     }
                 }

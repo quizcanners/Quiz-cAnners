@@ -101,7 +101,7 @@ namespace QuizCanners.Utils
                 {
                     var path = GetAssetPath();
                     Icon.Warning.Draw("Scene pas has changed");
-                    if ("Update Path".PegiLabel(path).Click())
+                    if ("Update Path".PL(path).Click())
                         ScenePath = path;
                 }
             }

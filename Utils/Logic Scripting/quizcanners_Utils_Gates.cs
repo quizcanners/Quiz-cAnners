@@ -54,7 +54,7 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class GateGenericValue<T> : GateGenericBase<T> where T: struct
+        public class GateGenericValue<T> : GateGenericBase<T>
         {
             protected override bool DifferentFromPrevious(T newValue) 
             {
@@ -89,7 +89,6 @@ namespace QuizCanners.Utils
                 }
             }
 
-
             public bool TryEnterIfFramesPassed(int framesCount) 
             {
                 if (!IsFramesPassed(framesCount))
@@ -102,6 +101,13 @@ namespace QuizCanners.Utils
 
                 DoneThisFrame = true;
                 return true;
+            }
+
+            public bool Enter_IsFramesPassed(int framesCount)
+            {
+                bool passed = IsFramesPassed(framesCount);
+                DoneThisFrame = true;
+                return passed;
             }
 
             public bool TryEnter()
@@ -279,7 +285,7 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                "Delta: ".F(TimeSpan.FromSeconds(GetDeltaWithoutUpdate()).ToShortDisplayString()).PegiLabel().Write();
+                "Delta: ".F(TimeSpan.FromSeconds(GetDeltaWithoutUpdate()).ToShortDisplayString()).PL().Write();
             }
 
             public TimeBase(InitialValue initialValue = InitialValue.Uninitialized)
@@ -599,7 +605,7 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                "Previous: {0}".F(previousValue).PegiLabel().Write();
+                "Previous: {0}".F(previousValue).PL().Write();
             }
 
             public Vector4Value()

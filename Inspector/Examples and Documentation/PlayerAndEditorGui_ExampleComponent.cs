@@ -25,40 +25,40 @@ namespace QuizCanners.Inspect.Examples
 
             using (_menuContext.StartContext())
             {
-                "Documentation".PegiLabel().IsEntered().Nl().If_Entered(() => PlayerAndEditorGui_Documentation.Inspect());
+                "Documentation".PL().IsEntered().Nl().If_Entered(() => PlayerAndEditorGui_Documentation.Inspect());
                    
-                if ("Example".PegiLabel().IsEntered().Nl())
+                if ("Example".PL().IsEntered().Nl())
                 {
                     using (_examplesSubContext.StartContext())
                     {
                         if (_examplesSubContext.IsAnyEntered == false)
                         {
                             Icon.Debug.Draw();
-                            " - this icon at the top switches to Default Unity inspector".PegiLabel().Nl();
-                            "Open this script to learn how what code to use to display the elements.".PegiLabel().Write_Hint().Nl();
+                            " - this icon at the top switches to Default Unity inspector".PL().Nl();
+                            "Open this script to learn how what code to use to display the elements.".PL().Write_Hint().Nl();
                         }
 
-                        "GameView OnGUI Inspector".PegiLabel().IsEntered().Nl().If_Entered(() =>
+                        "GameView OnGUI Inspector".PL().IsEntered().Nl().If_Entered(() =>
                         {
-                            "Inspector visible in the game view".PegiLabel().Toggle(ref showInspectorInTheGameView);
+                            "Inspector visible in the game view".PL().Toggle(ref showInspectorInTheGameView);
                             pegi.Nl();
                         });
 
-                        if ("Nested Inspect".PegiLabel().IsEntered().Nl())
+                        if ("Nested Inspect".PL().IsEntered().Nl())
                         {
                             if (!someOtherScript)
                             {
-                                "Nested component not found".PegiLabel().WriteWarning();
+                                "Nested component not found".PL().WriteWarning();
                                 pegi.Nl();
 
-                                if ("Search for Component".PegiLabel().Click().Nl())
+                                if ("Search for Component".PL().Click().Nl())
                                 {
                                     someOtherScript = GetComponent<PlayerAndEditorGui_ExampleNested>();
                                     if (!someOtherScript)
                                         Debug.Log("One is not attached. Please click Create");
                                 }
 
-                                if ("Attach component".PegiLabel().Click().Nl())
+                                if ("Attach component".PL().Click().Nl())
                                 {
                                     someOtherScript = gameObject.AddComponent<PlayerAndEditorGui_ExampleNested>();
                                 }
@@ -71,7 +71,7 @@ namespace QuizCanners.Inspect.Examples
                         }
                     }
 
-                    if ("I will not be seen".PegiLabel().IsEntered().Nl())
+                    if ("I will not be seen".PL().IsEntered().Nl())
                     {
                         //This will not be visible, as this section will use _menuContext, which already has index of Example Section.
                     }

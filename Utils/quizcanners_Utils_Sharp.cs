@@ -262,21 +262,21 @@ namespace QuizCanners.Utils
 
         }
 
-        public static T AddWithUniqueNameAndIndex<T>(IList<T> list) => AddWithUniqueNameAndIndex(list, "New " + typeof(T).ToPegiStringType());
+        public static T AddWithUniqueStringIdAndIndex<T>(IList<T> list) => AddWithUniqueStringIdAndIndex(list, "New " + typeof(T).ToPegiStringType());
 
-        internal static T AddWithUniqueNameAndIndex<T>(IList<T> list, string name) =>
-            AddWithUniqueNameAndIndex(list, (T)Activator.CreateInstance(typeof(T)), name);
+        internal static T AddWithUniqueStringIdAndIndex<T>(IList<T> list, string name) =>
+            AddWithUniqueStringIdAndIndex(list, (T)Activator.CreateInstance(typeof(T)), name);
 
-        internal static T AddWithUniqueNameAndIndex<T>(IList<T> list, T e, string name)
+        internal static T AddWithUniqueStringIdAndIndex<T>(IList<T> list, T e, string name)
         {
             AssignUniqueIndex(list, e);
             list.Add(e);
 
-            if (e is IGotName named)
+            if (e is IGotStringId named)
             {
                 bool duplicate = false;
 
-                var oldName = named.NameForInspector;
+                var oldName = named.StringId;
 
                 if (oldName.IsNullOrEmpty())
                 {
@@ -289,9 +289,9 @@ namespace QuizCanners.Utils
                         var el = list[i];
                         if (el != null)
                         {
-                            if (el is IGotName existingName)
+                            if (el is IGotStringId existingName)
                             {
-                                if (oldName.Equals(existingName.NameForInspector))
+                                if (oldName.Equals(existingName.StringId))
                                 {
                                     duplicate = true;
                                     break;
@@ -304,19 +304,19 @@ namespace QuizCanners.Utils
 
                 if (duplicate)
                 {
-                    named.NameForInspector = name;
-                    AssignUniqueNameIn(e, list);
+                    named.StringId = name;
+                    AssignUniqueStringId(e, list);
                 }
             }
             return e;
         }
 
-        private static void AssignUniqueNameIn<T>(T el, IList<T> list)
+        private static void AssignUniqueStringId<T>(T el, IList<T> list)
         {
-            if (el is not IGotName namedNewElement) 
+            if (el is not IGotStringId namedNewElement) 
                 return;
 
-            var newName = namedNewElement.NameForInspector;
+            var newName = namedNewElement.StringId;
             var duplicate = true;
             var counter = 0;
 
@@ -326,10 +326,10 @@ namespace QuizCanners.Utils
 
                 foreach (var e in list)
                 {
-                    if (e is not IGotName currentName)
+                    if (e is not IGotStringId currentName)
                         continue;
 
-                    var otherName = currentName.NameForInspector;
+                    var otherName = currentName.StringId;
 
                     otherName ??= "";
 
@@ -338,16 +338,16 @@ namespace QuizCanners.Utils
 
                     duplicate = true;
                     counter++;
-                    newName = namedNewElement.NameForInspector + counter;
+                    newName = namedNewElement.StringId + counter;
                     break;
                 }
             }
 
-            namedNewElement.NameForInspector = newName;
+            namedNewElement.StringId = newName;
         }
 
-        public static List<T> SelectByNames<T>(this IEnumerable<T> collection, List<string> names) where T : class, IGotName
-            => collection.Join(names, el => el.NameForInspector, id => id, (e, i) => e).ToList();
+        public static List<T> SelectByNames<T>(this IEnumerable<T> collection, List<string> names) where T : class, IGotStringId
+            => collection.Join(names, el => el.StringId, id => id, (e, i) => e).ToList();
 
         public static T GetElementAt<T>(this IEnumerable<T> source, int index) => source.ElementAt(index);
 
@@ -796,98 +796,129 @@ namespace QuizCanners.Utils
 
         public static string F(this string format, Type type)
         {
+#if UNITY_EDITOR
             try
             {
+#endif
                 return string.Format(format, type.ToPegiStringType());
+#if UNITY_EDITOR
             }
             catch
             {
                 return BadFormat + format + " " + (type == null ? "null type" : type.ToString());
             }
+#endif
         }
 
         public static string F(this string format, Func<string> func)
         {
             string result;
-
+#if UNITY_EDITOR
             try
             {
+#endif
                 result = func();
+#if UNITY_EDITOR
             }
             catch (Exception ex)
             {
                 Debug.LogException(ex);
                 result = "ERR";
             }
+#endif
 
             return format.F(result);
         }
 
         public static string F(this string format, string obj)
         {
+#if UNITY_EDITOR
             try
             {
+#endif
                 return string.Format(format, obj);
+#if UNITY_EDITOR
             }
             catch
             {
                 return BadFormat + format + " " + obj;
             }
+#endif
         }
         public static string F(this string format, object obj1)
         {
+#if UNITY_EDITOR
             try
             {
+#endif
                 return string.Format(format, obj1.GetNameForInspector());
+#if UNITY_EDITOR
             }
             catch
             {
                 return BadFormat + format + " " + obj1.GetNameForInspector();
             }
+#endif
         }
         public static string F(this string format, string obj1, string obj2)
         {
+#if UNITY_EDITOR
             try
             {
+#endif
                 return string.Format(format, obj1, obj2);
+#if UNITY_EDITOR
             }
             catch
             {
                 return BadFormat + format + " " + obj1 + " " + obj2;
             }
+#endif
         }
         public static string F(this string format, object obj1, object obj2)
         {
+#if UNITY_EDITOR
             try
             {
+#endif
                 return string.Format(format, obj1.GetNameForInspector(), obj2.GetNameForInspector());
+#if UNITY_EDITOR
             }
             catch
             {
                 return BadFormat + format;
             }
+#endif
         }
         public static string F(this string format, string obj1, string obj2, string obj3)
         {
+#if UNITY_EDITOR
             try
             {
+#endif
                 return string.Format(format, obj1, obj2, obj3);
+#if UNITY_EDITOR
             }
             catch
             {
                 return BadFormat + format;
             }
+#endif
         }
         public static string F(this string format, object obj1, object obj2, object obj3)
         {
+#if UNITY_EDITOR
             try
             {
+#endif
                 return string.Format(format, obj1.GetNameForInspector(), obj2.GetNameForInspector(), obj3.GetNameForInspector());
+#if UNITY_EDITOR
             }
             catch
             {
                 return BadFormat + format;
             }
+#endif
         }
         public static string F(this string format, params object[] objs)
         {
@@ -915,14 +946,18 @@ namespace QuizCanners.Utils
 
         public static string F(this string format, params string[] objs)
         {
+#if UNITY_EDITOR
             try
             {
+#endif
                 return string.Format(format, objs);
+#if UNITY_EDITOR
             }
             catch
             {
                 return BadFormat + format;
             }
+#endif
         }
 
         #endregion
@@ -1257,7 +1292,9 @@ namespace QuizCanners.Utils
 
         public static bool IsDefaultOrNull<T>(T obj) => (obj == null) || EqualityComparer<T>.Default.Equals(obj, default);
 
-        public static float RoundTo(this float val, int digits) => (float)Math.Round(val, digits);
+        public static float RoundTo(float val, int digits) => (float)Math.Round(val, digits);
+
+        public static double RoundTo(double val, int digits) => Math.Round(val, digits);
 
         public static void SetMaximumLength<T>(List<T> list, int length)
         {
@@ -1296,7 +1333,7 @@ namespace QuizCanners.Utils
             {
                 case System.Reflection.MemberTypes.Field: name = member.Name; break;
                 case System.Reflection.MemberTypes.Property: name = "m_{0}{1}".F(char.ToUpper(member.Name[0]), member.Name[1..]); break;
-                default: "Not Impl {0}".F(member.MemberType.ToString().SimplifyTypeName()).PegiLabel(90).Write(); return null;
+                default: "Not Impl {0}".F(member.MemberType.ToString().SimplifyTypeName()).PL(90).Write(); return null;
             }
 
             return name;

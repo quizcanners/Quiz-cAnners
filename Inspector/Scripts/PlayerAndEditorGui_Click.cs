@@ -101,7 +101,7 @@ namespace QuizCanners.Inspect
                 if (Icon.Close.Click(Msg.No.GetText(), 30))
                     ConfirmationDialogue.Close();
 
-                ConfirmationDialogue.ConfirmationText.PegiLabel().Write_Hint(false);
+                ConfirmationDialogue.ConfirmationText.PL().Write_Hint(false);
 
                 if (Icon.Done.Click(Msg.Yes.GetText(), 30))
                 {
@@ -151,7 +151,7 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
-            if (confirmationTag.PegiLabel().ClickUnFocus())
+            if (confirmationTag.PL().ClickUnFocus())
                 ConfirmationDialogue.Request(tag: confirmationTag, "Execute {0}".F(confirmationTag));
 
             return ChangesToken.False;
@@ -282,7 +282,7 @@ namespace QuizCanners.Inspect
 
             using (SetBgColorDisposable(Color.clear))
             {
-                GUIStyle st = label.GotStyle ? label.style.Current : Styles.ClickableText.Current;
+                GUIStyle st = label.GotStyle ? label.style.Current : Styles.Text.ClickableText.Current;
 
                 var textAndTip = TextAndTip(label);
 
@@ -332,7 +332,7 @@ namespace QuizCanners.Inspect
         {
             string name = "{0}()".F(QcSharp.AddSpacesInsteadOfCapitals(action.Method.Name));
 
-            return name.PegiLabel().Click(action);
+            return name.PL().Click(action);
         }
 
         public static ChangesToken Click(this TextLabel text, System.Action onClick)
@@ -344,12 +344,23 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Click(this TextLabel text)
         {
+            switch (currentMode) 
+            {
+
 #if UNITY_EDITOR
-            if (!PaintingGameViewUI)
-                return PegiEditorOnly.Click(text);
+                case PegiPaintingMode.EditorInspector:
+                    return PegiEditorOnly.Click(text);
 #endif
-            CheckLine();
-            return GUILayout.Button(text.label, Utils.GuiMaxWidthOptionFrom(text.label)).FeedChanges_Internal(LatestInteractionEvent.Click);
+                case PegiPaintingMode.GameViewGUI:
+                    CheckLine();
+                    return GUILayout.Button(text.label, Utils.GuiMaxWidthOptionFrom(text.label)).FeedChanges_Internal(LatestInteractionEvent.Click);
+
+                case PegiPaintingMode.UI_Toolkit:
+
+                    return Toolkit.Click(text);
+
+                default: Debug.LogError(QcLog.CaseNotImplemented(currentMode)); return ChangesToken.False;
+            }
         }
 
         private static Texture GetTexture_orEmpty(this Sprite sp) => sp ? sp.texture : Icon.Empty.GetIcon();
@@ -374,19 +385,24 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Click(Texture img, string toolTip, int size = DEFAULT_BUTTON_SIZE)
         {
-
             if (!img)
                 img = Icon.Empty.GetIcon();
             
-            var cnt = ImageAndTip(img, toolTip);
-
+            switch (currentMode) 
+            {
+                case PegiPaintingMode.GameViewGUI:
+                    CheckLine();
+                    return GUILayout.Button(ImageAndTip(img, toolTip), GUILayout.MaxWidth(size + 5), GUILayout.MaxHeight(size)).FeedChanges_Internal(LatestInteractionEvent.Click);
 #if UNITY_EDITOR
-            if (!PaintingGameViewUI)
-                return PegiEditorOnly.ClickImage(cnt, size);
+                case PegiPaintingMode.EditorInspector:
+                    return PegiEditorOnly.ClickImage(ImageAndTip(img, toolTip), size);
 #endif
 
-            CheckLine();
-            return GUILayout.Button(cnt, GUILayout.MaxWidth(size + 5), GUILayout.MaxHeight(size)).FeedChanges_Internal(LatestInteractionEvent.Click);
+                case PegiPaintingMode.UI_Toolkit:
+                    return Toolkit.Click(img, toolTip, size);
+
+                default: Debug.LogError(QcLog.CaseNotImplemented(currentMode)); return ChangesToken.False;
+            }
         }
 
         public static ChangesToken Click(Texture img, string toolTip, int width, int height)
@@ -495,29 +511,16 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static ChangesToken ClickHighlight(Sprite sp, int width = DEFAULT_BUTTON_SIZE)
+        public static ChangesToken Ping(this ChangesToken onChange, Object objToPing) 
         {
-#if UNITY_EDITOR
-            if (sp && Click(sp, Msg.HighlightElement.GetText(), width).IgnoreChanges(LatestInteractionEvent.Click))
-            {
-                UnityEditor.EditorGUIUtility.PingObject(sp);
-                return ChangesToken.True;
-            }
-#endif
-            return ChangesToken.False;
-        }
+            #if UNITY_EDITOR
+                if (onChange.IgnoreChanges(LatestInteractionEvent.Click))
+                {
+                    UnityEditor.EditorGUIUtility.PingObject(objToPing);
+                }
+            #endif
 
-        public static ChangesToken ClickHighlight(Texture tex, int width = DEFAULT_BUTTON_SIZE)
-        {
-#if UNITY_EDITOR
-            if (tex && Click(tex, Msg.HighlightElement.GetText(), width).IgnoreChanges())
-            {
-                UnityEditor.EditorGUIUtility.PingObject(tex);
-                return ChangesToken.True;
-            }
-#endif
-
-            return ChangesToken.False;
+            return onChange;
         }
 
         public static ChangesToken ClickHighlight(Object obj, int width = DEFAULT_BUTTON_SIZE) =>
@@ -568,7 +571,7 @@ namespace QuizCanners.Inspect
                 if (Icon.Warning.Click("Copy to Clipboard"))
                     SetCopyPasteBuffer(warningMsg);
 
-                warningMsg.PegiLabel(Styles.Text.Warning).Write();
+                warningMsg.PL(Styles.Text.Warning).Write();
                 return StateToken.True;
             }
 
@@ -597,5 +600,7 @@ namespace QuizCanners.Inspect
 
             return icon.ClickUnFocus(hint);
         }
+
+    
     }
 }

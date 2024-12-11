@@ -151,19 +151,19 @@ namespace QuizCanners.Utils
                 if (GetCount() > 0)
                 {
                     Icon.Clear.Click().OnChanged(ClearAll);
-                    "{0}".F(GetCount()).PegiLabel(60).Write();
+                    "{0}".F(GetCount()).PL(60).Write();
                 }
             }
 
             public virtual void Inspect()
             {
-                "Active {0}".F(ToString()).PegiLabel().Edit_List(instances).Nl();
+                "Active {0}".F(ToString()).PL().Edit_List(instances).Nl();
 
                 if (Application.isPlaying)
                 {
                     if (TotalCount > 0)
                     {
-                        "Capacity: {0}".F(TotalCount).PegiLabel().Write();
+                        "Capacity: {0}".F(TotalCount).PL().Write();
                         Icon.Delete.Click().OnChanged(ClearAll);
                         pegi.Nl();
                     }
@@ -331,9 +331,9 @@ namespace QuizCanners.Utils
                 if (!Application.isPlaying)
                 {
                     if (!parent)
-                        "Parent".ConstLabel().Edit(ref parent);
+                        "Parent".ConstL().Edit(ref parent);
                     else
-                        "Prefab".ConstLabel().Edit(ref prefab);
+                        "Prefab".ConstL().Edit(ref prefab);
                 }
 
                 base.InspectInList(ref edited, ind);
@@ -345,8 +345,8 @@ namespace QuizCanners.Utils
 
                 if (!Application.isPlaying)
                 {
-                    "Parent".ConstLabel().Edit(ref parent).Nl();
-                    "Prefab".ConstLabel().Edit(ref prefab).Nl();
+                    "Parent".ConstL().Edit(ref parent).Nl();
+                    "Prefab".ConstL().Edit(ref prefab).Nl();
                 }
             }
 

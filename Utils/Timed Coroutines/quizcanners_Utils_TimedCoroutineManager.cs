@@ -68,28 +68,28 @@ namespace QuizCanners.Utils
 
                 if (!coroutinesListMeta.IsAnyEntered)
                 {
-                    "Pool Size: {0}".F(pool.Count).PegiLabel().Nl();
+                    "Pool Size: {0}".F(pool.Count).PL().Nl();
 
-                    if ("Run an Example Managed Coroutine".PegiLabel().Click().Nl())
+                    if ("Run an Example Managed Coroutine".PL().Click().Nl())
                         DefaultCoroutineManager.Add(Coroutine_Test());
 
                     if (_debugTask != null)
                     {
-                        "Task status:{0}".F(_debugTask.Status).PegiLabel().Nl();
+                        "Task status:{0}".F(_debugTask.Status).PL().Nl();
 
-                        _debugTask.Exception?.ToString().PegiLabel().WriteBig();
+                        _debugTask.Exception?.ToString().PL().WriteBig();
 
-                        if ("Clear".PegiLabel().Click())
+                        if ("Clear".PL().Click())
                             _debugTask = null;
                     }
-                    else if ("Run an Example Task".PegiLabel().Click().Nl())
+                    else if ("Run an Example Task".PL().Click().Nl())
                     {
                         var tmp = new TimedCoroutine(Coroutine_Test());
                         _debugTask = tmp.StartTask();
                     }
                 }
 
-                if ("Yield 1 frame".PegiLabel().Click().Nl())
+                if ("Yield 1 frame".PL().Click().Nl())
                     UpdateManagedCoroutines();
 
                 coroutinesListMeta.Edit_List(_enumerators).Nl();
@@ -98,9 +98,9 @@ namespace QuizCanners.Utils
                 {
                     ("Managed Timed coroutines can run in Editor, but need an object to send an update call to them every frame: QcAsync.UpdateManagedCoroutines()." +
                      " Alternatively a TimedEnumerator can be started with Unity's " +
-                     "StartCoroutine(new TimedEnumeration(enumerator)). It will in turn call yield on it multiple times with care for performance.").PegiLabel().Write_Hint();
+                     "StartCoroutine(new TimedEnumeration(enumerator)). It will in turn call yield on it multiple times with care for performance.").PL().Write_Hint();
 
-                    ("Examples are in QcAsync.cs class").PegiLabel().Write_Hint();
+                    ("Examples are in QcAsync.cs class").PL().Write_Hint();
                 }
             }
 

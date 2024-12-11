@@ -20,7 +20,7 @@ namespace QuizCanners.Utils
 
                 public void InspectInList(ref int edited, int index)
                 {
-                    ToString().PegiLabel().Write_ForCopy();
+                    ToString().PL().Write_ForCopy();
 
                     if (Icon.Enter.Click())
                         edited = index;
@@ -47,7 +47,7 @@ namespace QuizCanners.Utils
                 public void InspectInList(ref int edited, int index)
                 {
                     pegi.ToggleIcon(ref SearchIn);
-                    Assembly.GetName().Name.PegiLabel().Write_ForCopy();
+                    Assembly.GetName().Name.PL().Write_ForCopy();
                 }
             }
 
@@ -115,16 +115,16 @@ namespace QuizCanners.Utils
             {
                 var changes = pegi.ChangeTrackStart();
 
-                if ("Assmeblies".PegiLabel().IsFoldout(ref foldoutAssemblies).Nl())
+                if ("Assmeblies".PL().IsFoldout(ref foldoutAssemblies).Nl())
                 {
-                    "Assemblies to search in".PegiLabel().Edit_List(AllAssemblies).Nl().OnChanged(Clear);
+                    "Assemblies to search in".PL().Edit_List(AllAssemblies).Nl().OnChanged(Clear);
 
-                    "Refresh".PegiLabel().Click().OnChanged(() => _allAssemblies = null).Nl();
+                    "Refresh".PL().Click().OnChanged(() => _allAssemblies = null).Nl();
                 }
                 else
                 {
                     var typeName = _reflectCLassName.GetValue();
-                    "Class Name".ConstLabel().Edit_Delayed(ref typeName).OnChanged(() => _reflectCLassName.SetValue(typeName)).OnChanged(Clear).UnfocusOnChange().Nl();
+                    "Class Name".ConstL().Edit_Delayed(ref typeName).OnChanged(() => _reflectCLassName.SetValue(typeName)).OnChanged(Clear).UnfocusOnChange().Nl();
 
                     if (matches == null && !typeName.IsNullOrEmpty())
                     {
@@ -150,7 +150,7 @@ namespace QuizCanners.Utils
                         {
                             foreach (var t in matches)
                             {
-                                if (t.Name.PegiLabel(toolTip: t.FullName).Click().UnfocusOnChange().Nl())
+                                if (t.Name.PL(toolTip: t.FullName).Click().UnfocusOnChange().Nl())
                                     selectedType = t;
                             }
                         }
@@ -180,12 +180,12 @@ namespace QuizCanners.Utils
                             }
 
                             if (derrivedFromSelected.Count == 0)
-                                "No classes are assignable from {0}".F(selectedType.Name).PegiLabel().Nl();
+                                "No classes are assignable from {0}".F(selectedType.Name).PL().Nl();
                             else
                             {
-                                "Assignable From {0}".F(selectedType.Name).PegiLabel(pegi.Styles.ListLabel).Nl();
+                                "Assignable From {0}".F(selectedType.Name).PL(pegi.Styles.ListLabel).Nl();
 
-                                if ("{0}s To Clipboard".F(selectedType.Name).PegiLabel().Click().Nl())
+                                if ("{0}s To Clipboard".F(selectedType.Name).PL().Click().Nl())
                                 {
                                     var sb = new StringBuilder();
                                     foreach (var t in derrivedFromSelected)
@@ -196,7 +196,7 @@ namespace QuizCanners.Utils
                                     pegi.CopyPasteBuffer = sb.ToString();
                                 }
 
-                                "Assignable Types".PegiLabel().Edit_List(derrivedFromSelected).Nl();
+                                "Assignable Types".PL().Edit_List(derrivedFromSelected).Nl();
                             }
                         }
                     }
@@ -207,7 +207,7 @@ namespace QuizCanners.Utils
             {
                 var rews = GetTypesAssignableFrom<T>(); 
 
-                if ("{0}s To Clipboard".F(typeof(T).Name).PegiLabel().Click().Nl())
+                if ("{0}s To Clipboard".F(typeof(T).Name).PL().Click().Nl())
                 {
                     var sb = new StringBuilder();
                     foreach (var t in rews)
@@ -220,7 +220,7 @@ namespace QuizCanners.Utils
 
                 foreach (var t in rews)
                 {
-                    t.Name.PegiLabel().Write_ForCopy(showCopyButton: true).Nl();
+                    t.Name.PL().Write_ForCopy(showCopyButton: true).Nl();
                 }
             }
         }

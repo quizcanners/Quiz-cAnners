@@ -13,7 +13,7 @@ namespace QuizCanners.Migration
     [Serializable]
     public class QcCSVSheetToCfg : IPEGI, INeedAttention, IPEGI_ListInspect
     {
-        [SerializeField] private string url;
+        [SerializeField] public string Url;
 
       //  const string DEFAULT_URL = "https://docs.google.com/spreadsheets/d/e/XXX/pub?";
 
@@ -55,13 +55,13 @@ namespace QuizCanners.Migration
 
         private bool InspectUrlEndingNeedsCleanup()
         {
-            var ind = url.LastIndexOf("pub?", StringComparison.Ordinal);
+            var ind = Url.LastIndexOf("pub?", StringComparison.Ordinal);
 
-            bool needsCleanup = (ind > 10 && ind < url.Length - 4);
+            bool needsCleanup = (ind > 10 && ind < Url.Length - 4);
 
-            if (needsCleanup && "Clear Url Ending".PegiLabel().Click())
+            if (needsCleanup && "Clear Url Ending".PL().Click())
             {
-                url = url[..(ind + 4)];
+                Url = Url[..(ind + 4)];
             }
 
             return needsCleanup;
@@ -69,18 +69,20 @@ namespace QuizCanners.Migration
 
         private static QcCSVSheetToCfg s_inspectedSheet;
 
+        public override string ToString() => "Google Sheet";
+
         public void InspectInList(ref int edited, int index)
         {
             s_inspectedSheet = this;
             if (this.Click_Enter_Attention())
                 edited = index;
 
-            if (url.IsNullOrEmpty())
+            if (Url.IsNullOrEmpty())
             {
-                "url(.csv): ".ConstLabel().Edit(ref url);
+                "url(.csv): ".ConstL().Edit(ref Url);
 
-                if (pegi.CopyPasteBuffer.IsNullOrEmpty() == false && pegi.CopyPasteBuffer.Contains("spreadsheets") && "From Clipboard".PegiLabel().Click())
-                    url = pegi.CopyPasteBuffer;
+                if (pegi.CopyPasteBuffer.IsNullOrEmpty() == false && pegi.CopyPasteBuffer.Contains("spreadsheets") && "From Clipboard".PL().Click())
+                    Url = pegi.CopyPasteBuffer;
             }
             else
             {
@@ -89,7 +91,7 @@ namespace QuizCanners.Migration
                     if (pages.Count == 0)
                     {
                         int tmp = 0;
-                        if ("gid=".ConstLabel().Edit(ref tmp) | Icon.Done.Click(toolTip: "The gid is 0"))
+                        if ("gid=".ConstL().Edit(ref tmp) | Icon.Done.Click(toolTip: "The gid is 0"))
                         {
                             pages.Add(new SheetPage() { pageIndex = tmp, pageName = "Unnamed" });
                         }
@@ -97,11 +99,11 @@ namespace QuizCanners.Migration
                     else
                     {
                         if (SelectedPage == null)
-                            "Sheet Page".ConstLabel().Select_Index(ref _selectedPage, pages);
+                            "Sheet Page".ConstL().Select_Index(ref _selectedPage, pages);
                         else
                         {
-                            "Name:".ConstLabel().Edit(ref SelectedPage.pageName);
-                            "gid=".ConstLabel().Edit(ref SelectedPage.pageIndex);
+                            "Name:".ConstL().Edit(ref SelectedPage.pageName);
+                            "gid=".ConstL().Edit(ref SelectedPage.pageIndex);
                         }
                     }
                 }
@@ -121,22 +123,22 @@ namespace QuizCanners.Migration
 
                 if (!context.IsAnyEntered)
                 {
-                    "Published CSV Url".ConstLabel().Edit(ref url);
+                    "Published CSV Url".ConstL().Edit(ref Url);
 
-                    if (url.IsNullOrEmpty())
+                    if (Url.IsNullOrEmpty())
                     {
-                        if (pegi.CopyPasteBuffer.IsNullOrEmpty() == false && pegi.CopyPasteBuffer.Contains("spreadsheets") && "From Clipboard".PegiLabel().Click())
-                            url = pegi.CopyPasteBuffer;
+                        if (pegi.CopyPasteBuffer.IsNullOrEmpty() == false && pegi.CopyPasteBuffer.Contains("spreadsheets") && "From Clipboard".PL().Click())
+                            Url = pegi.CopyPasteBuffer;
                     }
                     else if (Icon.Copy.Click())
-                        pegi.SetCopyPasteBuffer(url);
+                        pegi.SetCopyPasteBuffer(Url);
 
                     pegi.FullWindow.DocumentationClickOpen(() =>
                         "GoogleSheet->File->Publish To Web-> Publish... Copy link for .csv document");
 
                     pegi.Nl();
 
-                    if (url.IsNullOrEmpty() == false)
+                    if (Url.IsNullOrEmpty() == false)
                     {
                         InspectUrlEndingNeedsCleanup();
                         pegi.Nl();
@@ -144,7 +146,7 @@ namespace QuizCanners.Migration
 
                     pegi.Nl();
 
-                    "Page:".ConstLabel().Select_Index(ref _selectedPage, pages);
+                    "Page:".ConstL().Select_Index(ref _selectedPage, pages);
                 
                     pegi.Nl();
                 }
@@ -152,18 +154,18 @@ namespace QuizCanners.Migration
 
                 _pagesMeta.Enter_List(pages).Nl();
 
-                if ("Link".PegiLabel().IsEntered())
+                if ("Link".PL().IsEntered())
                 {
                     pegi.Nl();
-                    "Sheet Edit Link".ConstLabel().Edit(ref editUrl);
+                    "Sheet Edit Link".ConstL().Edit(ref editUrl);
 
-                    if ("Open".PegiLabel().Click())
+                    if ("Open".PL().Click())
                         Application.OpenURL(editUrl);
 
                     pegi.Nl();
                 }
 
-                if (!context.IsAnyEntered && !editUrl.IsNullOrEmpty()  && "Open in Browser".PegiLabel().Click())
+                if (!context.IsAnyEntered && !editUrl.IsNullOrEmpty()  && "Open in Browser".PL().Click())
                     Application.OpenURL(editUrl);
 
                 pegi.Nl();
@@ -194,8 +196,16 @@ namespace QuizCanners.Migration
 
             public bool IsDownloading() => request != null && request.result == UnityEngine.Networking.UnityWebRequest.Result.InProgress;
 
+            public void Clear() 
+            {
+                Rows.Clear();
+                if (Columns != null)
+                    Columns.Clear();
+                request?.Dispose();
+                request = null;
+            }
 
-            public void ToICfgCustom(ICfgDecode receiver, Action onRawParced = null)
+            public void ToICfg(ICfgDecode receiver, Action onRawParced = null)
             {
                 CheckWebRequest();
 
@@ -381,13 +391,13 @@ namespace QuizCanners.Migration
 
             public void StartDownload(QcCSVSheetToCfg parent)
             {
-                if (parent.url.IsNullOrEmpty())
+                if (parent.Url.IsNullOrEmpty())
                 {
                     Debug.LogError("URL not set");
                     return;
                 }
 
-                request = UnityEngine.Networking.UnityWebRequest.Get("{0}gid={1}&single=true&output=csv".F(parent.url, pageIndex.ToString()));
+                request = UnityEngine.Networking.UnityWebRequest.Get("{0}gid={1}&single=true&output=csv".F(parent.Url, pageIndex.ToString()));
                 request.SendWebRequest();
             }
 
@@ -408,25 +418,23 @@ namespace QuizCanners.Migration
 
             #region Inspector
 
-            public override string ToString() => _csvFile ? "{0}.csv".F(_csvFile.name) : pageName;
+            public override string ToString() => _csvFile ? "{0}.csv".F(_csvFile.name) : (pageName.IsNullOrEmpty() ? pageIndex.ToString() : pageName);
 
             public void InspectInList(ref int edited, int ind)
             {
                 if (Icon.Enter.Click())
                     edited = ind;
 
-                "Sheet Name".ConstLabel().Edit(ref pageName);
+                "Sheet Name".ConstL().Edit(ref pageName);
                 pegi.Edit(ref _csvFile);
                 if (!_csvFile)
-                    "#gid=".ConstLabel().Edit(ref pageIndex);
+                    "#gid=".ConstL().Edit(ref pageIndex);
                 else
-                    "Process".PegiLabel().Click(ProcessCSV);
+                    "Process".PL().Click(ProcessCSV);
             }
 
             private readonly pegi.EnterExitContext _context = new();
             private readonly pegi.CollectionInspectorMeta _rowsInspector = new("Records");
-
-            internal static SheetPage s_inspectedPage;
 
             void ProcessCSV() 
             {
@@ -443,10 +451,10 @@ namespace QuizCanners.Migration
             {
                 using (_context.StartContext())
                 {
-                    "CSV file".ConstLabel().Edit(ref _csvFile);
+                    "CSV file".ConstL().Edit(ref _csvFile);
 
                     if (_csvFile)
-                        "Process".PegiLabel().Click(ProcessCSV);
+                        "Process".PL().Click(ProcessCSV);
                     
                     pegi.Nl();
 
@@ -454,9 +462,9 @@ namespace QuizCanners.Migration
                     {
                         InspectRequest();
 
-                        "Raw Data".ConstLabel().IsConditionally_Entered(canEnter: IsDownloaded).Nl().If_Entered(() =>
+                        "Raw Data".ConstL().IsConditionally_Entered(canEnter: IsDownloaded).Nl().If_Entered(() =>
                         {
-                            request.downloadHandler.text.PegiLabel().Write_ForCopy_Big();
+                            request.downloadHandler.text.PL().Write_ForCopy_Big();
                         });
                     }
 
@@ -468,12 +476,12 @@ namespace QuizCanners.Migration
                     {
                         if (request == null)
                         {
-                            if ("Download".PegiLabel().Click().Nl())
+                            if ("Download".PL().Click().Nl())
                                 StartDownload(s_inspectedSheet);
                             return;
                         }
 
-                        if ("Clear Request".PegiLabel().Click())
+                        if ("Clear Request".PL().Click())
                         {
                             request.Dispose();
                             request = null;
@@ -482,14 +490,14 @@ namespace QuizCanners.Migration
 
                         if (!request.isDone)
                         {
-                            "Thread state: ".F(Mathf.FloorToInt(request.downloadProgress * 100).ToString()).PegiLabel().Nl();
+                            "Thread state: ".F(Mathf.FloorToInt(request.downloadProgress * 100).ToString()).PL().Nl();
 
-                            if ("Cancel Trhread".PegiLabel().Click().Nl())
+                            if ("Cancel Trhread".PL().Click().Nl())
                                 request.Dispose();
                             return;
                         }
 
-                        "Download finished".PegiLabel().Nl();
+                        "Download finished".PL().Nl();
                     }
                 }
             }

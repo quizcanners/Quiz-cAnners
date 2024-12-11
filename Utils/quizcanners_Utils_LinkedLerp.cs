@@ -133,13 +133,13 @@ namespace QuizCanners.Lerp
                 switch (lerpMode)
                 {
                     case LerpSpeedMode.SpeedThreshold:
-                        (Name_Internal + " Thld").PegiLabel(200).Edit(ref SpeedLimit);
+                        (Name_Internal + " Thld").PL(200).Edit(ref SpeedLimit);
                         break;
                     case LerpSpeedMode.UnlinkedSpeed:
-                        (Name_Internal + " Speed").PegiLabel(200).Edit(ref SpeedLimit);
+                        (Name_Internal + " Speed").PL(200).Edit(ref SpeedLimit);
                         break;
                     default:
-                        (Name_Internal + " Mode").PegiLabel(200).Edit_Enum(ref lerpMode);
+                        (Name_Internal + " Mode").PL(200).Edit_Enum(ref lerpMode);
                         break;
                 }
                 
@@ -150,9 +150,9 @@ namespace QuizCanners.Lerp
             public virtual void Inspect()
             {
 
-                ToString().PegiLabel().Write_ForCopy().Nl();
+                ToString().PL().Write_ForCopy().Nl();
 
-                "Lerp Speed Mode ".ConstLabel().Edit_Enum(ref lerpMode).Nl();
+                "Lerp Speed Mode ".ConstL().Edit_Enum(ref lerpMode).Nl();
 
                 if (Application.isPlaying)
                     (Enabled ? Icon.Active : Icon.InActive).Nl(Enabled ? "Lerp Possible" : "Lerp Not Possible");
@@ -160,10 +160,10 @@ namespace QuizCanners.Lerp
                 switch (lerpMode)
                 {
                     case LerpSpeedMode.SpeedThreshold:
-                        "Max Speed".ConstLabel().Edit(ref SpeedLimit);
+                        "Max Speed".ConstL().Edit(ref SpeedLimit);
                         break;
                     case LerpSpeedMode.UnlinkedSpeed:
-                        "Speed".ConstLabel().Edit(ref SpeedLimit);
+                        "Speed".ConstL().Edit(ref SpeedLimit);
                         break;
                         //default:
                         //("Mode").editEnum(ref lerpMode).changes(ref changed);
@@ -267,7 +267,7 @@ namespace QuizCanners.Lerp
                 }
 
                 if (lerpMode != LerpSpeedMode.LerpDisabled)
-                    "Target".PegiLabel().Edit(ref targetValue).Nl();
+                    "Target".PL().Edit(ref targetValue).Nl();
             }
 
             #endregion
@@ -353,7 +353,7 @@ namespace QuizCanners.Lerp
                     targetValue = CurrentValue;
 
                 if (lerpMode != LerpSpeedMode.LerpDisabled)
-                    "Target".PegiLabel().Edit(ref targetValue).Nl();
+                    "Target".PL().Edit(ref targetValue).Nl();
             }
 
             #endregion
@@ -410,7 +410,7 @@ namespace QuizCanners.Lerp
                 base.Inspect();
 
                 if (Application.isPlaying)
-                    "{0} => {1}".F(CurrentValue, TargetValue).PegiLabel().Nl();
+                    "{0} => {1}".F(CurrentValue, TargetValue).PL().Nl();
 
             }
 
@@ -585,9 +585,9 @@ namespace QuizCanners.Lerp
 
                 var tex = Current;
           
-                "On Start:".ConstLabel().Edit_Enum(ref _onStart).Nl();
+                "On Start:".ConstL().Edit_Enum(ref _onStart).Nl();
 
-                if ("Texture[{0}]".F(_targetTextures.Count).PegiLabel(90).Edit(ref tex).Nl())
+                if ("Texture[{0}]".F(_targetTextures.Count).PL(90).Edit(ref tex).Nl())
                     TargetTexture = tex;
             }
 
@@ -823,7 +823,7 @@ namespace QuizCanners.Lerp
 
         #region Value Types
 
-        public class FloatValue : BaseFloatLerp, IGotName
+        public class FloatValue : BaseFloatLerp, IGotStringId
         {
             private readonly string _name;
 
@@ -846,7 +846,7 @@ namespace QuizCanners.Lerp
             protected override string Name_Internal => _name;
 
             #region Inspect
-            public string NameForInspector
+            public string StringId
             {
                 get { return _name; }
                 set { }
@@ -855,9 +855,9 @@ namespace QuizCanners.Lerp
             public override void InspectInList(ref int edited, int ind)
             {
                 if (minMax)
-                    _name.PegiLabel().Edit(ref targetValue, min, max);
+                    _name.PL().Edit(ref targetValue, min, max);
                 else
-                    _name.PegiLabel().ApproxWidth().Edit(ref targetValue);
+                    _name.PL().ApproxWidth().Edit(ref targetValue);
                 
                 if (Icon.Enter.Click())
                     edited = ind;
@@ -926,7 +926,7 @@ namespace QuizCanners.Lerp
 
         }
 
-        public class ColorValue : BaseColorLerp, IGotName
+        public class ColorValue : BaseColorLerp, IGotStringId
         {
             protected readonly string _name = "Color value";
 
@@ -940,7 +940,7 @@ namespace QuizCanners.Lerp
                 set { currentValue = value; }
             }
 
-            public string NameForInspector
+            public string StringId
             {
                 get { return _name; }
                 set { }
@@ -1042,7 +1042,7 @@ namespace QuizCanners.Lerp
                     targetValue = CurrentValue;
 
                 if (lerpMode != LerpSpeedMode.LerpDisabled)
-                    "Target".PegiLabel().Edit(ref targetValue).Nl();
+                    "Target".PL().Edit(ref targetValue).Nl();
             }
 
             #endregion
@@ -1119,7 +1119,7 @@ namespace QuizCanners.Lerp
 
             public override void InspectInList(ref int edited, int ind)
             {
-                Name_Internal.PegiLabel().ApproxWidth().Edit(ref targetValue);
+                Name_Internal.PL().ApproxWidth().Edit(ref targetValue);
                 
                 if (Icon.Enter.Click())
                     edited = ind;
@@ -1438,9 +1438,9 @@ namespace QuizCanners.Lerp
             {
                 base.Inspect();
 
-                "Target".ConstLabel().Edit(ref targetValue).Nl();
+                "Target".ConstL().Edit(ref targetValue).Nl();
 
-                if ("Value".ConstLabel().Edit(ref _property.LatestValue).Nl())
+                if ("Value".ConstL().Edit(ref _property.LatestValue).Nl())
                     Set();
             }
 
@@ -1645,7 +1645,7 @@ namespace QuizCanners.Lerp
                 pegi.Nl();
 
                 var val = TargetValue;
-                "Target value".PegiLabel().Edit(ref val).Nl(()=> TargetValue = val);
+                "Target value".PL().Edit(ref val).Nl(()=> TargetValue = val);
             }
 
         }
@@ -1781,7 +1781,7 @@ namespace QuizCanners.Lerp
             {
                 base.Inspect();
 
-                "Set zero On Start".PegiLabel().ToggleIcon(ref setZeroOnStart).Nl();
+                "Set zero On Start".PL().ToggleIcon(ref setZeroOnStart).Nl();
             }
 
             #endregion
@@ -1816,7 +1816,7 @@ namespace QuizCanners.Lerp
         #endregion
     }
 
-    public class LerpData : IPEGI, IGotName, IGotCount, IPEGI_ListInspect
+    public class LerpData : IPEGI, IGotStringId, IGotCount, IPEGI_ListInspect
     {
         private int _lerpChangeVersion = -1;
         private float _linkedPortion = 1;
@@ -1860,7 +1860,7 @@ namespace QuizCanners.Lerp
         #region Inspector
         private int _resets;
 
-        public string NameForInspector
+        public string StringId
         {
             get { return dominantParameter; }
             set { dominantParameter = value; }
@@ -1870,13 +1870,13 @@ namespace QuizCanners.Lerp
 
         void IPEGI.Inspect()
         {
-            "Slowest:".PegiLabel().Write_ForCopy(dominantParameter).Nl();
-            "Updates: {0}".F(_resets).PegiLabel().Nl();
+            "Slowest:".PL().Write_ForCopy(dominantParameter).Nl();
+            "Updates: {0}".F(_resets).PL().Nl();
         }
 
         public void InspectInList(ref int edited, int ind)
         {
-            "Lerp DP: {0} [{1}]".F(dominantParameter, _resets).PegiLabel().Write();
+            "Lerp DP: {0} [{1}]".F(dominantParameter, _resets).PL().Write();
 
             if (Icon.Refresh.Click("Reset stats"))
             {

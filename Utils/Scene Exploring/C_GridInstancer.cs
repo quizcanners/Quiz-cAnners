@@ -71,12 +71,12 @@ namespace QuizCanners
 
             if (!_prefab || InstanceCount == 0)
             {
-                "Prefab".PegiLabel().Edit(ref _prefab).Nl();
+                "Prefab".PL().Edit(ref _prefab).Nl();
             }
 
             if (InstanceCount > 0)
             {
-                "Total Count: {0}".F(Count).PegiLabel(pegi.Styles.Text.Bald).Write();
+                "Total Count: {0}".F(Count).PL(pegi.Styles.Text.Bald).Write();
 
                 if (Icon.Delete.Click().IgnoreChanges()) 
                 {
@@ -90,10 +90,10 @@ namespace QuizCanners
                 pegi.Nl();
             }
 
-            "X".PegiLabel(20).Edit(ref x_Max, 1, 100).Nl();
-            "Y".PegiLabel(20).Edit(ref y_Max, 1, 100).Nl();
-            "Z".PegiLabel(20).Edit(ref z_Max, 1, 100).Nl();
-            "Gap".ConstLabel().Edit(ref _gap, 0.1f, 3f).Nl();
+            "X".PL(20).Edit(ref x_Max, 1, 100).Nl();
+            "Y".PL(20).Edit(ref y_Max, 1, 100).Nl();
+            "Z".PL(20).Edit(ref z_Max, 1, 100).Nl();
+            "Gap".ConstL().Edit(ref _gap, 0.1f, 3f).Nl();
 
             if (changed && _prefab) 
             {

@@ -23,13 +23,17 @@ namespace QuizCanners.Utils
             return singleton;
         }
 
+        public static pegi.ChangesToken TryEnter_Inspect<TSingleton>() where TSingleton : MonoBehaviour, IQcSingleton, IPEGI
+        {
+            if (TryGet<TSingleton>(out var sng))
+                return sng.Enter_Inspect().Nl();
+
+            "Sng".PL().IsConditionally_Entered(canEnter: false).Nl();
+            return pegi.ChangesToken.False;
+        }
+
         public static bool Try<TSingleton>(Action<TSingleton> onFound, bool logOnServiceMissing = true) where TSingleton : IQcSingleton =>
             Try(onFound: onFound, onFailed: null, logOnServiceMissing: logOnServiceMissing);
-
-        /*
-        public static bool Try<TServiceA, TServiceB>(Action<TServiceA, TServiceB> onFound, bool logOnServiceMissing = true) where TServiceA : IQcSingleton where TServiceB : IQcSingleton =>
-            Try(onFound: onFound, onFailed: null, logOnServiceMissing: logOnServiceMissing);
-        */
 
         public static bool Try<TService>(Action<TService> onFound, Action onFailed, bool logOnServiceMissing = false) where TService : IQcSingleton
         {
@@ -241,7 +245,7 @@ namespace QuizCanners.Utils
                 if (!_singletonLoop.Unlocked) 
                 {
                     pegi.Nl();
-                    "Recursion detected.".PegiLabel().Write().Nl();
+                    "Recursion detected.".PL().Write().Nl();
                     return;
 
                 }
@@ -258,7 +262,7 @@ namespace QuizCanners.Utils
 
                     if (_prsstInspectedCategory.GetValue().IsNullOrEmpty() == false)
                     {
-                        if (Icon.Exit.Click() | _prsstInspectedCategory.GetValue().PegiLabel().ClickLabel().Nl())
+                        if (Icon.Exit.Click() | _prsstInspectedCategory.GetValue().PL().ClickLabel().Nl())
                             _prsstInspectedCategory.SetValue("");
                     }
 
@@ -272,7 +276,7 @@ namespace QuizCanners.Utils
 
                         if (!enteredAnyCategory)
                         {
-                            "Search".ConstLabel().Edit(ref _searchText);
+                            "Search".ConstL().Edit(ref _searchText);
                             Icon.Clear.Click(() => _searchText = "");
                             pegi.Nl();
 
@@ -315,7 +319,7 @@ namespace QuizCanners.Utils
                                             continue;
 
                                         processedCategories.Add(myCategory);
-                                        if (Icon.List.Click() | myCategory.PegiLabel().ClickLabel().Nl())
+                                        if (Icon.List.Click() | myCategory.PL().ClickLabel().Nl())
                                             _prsstInspectedCategory.SetValue(myCategory);
                                     }
                                 }
@@ -331,7 +335,7 @@ namespace QuizCanners.Utils
                                 if (QcUnity.IsNullOrDestroyed_Obj(service))
                                 {
                                     pegi.Nl();
-                                    "Service {0} destroyed".F(el.Key).PegiLabel().WriteWarning();
+                                    "Service {0} destroyed".F(el.Key).PL().WriteWarning();
                                     pegi.Nl();
                                     continue;
                                 }
@@ -353,14 +357,14 @@ namespace QuizCanners.Utils
 
                         using (pegi.Styles.Background.ExitLabel.SetDisposible())
                         {
-                            if (Icon.Exit.Click() | s.GetNameForInspector().PegiLabel(style: pegi.Styles.Text.ExitLabel).ClickLabel().Nl())
+                            if (Icon.Exit.Click() | s.GetNameForInspector().PL(style: pegi.Styles.Text.ExitLabel).ClickLabel().Nl())
                                 inspectedService = -1;
                         }
 
                         if (s != null)
                             pegi.Nested_Inspect(ref s);
                         else
-                            "NULL".PegiLabel().Nl();
+                            "NULL".PL().Nl();
                     }
 
 
@@ -377,7 +381,7 @@ namespace QuizCanners.Utils
                         }
                         else
                         {
-                            if (service.GetNameForInspector().PegiLabel().ClickLabel())
+                            if (service.GetNameForInspector().PL().ClickLabel())
                                 inspectedService = index;
 
                             if (Icon.Enter.Click())
@@ -406,7 +410,7 @@ namespace QuizCanners.Utils
 
                             if (s.Value is ILoadingProgressForInspector load && load.IsLoading(ref state, ref progress01))
                             {
-                               "{0} {1}%  ({2})".F(s.Key, Mathf.FloorToInt(progress01 * 100), state).PegiLabel().DrawProgressBar(progress01);
+                               "{0} {1}%  ({2})".F(s.Key, Mathf.FloorToInt(progress01 * 100), state).PL().DrawProgressBar(progress01);
                             }
                             pegi.Nl();
 
@@ -414,7 +418,7 @@ namespace QuizCanners.Utils
                     } catch (Exception ex) 
                     {
                         Debug.LogException(ex);
-                        ex.ToString().PegiLabel().WriteWarning();
+                        ex.ToString().PL().WriteWarning();
                         pegi.Nl();
                     }
                 }
@@ -577,9 +581,9 @@ namespace QuizCanners.Utils
             {
                 if (Application.isPlaying == false)
                 {
-                    string preferedName = "MGMT-"+ ToString();
+                    string preferedName = "MGMT-"+ ToString().Replace("Manager", "");
 
-                    if (preferedName.Equals(gameObject.name) == false && "Set Go Name".PegiLabel(toolTip: preferedName).Click())
+                    if (preferedName.Equals(gameObject.name) == false && "Set Go Name".PL(toolTip: preferedName).Click())
                         gameObject.name = preferedName;
                 }
 
@@ -591,7 +595,7 @@ namespace QuizCanners.Utils
             public virtual void InspectInList(ref int edited, int ind)
             {
               
-                if (this.Click_Enter_Attention() | ToString().PegiLabel(pegi.Styles.Text.EnterLabel).ClickLabel())
+                if (this.Click_Enter_Attention() | ToString().PL(pegi.Styles.Text.EnterLabel).ClickLabel())
                     edited = ind;
 
                 pegi.ClickHighlight(this);

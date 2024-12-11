@@ -192,7 +192,7 @@ namespace QuizCanners.Utils
             {
                 if (Application.isPlaying && LoadingFailed) 
                 {
-                    "Failed to load".PegiLabel().Write();
+                    "Failed to load".PL().Write();
 
                     Icon.Warning.Draw();
 
@@ -211,7 +211,7 @@ namespace QuizCanners.Utils
                             if (Icon.Save.Click())
                                 EditorSceneManager.SaveScene(scene);
 
-                            if ("Unload".PegiLabel(toolTip: "The scene has unsaved changes. Are you sure you want to Unload and loose changes?").ClickConfirm(confirmationTag: "unload " + scene.name))
+                            if ("Unload".PL(toolTip: "The scene has unsaved changes. Are you sure you want to Unload and loose changes?").ClickConfirm(confirmationTag: "unload " + scene.name))
                             {
                                 IsLoadedOrLoading = false;
                             }
@@ -220,14 +220,14 @@ namespace QuizCanners.Utils
                         }
 #endif
 
-                        "Unload".PegiLabel().Click(() =>
+                        "Unload".PL().Click(() =>
                         {
                             IsLoadedOrLoading = false;
                             return;
                         });
                     }
 
-                    SceneManager.GetSceneByPath(ScenePath).name.PegiLabel().Write();
+                    SceneManager.GetSceneByPath(ScenePath).name.PL().Write();
                 }
                 else
                 {
@@ -243,7 +243,7 @@ namespace QuizCanners.Utils
 
                     if (LoadOperation != null && LoadOperation.isDone == false)
                     {
-                        "Loading {0}... {1}%".F(ScenePath, Mathf.FloorToInt(LoadOperation.progress * 100)).PegiLabel().Write();
+                        "Loading {0}... {1}%".F(ScenePath, Mathf.FloorToInt(LoadOperation.progress * 100)).PL().Write();
                     }
                     else
                     {
@@ -256,12 +256,12 @@ namespace QuizCanners.Utils
 
                             if (pegi.PaintingGameViewUI)
                             {
-                                ToString().PegiLabel().Write();
+                                ToString().PL().Write();
                             }
 
                         }
 #if UNITY_EDITOR
-                        else if (IsValid && !SceneReference.ScenePathDirty && "Switch".PegiLabel(toolTip: "Save scene before switching to another. Sure you want to change?").ClickConfirm(
+                        else if (IsValid && !SceneReference.ScenePathDirty && "Switch".PL(toolTip: "Save scene before switching to another. Sure you want to change?").ClickConfirm(
                             confirmationTag: "SwSc" + ScenePath))
                         {
                             LoadingFailed = false;
@@ -298,7 +298,7 @@ namespace QuizCanners.Utils
                     }
 
                     if (!match)
-                        "Add To Build".PegiLabel().Click(() =>
+                        "Add To Build".PL().Click(() =>
                         {
                             var lst = new List<EditorBuildSettingsScene>(allScenes)
                                 {

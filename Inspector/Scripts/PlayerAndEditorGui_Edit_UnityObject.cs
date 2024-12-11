@@ -121,7 +121,7 @@ namespace QuizCanners.Inspect
             label.Write();
             var res = Edit_IfNull(ref component, parent);
 
-            if (renameOnAttach && component && !component.gameObject.name.Equals(label.label) && "Rename".PegiLabel(toolTip: "Rename to "+label.label).Click()) 
+            if (renameOnAttach && component && !component.gameObject.name.Equals(label.label) && "Rename".PL(toolTip: "Rename to "+label.label).Click()) 
             {
                 component.gameObject.name = label.label;
             }
@@ -185,7 +185,7 @@ namespace QuizCanners.Inspect
             }
 #endif
 
-            "{0} [{1}]".F(label, field ? field.name : "NULL").PegiLabel(toolTip: field.GetNameForInspector_Uobj()).Write();
+            "{0} [{1}]".F(label, field ? field.name : "NULL").PL(toolTip: field.GetNameForInspector_Uobj()).Write();
 
             return ChangesToken.False;
 
@@ -459,7 +459,7 @@ namespace QuizCanners.Inspect
             public ChangesToken Edit_Texture(string name, string display)
             {
                 var mat = material;
-                display.PegiLabel().ApproxWidth().Write();
+                display.PL().ApproxWidth().Write();
                 var tex = mat.GetTexture(name);
 
                 if (pegi.Edit(ref tex))
@@ -475,7 +475,7 @@ namespace QuizCanners.Inspect
             {
                 var val = System.Array.IndexOf(material.shaderKeywords, keyword) != -1;
 
-                if (!keyword.PegiLabel().ToggleIcon(ref val))
+                if (!keyword.PL().ToggleIcon(ref val))
                     return ChangesToken.False;
 
                 if (val)
@@ -493,7 +493,7 @@ namespace QuizCanners.Inspect
                 if (name.IsNullOrEmpty())
                     name = property.ToString();
 
-                if (name.ConstLabel().Edit(ref val))
+                if (name.ConstL().Edit(ref val))
                 {
                     material.Set(property, val);
                     return ChangesToken.True;
@@ -510,7 +510,7 @@ namespace QuizCanners.Inspect
                 if (name.IsNullOrEmpty())
                     name = property.ToString();
 
-                if (name.PegiLabel().ApproxWidth().Edit(ref val, min, max))
+                if (name.PL().ApproxWidth().Edit(ref val, min, max))
                 {
                     mat.Set(property, val);
                     return ChangesToken.True;
@@ -530,7 +530,7 @@ namespace QuizCanners.Inspect
                 if (name.IsNullOrEmpty())
                     name = property.ToString();
 
-                if (name.PegiLabel(0.3f).Edit(ref val))
+                if (name.PL(0.3f).Edit(ref val))
                 {
                     mat.Set(property, val);
                     return ChangesToken.True;
@@ -565,7 +565,7 @@ namespace QuizCanners.Inspect
                 if (name.IsNullOrEmpty())
                     name = property.ToString();
 
-                if (name.ConstLabel().Edit(ref val))
+                if (name.ConstL().Edit(ref val))
                 {
                     mat.Set(property, val);
                     return ChangesToken.True;
@@ -580,7 +580,7 @@ namespace QuizCanners.Inspect
 
                 int val = Mathf.RoundToInt(material.Get(property));
 
-                if (property.ToString().PegiLabel(0.3f).Select(ref val, property.Keywords))
+                if (property.ToString().PL(0.3f).Select(ref val, property.Keywords))
                 {
                     material.Set(property, val);
                 }
@@ -596,7 +596,7 @@ namespace QuizCanners.Inspect
                 if (name.IsNullOrEmpty())
                     name = property.ToString();
 
-                if (name.PegiLabel().ToggleIcon(ref val))
+                if (name.PL().ToggleIcon(ref val))
                 {
                     property.SetOn(material, val);
 

@@ -61,7 +61,7 @@ namespace QuizCanners.Utils
             void IPEGI.Inspect()
             {
                 var init = IsInitialized;
-                "{0}".F(_name).PegiLabel().ToggleIcon(ref init).Nl().OnChanged(() => IsInitialized = init);
+                "{0}".F(_name).PL().ToggleIcon(ref init).Nl().OnChanged(() => IsInitialized = init);
 
                 if (IsInitialized)
                 {
@@ -305,8 +305,8 @@ namespace QuizCanners.Utils
             {
                 if (!_renderTextures.IsNullOrEmpty())
                 {
-                    _name.PegiLabel().Edit_List_UObj(_renderTextures).Nl();
-                    if ("Precision".PegiLabel().Edit_Enum(ref _precision).Nl())
+                    _name.PL().Edit_List_UObj(_renderTextures).Nl();
+                    if ("Precision".PL().Edit_Enum(ref _precision).Nl())
                     {
                         Clear();
                     }
@@ -315,7 +315,7 @@ namespace QuizCanners.Utils
                     pegi.Draw(Target, width: 256).Nl();
                 }
                 else
-                    "{0} not initialized".F(_name).PegiLabel().Nl();
+                    "{0} not initialized".F(_name).PL().Nl();
 
             
             }
@@ -323,7 +323,7 @@ namespace QuizCanners.Utils
 
             public void InspectInList(ref int edited, int index)
             {
-                _name.PegiLabel().ClickEnter(ref edited, index);
+                _name.PL().ClickEnter(ref edited, index);
 
                  (IsInitialized ? Icon.Active : Icon.InActive).Draw();
             }
@@ -444,7 +444,7 @@ namespace QuizCanners.Utils
                     pegi.Draw(_renderTexture, 256, alphaBlend: false);
                 }
                 else
-                    "{0} not initialized".F(_name).PegiLabel().Nl();
+                    "{0} not initialized".F(_name).PL().Nl();
             }
             #endregion
         }

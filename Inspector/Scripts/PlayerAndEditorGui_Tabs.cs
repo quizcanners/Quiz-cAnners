@@ -270,7 +270,7 @@ namespace QuizCanners.Inspect
         {
             if (TabContext.s_tabs.Count == 0)
             {
-                "NO TAB CONTEXT FOR {0}".F(tabName).PegiLabel().Nl();
+                "NO TAB CONTEXT FOR {0}".F(tabName).PL().Nl();
                 return;
             }
 
@@ -324,7 +324,7 @@ namespace QuizCanners.Inspect
         {
             if (TabContext.s_tabs.Count == 0)
             {
-                "NO TAB CONTEXT FOR {0}".F(tabName).PegiLabel().Nl();
+                "NO TAB CONTEXT FOR {0}".F(tabName).PL().Nl();
                 return;
             }
 

@@ -43,10 +43,10 @@ namespace QuizCanners.Utils
             #region Inspector
             
             public virtual void InspectInList(ref int edited, int ind) =>
-                name.PegiLabel(toolTip: "Id: {0}".F(id), width: 90).Write_ForCopy();
+                name.PL(toolTip: "Id: {0}".F(id), width: 90).Write_ForCopy();
             
             public virtual void Inspect()=>
-                name.PegiLabel().Write_ForCopy();
+                name.PL().Write_ForCopy();
             #endregion
 
             #region Constructors
@@ -134,7 +134,7 @@ namespace QuizCanners.Utils
             {
                 base.InspectInList(ref edited, ind);
                 if (GlobalValueSet)
-                    Icon.SelectAll.Draw(toolTip: "Set as Global value");
+                    Icon.Selected.Draw(toolTip: "Set as Global value");
             }
 
             public override void Inspect()
@@ -142,7 +142,7 @@ namespace QuizCanners.Utils
                 base.Inspect();
                 pegi.Nl();
                 if (GlobalValueSet)
-                    "Global Value Set: {0}".F(GlobalValue).PegiLabel().Nl();
+                    "Global Value Set: {0}".F(GlobalValue).PL().Nl();
             }
 
             #endregion
@@ -211,7 +211,6 @@ namespace QuizCanners.Utils
             return inst;
         }
 
-
         public static Material Set<T>(this Material mat, IndexGeneric<T> property)
         {
             property.SetLatestValueOn(mat);
@@ -234,7 +233,6 @@ namespace QuizCanners.Utils
         
         public static void Set(this Material mat, KeywordEnum property, int value) => property.Set(mat, value);    
         
-
         #endregion
 
         #region Float
@@ -271,16 +269,16 @@ namespace QuizCanners.Utils
             {
                 LatestValue = mat.Get(this);
                 return (_usingRange
-                    ? name.PegiLabel().Edit(ref LatestValue, min: _min, max: _max)
-                    : name.PegiLabel().Edit(ref LatestValue))
+                    ? name.PL().Edit(ref LatestValue, min: _min, max: _max)
+                    : name.PL().Edit(ref LatestValue))
                     .OnChanged(()=> mat.Set(this));
               
             }
 
             public pegi.ChangesToken InspectValue() =>
                 (_usingRange ?
-                    name.PegiLabel(0.25f).Edit(ref LatestValue, min: _min, max: _max) :
-                    name.PegiLabel(0.25f).Edit(ref LatestValue))
+                    name.PL(0.25f).Edit(ref LatestValue, min: _min, max: _max) :
+                    name.PL(0.25f).Edit(ref LatestValue))
               .OnChanged(() =>
               {
                   if (GlobalValueSet)
@@ -353,7 +351,7 @@ namespace QuizCanners.Utils
                         GlobalValue = LatestValue;
                 }
 
-                name.PegiLabel(0.25f).Edit_01(ref LatestValue).OnChanged(() =>
+                name.PL(0.25f).Edit_01(ref LatestValue).OnChanged(() =>
                 {
                     if (GlobalValueSet)
                         GlobalValue = LatestValue;
@@ -410,8 +408,8 @@ namespace QuizCanners.Utils
 
             private pegi.ChangesToken InspectValue() =>
                 (_usingRange ?
-                    name.PegiLabel(0.25f).Edit(ref LatestValue, minInclusiven: _min, maxInclusive: _max) :
-                    name.PegiLabel(0.25f).Edit(ref LatestValue))
+                    name.PL(0.25f).Edit(ref LatestValue, minInclusiven: _min, maxInclusive: _max) :
+                    name.PL(0.25f).Edit(ref LatestValue))
               .OnChanged(() =>
               {
                   if (GlobalValueSet)
@@ -457,7 +455,7 @@ namespace QuizCanners.Utils
 
             public override void Inspect()
             {
-                ToString().PegiLabel().Write(); 
+                ToString().PL().Write(); 
                 (DirectiveEnabledForLastValue ? Icon.Active: Icon.InActive).Nl();
                 
                 if (pegi.Edit(ref LatestValue).Nl())
@@ -519,7 +517,7 @@ namespace QuizCanners.Utils
             public override void Inspect()
             {
                //base.Inspect();
-                if (name.PegiLabel().Edit(ref LatestValue, hdr: true).Nl() && GlobalValueSet)
+                if (name.PL().Edit(ref LatestValue, hdr: true).Nl() && GlobalValueSet)
                     GlobalValue = LatestValue;
             }
 
@@ -562,6 +560,12 @@ namespace QuizCanners.Utils
             public override Vector4 Get(MaterialPropertyBlock block) => block.GetVector(id);
             public override Vector4 Get(Material mat) => mat.GetVector(id);
 
+            public Color AsColor 
+            {
+                get => new (LatestValue.x, LatestValue.y, LatestValue.z, LatestValue.w);
+                set => LatestValue = new Vector4(value.r, value.g, value.b, value.a);
+            }
+
             protected override Vector4 GlobalValue_Internal
             {
                 get => Shader.GetGlobalVector(id);
@@ -580,9 +584,7 @@ namespace QuizCanners.Utils
             {
                 Icon.Copy.Click().OnChanged(() => pegi.SetCopyPasteBuffer(name, hint: "Valiable name copied to buffer"));
 
-               // name.PegiLabel().Write_ForCopy(showCopyButton: true);
-
-                return name.PegiLabel().Edit(ref LatestValue).OnChanged(() =>
+                return name.PL().Edit(ref LatestValue).OnChanged(() =>
                 {
                     if (GlobalValueSet)
                         GlobalValue = LatestValue;
@@ -815,7 +817,7 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                _name.PegiLabel().Write_ForCopy();
+                _name.PL().Write_ForCopy();
                 pegi.Nl();
 
                 for ( int i=0; i<EnumValues.Length; i++) 
@@ -823,9 +825,9 @@ namespace QuizCanners.Utils
                     var val = EnumValues[i]; 
 
                     if (lastIndex == i)
-                        "Remove {0}".F(val).PegiLabel().Click(() => this[i] = false);
+                        "Remove {0}".F(val).PL().Click(() => this[i] = false);
                     else
-                        "Add {0}".F(val).PegiLabel().Click(()=> this[i] = true);
+                        "Add {0}".F(val).PL().Click(()=> this[i] = true);
 
                     pegi.Nl();
                 }
@@ -863,7 +865,7 @@ namespace QuizCanners.Utils
             {
                 if (pegi.ToggleIcon(ref lastValue))
                     Enabled = lastValue;
-                _name.PegiLabel().Write_ForCopy();
+                _name.PL().Write_ForCopy();
             }
         }
 
@@ -903,10 +905,10 @@ namespace QuizCanners.Utils
             public pegi.ChangesToken InspectValue(Material mat)
             {
                 LastValue = mat.Get(this);
-                return (_keyword.PegiLabel().ToggleIcon(ref LastValue)).OnChanged(() => mat.Set(this));
+                return (_keyword.PL().ToggleIcon(ref LastValue)).OnChanged(() => mat.Set(this));
             }
 
-            void IPEGI.Inspect() => _floatProperty.PegiLabel().ToggleIcon(ref LastValue);
+            void IPEGI.Inspect() => _floatProperty.PL().ToggleIcon(ref LastValue);
         }
 
 
@@ -1111,8 +1113,6 @@ namespace QuizCanners.Utils
             val.Has(mat, propertyPrefix, searchFallBacks);
     }
     #endregion
-
-
 
 #if UNITY_EDITOR
 

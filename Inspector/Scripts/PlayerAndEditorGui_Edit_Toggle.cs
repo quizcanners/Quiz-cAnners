@@ -120,7 +120,7 @@ namespace QuizCanners.Inspect
 #if UNITY_EDITOR
             var val = QcUnity.GetPlatformDirective(keyword);
 
-            if (text.PegiLabel().ToggleIconConfirm(ref val, confirmationTag: keyword, tip: "Changing Compile directive will force scripts to recompile. {0} {1}? ".F(val ? "Disable" : "Enable", keyword)))
+            if (text.PL().ToggleIconConfirm(ref val, confirmationTag: keyword, tip: "Changing Compile directive will force scripts to recompile. {0} {1}? ".F(val ? "Disable" : "Enable", keyword)))
                 QcUnity.SetPlatformDirective(keyword, val);
 #endif
 
@@ -134,7 +134,7 @@ namespace QuizCanners.Inspect
 
             (expectedValue == val ? Icon.Done : Icon.Warning).Draw();
 
-            if (text.PegiLabel().ToggleIconConfirm(ref val, confirmationTag: keyword, tip: "Changing Compile directive will force scripts to recompile. {0} {1}? ".F(val ? "Disable" : "Enable", keyword)))
+            if (text.PL().ToggleIconConfirm(ref val, confirmationTag: keyword, tip: "Changing Compile directive will force scripts to recompile. {0} {1}? ".F(val ? "Disable" : "Enable", keyword)))
                 QcUnity.SetPlatformDirective(keyword, val);
 #endif
 

@@ -1,0 +1,125 @@
+.workflow-option {
+    -unity-font-definition: url("project://database/Assets/Shapes/Textures/Inconsolata/Inconsolata-SemiBold.ttf?fileID=12800000&guid=32e1a9b06e983304a8a5e22976717e9c&type=3#Inconsolata-SemiBold");
+    -unity-font-style: normal;
+    font-size: 18px;
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: rgba(0, 0, 0, 0);
+    color: rgb(255, 255, 255);
+    text-overflow: clip;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    background-image: none;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    -unity-background-image-tint-color: rgb(107, 187, 217);
+    background-color: rgb(47, 71, 89);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    opacity: 1;
+    display: flex;
+    overflow: visible;
+    justify-content: flex-end;
+    align-content: center;
+    align-self: stretch;
+    flex-shrink: 0;
+    margin-bottom: -2px;
+    padding-bottom: 2%;
+    align-items: stretch;
+    transform-origin: center;
+}
+
+.tab-selected {
+    border-bottom-width: 0;
+    border-bottom-color: rgba(0, 0, 0, 0);
+}
+
+.hidden-top {
+    translate: 0 -105%;
+    opacity: 0.5;
+}
+
+.grid-element {
+    flex-grow: 1;
+    width: 100px;
+    height: 100px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    border-bottom-left-radius: 20px;
+    background-image: none;
+    background-size: 150% 150%;
+    -unity-background-scale-mode: scale-and-crop;
+    background-color: rgb(255, 255, 255);
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 10px;
+    margin-top: 10px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.hidden-fade {
+    opacity: 0;
+    visibility: visible;
+}
+
+.pegi-selected {
+    border-top-width: 3px;
+    border-right-width: 5px;
+    border-bottom-width: 4px;
+    border-left-width: 3px;
+    border-left-color: rgb(255, 174, 0);
+    border-right-color: rgb(255, 174, 0);
+    border-top-color: rgb(255, 174, 0);
+    border-bottom-color: rgb(255, 174, 0);
+    -unity-font-style: bold;
+    color: rgb(48, 34, 0);
+}
+
+.white-text {
+    color: rgb(255, 255, 255);
+    font-size: 18px;
+    -unity-font-definition: url("project://database/Assets/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2230732570650464555&guid=ba178686d171cb74ea20f63d7275f350&type=3#NotInter-Regular");
+    -unity-font-style: normal;
+    letter-spacing: 0;
+    text-shadow: 0.75px 0 30px rgb(0, 0, 0);
+}
+
+.raycast-blocker {
+}
+
+.dark-background {
+    -unity-background-image-tint-color: rgb(0, 0, 0);
+    opacity: 1;
+}
+
+.unity-text-field {
+}
+
+.unity-base-text-field__input {
+    background-color: rgba(0, 0, 0, 0.48);
+    -unity-background-image-tint-color: rgba(0, 0, 0, 0.54);
+}
+
+.unity-base-popup-field__input {
+    background-color: rgba(0, 0, 0, 0.57);
+    border-left-color: rgba(0, 0, 0, 0.54);
+    border-right-color: rgba(0, 0, 0, 0.54);
+    border-top-color: rgba(0, 0, 0, 0.54);
+    border-bottom-color: rgba(0, 0, 0, 0.54);
+}
+
+.hidden-left {
+    display: none;
+}

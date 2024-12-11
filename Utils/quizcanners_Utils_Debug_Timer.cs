@@ -54,7 +54,7 @@ namespace QuizCanners.Utils
 
             public static void Inspect() 
             {
-                "Framerate: {0}".F(Mathf.RoundToInt(FrameRatePerSecond)).PegiLabel().Write();
+                "Framerate: {0}".F(Mathf.RoundToInt(FrameRatePerSecond)).PL().Write();
 
                 if (Icon.Refresh.Click())
                     ResetTimer();
@@ -224,22 +224,22 @@ namespace QuizCanners.Utils
                 {
                     if (_timings.IsNullOrEmpty())
                     {
-                        "No timings".PegiLabel().Write_Hint();
+                        "No timings".PL().Write_Hint();
                         return;
                     }
 
                     if (collectionMeta.IsAnyEntered == false)
                     {
                         if (_timings.Count > 500)
-                            "Maximum Timings Count reached".PegiLabel().WriteWarning();
+                            "Maximum Timings Count reached".PL().WriteWarning();
 
                         pegi.Nl();
 
                         if (_timings.Count > 1)
-                            "Sort by duration.".PegiLabel().ToggleIcon(ref _sortByDuration);
+                            "Sort by duration.".PL().ToggleIcon(ref _sortByDuration);
 
                         if (_timings.Count > 0)
-                            if ("Clear".PegiLabel().ClickConfirm(confirmationTag: "clLog"))
+                            if ("Clear".PL().ClickConfirm(confirmationTag: "clLog"))
                                 Clear();
 
                         pegi.Nl();
@@ -266,7 +266,7 @@ namespace QuizCanners.Utils
 
                 public void InspectInList(ref int edited, int index)
                 {
-                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PegiLabel().Write();
+                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PL().Write();
 
                     if (Icon.Enter.Click())
                         edited = index;
@@ -413,19 +413,19 @@ namespace QuizCanners.Utils
                 {
                     if (_timings.IsNullOrEmpty())
                     {
-                        "No timings".PegiLabel().Write_Hint();
+                        "No timings".PL().Write_Hint();
                         return;
                     }
 
                     if (_listMeta.IsAnyEntered == false)
                     {
                         if (_timings.Count > 500)
-                            "Maximum Timings Count reached".PegiLabel().WriteWarning();
+                            "Maximum Timings Count reached".PL().WriteWarning();
 
                         pegi.Nl();
 
                         if (_timings.Count > 1)
-                            "Sort by duration.".PegiLabel().ToggleIcon(ref _sortByDuration);
+                            "Sort by duration.".PL().ToggleIcon(ref _sortByDuration);
 
                         pegi.Nl();
 
@@ -435,7 +435,7 @@ namespace QuizCanners.Utils
 
                         if (_timings.Count > 1) 
                         {
-                            "Total: {0} ".F(QcSharp.TicksToReadableString(TotalTicks())).PegiLabel().Write();
+                            "Total: {0} ".F(QcSharp.TicksToReadableString(TotalTicks())).PL().Write();
                         }
 
                         pegi.Nl();
@@ -466,7 +466,7 @@ namespace QuizCanners.Utils
 
                 public void InspectInList(ref int edited, int index)
                 {
-                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PegiLabel().Write();
+                    "{0} [{1}]".F(QcSharp.TicksToReadableString(TotalTicks()), _timings.Count).PL().Write();
 
                     if (Icon.Enter.Click())
                         edited = index;
@@ -563,7 +563,7 @@ namespace QuizCanners.Utils
                             Icon.Wait.Draw();
                         }
 
-                        ToString().PegiLabel().Write();
+                        ToString().PL().Write();
                     }
 
                     public override string ToString()
@@ -722,10 +722,10 @@ namespace QuizCanners.Utils
                     #region Inspector
                     public void InspectInList(ref int edited, int index)
                     {
-                        if (QcSharp.AddSpacesToSentence(Name).PegiLabel().ClickLabel())
+                        if (QcSharp.AddSpacesToSentence(Name).PL().ClickLabel())
                             edited = index;
 
-                        "{0} %".F(Percentage).PegiLabel(65).Write();
+                        "{0} %".F(Percentage).PL(65).Write();
 
                         collection.InspectInList(ref edited, index);
                     }
@@ -755,10 +755,10 @@ namespace QuizCanners.Utils
                     #region Inspector
                     public void InspectInList(ref int edited, int index)
                     {
-                        if (QcSharp.AddSpacesToSentence(Name).PegiLabel().ClickLabel())
+                        if (QcSharp.AddSpacesToSentence(Name).PL().ClickLabel())
                             edited = index;
 
-                        "{0} %".F(Percentage).PegiLabel(65).Write();
+                        "{0} %".F(Percentage).PL(65).Write();
 
                         collection.InspectInList(ref edited, index);
                     }

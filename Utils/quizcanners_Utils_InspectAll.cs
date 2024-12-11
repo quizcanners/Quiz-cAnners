@@ -26,7 +26,7 @@ namespace QuizCanners.Utils
         {
             
             var tScale = Time.timeScale;
-            if ("Time.timescale".ConstLabel(toolTip: "For convenience will also modify Fixed Delta Time").Edit(ref tScale, 0f, 4f))
+            if ("Time.timescale".ConstL(toolTip: "For convenience will also modify Fixed Delta Time").Edit(ref tScale, 0f, 4f))
             {
                 Time.timeScale = tScale;
                 Time.fixedDeltaTime = Mathf.Clamp(Time.timeScale / 60, min: 0.001f, max: 0.02f);
@@ -45,7 +45,7 @@ namespace QuizCanners.Utils
         {   
             if (!_inspectionLoopLock.Unlocked) 
             {
-                "Recursively entered".PegiLabel().WriteWarning().Nl();
+                "Recursively entered".PL().WriteWarning().Nl();
                 return;
             }
 
@@ -68,24 +68,24 @@ namespace QuizCanners.Utils
 
                 try
                 {
-                    pegi.Conditionally_Enter_Inspect(current.PegiLabel(), valid, CurrentProjectInspector).Nl();
+                    pegi.Conditionally_Enter_Inspect(current.PL(), valid, CurrentProjectInspector).Nl();
 
                 } catch (Exception ex) 
                 {
                     pegi.Write_Exception(ex);
                 }
 
-                "Singletons".PegiLabel().IsEntered().Nl().If_Entered(Singleton.Collector.Inspect);
+                "Singletons".PL().IsEntered().Nl().If_Entered(Singleton.Collector.Inspect);
 
-                "PEGI Documentation".PegiLabel().IsEntered(showLabelIfTrue: false).Nl_ifNotEntered().If_Entered(PlayerAndEditorGui_Documentation.Inspect);
+                "PEGI Documentation".PL().IsEntered(showLabelIfTrue: false).Nl_ifNotEntered().If_Entered(PlayerAndEditorGui_Documentation.Inspect);
 
-                if ("Data".PegiLabel().IsEntered().Nl())
+                if ("Data".PL().IsEntered().Nl())
                 {
                     using (_enteredData.StartContext())
                     {
-                        if ("Cache".PegiLabel().IsEntered().Nl())
+                        if ("Cache".PL().IsEntered().Nl())
                         {
-                            if ("Caching.ClearCache() [{0}]".F(Caching.cacheCount).PegiLabel().ClickConfirm("clCach").Nl())
+                            if ("Caching.ClearCache() [{0}]".F(Caching.cacheCount).PL().ClickConfirm("clCach").Nl())
                             {
                                 if (Caching.ClearCache())
                                     pegi.GameView.ShowNotification("Bundles were cleared");
@@ -97,7 +97,7 @@ namespace QuizCanners.Utils
 
                             Caching.GetAllCachePaths(lst);
 
-                            "Caches".PegiLabel().Edit_List(lst, path =>
+                            "Caches".PL().Edit_List(lst, path =>
                             {
                                 var c = Caching.GetCacheByPath(path);
 
@@ -113,37 +113,37 @@ namespace QuizCanners.Utils
 
                                 Icon.Copy.Click(() => pegi.SetCopyPasteBuffer(path));
 
-                                path.PegiLabel().Write();
+                                path.PL().Write();
 
                                 return path;
                             });
                         }
 
-                        "Reflection".PegiLabel().IsEntered().Nl().If_Entered(QcSharp.Reflector.Inspect).Nl();
+                        "Reflection".PL().IsEntered().Nl().If_Entered(QcSharp.Reflector.Inspect).Nl();
 
                         if (_enteredData.IsAnyEntered == false)
                         {
-                            if ("Player Data Folder".PegiLabel().Click().Nl())
+                            if ("Player Data Folder".PL().Click().Nl())
                             {
                                 QcFile.Explorer.OpenPersistentFolder();
                                 pegi.SetCopyPasteBuffer(Application.persistentDataPath, sendNotificationIn3Dview: true);
                             }
 
-                            if (Application.isEditor && "Editor Data Folder".PegiLabel().Click().Nl())
+                            if (Application.isEditor && "Editor Data Folder".PL().Click().Nl())
                                 QcFile.Explorer.OpenPath(
                                     "C:/Users/{0}/AppData/Local/Unity/Editor/Editor.log".F(Environment.UserName));
 
-                            "Mono Heap Size Long {0}".F(QcSharp.ToMegabytes(Profiler.GetMonoHeapSizeLong())).PegiLabel().Nl();
+                            "Mono Heap Size Long {0}".F(QcSharp.ToMegabytes(Profiler.GetMonoHeapSizeLong())).PL().Nl();
 
-                            "Mono Used Size Long {0}".F(QcSharp.ToMegabytes(Profiler.GetMonoUsedSizeLong())).PegiLabel().Nl();
+                            "Mono Used Size Long {0}".F(QcSharp.ToMegabytes(Profiler.GetMonoUsedSizeLong())).PL().Nl();
 
-                            "Temp Allocated Size {0}".F(QcSharp.ToMegabytes(Profiler.GetTempAllocatorSize())).PegiLabel().Nl();
+                            "Temp Allocated Size {0}".F(QcSharp.ToMegabytes(Profiler.GetTempAllocatorSize())).PL().Nl();
 
-                            "Total Allocated Memmory Long {0}".F(QcSharp.ToMegabytes(Profiler.GetTotalAllocatedMemoryLong())).PegiLabel().Nl();
+                            "Total Allocated Memmory Long {0}".F(QcSharp.ToMegabytes(Profiler.GetTotalAllocatedMemoryLong())).PL().Nl();
 
-                            "Total Unused Reserved Memmory Long {0}".F(QcSharp.ToMegabytes(Profiler.GetTotalUnusedReservedMemoryLong())).PegiLabel().Nl();
+                            "Total Unused Reserved Memmory Long {0}".F(QcSharp.ToMegabytes(Profiler.GetTotalUnusedReservedMemoryLong())).PL().Nl();
 
-                            if ("Unload Unused Assets".PegiLabel().Click().Nl())
+                            if ("Unload Unused Assets".PL().Click().Nl())
                             {
                                 Resources.UnloadUnusedAssets();
                             }
@@ -152,33 +152,33 @@ namespace QuizCanners.Utils
                     }
                 }
 
-                "Logs".PegiLabel().IsEntered().Nl().If_Entered(() => QcLog.LogHandler.Nested_Inspect());
+                "Logs".PL().IsEntered().Nl().If_Entered(() => QcLog.LogHandler.Nested_Inspect());
 
-                "Profiler".PegiLabel().Enter_Inspect(TimeProfiler.Instance).Nl();
+                "Profiler".PL().Enter_Inspect(TimeProfiler.Instance).Nl();
     
-                if ("Time & Audio".PegiLabel().IsEntered().Nl_ifEntered())
+                if ("Time & Audio".PL().IsEntered().Nl_ifEntered())
                 {
-                    if (Application.isEditor && Application.isPlaying && "Debug.Break()".PegiLabel().Click().Nl())
+                    if (Application.isEditor && Application.isPlaying && "Debug.Break()".PL().Click().Nl())
                         Debug.Break();
 
                     var maxDt = Time.maximumDeltaTime;
-                    "Time.maximumDeltaTime".PegiLabel().Edit_Delayed(ref maxDt).Nl().OnChanged(()=> Time.maximumDeltaTime = maxDt);
+                    "Time.maximumDeltaTime".PL().Edit_Delayed(ref maxDt).Nl().OnChanged(()=> Time.maximumDeltaTime = maxDt);
 
-                    "Time.time: {0}".F(QcSharp.SecondsToReadableString(Time.time)).PegiLabel().Nl();
+                    "Time.time: {0}".F(QcSharp.SecondsToReadableString(Time.time)).PL().Nl();
 
-                    "AudioSettings.dspTime: {0}".F(QcSharp.SecondsToReadableString(AudioSettings.dspTime)).PegiLabel().Nl();
+                    "AudioSettings.dspTime: {0}".F(QcSharp.SecondsToReadableString(AudioSettings.dspTime)).PL().Nl();
 
-                    "Use it to schedule Audio Clips: audioSource.PlayScheduled(AudioSettings.dspTime + 0.5);".PegiLabel().Write_Hint();
+                    "Use it to schedule Audio Clips: audioSource.PlayScheduled(AudioSettings.dspTime + 0.5);".PL().Write_Hint();
 
-                    "Clip Duration: double duration = (double)AudioClip.samples / AudioClip.frequency;".PegiLabel().Write_Hint();
+                    "Clip Duration: double duration = (double)AudioClip.samples / AudioClip.frequency;".PL().Write_Hint();
 
-                    "Time.unscaled time: {0}".F(QcSharp.SecondsToReadableString(Time.unscaledTime)).PegiLabel().Nl();
+                    "Time.unscaled time: {0}".F(QcSharp.SecondsToReadableString(Time.unscaledTime)).PL().Nl();
 
-                    "Time.frameCount: {0}".F(Time.frameCount).PegiLabel().Nl();
+                    "Time.frameCount: {0}".F(Time.frameCount).PL().Nl();
 
                     var phA = Physics.autoSyncTransforms;
 
-                    "Physics Auto Sync Transforms".PegiLabel().ToggleIcon(ref phA).Nl(()=> Physics.autoSyncTransforms = phA);
+                    "Physics Auto Sync Transforms".PL().ToggleIcon(ref phA).Nl(()=> Physics.autoSyncTransforms = phA);
 
                     Inspect_TimeScaleOption();
 
@@ -188,14 +188,14 @@ namespace QuizCanners.Utils
                     pegi.Nl();
 
                     var fTScale = Time.fixedDeltaTime;
-                    if ("Time.fixedDeltaTime".ConstLabel().Edit(ref fTScale, 0, 0.5f))
+                    if ("Time.fixedDeltaTime".ConstL().Edit(ref fTScale, 0, 0.5f))
                         Time.fixedDeltaTime = fTScale;
 
                     pegi.Nl();
 
-                    "Time.deltaTime: {0}".F(QcSharp.SecondsToReadableString(Time.deltaTime)).PegiLabel().Nl();
+                    "Time.deltaTime: {0}".F(QcSharp.SecondsToReadableString(Time.deltaTime)).PL().Nl();
 
-                    "Time.realtimeSinceStartup {0}".F(QcSharp.SecondsToReadableString(Time.realtimeSinceStartup)).PegiLabel().Nl();
+                    "Time.realtimeSinceStartup {0}".F(QcSharp.SecondsToReadableString(Time.realtimeSinceStartup)).PL().Nl();
 
                     
                 }
@@ -205,10 +205,10 @@ namespace QuizCanners.Utils
 
                 pegi.Nl();
 
-                if ("Graphics".PegiLabel().IsEntered().Nl()) 
+                if ("Graphics".PL().IsEntered().Nl()) 
                 {
                     var fr = Application.targetFrameRate;
-                    if ("Frame-Rate".ConstLabel().Edit(ref fr).Nl() && fr > 0)
+                    if ("Frame-Rate".ConstL().Edit(ref fr).Nl() && fr > 0)
                     {
                         Application.targetFrameRate = fr;
                     }
@@ -218,34 +218,34 @@ namespace QuizCanners.Utils
                     int width = res.width;
                     int height = res.height;
 
-                    "Screen: {0}x{1}".F(Screen.width, Screen.height).PegiLabel().Nl();
+                    "Screen: {0}x{1}".F(Screen.width, Screen.height).PL().Nl();
 
-                    "Display: {0}x{1}".F(Display.main.renderingWidth, Display.main.renderingHeight).PegiLabel().Nl();
+                    "Display: {0}x{1}".F(Display.main.renderingWidth, Display.main.renderingHeight).PL().Nl();
 
-                    "Resolution: {0}x{1}".F(width, height).PegiLabel().Nl();
+                    "Resolution: {0}x{1}".F(width, height).PL().Nl();
 
                     var changes = pegi.ChangeTrackStart();
 
-                    "Width".ConstLabel().Edit(ref width, 8, Display.main.renderingWidth).Nl();
-                    "Height".ConstLabel().Edit(ref height, 8, Display.main.renderingHeight).Nl();
+                    "Width".ConstL().Edit(ref width, 8, Display.main.renderingWidth).Nl();
+                    "Height".ConstL().Edit(ref height, 8, Display.main.renderingHeight).Nl();
 
                     if (changes)
                         Screen.SetResolution(width, height, fullscreen: true);
 
                 }
 
-                if ("Screen Shots".PegiLabel().IsEntered().Nl())
+                if ("Screen Shots".PL().IsEntered().Nl())
                     screenShots.Nested_Inspect();
 
-                if ("Texture Utils".PegiLabel().IsEntered().Nl())
+                if ("Texture Utils".PL().IsEntered().Nl())
                 {
                     if (Application.isEditor)
                     {
 
                         Sprite sa = null;
-                        "To extract a Texture from Sprite, Set Read/Write Enabled to True and make sure it's format is Uncompressed (RGBA32 should do it)".PegiLabel().Write_Hint();
+                        "To extract a Texture from Sprite, Set Read/Write Enabled to True and make sure it's format is Uncompressed (RGBA32 should do it)".PL().Write_Hint();
 
-                        if ("Extract Sprite Atlas Texture".PegiLabel().Edit(ref sa) && sa)
+                        if ("Extract Sprite Atlas Texture".PL().Edit(ref sa) && sa)
                         {
 #if UNITY_EDITOR
                             string atlasName;
@@ -265,10 +265,10 @@ namespace QuizCanners.Utils
                         }
                     }
                     else
-                        "Only in Editor".PegiLabel().WriteWarning();
+                        "Only in Editor".PL().WriteWarning();
                 }
 
-                "Debug".PegiLabel().IsEntered().Nl().If_Entered(QcDebug.Inspect);
+                "Debug".PL().IsEntered().Nl().If_Entered(QcDebug.Inspect);
 
                 if (!_context.IsAnyEntered)
                     QcScenes.Inspect();

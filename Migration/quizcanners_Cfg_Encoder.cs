@@ -133,13 +133,13 @@ namespace QuizCanners.Migration
 
         #region ValueTypes
         public static CfgEncoder Encode(this Vector3 v3, int precision) => new CfgEncoder()
-            .Add_IfNotEpsilon("x", v3.x.RoundTo(precision))
-            .Add_IfNotEpsilon("y", v3.y.RoundTo(precision))
-            .Add_IfNotEpsilon("z", v3.z.RoundTo(precision));
+            .Add_IfNotEpsilon("x", QcSharp.RoundTo(v3.x, precision))
+            .Add_IfNotEpsilon("y", QcSharp.RoundTo(v3.y, precision))
+            .Add_IfNotEpsilon("z", QcSharp.RoundTo(v3.z, precision));
             
         public static CfgEncoder Encode(this Vector2 v2, int precision) => new CfgEncoder()
-            .Add_IfNotEpsilon("x", v2.x.RoundTo(precision))
-            .Add_IfNotEpsilon("y", v2.y.RoundTo(precision));
+            .Add_IfNotEpsilon("x", QcSharp.RoundTo(v2.x, precision))
+            .Add_IfNotEpsilon("y", QcSharp.RoundTo(v2.y, precision));
         
         public static CfgEncoder Encode(this Quaternion q) => new CfgEncoder()
             .Add_IfNotEpsilon("x", q.x.RoundTo6Dec())
@@ -198,10 +198,10 @@ namespace QuizCanners.Migration
             .Add_IfNotEpsilon("y", v2.y.RoundTo6Dec());
         
         public static CfgEncoder Encode(this Color col) => new CfgEncoder()
-            .Add_IfNotEpsilon("r", col.r.RoundTo(3))
-            .Add_IfNotEpsilon("g", col.g.RoundTo(3))
-            .Add_IfNotEpsilon("b", col.b.RoundTo(3))
-            .Add_IfNotEpsilon("a", col.a.RoundTo(3));
+            .Add_IfNotEpsilon("r", QcSharp.RoundTo(col.r, 3))
+            .Add_IfNotEpsilon("g", QcSharp.RoundTo(col.g, 3))
+            .Add_IfNotEpsilon("b", QcSharp.RoundTo(col.b, 3))
+            .Add_IfNotEpsilon("a", QcSharp.RoundTo(col.a, 3));
         #endregion
 
         private static float RoundTo6Dec(this float val) => Mathf.Round(val * 1000000f) * 0.000001f;
@@ -257,7 +257,7 @@ namespace QuizCanners.Migration
         public CfgEncoder Add(string tag, float val) =>
         Add_String(tag, val.ToString(System.Globalization.CultureInfo.InvariantCulture.NumberFormat));
         public CfgEncoder Add(string tag, float val, int precision) =>
-            Add_String(tag, val.RoundTo(precision).ToString(System.Globalization.CultureInfo.InvariantCulture.NumberFormat));
+            Add_String(tag, QcSharp.RoundTo(val, precision).ToString(System.Globalization.CultureInfo.InvariantCulture.NumberFormat));
         public CfgEncoder Add(string tag, int val) => Add_String(tag, val.ToString());
         public CfgEncoder Add(string tag, uint val) => Add_String(tag, val.ToString());
 

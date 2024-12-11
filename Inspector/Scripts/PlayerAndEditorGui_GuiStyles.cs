@@ -79,14 +79,14 @@ namespace QuizCanners.Inspect
 
                         var al = cur.alignment;
 
-                        if ("Allignment".ConstLabel().Edit_Enum(ref al).Nl())
+                        if ("Allignment".ConstL().Edit_Enum(ref al).Nl())
                             cur.alignment = al;
 
                         var fs = cur.fontSize;
-                        if ("Font Size".ConstLabel().Edit(ref fs).Nl())
+                        if ("Font Size".ConstL().Edit(ref fs).Nl())
                             cur.fontSize = fs;
 
-                        if ("Padding".PegiLabel().IsFoldout().Nl())
+                        if ("Padding".PL().IsFoldout().Nl())
                         {
                             RectOffset pad = cur.padding;
 
@@ -94,7 +94,7 @@ namespace QuizCanners.Inspect
                                 cur.padding = pad;
                         }
 
-                        if ("Margins".PegiLabel().IsFoldout().Nl())
+                        if ("Margins".PL().IsFoldout().Nl())
                         {
                             RectOffset mar = cur.margin;
 
@@ -115,14 +115,7 @@ namespace QuizCanners.Inspect
                 margin = new RectOffset(1, -3, 1, 1)
             });
 
-            public static PegiGuiStyle ClickableText = new(() => new GUIStyle(GUI.skin.label)
-            {
-                wordWrap = false,
-                fontStyle = FontStyle.Bold,
-                contentOffset = new Vector2(0, 4),
-                alignment = TextAnchor.MiddleLeft,
-                normal = { textColor = InGameView ? new Color32(220, 220, 255, 255) : new Color32(40, 40, 40, 255) }
-            });
+ 
 
             public static PegiGuiStyle ScalableBlueText(int fontSize)
             {
@@ -243,6 +236,15 @@ namespace QuizCanners.Inspect
                 #endregion
 
 
+                public static PegiGuiStyle ClickableText = new(() => new GUIStyle(GUI.skin.label)
+                {
+                    wordWrap = false,
+                    fontStyle = FontStyle.Bold,
+                    contentOffset = new Vector2(0, 4),
+                    alignment = TextAnchor.MiddleLeft,
+                    normal = { textColor = InGameView ? new Color32(220, 220, 255, 255) : new Color32(40, 40, 40, 255) }
+                });
+
                 public static PegiGuiStyle Header = new(() => new GUIStyle(GUI.skin.label)
                 {
                     margin = new RectOffset(9, 1, 6, 1),
@@ -356,8 +358,8 @@ namespace QuizCanners.Inspect
 
                     public IDisposable SetDisposible()
                     {
-                        PegiEditorOnly.nextBgStyle.Add(this);
-                        return QcSharp.DisposableAction(()=> PegiEditorOnly.nextBgStyle.Remove(this));
+                        pegi.nextBgStyle.Add(this);
+                        return QcSharp.DisposableAction(()=> pegi.nextBgStyle.Remove(this));
                     }
 
                     public BackgroundStyle(Color color)
@@ -382,9 +384,9 @@ namespace QuizCanners.Inspect
 
             private static void InspectInteranl(string StyleName, PegiGuiStyle style)
             {
-                if (StyleName.PegiLabel().IsEntered(ref _inspectedFont, _iteratiedFont).Nl())
+                if (StyleName.PL().IsEntered(ref _inspectedFont, _iteratiedFont).Nl())
                 {
-                    "Example text in {0} style ".F(StyleName).PegiLabel(style: style).Nl();
+                    "Example text in {0} style ".F(StyleName).PL(style: style).Nl();
                     style.Nested_Inspect().Nl();
                 }
 
@@ -401,7 +403,7 @@ namespace QuizCanners.Inspect
 
                 InspectInteranl("Overfloaw text", Text.Overflow);
 
-                InspectInteranl("Text Button", ClickableText);
+                InspectInteranl("Text Button", Text.ClickableText);
 
                 InspectInteranl("Enter Label", Text.EnterLabel);
 

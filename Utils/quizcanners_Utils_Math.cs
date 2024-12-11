@@ -825,13 +825,13 @@ namespace QuizCanners.Utils
             {
                 var rangeChanged = false;
 
-                if ("><".PegiLabel().Click())
+                if ("><".PL().Click())
                     UpdateRange(0.3f);
 
                 pegi.Edit(ref _value, dynamicMin, dynamicMax);
                 //    Value = _value;
 
-                if ("<>".PegiLabel().Click())
+                if ("<>".PL().Click())
                     UpdateRange(3f);
 
 
@@ -847,9 +847,9 @@ namespace QuizCanners.Utils
 
                     pegi.Nl();
 
-                    "[{0} : {1}] - {2}".F(dynamicMin, dynamicMax, "Focused Range").PegiLabel().Nl();
+                    "[{0} : {1}] - {2}".F(dynamicMin, dynamicMax, "Focused Range").PL().Nl();
 
-                    "Range: [".ConstLabel().Write();
+                    "Range: [".ConstL().Write();
 
                     var before = min;
 
@@ -862,7 +862,7 @@ namespace QuizCanners.Utils
                             max = min + (max - before);
                     }
 
-                    "-".PegiLabel(10).Write();
+                    "-".PL(10).Write();
 
                     if (pegi.Edit_Delayed(ref max, 40))
                     {
@@ -870,7 +870,7 @@ namespace QuizCanners.Utils
                         min = Mathf.Min(min, max);
                     }
 
-                    "]".PegiLabel(10).Write();
+                    "]".PL(10).Write();
 
                     pegi.FullWindow.DocumentationClickOpen("Use >< to shrink range around current value for more precision. And <> to expand range.", "About <> & ><");
 
@@ -883,7 +883,7 @@ namespace QuizCanners.Utils
 
                     pegi.Nl();
 
-                    "Tap Enter to apply Range change in the field (will Clamp current value)".PegiLabel().Write_Hint();
+                    "Tap Enter to apply Range change in the field (will Clamp current value)".PL().Write_Hint();
 
 
 
