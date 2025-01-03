@@ -84,6 +84,8 @@ namespace QuizCanners.Inspect
                     {
                         if (IsExitGUIException(ex))
                             throw ex;
+                        else if (change)
+                            Debug.LogException(ex);
                         else
                             Write_Exception(ex);
                     }
@@ -94,7 +96,10 @@ namespace QuizCanners.Inspect
                     }
                     catch (Exception ex)
                     {
-                        Write_Exception(ex);
+                        if (change)
+                            Debug.LogException(ex);
+                        else
+                            Write_Exception(ex);
                     }
 
                     if (change)
@@ -150,6 +155,8 @@ namespace QuizCanners.Inspect
                 if (FullWindow.ShowingPopup())
                     return;
 
+                var changes = ChangeTrackStart();
+
                 SerObj = so;
                 Toggle_DefaultInspector(scrObj);
 
@@ -159,7 +166,10 @@ namespace QuizCanners.Inspect
                 }
                 catch (Exception ex)
                 {
-                    Write_Exception(ex);
+                    if (changes)
+                        Debug.LogException(ex);
+                    else
+                        Write_Exception(ex);
                 }
 
                 try
@@ -229,7 +239,7 @@ namespace QuizCanners.Inspect
                 }
                 else
                 {
-                    pegi.ClickHighlight(target);
+                    ClickHighlight(target);
                 }
             }
 

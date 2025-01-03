@@ -1139,11 +1139,37 @@ namespace QuizCanners.Inspect
 
         #region URL
 
+        public static ChangesToken Edit_FullFolderPath(this TextLabel label, ref string path, bool showEditorFolderButton = true)
+        {
+            label.Edit(ref path);
+            return Edit_FullFolderPath(ref path, showEditorFolderButton: showEditorFolderButton);
+        }
+
+        public static ChangesToken Edit_FullFolderPath(ref string path, bool showEditorFolderButton = true)
+        {
+#if !UNITY_EDITOR
+            return ChangesToken.False;
+#else
+
+            var changes = ChangeTrackStart();
+
+            if (Application.isEditor && showEditorFolderButton && Icon.Folder.Click())
+            {
+                if (QcFile.Select.TrySelectFolder_EditorOnly(out string newPath))
+                    path = newPath;
+            }
+
+            return changes;
+#endif
+        }
+
         public static ChangesToken Edit_FullAssetPath(this TextLabel label, ref string path, bool showEditorFolderButton = true) 
         {
             label.TryWrite();
             return Edit_FullAssetPath(ref path, showEditorFolderButton: showEditorFolderButton);
         }
+
+
 
         public static ChangesToken Edit_FullAssetPath(ref string path, bool showEditorFolderButton = true)
         {
@@ -1168,7 +1194,7 @@ namespace QuizCanners.Inspect
 
             if (Application.isEditor && showEditorFolderButton && Icon.Folder.Click())
             {
-                if (QcFile.Select.TrySelectPath_EditorOnly(out string newPath))
+                if (QcFile.Select.TrySelectPathToFile_EditorOnly(out string newPath))
                     path = newPath;
             }
 

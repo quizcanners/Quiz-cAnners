@@ -1972,6 +1972,7 @@ namespace QuizCanners.Inspect
                 bool showDictionaryKey = true,
                 bool showCopyPasteOptions = false,
                 bool nameIsDictionaryKey = true,
+                bool allowDuplicates = false,
                 string playerPrefsIndex = null)
             {
 
@@ -1985,6 +1986,7 @@ namespace QuizCanners.Inspect
                 this[CollectionInspectParams.showDictionaryKey] = showDictionaryKey;
                 this[CollectionInspectParams.showCopyPasteOptions] = showCopyPasteOptions;
                 this[CollectionInspectParams.nameIsDictionaryKey] = nameIsDictionaryKey;
+                this[CollectionInspectParams.allowDuplicates] = allowDuplicates;
 
                 if (!playerPrefsIndex.IsNullOrEmpty())
                 {

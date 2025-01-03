@@ -23,15 +23,14 @@ namespace QuizCanners.Inspect {
             unityMaterialEditor = materialEditor;
             _properties = properties;
 
-            if (!drawDefaultInspector) {
+            if (!drawDefaultInspector) 
+            {
                 PegiEditorOnly.Inspect_Material(this);
                 return;
             }
 
             pegi.Toggle_DefaultInspector(materialEditor.target);
-
             DrawDefaultInspector();
-
         }
 
         #endif

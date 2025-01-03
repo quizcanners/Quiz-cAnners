@@ -39,6 +39,18 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Toggle(ref bool val, Icon TrueIcon, Icon FalseIcon, GUIStyle style = null) => Toggle(ref val, TrueIcon.GetIcon(), FalseIcon.GetIcon(), "", DEFAULT_BUTTON_SIZE, style);
 
+        public static ChangesToken ToggleIcon(this Icon icon, bool isOn, System.Action<bool> onChanged)
+        {
+            var changed = ChangeTrackStart();
+
+            if (isOn)
+                icon.Click_Selected(() => onChanged(false));
+            else
+                icon.Click(() => onChanged(true));
+
+            return changed;
+        }
+
         public static ChangesToken ToggleIcon(ref bool val, string toolTip = "Toggle On/Off")
         {
             using (SetBgColorDisposable(Color.clear))

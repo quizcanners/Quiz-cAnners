@@ -178,7 +178,6 @@ namespace QuizCanners.Migration
 
         protected abstract Configuration ActiveConfig_Internal { get; set; }
 
-
         public void SetAsCurrent()
         {
             ActiveConfiguration = this;
@@ -189,6 +188,8 @@ namespace QuizCanners.Migration
         public abstract CfgEncoder EncodeData();
 
         #region Inspect
+
+        public override string ToString() => name;
 
         public string StringId
         {

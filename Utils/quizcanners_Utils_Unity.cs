@@ -10,6 +10,8 @@ using UnityEngine.SceneManagement;
 using QuizCanners.Inspect;
 using UnityEngine.AI;
 using static UnityEngine.GraphicsBuffer;
+using static System.Collections.Specialized.BitVector32;
+
 
 
 #if UNITY_EDITOR
@@ -321,7 +323,7 @@ namespace QuizCanners.Utils {
 
             float distanceToCamera = Vector3.Distance(camTf.position + camTf.forward * cam.nearClipPlane, worldPosition);
 
-            if (distanceToCamera < objectSize + 10)
+            if (distanceToCamera < objectSize + 2)
             {
                 return true;
             }
@@ -338,11 +340,21 @@ namespace QuizCanners.Utils {
 
             var pos = cam.WorldToViewportPoint(worldPosition);
 
-            bool isVisible = (pos.x >= -0.1f && pos.x <= 1.1f && pos.y >= -0.1f && pos.y <= 1.1f);
+            float angularSize = 2.0f * Mathf.Atan(objectSize / (2.0f * distanceToCamera));
+            float fovDeg = cam.fieldOfView * Mathf.Deg2Rad;
+            float screenSpaceSize = angularSize / fovDeg;
+
+            if (screenSpaceSize > 0.5f)
+                return true;
+
+            bool isVisible = pos.x >= -screenSpaceSize && pos.x <= (1f + screenSpaceSize) 
+                            && pos.y >= -screenSpaceSize && pos.y <= (1f + screenSpaceSize);
                 
             dic[worldPosition] = isVisible;
             return isVisible;
         }
+
+
 
         #endregion
 
@@ -360,6 +372,12 @@ namespace QuizCanners.Utils {
         #endregion
 
         #region Color 
+
+        public static Color Alpha_MultiplyBy(this Color col, float alpha)
+        {
+            col.a *= alpha;
+            return col;
+        }
 
         public static Color Alpha(this Color col, float alpha)
         {
@@ -2178,6 +2196,46 @@ namespace QuizCanners.Utils {
 #else
 return false;
 #endif
+        }
+
+        public static byte[] GetPngBytes(this Texture tex)
+        {
+            if (tex is RenderTexture rt)
+                return FromRenderTexture(tex as RenderTexture);
+
+            Texture2D tex2D = tex as Texture2D;
+
+            if (tex.isReadable)
+                return tex2D.EncodeToPNG();
+
+            RenderTexture renderTex = RenderTexture.GetTemporary(
+                tex.width, tex.height, 0,
+                format: RenderTextureFormat.Default,
+                readWrite: tex.isDataSRGB ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear);
+
+            Graphics.Blit(tex, renderTex);
+
+            var result = FromRenderTexture(renderTex);
+            RenderTexture.ReleaseTemporary(renderTex);
+            return result;
+
+            byte[] FromRenderTexture(RenderTexture renderTex)
+            {
+                RenderTexture previous = RenderTexture.active;
+                RenderTexture.active = renderTex;
+
+                Texture2D tex2D = new Texture2D(renderTex.width, renderTex.height);
+                tex2D.ReadPixels(new Rect(0, 0, renderTex.width, renderTex.height), 0, 0);
+                tex2D.Apply();
+
+                RenderTexture.active = previous;
+
+                var result = tex2D.EncodeToPNG();
+
+                tex2D.DestroyWhatever();
+
+                return result;
+            }
         }
 
 

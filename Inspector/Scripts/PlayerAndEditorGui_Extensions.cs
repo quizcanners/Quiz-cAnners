@@ -173,37 +173,35 @@ namespace QuizCanners.Inspect
             {
                 Debug.LogError("Inspector was not started");
             }
-           // using (InspectorStarted ? null : pegi.StartInspector(target))
-           // {
-                var changed = ChangeTrackStart();
 
-                var il = IndentLevel;
+            var changed = ChangeTrackStart();
 
-                try
+            var il = IndentLevel;
+
+            try
+            {
+                function();
+
+                if (changed)
                 {
-                    function();
-
-                    if (changed)
-                    {
-                        if (target)
-                            target.SetToDirty();
-                        else
-                            function.Target.SetToDirty_Obj();
-                    }
+                    if (target)
+                        target.SetToDirty();
+                    else
+                        function.Target.SetToDirty_Obj();
                 }
-                catch (Exception ex)
-                {
+            }
+            catch (Exception ex)
+            {
+                if (changed)
+                    Debug.LogException(ex);
+                else 
                     Write_Exception(ex);
-                }
+            }
 
-                IndentLevel = il;
+            IndentLevel = il;
 
-                return changed;
-         //  }
+            return changed;
         }
-
-      //  public static ChangesToken Nested_Inspect<T>(ref T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : struct, IPEGI
-        //  => Nested_Inspect_Internal(ref pgi, fromNewLine: fromNewLine, writeWhenNeedsAttention: writeWhenNeedsAttention);
 
         public static ChangesToken Nested_Inspect<T>(this TextLabel text, ref T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : struct, IPEGI
         {
@@ -528,7 +526,7 @@ namespace QuizCanners.Inspect
                     obj = (T)pgi;
             }
 
-            Nl();
+            //Nl();
 
             UnIndent();
 

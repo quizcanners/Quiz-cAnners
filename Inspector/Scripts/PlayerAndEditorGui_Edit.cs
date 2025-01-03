@@ -638,8 +638,78 @@ namespace QuizCanners.Inspect
             Write(label, 0.33f);
             return Edit_Enum(type, ref current,  width: valueWidth);
         }
+        /*
+          if (Select(ref current, display: display, from.Count, GetArrayAndInd))
+            {
+                SelectCache.Dictionary.Clear();
+                currentValue = from[keysList[current]];
+                return ChangesToken.True;
+            }
+        */
 
-        public static ChangesToken Edit_Enum(System.Type type, ref int current,  int width = -1, bool showIndex = false)
+        public static ChangesToken Edit_Enum(System.Type type, ref int currentValue, int width = -1, bool showIndex = false) 
+        {
+            string currentName = System.Enum.GetName(type, currentValue);
+           
+            System.Array values = System.Enum.GetValues(type);
+
+            int currentIndex = 0;
+
+            if (Select(ref currentIndex, display: currentName.ToString(), values.Length, GetArrayAndInd))
+            {
+                currentValue = ConvertToInts(System.Enum.GetUnderlyingType(type))[currentIndex];
+                return ChangesToken.True;
+            }
+
+            return ChangesToken.False;
+
+            void GetArrayAndInd(out string[] names, ref int elementIndex)
+            {
+                elementIndex = -1;
+                names = System.Enum.GetNames(type);
+
+                var ints = ConvertToInts(System.Enum.GetUnderlyingType(type));
+
+                for (int i= 0; i < names.Length; i++) 
+                {
+                    if (elementIndex == -1 && names[i] == currentName)
+                    {
+                        elementIndex = i;
+                    }
+
+                    var name = QcSharp.AddSpacesToSentence(names[i]);
+
+                    if (showIndex && !name.Contains(ints.ToString()))
+                        names[i] = "{0}:".F(ints[i]) + name;
+                    else
+                        names[i] = name;
+                }
+
+                return;
+            }
+
+            int[] ConvertToInts(System.Type underType)
+            {
+                System.Array valsRaw = System.Enum.GetValues(type);
+
+                if (underType == typeof(int))
+                    return (int[])valsRaw;
+
+                if (underType == typeof(byte))
+                    return System.Array.ConvertAll((byte[])valsRaw, s => (int)s);
+
+                if (underType == typeof(ushort))
+                    return System.Array.ConvertAll((ushort[])valsRaw, s => (int)s);
+
+                if (underType == typeof(short))
+                    return System.Array.ConvertAll((short[])valsRaw, s => (int)s);
+
+                return (int[])valsRaw;
+            }
+
+        }
+
+        public static ChangesToken Edit_Enum_old(System.Type type, ref int current,  int width = -1, bool showIndex = false)
         {
             CheckLine();
             var tmpVal = -1;
@@ -666,7 +736,6 @@ namespace QuizCanners.Inspect
                 
                 return (int[])valsRaw;
             }
-            //int index = 0;
 
             for (int i=0; i < integerValue.Length; i++)
             {

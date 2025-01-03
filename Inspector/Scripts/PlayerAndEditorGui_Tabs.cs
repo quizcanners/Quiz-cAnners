@@ -137,7 +137,12 @@ namespace QuizCanners.Inspect
 
                                 if (tab.Icon)
                                 {
-                                    var cnt = new GUIContent() { image = tab.Icon, text = text, };
+                                    var cnt = new GUIContent() 
+                                    { 
+                                        image = tab.Icon, 
+                                        text = text, 
+                                        
+                                    };
                                     contents[i] = cnt;
                                 }
                                 else
@@ -199,7 +204,40 @@ namespace QuizCanners.Inspect
 
             var changes = ChangeTrackStart();
             CheckLine();
-            var newIndex = GUILayout.Toolbar(index, tabs, GUILayout.MaxHeight(25), GUILayout.MaxWidth(Screen.width-25));
+
+            int newIndex = index;
+            int currentIndex = 0;
+            foreach (var tab in tabs) 
+            {
+                if (TryClick())
+                    newIndex = currentIndex;
+
+                bool TryClick()
+                {
+                    if (index == currentIndex)
+                    {
+                        using (SetBgColorDisposable(SELECTED_COLOR))
+                        {
+                            if (tab.text.IsNullOrEmpty())
+                               Click(tab.image);
+                            else
+                                tab.text.PL().Click();
+                        }
+
+                        return false;
+                    }
+
+                    if (tab.text.IsNullOrEmpty())
+                    {
+                        return Click(tab.image);
+                    }
+
+                    return tab.text.PL().Click();
+                }
+
+                currentIndex++;
+            }
+            //var newIndex = GUILayout.Toolbar(index, tabs, GUILayout.MaxHeight(25)); //, GUILayout.MaxWidth(Screen.width-25));
             (newIndex != index).FeedChanges_Internal(LatestInteractionEvent.Enter);
 
             tabKey = optionKeys[newIndex];

@@ -159,9 +159,9 @@ namespace QuizCanners.Inspect
                 else
                     iconImage = Background.FromRenderTexture(img as RenderTexture);
 
-                Button button = new()
+                Button button = new(iconImage: iconImage)
                 {
-                    tooltip = toolTip,
+                    tooltip = toolTip
                 };
                 button.style.width = size;
 

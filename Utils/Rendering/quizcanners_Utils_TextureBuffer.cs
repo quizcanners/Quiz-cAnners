@@ -1,7 +1,8 @@
 using QuizCanners.Inspect;
 using System.Collections.Generic;
 using UnityEngine;
-using static QuizCanners.Utils.MaterialInstancer;
+using UnityEngine.Rendering;
+
 
 namespace QuizCanners.Utils
 {
@@ -198,7 +199,8 @@ namespace QuizCanners.Utils
 
             public override RenderTexture GetOrCreateTexture => Target;
 
-         
+            public void Blit(MaterialInstancer.Base material, bool andRelease) => Blit(material.GetInstance(), andRelease);
+
             public void Blit(Material material, bool andRelease)
             {
                 Swap();
@@ -215,11 +217,26 @@ namespace QuizCanners.Utils
                 }
             }
 
+            public void Blit(ShaderProperty.TextureValue from, MaterialInstancer.Base mat, bool andRelease) => Blit(from.LatestValue, mat.GetInstance(), andRelease);
+
+
+            public void Blit(Texture from, MaterialInstancer.Base mat, bool andRelease) => Blit(from, mat.GetInstance(), andRelease);
+            
+
             public void Blit(Texture from, Material mat, bool andRelease)
             {
                 Swap();
                 mat.Set(_PREVIOUS_TEXTURE, Previous);
                 Graphics.Blit(from, Target, mat);
+
+                if (andRelease)
+                    Previous.Release();
+            }
+
+            public void Blit_Override(Texture from, bool andRelease) 
+            {
+                Swap();
+                Graphics.Blit(from, Target);
 
                 if (andRelease)
                     Previous.Release();
@@ -375,7 +392,7 @@ namespace QuizCanners.Utils
                 Graphics.Blit(null, GetRenderTexture(), mat);
             }
 
-            public void Blit(Texture tex, Base material) => Graphics.Blit(tex, GetRenderTexture(), material.GetInstance());
+            public void Blit(Texture tex, MaterialInstancer.Base material) => Graphics.Blit(tex, GetRenderTexture(), material.GetInstance());
             public void Blit(Texture tex, Material material) => Graphics.Blit(tex, GetRenderTexture(), material);
 
             public void Blit(Material material) => Graphics.Blit(null, GetRenderTexture(), material);

@@ -181,18 +181,18 @@ namespace QuizCanners.Inspect
 
         private delegate void GetArrayAndCurrent(out string[] elements, ref int index);
 
-        private static ChangesToken Select(ref int current, string display, int length, GetArrayAndCurrent getter, int width = -1)
+        private static ChangesToken Select(ref int current_Index, string display, int length, GetArrayAndCurrent getter, int width = -1)
         {
             var needSearch = length > SEARCH_SELECTIONTHOLD;
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI && !needSearch)
             {
-                getter.Invoke(out var fromEd, ref current);
+                getter.Invoke(out var fromEd, ref current_Index);
 
                 return width > 0 ?
-                    PegiEditorOnly.Select(ref current, fromEd, width) :
-                    PegiEditorOnly.Select(ref current, fromEd);
+                    PegiEditorOnly.Select(ref current_Index, fromEd, width) :
+                    PegiEditorOnly.Select(ref current_Index, fromEd);
             }
 #endif
 
@@ -221,7 +221,7 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
             
-            getter.Invoke(out var from, ref current);
+            getter.Invoke(out var from, ref current_Index);
 
             if (needSearch)
             {
@@ -242,14 +242,14 @@ namespace QuizCanners.Inspect
 
             int shownCount = 0;
             bool currentShown = false;
-            int tmpCurrent = current;
+            int tmpCurrent = current_Index;
 
-            if (current >= 0 && current < from.Length && current >= maxCount) 
+            if (current_Index >= 0 && current_Index < from.Length && current_Index >= maxCount) 
                 ShowCurrent();
             
             for (var i = 0; i < from.Length; i++)
             {
-                if (i == current)
+                if (i == current_Index)
                 {
                     if (!currentShown)
                         ShowCurrent();
@@ -262,7 +262,7 @@ namespace QuizCanners.Inspect
 
                     if (from[i].PL().ClickUnFocus().Nl())
                     {
-                        current = i;
+                        current_Index = i;
                         return ChangesToken.True;
                     }
 
@@ -927,17 +927,17 @@ namespace QuizCanners.Inspect
             return Select(ref value, from, showIndex: showIndex);
         }
 
-        private static class SelectCaching 
+        private class SelectCaching 
         {
-            public static IDictionary collectionFiltered;
-            public static ICollection keys;
-            public static object cachedKeyValue;
-            public static string[] names;
-            public static int elementIndex;
+            public IDictionary collectionFiltered;
+            public ICollection keys;
+            public object cachedKeyValue;
+            public string[] names;
+            public int elementIndex;
 
-            public static Gate.UnityTimeUnScaled SearchGate = new(Gate.InitialValue.StartArmed);
+            public Gate.UnityTimeUnScaled SearchGate = new(Gate.InitialValue.StartArmed);
 
-            public static void UpdateCachedValues(IDictionary collection, ICollection newKeys, string[] filteredNames, int index, object cachedKey) 
+            public void UpdateCachedValues(IDictionary collection, ICollection newKeys, string[] filteredNames, int index, object cachedKey) 
             {
                 collectionFiltered = collection;
                 keys = newKeys;
@@ -946,7 +946,7 @@ namespace QuizCanners.Inspect
                 cachedKeyValue = cachedKey;
             }
 
-            public static bool SameKey<T>(T key) 
+            public bool SameKey<T>(T key) 
             {
                 if (SearchGate.TryUpdateIfTimePassed(10))
                     return false;
@@ -972,12 +972,18 @@ namespace QuizCanners.Inspect
                 //Debug.Log("Key is of different type. New: {0} Old:{1}".F(key, cachedKeyValue));
                 return false;
             }
-            public static void Clear() 
+            public void Clear() 
             {
                 collectionFiltered = null;
                 keys = null;
                 names = null;
             }
+        }
+
+        private static class SelectCache 
+        {
+            public static SelectCaching Dictionary = new();
+            public static SelectCaching Enum = new();
         }
 
         public static ChangesToken Select<TKey, TValue>(ref TValue currentValue, Dictionary<TKey, TValue> from, bool showIndex = false, System.Func<TValue, string> nameGenerator = null)
@@ -1019,7 +1025,7 @@ namespace QuizCanners.Inspect
 
             if (Select(ref current, display: display, from.Count, GetArrayAndInd))
             {
-                SelectCaching.Clear();
+                SelectCache.Dictionary.Clear();
                 currentValue = from[keysList[current]];
                 return ChangesToken.True;
             }
@@ -1028,17 +1034,16 @@ namespace QuizCanners.Inspect
 
             void GetArrayAndInd(out string[] arr, ref int elementIndex)
             {
-                if (SelectCaching.collectionFiltered == from && SelectCaching.SameKey(tmpCurValue))
+                if (SelectCache.Dictionary.collectionFiltered == from && SelectCache.Dictionary.SameKey(tmpCurValue))
                 {
-                    arr = SelectCaching.names;
-                    keysList = (List<TKey>)SelectCaching.keys;
-                    elementIndex = SelectCaching.elementIndex;
+                    arr = SelectCache.Dictionary.names;
+                    keysList = (List<TKey>)SelectCache.Dictionary.keys;
+                    elementIndex = SelectCache.Dictionary.elementIndex;
                     return;
                 }
 
                 var namesList = new List<string>(from.Count + 1);
                 keysList = new List<TKey>(from.Count);
-
                 elementIndex = -1;
 
                 if (tmpCurValue == null)
@@ -1051,7 +1056,6 @@ namespace QuizCanners.Inspect
                 }
                 else
                 {
-
                     for (var i = 0; i < from.Count; i++)
                     {
                         KeyValuePair<TKey, TValue> pair = from.GetElementAt(i);
@@ -1065,15 +1069,8 @@ namespace QuizCanners.Inspect
 
                 arr = namesList.ToArray();
 
-                SelectCaching.UpdateCachedValues(from, keysList, arr, elementIndex, tmpCurValue);
+                SelectCache.Dictionary.UpdateCachedValues(from, keysList, arr, elementIndex, tmpCurValue);
 
-                /*
-                SelectCaching.collectionFiltered = from;
-                SelectCaching.keys = keysList;
-                SelectCaching.names = arr;
-                SelectCaching.elementIndex = elementIndex;
-                SelectCaching.cachedKeyValue = tmpCurValue;
-                */
                 return;
 
                 void CreateEntry(KeyValuePair<TKey, TValue> pair)
@@ -1102,7 +1099,6 @@ namespace QuizCanners.Inspect
                         namesList.Add("{0}: {1}".F(entryKey, valueName));
                 }
             }
-
         }
 
         public static ChangesToken Select<TKey, TValue>(ref TKey currentKey, Dictionary<TKey, TValue> from, bool showIndex = false, 
@@ -1136,7 +1132,7 @@ namespace QuizCanners.Inspect
 
             if (Select(ref current, display: display, from.Count, GetArrayAndInd))
             {
-                SelectCaching.Clear();
+                SelectCache.Dictionary.Clear();
                 currentKey = keysList[current];
                 return ChangesToken.True;
             }
@@ -1147,23 +1143,21 @@ namespace QuizCanners.Inspect
             {
                 if (from.Count > 32)
                 {
-                    bool sameCollection = SelectCaching.collectionFiltered == from;
-                    bool sameKey = SelectCaching.SameKey(tmpCurKey);
-                    bool timeOut = SelectCaching.SearchGate.TryUpdateIfTimePassed(10);
+                    bool sameCollection = SelectCache.Dictionary.collectionFiltered == from;
+                    bool sameKey = SelectCache.Dictionary.SameKey(tmpCurKey);
+                    bool timeOut = SelectCache.Dictionary.SearchGate.TryUpdateIfTimePassed(10);
 
                     if (sameCollection && sameKey && !timeOut)
                     {
-                        arr = SelectCaching.names;
-                        keysList = (List<TKey>)SelectCaching.keys;
-                        elementIndex = SelectCaching.elementIndex;
-                        SelectCaching.SearchGate.Update();
+                        arr = SelectCache.Dictionary.names;
+                        keysList = (List<TKey>)SelectCache.Dictionary.keys;
+                        elementIndex = SelectCache.Dictionary.elementIndex;
+                        SelectCache.Dictionary.SearchGate.Update();
                         return;
                     }
 
                     Debug.Log("Recreating chache. Same collection: {0}. Same key: {1}. TimeOut: {2}".F(sameCollection, sameKey, timeOut));
                 }
-
-              
 
                 var namesList = new List<string>(from.Count + 1);
                 keysList = new List<TKey>(from.Count);
@@ -1187,7 +1181,6 @@ namespace QuizCanners.Inspect
                 }
                 else
                 {
-
                     for (var i = 0; i < from.Count; i++)
                     {
                         KeyValuePair<TKey, TValue> pair = from.GetElementAt(i);
@@ -1209,7 +1202,7 @@ namespace QuizCanners.Inspect
 
                 arr = namesList.ToArray();
 
-                SelectCaching.UpdateCachedValues(from, keysList, arr, elementIndex, tmpCurKey);
+                SelectCache.Dictionary.UpdateCachedValues(from, keysList, arr, elementIndex, tmpCurKey);
                 
                 /*
                 SelectCaching.collectionFiltered = from;

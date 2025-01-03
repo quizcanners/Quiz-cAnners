@@ -13,11 +13,9 @@ namespace QuizCanners.Utils
         {
             private bool _requestCreated;
 
-            public bool CreateRequest() => _requestCreated = true;
+            public void CreateRequest() => _requestCreated = true;
             public bool IsRequested => _requestCreated;
 
-            public void Use() => TryUseRequest();
-            
             public bool TryUseRequest()
             {
                 var result = _requestCreated;
@@ -30,6 +28,30 @@ namespace QuizCanners.Utils
                 _requestCreated |= createRequest;
             }
         }
+
+        public class NamedRequest
+        {
+            public string Reason { get; private set; }
+
+            private bool _requestCreated;
+
+            public void CreateRequest(string name)
+            {
+                _requestCreated = true;
+                Reason = name;
+            }
+
+            public bool IsRequested => _requestCreated;
+
+            public bool TryUseRequest()
+            {
+                var result = _requestCreated;
+                _requestCreated = false;
+                return result;
+            }
+
+        }
+
 
         public class CountDown 
         {

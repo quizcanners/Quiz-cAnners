@@ -5,6 +5,8 @@ using UnityEngine;
 using System.Runtime.Serialization.Formatters.Binary;
 using Object = UnityEngine.Object;
 using System;
+using System.Linq;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -53,7 +55,19 @@ namespace QuizCanners.Utils
 
         public static class Select 
         {
-            public static bool TrySelectPath_EditorOnly(out string filePath) 
+            public static bool TrySelectFolder_EditorOnly(out string filePath, string title = "Select Folder")
+            {
+#if UNITY_EDITOR
+                filePath = EditorUtility.OpenFolderPanel(title: title, "", "");
+                if (!filePath.IsNullOrEmpty())
+                    return true;
+#endif
+
+                filePath = "";
+                return false;
+            }
+
+            public static bool TrySelectPathToFile_EditorOnly(out string filePath) 
             {
 #if UNITY_EDITOR
                 filePath = EditorUtility.OpenFilePanel("Select File", "", "");
@@ -208,6 +222,40 @@ namespace QuizCanners.Utils
                     pegi.GameView.ShowNotification("File not found: " + fullPath);
 
                 return false;
+            }
+
+            public static void AllEmptyFolders(string path)
+            {
+                try
+                {
+                    foreach (var childFolder in Directory.GetDirectories(path))
+                    {
+                        TryDelete_Internal(childFolder, out _);
+                    }
+
+                    static void TryDelete_Internal(string directory, out bool isEmpty)
+                    {
+                        isEmpty = true;
+
+                        foreach (var sub in Directory.GetDirectories(directory))
+                        {
+                            TryDelete_Internal(sub, out bool isEmptySub);
+
+                            if (!isEmptySub)
+                                isEmpty = false;
+                        }
+
+                        if (isEmpty && Directory.EnumerateFileSystemEntries(directory).Any())
+                            isEmpty = false;
+
+                        if (isEmpty && Directory.Exists(directory))
+                            Directory.Delete(directory);
+                    }
+                
+                } catch (Exception ex) 
+                {
+                    Debug.LogException(ex);
+                }
             }
         }
 

@@ -20,7 +20,7 @@ namespace QuizCanners.Inspect.Examples
 
         void OnGUI()
         {
-            scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Width(Screen.width-3), GUILayout.Height(Screen.height - 50));
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos); //, GUILayout.Width(Screen.width-3), GUILayout.Height(Screen.height - 50));
 
             using (pegi.StartInspector(null, pegi.PegiPaintingMode.EditorInspector))
             {

@@ -58,6 +58,9 @@ namespace QuizCanners.Utils
         {
             protected override bool DifferentFromPrevious(T newValue) 
             {
+                if (newValue == null)
+                    return previousValue == null;
+
                 return !newValue.Equals(previousValue);
             }
         }
@@ -151,7 +154,6 @@ namespace QuizCanners.Utils
                 }
             }
 
-       
             public Frame(InitialValue initialValue) 
             {
                 _initialValue = initialValue;
@@ -191,48 +193,37 @@ namespace QuizCanners.Utils
             }
         }
 
-
         public enum InitialValue
         {
             Uninitialized, StartArmed
         }
 
-
-        public abstract class TimeBase<T> : GateBase, IPEGI
+        public abstract class TimeBase : GateBase, IPEGI
         {
-            protected T _lastTime;
             protected double _delta;
             private readonly bool _startArmed;
 
-            protected abstract T GetCurrent { get; }
+            public abstract void Update();
 
-            public T LastTime
+            protected bool WasInitialized()
             {
-                get
-                {
-                    WasInitialized();
-                    return _lastTime;
-                }
-                set
-                {
-                    WasInitialized();
-                    _lastTime = value;
-                }
+                if (ValueIsDefined)
+                    return true;
+
+                Update();
+                return false;
             }
 
-            public double GetSecondsDeltaAndUpdate()
+            public double GetDeltaWithoutUpdate()
             {
-                _delta = GetDeltaWithoutUpdate();
-                Update();
+                if (!WasInitialized())
+                    return 0;
+
+                _delta = GetDeltaSeconds_Internal();
 
                 return _delta;
             }
 
-            public void Update()
-            {
-                ValueIsDefined = true;
-                _lastTime = GetCurrent;
-            }
             public bool TryUpdateIfTimePassed(double secondsPassed, out bool wasInitialized)
             {
                 wasInitialized = ValueIsDefined;
@@ -254,7 +245,15 @@ namespace QuizCanners.Utils
                 return false;
             }
 
-            public bool WillAllowIfTimePassed(double secondsPassed) 
+            public double GetSecondsDeltaAndUpdate()
+            {
+                _delta = GetDeltaWithoutUpdate();
+                Update();
+
+                return _delta;
+            }
+
+            public bool WillAllowIfTimePassed(double secondsPassed)
             {
                 if (!ValueIsDefined && _startArmed)
                     return true;
@@ -262,44 +261,57 @@ namespace QuizCanners.Utils
                 return GetDeltaWithoutUpdate() >= secondsPassed;
             }
 
-            public double GetDeltaWithoutUpdate()
-            {
-                if (!WasInitialized())
-                    return 0;
-
-                _delta = GetDeltaSeconds_Internal();
-
-                return _delta;
-            }
-
             protected abstract double GetDeltaSeconds_Internal();
 
-            protected bool WasInitialized()
-            {
-                if (ValueIsDefined)
-                    return true;
-
-                Update();
-                return false;
-            }
+            #region Inspector
 
             void IPEGI.Inspect()
             {
                 "Delta: ".F(TimeSpan.FromSeconds(GetDeltaWithoutUpdate()).ToShortDisplayString()).PL().Write();
             }
 
-            public TimeBase(InitialValue initialValue = InitialValue.Uninitialized)
+            #endregion
+
+            public TimeBase(InitialValue initialValue)
             {
-                switch (initialValue) 
+                switch (initialValue)
                 {
                     case InitialValue.StartArmed: _startArmed = true; break;
                 }
             }
-
-         
         }
 
-        public class SystemTime : TimeBase<DateTime>
+        public abstract class TimeGeneric<T> : TimeBase
+        {
+            protected T _lastTime;
+           
+            protected abstract T GetCurrent { get; }
+
+            public T LastTime
+            {
+                get
+                {
+                    WasInitialized();
+                    return _lastTime;
+                }
+                set
+                {
+                    WasInitialized();
+                    _lastTime = value;
+                }
+            }
+
+
+            public override void Update()
+            {
+                ValueIsDefined = true;
+                _lastTime = GetCurrent;
+            }
+
+            public TimeGeneric(InitialValue initialValue) : base(initialValue) { }
+        }
+
+        public class SystemTime : TimeGeneric<DateTime>
         {
             protected override DateTime GetCurrent => DateTime.Now;
             protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime).TotalSeconds;
@@ -308,7 +320,7 @@ namespace QuizCanners.Utils
 
         }
 
-        public class UnityTimeScaled : TimeBase<float>, IPEGI
+        public class UnityTimeScaled : TimeGeneric<float>, IPEGI
         {
             protected override float GetCurrent => Time.time;
             protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
@@ -316,7 +328,7 @@ namespace QuizCanners.Utils
             public UnityTimeScaled(InitialValue initialValue) : base(initialValue) { }
         }
 
-        public class UnityTimeUnScaled : TimeBase<float>, IPEGI
+        public class UnityTimeUnScaled : TimeGeneric<float>, IPEGI
         {
             protected override float GetCurrent => Time.unscaledTime;
             protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
@@ -324,7 +336,7 @@ namespace QuizCanners.Utils
             public UnityTimeUnScaled(InitialValue initialValue) : base(initialValue) { }
         }
 
-        public class UnityTimeSinceStartup : TimeBase<double>, IPEGI
+        public class UnityTimeSinceStartup : TimeGeneric<double>, IPEGI
         {
             protected override double GetCurrent => QcUnity.TimeSinceStartup();
             protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
