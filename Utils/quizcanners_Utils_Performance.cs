@@ -1,7 +1,6 @@
-
-
+using QuizCanners.Inspect;
+using System;
 using UnityEngine;
-using static QuizCanners.Utils.QcDebug;
 
 namespace QuizCanners.Utils
 {
@@ -11,7 +10,7 @@ namespace QuizCanners.Utils
     {
         private static float longestWaitLastFrame = 0;
         private static float longestWaitThisFrame = 0;
-        private static bool _permissionGranted;
+        internal static bool _permissionGrantedThisFrame;
         private static readonly Gate.Frame _newFrameGate = new(Gate.InitialValue.StartArmed);
 
         public static bool TryGetMyTurn(Gate.TimeGeneric<float> ticket, float minDelay = 0.01f) 
@@ -27,11 +26,15 @@ namespace QuizCanners.Utils
             if (_newFrameGate.TryEnter()) 
                 ResetFrame();
             
-            if (!_permissionGranted) 
+            if (!_permissionGrantedThisFrame) 
             {
                 if (ticket.TryUpdateIfTimePassed(longestWaitLastFrame))
                 {
-                    _permissionGranted = true;
+                    _permissionGrantedThisFrame = true;
+                    if (Application.isEditor && longestWaitLastFrame > 2) 
+                    {
+                        Debug.LogError("Performane token waited for "+longestWaitLastFrame);
+                    }
                     return true;
                 }
             } else if (ticket.TryUpdateIfTimePassed(longestWaitLastFrame * 3))
@@ -40,15 +43,15 @@ namespace QuizCanners.Utils
                 return true;
             }
 
-            float delay = (float)ticket.GetDeltaWithoutUpdate();
+            float delay = (float)ticket.GetSecondsWithoutUpdate();
 
             longestWaitThisFrame = Mathf.Max(longestWaitThisFrame, delay);
 
             return false;
 
-            void ResetFrame()
+            static void ResetFrame()
             {
-                _permissionGranted = false;
+                _permissionGrantedThisFrame = false;
                 longestWaitLastFrame = longestWaitThisFrame;
                 longestWaitThisFrame = 0;
             }
@@ -122,17 +125,74 @@ namespace QuizCanners.Utils
 
         public class Token 
         {
-            private float _delay;
+            private readonly float _delay;
             private readonly Gate.UnityTimeUnScaled _checkVisibilityDelta;
+            private readonly string _name;
+            private readonly bool _gotName;
+            private int permissionGrantedFrame = -1;
+
+            public void Reset() => _checkVisibilityDelta.ValueIsDefined = false;
+
+            public void OnFrameResourcesNotUsed() 
+            {
+                if (permissionGrantedFrame == Time.frameCount)
+                    _permissionGrantedThisFrame = false;
+            }
 
             public bool TryGetTurn(float delay)
             {
-                return TryGetMyTurn(_checkVisibilityDelta, delay);
+                if (!TryGetMyTurn(_checkVisibilityDelta, delay))
+                    return false;
+
+                permissionGrantedFrame = Time.frameCount;
+
+                if (_gotName)
+                {
+                    _requests.TryGetValue(_name, out var val);
+                    val++;
+                    _requests[_name] = val;
+                }
+
+                return true;
+            }
+
+            public bool Update(bool needsFrameResources) 
+            {
+                if (!TryGetTurn())
+                    return false;
+
+                if (!needsFrameResources)
+                    OnFrameResourcesNotUsed();
+
+                return needsFrameResources;
+            }
+
+            public bool TryGetTurn(bool shouldBlockOthersPermission) 
+            {
+                if (!TryGetTurn())
+                    return false;
+
+                if (!shouldBlockOthersPermission)
+                    OnFrameResourcesNotUsed();
+
+                return true;
             }
 
             public bool TryGetTurn() 
             {
-                return TryGetMyTurn(_checkVisibilityDelta, _delay);
+                if (!TryGetMyTurn(_checkVisibilityDelta, _delay))
+                    return false;
+
+                permissionGrantedFrame = Time.frameCount;
+
+                if (_gotName) 
+                {
+                    _requests.TryGetValue(_name, out var val);
+                    val++;
+                    _requests[_name] = val;
+                }
+
+                return true;
             }
 
             public Token(float delay, Gate.InitialValue initialValue) 
@@ -140,7 +200,23 @@ namespace QuizCanners.Utils
                 _delay = delay;
                 _checkVisibilityDelta = new(initialValue);
             }
-        }
 
+            public Token(string name, float delay, Gate.InitialValue initialValue)
+            {
+                _name = name;
+                _delay = delay;
+                _checkVisibilityDelta = new(initialValue);
+                _gotName = true;
+            }
+
+            private static readonly System.Collections.Generic.Dictionary<string, int> _requests = new();
+
+            public static void InspectTokenStack() 
+            {
+                "Requests".PL().Edit_Dictionary(_requests).Nl();
+            }
+
+         
+        }
     }
 }

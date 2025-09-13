@@ -11,8 +11,8 @@ namespace QuizCanners.Lerp
 
     public interface ILinkedLerping
     {
-        void Portion(LerpData ld);
-        void Lerp(LerpData ld, bool canSkipLerp);
+        void Portion(LerpContext ld);
+        void Lerp(LerpContext ld, bool canSkipLerp);
     }
 
     public static class LinkedLerp
@@ -70,7 +70,7 @@ namespace QuizCanners.Lerp
 
             #endregion
 
-            public void Lerp(LerpData ld, bool canSkipLerp)
+            public void Lerp(LerpContext ld, bool canSkipLerp)
             {
                 if (!Enabled) return;
 
@@ -104,7 +104,7 @@ namespace QuizCanners.Lerp
 
             protected abstract bool LerpInternal(float linkedPortion);
 
-            public virtual void Portion(LerpData ld)
+            public virtual void Portion(LerpContext ld)
             {
                 var lp = ld.MinPortion;
 
@@ -192,7 +192,7 @@ namespace QuizCanners.Lerp
                 }
             }
 
-            public virtual void Portion(LerpData ld, T targetValue)
+            public virtual void Portion(LerpContext ld, T targetValue)
             {
                 TargetValue = targetValue;
                 Portion(ld);
@@ -1178,8 +1178,8 @@ namespace QuizCanners.Lerp
             readonly RectTransform _transform;
             protected override string Name_Internal => "Size Delta";
 
-            public void PortionX(LerpData ld, float targetValueX) => Portion(ld, targetValue: CurrentValue.X(targetValueX));
-            public void PortionY(LerpData ld, float targetValueY) => Portion(ld, targetValue: CurrentValue.Y(targetValueY));
+            public void PortionX(LerpContext ld, float targetValueX) => Portion(ld, targetValue: CurrentValue.X(targetValueX));
+            public void PortionY(LerpContext ld, float targetValueY) => Portion(ld, targetValue: CurrentValue.Y(targetValueY));
 
             public override Vector2 CurrentValue
             {
@@ -1199,8 +1199,8 @@ namespace QuizCanners.Lerp
             readonly RectTransform _transform;
             protected override string Name_Internal => "Anchored Position";
 
-            public void PortionX(LerpData ld, float targetValueX) => Portion(ld, targetValue: CurrentValue.X(targetValueX));
-            public void PortionY(LerpData ld, float targetValueY) => Portion(ld, targetValue: CurrentValue.Y(targetValueY));
+            public void PortionX(LerpContext ld, float targetValueX) => Portion(ld, targetValue: CurrentValue.X(targetValueX));
+            public void PortionY(LerpContext ld, float targetValueY) => Portion(ld, targetValue: CurrentValue.Y(targetValueY));
 
             public override Vector2 CurrentValue
             {
@@ -1816,7 +1816,7 @@ namespace QuizCanners.Lerp
         #endregion
     }
 
-    public class LerpData : IPEGI, IGotStringId, IGotCount, IPEGI_ListInspect
+    public class LerpContext : IPEGI, IGotStringId, IGotCount, IPEGI_ListInspect
     {
         private int _lerpChangeVersion = -1;
         private float _linkedPortion = 1;
@@ -1852,7 +1852,7 @@ namespace QuizCanners.Lerp
             _resets++;
         }
 
-        public LerpData (bool unscaledTime) 
+        public LerpContext (bool unscaledTime) 
         {
             _unscaledTime = unscaledTime;
         }
@@ -1892,14 +1892,14 @@ namespace QuizCanners.Lerp
     
         public class ChangesToken 
         {
-            private readonly LerpData _data;
+            private readonly LerpContext _data;
             private readonly int _originalVersion;
 
             public bool Changed => _originalVersion != _data._lerpChangeVersion;
 
             public static implicit operator bool(ChangesToken me) => me.Changed;
 
-            public ChangesToken(LerpData data) 
+            public ChangesToken(LerpContext data) 
             {
                 _data = data;
                 _originalVersion = _data._lerpChangeVersion;

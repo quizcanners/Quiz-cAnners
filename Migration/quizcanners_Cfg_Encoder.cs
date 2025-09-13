@@ -1,5 +1,6 @@
 ﻿using QuizCanners.Utils;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -53,13 +54,6 @@ namespace QuizCanners.Migration
 
             cody.Add("len", arr.Length);
 
-          /*  var types = ICfgExtensions.TryGetDerivedClasses(typeof(T));
-
-            if (types != null && types.Count > 0) {
-                foreach (var v in arr)
-                    cody.Add(v, types);
-            }
-            else*/
             foreach (var v in arr) {
                 if (!QcUnity.IsNullOrDestroyed_Obj(v))
                     cody.Add(CfgDecoder.ListElementTag, v.Encode().CfgData);
@@ -82,6 +76,17 @@ namespace QuizCanners.Migration
             return sub;
         }
         
+        public static CfgEncoder From(IEnumerator<KeyValuePair<string, string>> data)
+        {
+            var cody = new CfgEncoder();
+            while (data.MoveNext())
+            {
+                var current = data.Current;
+                cody.Add_String(current.Key, current.Value);
+            }
+            return cody;
+        }
+
         public static CfgEncoder Encode(this Dictionary<string, string> dic)
         {
             var sub = new CfgEncoder();
@@ -208,7 +213,7 @@ namespace QuizCanners.Migration
 
     }
 
-    public class CfgEncoder
+    public class CfgEncoder : IEnumerable<KeyValuePair<string, string>>
     {
         #region Constants
         public const char Splitter = '|';
@@ -219,13 +224,56 @@ namespace QuizCanners.Migration
         public const string IsFalseTag = "n";
         #endregion
 
-        private readonly System.Text.StringBuilder _builder = new();
+        private System.Text.StringBuilder cached_builder = null;
 
-        public CfgData CfgData => new(_builder.ToString());
+       // private readonly Dictionary<string, string> _encodedTagDatas = new();
 
+        private readonly List<KeyValuePair<string, string>> _encodedTagDatas = new();
+
+        private CfgData _dataCached;
+
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => _encodedTagDatas.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        
+        private System.Text.StringBuilder GetBuilder() 
+        {
+            if (cached_builder != null) 
+                return cached_builder;
+
+            cached_builder = new();
+
+            foreach (var pair in _encodedTagDatas) 
+            {
+                cached_builder.AppendSplit(pair.Key)
+                  .AppendSplit(pair.Value.Length.ToString())
+                  .AppendSplit(pair.Value);
+            }
+
+            return cached_builder;
+        }
+
+        private void SetDirty() 
+        {
+            if (_dataCached.IsEmpty) 
+                return;
+
+            cached_builder = null;
+            _dataCached = new CfgData();
+        }
+
+        public CfgData CfgData
+        {
+            get
+            {
+                if (_dataCached.IsEmpty)
+                    _dataCached = new CfgData(GetBuilder().ToString());
+
+                return _dataCached;
+            }
+        }
         public override string ToString() 
         {
-            return _builder.ToString();
+            return CfgData.ToString();
         }
 
         public delegate CfgEncoder EncodeDelegate();
@@ -245,9 +293,8 @@ namespace QuizCanners.Migration
         {
             data ??= "";
 
-            _builder.AppendSplit(tag)
-            .AppendSplit(data.Length.ToString())
-            .AppendSplit(data);
+            _encodedTagDatas.Add(new KeyValuePair<string, string>(tag, data));
+            SetDirty();
             return this;
         }
 
@@ -543,6 +590,7 @@ namespace QuizCanners.Migration
         #endregion
 
         private static float RoundTo6Dec(float val) => Mathf.Round(val * 1000000f) * 0.000001f;
+
 
     }
 }

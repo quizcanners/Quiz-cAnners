@@ -48,7 +48,7 @@ namespace QuizCanners.Utils
                 }
                 catch (Exception ex)
                 {
-                    if (pegi.IsExitGUIException(ex))
+                    if (pegi.IsGUIInternalException(ex))
                         throw ex;
                     else
                         Debug.LogException(ex);
@@ -87,7 +87,7 @@ namespace QuizCanners.Utils
                 }
                 catch (Exception ex)
                 {
-                    if (pegi.IsExitGUIException(ex))
+                    if (pegi.IsGUIInternalException(ex))
                         throw ex;
                     else
                         Debug.LogException(ex);
@@ -362,7 +362,7 @@ namespace QuizCanners.Utils
                         }
 
                         if (s != null)
-                            pegi.Nested_Inspect(ref s);
+                            pegi.Nested_Inspect_Object(ref s);
                         else
                             "NULL".PL().Nl();
                     }
@@ -445,7 +445,7 @@ namespace QuizCanners.Utils
 
             public virtual string InspectedCategory => Categories.DEFAULT;
 
-            public virtual bool IsSingletonActive { get => gameObject.activeInHierarchy; set { gameObject.SetActive(value); } } 
+            public virtual bool IsSingletonActive { get => gameObject && gameObject.activeInHierarchy; set { gameObject.SetActive(value); } } 
 
             protected virtual void OnRegisterServiceInterfaces() { }
 
@@ -458,7 +458,7 @@ namespace QuizCanners.Utils
             }
 
             //[SerializeField] 
-            private bool _afterEnableCalled;
+            public bool AfterEnableCalled { get; private set; }
 
             protected virtual void OnAfterEnable() 
             { 
@@ -468,7 +468,7 @@ namespace QuizCanners.Utils
             private System.Collections.IEnumerator AfterEnableCoro() 
             {
                 yield return null;
-                _afterEnableCalled = true;
+                AfterEnableCalled = true;
                 OnAfterEnable();
             }
 
@@ -482,7 +482,7 @@ namespace QuizCanners.Utils
                 try
                 {
                    
-                    OnBeforeOnDisableOrEnterPlayMode(_afterEnableCalled);
+                    OnBeforeOnDisableOrEnterPlayMode(AfterEnableCalled);
                    
                 } catch(Exception ex) 
                 {
@@ -490,7 +490,7 @@ namespace QuizCanners.Utils
                 }
                 finally 
                 {
-                    _afterEnableCalled = false;
+                    AfterEnableCalled = false;
                 }
 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.playModeStateChanged -= StateChangeProcessor;
@@ -564,8 +564,8 @@ namespace QuizCanners.Utils
             {
                 if (newState == UnityEditor.PlayModeStateChange.ExitingEditMode)
                 {
-                    OnBeforeOnDisableOrEnterPlayMode(_afterEnableCalled);
-                    _afterEnableCalled = false;
+                    OnBeforeOnDisableOrEnterPlayMode(AfterEnableCalled);
+                    AfterEnableCalled = false;
                 }
             }
 #endif

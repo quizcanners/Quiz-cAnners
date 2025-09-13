@@ -316,6 +316,7 @@ namespace QuizCanners.Inspect
             return GUILayout.Button(content, GUILayout.MaxWidth(width + 5), GUILayout.MaxHeight(width)).FeedChanges_Internal(LatestInteractionEvent.Click);
         }
 
+        /*
         private static ChangesToken ClickImage(this GUIContent content, int width, int height, GUIStyle style)
         {
 
@@ -326,7 +327,7 @@ namespace QuizCanners.Inspect
             CheckLine();
 
             return GUILayout.Button(content, GUILayout.MaxWidth(width), GUILayout.MaxHeight(height)).FeedChanges_Internal(LatestInteractionEvent.Click);
-        }
+        }*/
 
         public static ChangesToken Click(System.Action action)
         {
@@ -363,7 +364,7 @@ namespace QuizCanners.Inspect
             }
         }
 
-        private static Texture GetTexture_orEmpty(this Sprite sp) => sp ? sp.texture : Icon.Empty.GetIcon();
+        private static Texture GetTexture_orEmpty(this Sprite sp) => sp ? sp.texture : Icon.Empty.GetIcon().texture;
 
         public static ChangesToken Click(Sprite img, string toolTip = null, int size = DEFAULT_BUTTON_SIZE)
             => Click(img.GetTexture_orEmpty(), toolTip, size);
@@ -371,7 +372,7 @@ namespace QuizCanners.Inspect
         public static ChangesToken Click(Texture img, int size = DEFAULT_BUTTON_SIZE)
         {
 
-            if (!img) img = Icon.Empty.GetIcon();
+            if (!img) img = Icon.Empty.GetIcon().texture;
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
@@ -386,7 +387,7 @@ namespace QuizCanners.Inspect
         public static ChangesToken Click(Texture img, string toolTip, int size = DEFAULT_BUTTON_SIZE)
         {
             if (!img)
-                img = Icon.Empty.GetIcon();
+                img = Icon.Empty.GetIcon().texture;
             
             switch (currentMode) 
             {
@@ -407,7 +408,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Click(Texture img, string toolTip, int width, int height)
         {
-            if (!img) img = Icon.Empty.GetIcon();
+            if (!img) img = Icon.Empty.GetIcon().texture;
 
             var cnt = ImageAndTip(img, toolTip);
 
@@ -424,7 +425,7 @@ namespace QuizCanners.Inspect
             if (!icon.TryGetTexture(out var tex))
                 return icon.GetText().ClickUnFocus();
 
-            return Click(tex, toolTip, width, height);
+            return Click(tex.texture, toolTip, width, height);
         }
 
         public static ChangesToken Click(this Icon icon, System.Action onClick, string toolTip) => icon.Click(toolTip: toolTip).OnChanged(onClick);
@@ -489,7 +490,7 @@ namespace QuizCanners.Inspect
             if (!icon.TryGetTexture(out var tex))
                 return icon.GetText().Click();
 
-            return Click(tex, size);
+            return Click(tex.texture, size);
         }
 
         public static ChangesToken Click(this Icon icon, string toolTip, int size = DEFAULT_BUTTON_SIZE)
@@ -524,7 +525,7 @@ namespace QuizCanners.Inspect
         }
 
         public static ChangesToken ClickHighlight(Object obj, int width = DEFAULT_BUTTON_SIZE) =>
-           ClickHighlight(obj, Icon.Ping.GetIcon(), width).IgnoreChanges();
+           ClickHighlight(obj, Icon.Ping.GetIcon().texture, width).IgnoreChanges();
 
         public static ChangesToken ClickHighlight(Object obj, Texture tex, int width = DEFAULT_BUTTON_SIZE)
         {

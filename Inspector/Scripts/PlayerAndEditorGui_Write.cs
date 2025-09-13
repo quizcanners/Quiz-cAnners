@@ -1,6 +1,6 @@
 ﻿using QuizCanners.Utils;
 using UnityEngine;
-using System.Linq;
+
 
 #if UNITY_EDITOR
 using  UnityEditor;
@@ -470,9 +470,9 @@ namespace QuizCanners.Inspect
 
         public static TextToken Draw(this Icon icon, int size = DEFAULT_BUTTON_SIZE) => Draw(icon.GetIcon(), size, alphaBlend: true);
 
-        public static TextToken Draw(this Icon icon, string toolTip, int size = DEFAULT_BUTTON_SIZE) => Draw(icon.GetIcon(), toolTip, size);
+        public static TextToken Draw(this Icon icon, string toolTip, int size = DEFAULT_BUTTON_SIZE) => Draw(icon.GetIcon().texture, toolTip, size);
 
-        public static TextToken Write(this Icon icon, string toolTip, int width, int height) => Draw(icon.GetIcon(), toolTip, width, height);
+        public static TextToken Write(this Icon icon, string toolTip, int width, int height) => Draw(icon.GetIcon().texture, toolTip, width, height);
 
         #endregion
 
@@ -593,10 +593,24 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
+        private static string _copyPasteCached;
+        private static Gate.Frame _copyPasteBufferCheck = new();
+
         public static string CopyPasteBuffer 
         {
-            get => GUIUtility.systemCopyBuffer;
-            set => GUIUtility.systemCopyBuffer = value;
+            get
+            {
+                if (_copyPasteBufferCheck.TryEnter())
+                    _copyPasteCached = GUIUtility.systemCopyBuffer;
+
+                return _copyPasteCached;
+            }
+            set
+            {
+                _copyPasteBufferCheck.TryEnter();
+                GUIUtility.systemCopyBuffer = value;
+                _copyPasteCached = value;
+            }
         }
 
         public static void SetCopyPasteBuffer(string value, string hint = "", bool sendNotificationIn3Dview = true)

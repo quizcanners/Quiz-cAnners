@@ -1,12 +1,11 @@
 using QuizCanners.Utils;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace QuizCanners.Inspect
 {
     public static partial class pegi
     {
-        public enum LatestInteractionEvent { None, Click, SliderScroll, Enter, Exit }
+        public enum LatestInteractionEvent { None, Click, SliderScroll, Enter, Exit, ToggleOn, ToggleOff }
 
         public static class GameView
         {
@@ -169,7 +168,7 @@ namespace QuizCanners.Inspect
                                 else
                                 {
                                     _scrollPosition = GUILayout.BeginScrollView(_scrollPosition
-                                        , GUILayout.Width(Screen.width * 0.9f / Upscale)
+                                        , GUILayout.Width(Screen.width * 0.87f / Upscale)
                                         , GUILayout.Height(Screen.height * 0.9f / Upscale));
                                 }
 

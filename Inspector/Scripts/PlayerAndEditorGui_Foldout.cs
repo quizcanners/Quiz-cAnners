@@ -1,3 +1,4 @@
+using NUnit.Framework.Constraints;
 using QuizCanners.Utils;
 using System;
 using UnityEngine;
@@ -6,6 +7,77 @@ namespace QuizCanners.Inspect
 {
     public static partial class pegi
     {
+        internal static class Focus
+
+        {
+            internal static int _elementIndex;
+            internal static int editedElementIndex = -1;
+            internal static string _latestActualFocused;
+            internal static string _previouslyFocused = "";
+            private static readonly Gate.String currentFocused = new();
+            private static readonly Gate.Frame _framesToClearPReviousFocus = new();
+
+            public enum EditState { Unfocused, Started, IsFocused, PressedEnter, Ended }
+
+            internal static void OnContextChange()
+            {
+                editedElementIndex = 0;
+                _latestActualFocused = "";
+                _previouslyFocused = "";
+                currentFocused.ValueIsDefined = false;
+                FoldoutManager.OnContextChange();
+            }
+
+
+            internal static EditState IsCurrentlyFocusedElement(string context)
+            {
+
+                _elementIndex++;
+
+                if (_framesToClearPReviousFocus.TryEnterIfFramesPassed(3))
+                    _previouslyFocused = "";
+
+                var controlName = context + _elementIndex;
+                GUI.SetNextControlName(controlName);
+
+                if (Event.current.type != EventType.Repaint)
+                {
+                    _latestActualFocused = GUI.GetNameOfFocusedControl();
+                }
+
+                if (!_latestActualFocused.Equals(controlName))
+                {
+                    if ((!currentFocused.CurrentValue.IsNullOrEmpty() && currentFocused.CurrentValue.Equals(controlName))
+                        || (!_previouslyFocused.IsNullOrEmpty() && _previouslyFocused.Equals(controlName))
+                        )
+                    {
+                        currentFocused.ValueIsDefined = false;
+                        return EditState.Ended;
+                    }
+
+                    return EditState.Unfocused;
+                }
+
+                if (currentFocused.IsDirty(controlName))
+                {
+                    _previouslyFocused = currentFocused.CurrentValue;
+                    currentFocused.TryChange(controlName);
+                    _framesToClearPReviousFocus.TryEnter();
+                    return EditState.Started;
+                }
+                else if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Return)
+                {
+                    Event.current.Use();
+                    return EditState.PressedEnter;
+                }
+                else
+                    return EditState.IsFocused;
+            }
+        }
+
+
+
+
         public static StateToken IsFoldout(this TextLabel txt, ref bool state)
         {
 
@@ -52,6 +124,8 @@ namespace QuizCanners.Inspect
 
         }
 
+
+
         public static StateToken IsFoldout(this Icon ico, string text)
         {
             using (FoldoutManager.StartFoldoutDisposable(out var isFoldedOut))
@@ -71,7 +145,7 @@ namespace QuizCanners.Inspect
             return FoldoutManager.isFoldedOutOrEntered;
         }
 
-        public static StateToken IsFoldout(this Icon ico, string text, ref bool state) => ico.GetIcon().IsFoldout(text, ref state);
+        public static StateToken IsFoldout(this Icon ico, string text, ref bool state) => ico.GetIcon().texture.IsFoldout(text, ref state);
 
         public static StateToken IsFoldout(this TextLabel txt)
         {
@@ -82,7 +156,7 @@ namespace QuizCanners.Inspect
 
             using (FoldoutManager.StartFoldoutDisposable(out _))
             {
-                IsFoldout(txt, ref FoldoutManager.selectedFold, _elementIndex);
+                IsFoldout(txt, ref FoldoutManager.selectedFold, Focus._elementIndex);
             }
 
             return FoldoutManager.isFoldedOutOrEntered;
@@ -110,34 +184,45 @@ namespace QuizCanners.Inspect
             set => FoldoutManager.isFoldedOutOrEntered = new StateToken(value);
         }
 
-        internal static int _elementIndex;
 
-        internal static class FoldoutManager 
+
+        //  private static int editedFloatIndex = -1;
+
+        internal static class FoldoutManager
         {
+
             internal static StateToken isFoldedOutOrEntered;
 
-           
+
             internal static int selectedFold = -1;
 
             internal static void FoldInNow() => selectedFold = -1;
 
-            internal static void FoldOutNow() => selectedFold = _elementIndex;
+            internal static void FoldOutNow() => selectedFold = Focus._elementIndex;
 
-            internal static bool IsNextFoldedOut => selectedFold == _elementIndex - 1;
+            internal static bool IsNextFoldedOut => selectedFold == Focus._elementIndex - 1;
 
 
-            internal static IDisposable StartFoldoutDisposable(out bool isFoldedOut) 
+            internal static void OnContextChange()
             {
-                _elementIndex++;
-                IsFoldedOutOrEntered = selectedFold == _elementIndex;
+                selectedFold = -1;
+            }
+        
+
+            internal static IDisposable StartFoldoutDisposable(out bool isFoldedOut)
+            {
+                Focus._elementIndex++;
+                IsFoldedOutOrEntered = selectedFold == Focus._elementIndex;
                 isFoldedOut = IsFoldedOutOrEntered;
 
-                return QcSharp.DisposableAction(() => 
+                return QcSharp.DisposableAction(() =>
                 {
-                    IsFoldedOutOrEntered = (selectedFold == _elementIndex);
+                    IsFoldedOutOrEntered = (selectedFold == Focus._elementIndex);
                 });
 
             }
+
+
         }
     }
 }

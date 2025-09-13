@@ -14,14 +14,14 @@ namespace QuizCanners.Inspect
         Back,
         Close, Condition, Config, Copy, Cut, Create, Clear,
         Delete, Done, Download, Down, DownLast, Debug, Dice,
-        Edit, Enter, Exit, Empty,
+        Edit, Enter, Exit, Empty, ExitToList, EditList,
         False, FoldedOut, Folder, Folder_Edit,
         Next,
         On, Off,
         Lock, Unlock, List, Link, UnLinked,
         Record, Replace, Refresh,
         Search, Script, Save, SaveAsNew, StateMachine, State, Show, Share, Size, ScreenGrab, Subtract, Swap,
-        Stop,
+        Stop, SendMessage,
         Selected, UnSelected,
         Question,
         Painter, Pencil, Erase,
@@ -34,58 +34,60 @@ namespace QuizCanners.Inspect
         Red, Green, Blue,
         InActive, Insert,
         Hint, Home, Hide,
+        Favorite, UnFavorited,
         Paste,
         Up, UpLast, User,
         Warning, Wait,
-        
+        TickBox_Done, TickBox
+
     }
 
     public static class Icons_MGMT 
     {
         private const string FOLDER_NAME = "Inspector Icons";
 
-        private static readonly Dictionary<int, Texture2D> _managementIcons = new();
+        private static readonly Dictionary<int, Sprite> _managementIcons = new();
 
-        internal static bool TryGetTexture(this Icon icon, out Texture2D tex)
+        internal static bool TryGetTexture(this Icon icon, out Sprite tex)
         {
             tex = icon.GetIcon();
-            return tex && tex != Texture2D.whiteTexture;
+            return tex && tex != null; // Texture2D.whiteTexture;
         }
 
-        public static Texture2D GetIcon(this Icon icon)
+        public static Sprite GetIcon(this Icon icon)
         {
-
             var ind = (int) icon;
 
             if (_managementIcons.TryGetValue(ind, out var ico))
                 return ico;
 
-   
-
             switch (icon) {
-                case Icon.Red: return ColorIcon(0) as Texture2D;
-                case Icon.Green: return ColorIcon(1) as Texture2D;
-                case Icon.Blue: return ColorIcon(2) as Texture2D;
-                case Icon.Alpha: return ColorIcon(3) as Texture2D;
+                case Icon.Red: return ColorIcon(0);
+                case Icon.Green: return ColorIcon(1);
+                case Icon.Blue: return ColorIcon(2);
+                case Icon.Alpha: return ColorIcon(3);
                 default:
                     var name = Enum.GetName(typeof(Icon), ind);
 
-                    Texture2D tmp = null;
+                    Sprite tmp = null;
                     
                     if (name != null)
-                        tmp = Resources.Load(Path.Combine(FOLDER_NAME, name)) as Texture2D;
-                    
-                    _managementIcons[ind] = tmp ? tmp : Texture2D.whiteTexture;
+                        tmp = Resources.Load<Sprite>(Path.Combine(FOLDER_NAME, name));
+
+                    if (!tmp)
+                        Debug.LogError("Failed to load " + name);
+
+                    _managementIcons[ind] = tmp ? tmp : null; // Texture2D.whiteTexture;
 
                     return tmp;
             }
         }
 
-        private static List<Texture2D> _painterIcons;
+        private static List<Sprite> _painterIcons;
 
-        private static Texture ColorIcon(int ind)
+        private static Sprite ColorIcon(int ind)
         {
-            _painterIcons ??= new List<Texture2D>();
+            _painterIcons ??= new List<Sprite>();
 
             while (_painterIcons.Count <= ind) 
                 _painterIcons.Add(null);
@@ -93,7 +95,7 @@ namespace QuizCanners.Inspect
             if (_painterIcons[ind] != null) 
                 return (_painterIcons[ind]);
 
-            _painterIcons[ind] = Resources.Load(Path.Combine(FOLDER_NAME, TryGetName())) as Texture2D;
+            _painterIcons[ind] = Resources.Load<Sprite>(Path.Combine(FOLDER_NAME, TryGetName()));
 
             string TryGetName() 
             {
@@ -110,9 +112,9 @@ namespace QuizCanners.Inspect
             return (_painterIcons[ind]);
         }
 
-        public static Texture GetIcon(this ColorChanel icon) => ColorIcon((int) icon);
+        public static Sprite GetIcon(this ColorChanel icon) => ColorIcon((int) icon);
 
-        public static Texture GetIcon(this ColorMask icon) => icon.ToColorChannel().GetIcon();
+        public static Sprite GetIcon(this ColorMask icon) => icon.ToColorChannel().GetIcon();
         
  
     }

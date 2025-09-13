@@ -56,8 +56,8 @@ namespace QuizCanners.Migration
         }
     }
     
-    public class CfgDecoder   {
-
+    public class CfgDecoder   
+    {
         public static string ListElementTag => CfgEncoder.ListElementTag;
 
         public delegate void DecodeDelegate(string tag, CfgData data);
@@ -80,7 +80,7 @@ namespace QuizCanners.Migration
 
         public void DecodeTagsFor(DecodeDelegate decodeDelegate)
         {
-            foreach (var tag in this)
+            foreach (string tag in this)
                 decodeDelegate(tag, GetData());
         }
 

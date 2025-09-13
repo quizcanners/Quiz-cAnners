@@ -9,6 +9,93 @@ namespace QuizCanners.Utils
 {
     public static class LogicWrappers
     {
+        public class MinMaxEnableGap : IPEGI
+        {
+            private float _enableAt, _disableAt;
+            private bool disableWhenBigger;
+            private readonly Gate.Bool _enableGate = new();
+
+            public bool Enabled => _enableGate.CurrentValue;
+
+            private bool IsEnabled_Internal(float value)
+            {
+                bool isEnabled = _enableGate.CurrentValue;
+
+                if (isEnabled)
+                {
+                    bool isAboveDisable = value > _disableAt;
+                    bool shouldDisable = isAboveDisable == disableWhenBigger;
+                    return !shouldDisable;
+                }
+                else
+                {
+                    bool isAboveEnable = value > _enableAt;
+                    return isAboveEnable == !disableWhenBigger;
+                }
+            }
+
+            public bool IsEnabled(float value) 
+            {
+                var isEnabled = IsEnabled_Internal(value);
+                _enableGate.TryChange(isEnabled);
+                return isEnabled;
+            }
+
+            public bool TryChange(float value, out bool isEnabled) 
+            {
+                isEnabled = IsEnabled_Internal(value);
+                return _enableGate.TryChange(isEnabled);
+            }
+
+            public void Reset() => _enableGate.ValueIsDefined = false;
+
+            public bool TryChange(float value, out bool isEnabled, out bool wasInitialized)
+            {
+                wasInitialized = _enableGate.ValueIsDefined;
+                isEnabled = IsEnabled_Internal(value);
+                return _enableGate.TryChange(isEnabled);
+            }
+
+            #region Inspector
+
+            //  private float _testValue;
+
+            public void Inspect()
+            {
+                var changes = pegi.ChangeTrackStart();
+
+                "Disable at".ConstL().Edit(ref _disableAt).Nl();
+                "Enable at".ConstL().Edit(ref _enableAt).Nl();
+
+                if (changes)
+                    disableWhenBigger = _disableAt > _enableAt;
+
+                float mid = (_disableAt + _enableAt) * 0.5f;
+                float diff = Mathf.Abs(_disableAt - mid);
+
+                /*
+                "Value".ConstL().Edit(ref _testValue, mid - diff*2, mid + diff*2);
+                if (TryChange(_testValue, out bool isEnabled)) 
+                {
+                    Debug.Log("Changed");
+                }*/
+
+                (_enableGate.CurrentValue ? Icon.Active : Icon.InActive).Draw().Nl();
+
+            }
+
+     
+
+            #endregion
+
+            public MinMaxEnableGap(float enableAt, float disableAt) 
+            {
+                _enableAt = enableAt;
+                _disableAt = disableAt;
+                disableWhenBigger = disableAt > enableAt;
+            }
+        }
+
         public class Request
         {
             private bool _requestCreated;
@@ -16,11 +103,24 @@ namespace QuizCanners.Utils
             public void CreateRequest() => _requestCreated = true;
             public bool IsRequested => _requestCreated;
 
-            public bool TryUseRequest()
+            public bool TryUseRequest(string debugReason) 
             {
                 var result = _requestCreated;
                 _requestCreated = false;
+
+              //  if (result)
+                  //  Debug.Log("Request was used by {0}".F(debugReason));
+
                 return result;
+            }
+
+            public bool TryUseRequest()
+            {
+                if (!_requestCreated)
+                    return false;
+
+                _requestCreated = false;
+                return true;
             }
 
             public void Feed(bool createRequest) 
@@ -49,9 +149,7 @@ namespace QuizCanners.Utils
                 _requestCreated = false;
                 return result;
             }
-
         }
-
 
         public class CountDown 
         {
@@ -255,7 +353,6 @@ namespace QuizCanners.Utils
                 return segments;
             }
 
-
             public int GetSegmentsWithouUpdate(float segment) 
             {
                 SegmentDuration = segment;
@@ -269,6 +366,7 @@ namespace QuizCanners.Utils
 #endif
                 return GetSegmentsAndUpdate(_defaultSegment);
             }
+
             public int GetSegmentsAndUpdate(float segmentLength) 
             {
                 var segmentCount = GetSegmentsWithouUpdate(segmentLength);
@@ -284,12 +382,11 @@ namespace QuizCanners.Utils
                 }
             }
 
-
-            public TimeFixedSegmenter(bool unscaledTime, float segmentLength = 1, int returnOnFirstRequest = 0) 
+            public TimeFixedSegmenter(bool unscaledTime, float defaultSegmentLength, int returnOnFirstRequest) 
             {
                 _unscaledTime = unscaledTime;
                 _returnOnFirstRequest = returnOnFirstRequest;
-                _defaultSegment = segmentLength;
+                _defaultSegment = defaultSegmentLength;
                 _defaultSegmentSet = true;
             }
         }
@@ -365,7 +462,7 @@ namespace QuizCanners.Utils
             {
                 if (result != null)
                 {
-                    pegi.Try_Nested_Inspect(result);
+                    pegi.Nested_Inspect_Value_OrFallback(ref result);
                 }
                 else
                 {
@@ -458,7 +555,6 @@ namespace QuizCanners.Utils
 
         }
 
-
         public class DeltaVector3
         {
             public Vector3 Previous;
@@ -523,8 +619,6 @@ namespace QuizCanners.Utils
 
         }
 
-      
-
         [Serializable]
         public class FadeInOut 
         {
@@ -558,6 +652,5 @@ namespace QuizCanners.Utils
                 _lastFrame = Time.frameCount;
             }
         }
-
     }
 }

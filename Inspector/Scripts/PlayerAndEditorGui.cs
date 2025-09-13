@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using QuizCanners.Utils;
+using UnityEditor;
 using UnityEngine;
 
 namespace QuizCanners.Inspect
@@ -76,6 +77,20 @@ namespace QuizCanners.Inspect
         internal static object inspectedTarget;
         internal static bool InspectorStarted;
 
+#if UNITY_EDITOR
+        public static void InspectEditorWindowOnGUI(Action action, ref Vector2 scrollPos) 
+        {
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos); //, GUILayout.Width(Screen.width-3), GUILayout.Height(Screen.height - 50));
+
+            using (StartInspector(null, PegiPaintingMode.EditorInspector))
+            {
+                Nested_Inspect(action);
+            }
+
+            EditorGUILayout.EndScrollView();
+        }
+#endif
+
         internal static IDisposable StartInspector(object obj, PegiPaintingMode mode)
         {
             if (InspectorStarted)
@@ -85,7 +100,7 @@ namespace QuizCanners.Inspect
 
             InspectorStarted = true;
 
-            _elementIndex = 0;
+            Focus._elementIndex = 0;
             _horizontalStarted = false;
             GlobChanged = false;
 

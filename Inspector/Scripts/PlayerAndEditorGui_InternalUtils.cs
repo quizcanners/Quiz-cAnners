@@ -231,7 +231,7 @@ namespace QuizCanners.Inspect
         public static pegi.ChangesToken Click(this Icon icon, Msg text) => icon.ClickUnFocus(text.GetText());
         //  public static bool Click(this icon icon, Msg text, ref bool changed) => icon.ClickUnFocus(text.GetText()).changes(ref changed);
         public static pegi.ChangesToken ClickUnFocus(this Icon icon, Msg text, int size = pegi.DEFAULT_BUTTON_SIZE) => pegi.Click(icon.GetIcon(), text.GetText(), size).UnfocusOnChange();
-        public static pegi.ChangesToken ClickUnFocus(this Icon icon, Msg text, int width, int height) => pegi.Click(icon.GetIcon(), text.GetText(), width, height).UnfocusOnChange();
+        public static pegi.ChangesToken ClickUnFocus(this Icon icon, Msg text, int width, int height) => pegi.Click(icon.GetIcon().texture, text.GetText(), width, height).UnfocusOnChange();
 
         #endregion
 

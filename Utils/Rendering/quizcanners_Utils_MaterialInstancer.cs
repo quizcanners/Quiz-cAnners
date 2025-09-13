@@ -7,7 +7,6 @@ namespace QuizCanners.Utils
 {
     public static class MaterialInstancer
     {
-
         public abstract class Base 
         {
             public abstract Material GetInstance();
@@ -25,15 +24,24 @@ namespace QuizCanners.Utils
                     return _materialInstance;
 
                 if (materialUsers.IsNullOrEmpty())
+                {
+                    QcLog.ChillLogger.LogErrorOnce("No Graphic Assigned", key: "NoGrph");
                     return null;
+                }
 
                 var first = materialUsers[0];
 
                 if (!first)
+                {
+                    QcLog.ChillLogger.LogErrorOnce("First graphic is null", key: "NFGrNull");
                     return null;
+                }
 
                 if (!Application.isPlaying || QcUnity.IsPartOfAPrefab(first.gameObject))
+                {
+                    QcLog.ChillLogger.LogErrorOnce("Not playing or part of prefab", key: "NotPlOrPrf");
                     return first.material;
+                }
 
                 _materialInstance = UnityEngine.Object.Instantiate(first.material);
 
@@ -73,7 +81,6 @@ namespace QuizCanners.Utils
 
                 return GetInstance();
             }
-
 
             public ForMeshRenderer()
             {

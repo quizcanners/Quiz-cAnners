@@ -131,7 +131,9 @@ namespace QuizCanners.Utils
             if (!triedToDecodeAll && "Decode All".PL().Click())
                 TryToDecodeAll();
 
-            if (jsonDestination.Length > 5)
+            if (!_name.IsNullOrEmpty())
+                _name.PL(pegi.Styles.Text.Header).Write();
+            else if (jsonDestination.Length > 5)
                 jsonDestination.PL().Write();
 
             pegi.Nl();

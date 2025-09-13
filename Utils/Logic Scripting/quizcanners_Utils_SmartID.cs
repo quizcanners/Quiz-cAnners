@@ -374,7 +374,7 @@ namespace QuizCanners.Utils
                     TValue val = GetEntity();
 
                     if (val != null)
-                        pegi.Try_Nested_Inspect(val).Nl();
+                        pegi.Nested_Inspect_Value_OrFallback(ref val).Nl();
                     else
                         ("ID {0} not found in Prototypes".F(Id)).PL().Nl();
                 }
@@ -613,9 +613,8 @@ namespace QuizCanners.Utils
 
                 TValue val = GetEntity();
 
-
                 if (val != null)
-                    pegi.Try_Nested_Inspect(val).Nl();
+                    pegi.Nested_Inspect_Value_OrFallback(ref val).Nl();
                 else
                     ("ID {0} not found in Prototypes".F(Id)).PL().Nl();
             }
@@ -752,7 +751,7 @@ namespace QuizCanners.Utils
 
 
                 if (val != null)
-                    pegi.Try_Nested_Inspect(val).Nl();
+                    pegi.Nested_Inspect_Value_OrFallback(ref val).Nl();
                 else
                     ("ID {0} not found in Prototypes".F(Id)).PL().Nl();
             }

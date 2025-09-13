@@ -8,6 +8,8 @@ using System;
 using System.Linq;
 
 
+
+
 #if UNITY_EDITOR
 using UnityEditor;
 using AssetDatabase = UnityEditor.AssetDatabase;
@@ -34,11 +36,15 @@ namespace QuizCanners.Utils
             public bool SaveGame(object saveData) => Save.ToPersistentPath.JsonTry(saveData, this);
             public bool LoadGame<T>(out T saveData)=> Load.FromPersistentPath.JsonTry(this, out saveData);
 
+            public bool DeleteGame() => Delete.InPersistentFolder.FileTry(this);
+
             public void Inspect()
             {
                 if ("Open {0} Save location".F(FolderName).PL().Click())
                     Explorer.OpenPersistentFolder(FolderName);
             }
+
+     
 
             public RelativeLocation (string folderName, string fileName, bool asBytes = DEFAULT_IS_BINARY) 
             {
@@ -139,7 +145,10 @@ namespace QuizCanners.Utils
                 UnityEditor.EditorUtility.RevealInFinder(path);
 #else
                  System.Diagnostics.Process.Start(path.TrimEnd(new[] { '\\', '/' }));
+                 pegi.SetCopyPasteBuffer(path);
 #endif
+
+
             }
 
             public static string TryGetFullPathToAsset(Object o)
@@ -245,11 +254,18 @@ namespace QuizCanners.Utils
                                 isEmpty = false;
                         }
 
-                        if (isEmpty && Directory.EnumerateFileSystemEntries(directory).Any())
-                            isEmpty = false;
+                        try
+                        {
+                            if (isEmpty && Directory.EnumerateFileSystemEntries(directory).Any())
+                                isEmpty = false;
 
-                        if (isEmpty && Directory.Exists(directory))
-                            Directory.Delete(directory);
+                            if (isEmpty && Directory.Exists(directory))
+                                Directory.Delete(directory);
+                        }
+                        catch (Exception e) 
+                        {
+                            Debug.LogException(e);
+                        }
                     }
                 
                 } catch (Exception ex) 
@@ -474,17 +490,24 @@ namespace QuizCanners.Utils
 
                 public static bool JsonTry<T>(RelativeLocation location, out T result)
                 {
-                    if (StringTry(location, out string data))
+                    try
                     {
-                        result = JsonUtility.FromJson<T>(data);
-
-                        if (result == null) 
+                        if (StringTry(location, out string data))
                         {
-                            Debug.LogError("Loaded {0} was null".F(typeof(T).ToString()));
-                            return false;
-                        }
+                            result = JsonUtility.FromJson<T>(data);
 
-                        return true;
+                            if (result == null)
+                            {
+                                Debug.LogError("Loaded {0} was null".F(typeof(T).ToString()));
+                                return false;
+                            }
+
+                            return true;
+                        }
+                    }
+                    catch (System.Exception ex) 
+                    {
+                        Debug.LogException(ex);
                     }
 
                     result = default;
@@ -670,8 +693,7 @@ namespace QuizCanners.Utils
                     try
                     {
                         var data = JsonUtility.ToJson(objectToSerialize);
-                        String(location, data);
-                        return true;
+                        return String(location, data);
                     }
                     catch (System.Exception ex)
                     {
@@ -680,32 +702,63 @@ namespace QuizCanners.Utils
                     }
                 }
 
-                public static void String(string subPath, string fileName, string data, bool asBytes = DEFAULT_IS_BINARY)
+                public static bool String(string subPath, string fileName, string data, bool asBytes = DEFAULT_IS_BINARY)
                 {
                     RelativeLocation location = new(folderName: subPath, fileName: fileName, asBytes: asBytes);
-                    String(location, data: data);
+                    return String(location, data: data);
                 }
 
-                public static void String(RelativeLocation location, string data)
+                public static bool String(RelativeLocation location, string data)
                 {
                     var path = CreateDirectoryPath(Application.persistentDataPath, location);
+                    return StringByFullPath(path, data);
+                }
+            }
 
-                    if (location.AsBytes)
+            #endregion
+
+            public static bool StringByFullPath(string path, string data)
+            {
+                var tmpPath = Path.ChangeExtension(path, ".tmp");
+
+                try
+                {
+                    /*
+                    if (asBytes)
                     {
-                        var file = File.Create(path);
+                        var file = File.Create(tmpPath);
                         using (file)
                         {
                             Formatter.Serialize(file, data);
                         }
                     }
                     else
+                    {*/
+                        File.WriteAllText(tmpPath, data);
+                    //}
+
+                    if (File.Exists(path))
                     {
-                        File.WriteAllText(path, data);
+                        File.Replace(tmpPath, path, null);
                     }
+                    else
+                    {
+                        File.Move(tmpPath, path);
+                    }
+
+                    return true;
                 }
+                catch (Exception ex)
+                {
+                    Debug.LogError("Saving to " + path);
+                    Debug.LogException(ex);
+                    if (File.Exists(tmpPath))
+                        File.Delete(tmpPath);
+                }
+
+                return false;
             }
 
-            #endregion
 
             #region Create Directory
 

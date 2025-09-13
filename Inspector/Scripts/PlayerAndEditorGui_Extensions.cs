@@ -192,10 +192,7 @@ namespace QuizCanners.Inspect
             }
             catch (Exception ex)
             {
-                if (changed)
-                    Debug.LogException(ex);
-                else 
-                    Write_Exception(ex);
+                WriteOrThrow_Exception(ex);
             }
 
             IndentLevel = il;
@@ -285,7 +282,7 @@ namespace QuizCanners.Inspect
         }
 
 
-        public static bool IsExitGUIException(Exception exception)
+        public static bool IsGUIInternalException(Exception exception)
         {
             while (exception is TargetInvocationException && exception.InnerException != null)
             {
@@ -301,69 +298,66 @@ namespace QuizCanners.Inspect
 
             //using (InspectorStarted ? null : StartInspector(pgi))
             //{
-                if (pgi == null)
+            if (pgi == null)
+            {
+                "NULL".PL().WriteWarning().Nl();
+                return ChangesToken.False;
+            }
+
+            if (fromNewLine)
+                Nl();
+
+            var changed = ChangeTrackStart();
+
+            var isFOOE = FoldoutManager.isFoldedOutOrEntered;
+
+            bool inDic = IpegiInspectionChain.TryGetValue(pgi, out int recurses);
+
+            if (!inDic || recurses < 4)
+            {
+                IpegiInspectionChain[pgi] = recurses + 1;
+
+                var indent = IndentLevel;
+
+                try
                 {
-                    "NULL".PL().WriteWarning().Nl();
-                    return ChangesToken.False;
+                    pgi.Inspect();
+                }
+                catch (Exception ex)
+                {
+                    WriteOrThrow_Exception(ex);
                 }
 
-                if (fromNewLine)
-                    Nl();
-
-                var changed = ChangeTrackStart();
-
-                var isFOOE = FoldoutManager.isFoldedOutOrEntered;
-
-                bool inDic = IpegiInspectionChain.TryGetValue(pgi, out int recurses);
-
-                if (!inDic || recurses < 4)
+                if (writeWhenNeedsAttention)
                 {
-                    IpegiInspectionChain[pgi] = recurses + 1;
-
-                    var indent = IndentLevel;
-
                     try
                     {
-                        pgi.Inspect();
+                        Nested_Inspect_Attention_MessageOnly(pgi);
                     }
                     catch (Exception ex)
                     {
-                        if (IsExitGUIException(ex))
-                            throw ex;
-                        else
-                            Write_Exception(ex);
-                    }
-
-                    if (writeWhenNeedsAttention)
-                    {
-                        try
-                        {
-                            Nested_Inspect_Attention_MessageOnly(pgi);
-                        }
-                        catch (Exception ex)
-                        {
-                            Write_Exception(ex);
-                        }
-                    }
-
-                    RestoreBGColor();
-                    IndentLevel = indent;
-
-                    int count;
-                    if (IpegiInspectionChain.TryGetValue(pgi, out count))
-                    {
-                        if (count < 2)
-                            IpegiInspectionChain.Remove(pgi);
-                        else
-                            IpegiInspectionChain[pgi] = count - 1;
+                        WriteOrThrow_Exception(ex);
                     }
                 }
-                else
-                    "3rd recursion".PL().WriteWarning();
 
-                FoldoutManager.isFoldedOutOrEntered = isFOOE;
+                RestoreBGColor();
+                IndentLevel = indent;
 
-                return changed;
+                int count;
+                if (IpegiInspectionChain.TryGetValue(pgi, out count))
+                {
+                    if (count < 2)
+                        IpegiInspectionChain.Remove(pgi);
+                    else
+                        IpegiInspectionChain[pgi] = count - 1;
+                }
+            }
+            else
+                "3rd recursion".PL().WriteWarning();
+
+            FoldoutManager.isFoldedOutOrEntered = isFOOE;
+
+            return changed;
             //}
         }
 
@@ -374,66 +368,63 @@ namespace QuizCanners.Inspect
                 // ? null : pegi.StartInspector(pgi))
            //{
 
-                if (pgi == null)
+            if (pgi == null)
+            {
+                "NULL".PL().WriteWarning().Nl();
+                return ChangesToken.False;
+            }
+
+            var changed = ChangeTrackStart();
+
+            var isFOOE = FoldoutManager.isFoldedOutOrEntered;
+
+            bool inDic = IpegiContInspectionChain.TryGetValue(pgi, out int recurses);
+
+            if (!inDic || recurses < 4)
+            {
+                IpegiContInspectionChain[pgi] = recurses + 1;
+
+                var indent = IndentLevel;
+
+                try
                 {
-                    "NULL".PL().WriteWarning().Nl();
-                    return ChangesToken.False;
+                    pgi.InspectContext(context);
+                }
+                catch (Exception ex)
+                {
+                    WriteOrThrow_Exception(ex);
                 }
 
-                var changed = ChangeTrackStart();
-
-                var isFOOE = FoldoutManager.isFoldedOutOrEntered;
-
-                bool inDic = IpegiContInspectionChain.TryGetValue(pgi, out int recurses);
-
-                if (!inDic || recurses < 4)
+                if (writeWhenNeedsAttention)
                 {
-                    IpegiContInspectionChain[pgi] = recurses + 1;
-
-                    var indent = IndentLevel;
-
                     try
                     {
-                        pgi.InspectContext(context);
+                        (pgi as INeedAttention).TryShow_AttentionMessage();
                     }
                     catch (Exception ex)
                     {
-                        if (IsExitGUIException(ex))
-                            throw ex;
-                        else
-                            Write_Exception(ex);
-                    }
-
-                    if (writeWhenNeedsAttention)
-                    {
-                        try
-                        {
-                            (pgi as INeedAttention).TryShow_AttentionMessage();
-                        }
-                        catch (Exception ex)
-                        {
-                            Write_Exception(ex);
-                        }
-                    }
-
-                    RestoreBGColor();
-                    IndentLevel = indent;
-
-                    int count;
-                    if (IpegiContInspectionChain.TryGetValue(pgi, out count))
-                    {
-                        if (count < 2)
-                            IpegiContInspectionChain.Remove(pgi);
-                        else
-                            IpegiContInspectionChain[pgi] = count - 1;
+                        WriteOrThrow_Exception(ex);
                     }
                 }
-                else
-                    "3rd recursion".PL().WriteWarning();
 
-                FoldoutManager.isFoldedOutOrEntered = isFOOE;
+                RestoreBGColor();
+                IndentLevel = indent;
 
-                return changed;
+                int count;
+                if (IpegiContInspectionChain.TryGetValue(pgi, out count))
+                {
+                    if (count < 2)
+                        IpegiContInspectionChain.Remove(pgi);
+                    else
+                        IpegiContInspectionChain[pgi] = count - 1;
+                }
+            }
+            else
+                "3rd recursion".PL().WriteWarning();
+
+            FoldoutManager.isFoldedOutOrEntered = isFOOE;
+
+            return changed;
             //}
         }
 
@@ -452,7 +443,7 @@ namespace QuizCanners.Inspect
                 if (Icon.Back.Click() | obj.GetNameForInspector().PL().ClickLabel().Nl())
                     inspected = -1;
                 else
-                    Try_Nested_Inspect(obj);
+                    Nested_Inspect_Value_OrFallback(ref obj);
             }
             else
             {
@@ -494,16 +485,20 @@ namespace QuizCanners.Inspect
 
             return changed;
         }
-        
-        public static ChangesToken Nested_Inspect(ref object obj)
+
+
+        public static ChangesToken Nested_Inspect_Object(ref object obj)
         {
             var pgi = obj as IPEGI;
             var changed = ChangeTrackStart();
 
             if (pgi != null)
-                pgi.Nested_Inspect();
+            {
+                if (Nested_Inspect_Value(ref pgi))
+                    obj = pgi;
+            }//.Nested_Inspect();
             else
-                TryDefaultInspect(ref obj);
+                Fallback_Inspect(ref obj);
 
 
             Nl();
@@ -592,13 +587,13 @@ namespace QuizCanners.Inspect
 #endif
 
             object obj = uObj;
-            TryReflectionInspect(ref obj);
+            ReflectionInspect(ref obj);
 
             return ChangesToken.False;
 
         }
 
-        public static ChangesToken TryDefaultInspect(ref object obj, EnterExitContext context = null)
+        public static ChangesToken Fallback_Inspect<T>(ref T obj, EnterExitContext context = null)
         {
 
 #if UNITY_EDITOR
@@ -628,13 +623,13 @@ namespace QuizCanners.Inspect
                 var txt = obj as string;
                 if (Edit_Big(ref txt, 40))
                 {
-                    obj = txt;
+                    obj = (T)(object)txt;
                     return ChangesToken.True;
                 }
             }
             else
             {
-                TryReflectionInspect(ref obj, context);
+                ReflectionInspect(ref obj, context);
             }
 
             return ChangesToken.False;
@@ -646,14 +641,14 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken TryReflectionInspect<T>(T value, EnterExitContext unstartedContext = null) where T: class
         {
-            var result = TryReflectionInspect(ref value, unstartedContext);
+            var result = ReflectionInspect(ref value, unstartedContext);
 
             return result;
         }
 
         public static ChangesToken TryReflectionInspect<T>(T value, Object objectToSetDirty, EnterExitContext unstartedContext = null) where T : class
         {
-            var result = TryReflectionInspect(ref value, unstartedContext);
+            var result = ReflectionInspect(ref value, unstartedContext);
 
             if (result && objectToSetDirty)
                 objectToSetDirty.SetToDirty();
@@ -663,7 +658,7 @@ namespace QuizCanners.Inspect
 
         private static ChangesToken TryReflectionInspect<T>(ref T obj, Object objectToSetDirty,  EnterExitContext context = null) 
         {
-            var changes = TryReflectionInspect(ref obj, context);
+            var changes = ReflectionInspect(ref obj, context);
 
             if (changes && objectToSetDirty)
                 objectToSetDirty.SetToDirty();
@@ -671,7 +666,7 @@ namespace QuizCanners.Inspect
             return changes;
         }
 
-        public static ChangesToken TryReflectionInspect<T>(ref T obj, EnterExitContext unstartedContext = null)
+        public static ChangesToken ReflectionInspect<T>(ref T obj, EnterExitContext unstartedContext = null)
         {
             var changes = ChangeTrackStart();
 
@@ -685,10 +680,7 @@ namespace QuizCanners.Inspect
                 }
                 catch (Exception ex)
                 {
-                    if (IsExitGUIException(ex))
-                        throw (ex);
-                    else
-                        Write_Exception(ex);
+                    WriteOrThrow_Exception(ex);
                 }
             }
 
@@ -831,10 +823,7 @@ namespace QuizCanners.Inspect
                 }
                 catch (Exception ex)
                 {
-                    if (IsExitGUIException(ex))
-                        throw (ex);
-                    else
-                        Write_Exception(ex);
+                    WriteOrThrow_Exception(ex);
                 }
 
                 _reflectiveInspectionDepth.Remove(value);
@@ -976,10 +965,10 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static ChangesToken Try_Nested_Inspect(object obj)
+        public static ChangesToken Nested_Inspect_OrFallback<T>(T obj) where T: class
         {
             var pgi = obj as IPEGI;
-            var ch = pgi?.Nested_Inspect() ?? TryDefaultInspect(ref obj);
+            var ch = pgi?.Nested_Inspect() ?? Fallback_Inspect(ref obj);
 
             Nl();
 
@@ -988,7 +977,7 @@ namespace QuizCanners.Inspect
             return ch;
         }
 
-        public static ChangesToken NestedOrReflection_Inspect<T>(ref T value)
+        public static ChangesToken Nested_Inspect_Value_OrFallback<T>(ref T value)
         {
             var changes = ChangeTrackStart();
 
@@ -996,15 +985,15 @@ namespace QuizCanners.Inspect
 
             if (pgi != null)
             {
-                if (Nested_Inspect_Value(ref pgi))
+                if (Nested_Inspect_Value(ref pgi) && typeof(T).IsValueType)
                     value = (T)pgi;
-            }
-            else
-            {
-                TryReflectionInspect(ref value);
-            }
-            Nl();
 
+                Nl();
+                return changes;
+            }
+          
+            Fallback_Inspect(ref value);
+            Nl();
             return changes;
         }
 
@@ -1260,11 +1249,17 @@ namespace QuizCanners.Inspect
             return !warningMsg.IsNullOrEmpty();
         }
 
-        public static void Write_Exception(Exception ex)
+        public static void WriteOrThrow_Exception(Exception ex)
         {
-            if (IsExitGUIException(ex))
+            if (IsGUIInternalException(ex))
                 throw ex;
             
+            if (GlobChanged) 
+            {
+                Debug.LogException(ex);
+                return;
+            }
+
             QcLog.ChillLogger.LogExceptionExpOnly(ex, key: "InspEx");
 
             Nl();

@@ -15,6 +15,18 @@ namespace QuizCanners.Utils
     public static partial class QcMath
     {
 
+        public static float SigmoidFunction(float x, float k = 1) 
+        {
+            return 1 + (x/Mathf.Sqrt(x*x + k));
+        }
+
+        /*
+        public static float InverseSigmoid(float y)
+        {
+            float logit = Mathf.Log(y / (1 - y));
+            return logit + 1;
+        }*/
+
         public static float SmoothStep(float edge0, float edge1, float t)
         {
             float coef = Mathf.Clamp01((t - edge0) / (edge1 - edge0));
@@ -426,6 +438,11 @@ namespace QuizCanners.Utils
             return new Vector3(a.x / b.x, a.y / b.y, a.z / b.z);
         }
 
+        public static Vector3 DivideBy(this Vector3 a, float b)
+        {
+            return new Vector3(a.x / b, a.y / b, a.z / b);
+        }
+
         public static Vector3 MultiplyBy(this Vector3 a, Vector3 b)
         {
             a.Scale(b);
@@ -473,6 +490,8 @@ namespace QuizCanners.Utils
         public static Vector3 Z(this Vector3 vec, float z) => new(vec.x, vec.y, z);
 
         public static Vector3 Y(this Vector3 vec, float y) => new(vec.x, y, vec.z);
+
+        public static Vector3 XZY(this Vector3 vec) => new(vec.x, vec.z, vec.y);
 
         public static Vector3 XYZ(this Vector4 vec) => new(vec.x, vec.y, vec.z);
 
@@ -781,6 +800,12 @@ namespace QuizCanners.Utils
             return localOffset.x < size.x && localOffset.y < size.y && localOffset.z < size.z;
         }
 
+        public static Vector2 FitInsideSquare(Vector2 element, Vector2 container)
+        {
+            var ratio = container / element;
+            return Mathf.Min(ratio.x, ratio.y) * element;
+        }
+
         [Serializable]
         public struct DynamicRangeFloat : ICfgCustom, IPEGI
         {
@@ -840,8 +865,6 @@ namespace QuizCanners.Utils
 
                 if (_showRange)
                 {
-
-
                     if (Icon.FoldedOut.ClickUnFocus("Hide Range"))
                         _showRange = false;
 

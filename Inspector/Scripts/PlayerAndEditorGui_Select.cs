@@ -1,8 +1,5 @@
 ﻿using QuizCanners.Migration;
 using QuizCanners.Utils;
-//using System;
-
-//using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,8 +11,13 @@ namespace QuizCanners.Inspect
 #pragma warning disable IDE1006 // Naming Styles
     public static partial class pegi
     {
+
+
+
         private static string CompileSelectionName<T>(int index, T obj, bool showIndex, bool stripSlashesAndDots = false, bool dotsToSlashes = true)
         {
+          
+
             var st = obj.GetNameForInspector();
 
             if (stripSlashesAndDots) 
@@ -70,6 +72,12 @@ namespace QuizCanners.Inspect
             return Select(ref current, tmp);
         }
 
+        public static ChangesToken Select(this TextLabel text, ref int value, List<int> list)
+        {
+            Write(text);
+            return Select(ref value, list);
+        }
+
         internal static ChangesToken Select(ref int value, List<int> list) => Select(ref value, list.ToArray());
 
         public static ChangesToken Select(this TextLabel text, ref int value, int minInclusive, int maxInclusive)
@@ -96,7 +104,7 @@ namespace QuizCanners.Inspect
             return ChangesToken.False;
         }
 
-        public static ChangesToken Select(ref int val, int[] arr, bool showIndex = false, bool stripSlashes = false, bool dotsToSlashes = true)
+        public static ChangesToken Select(ref int val, int[] arr, bool showIndex = false, bool showValue = true, bool stripSlashes = false, bool dotsToSlashes = true)
         {
             CheckLine();
 
@@ -207,7 +215,7 @@ namespace QuizCanners.Inspect
             {
                 if (!isFoldedOut)
                 {
-                    if (display.ConstL().ClickLabel() | Icon.Search.Click())
+                    if ((display.IsNullOrEmpty() ? "NONE SELECTED" : display).ConstL().ClickLabel() | Icon.Search.Click())
                         FoldoutManager.FoldOutNow();
                 }
                 else
@@ -289,9 +297,9 @@ namespace QuizCanners.Inspect
         }
 
 
-        public static ChangesToken Select_Deprecated(ref int no, string[] from, int width = -1)
+        public static ChangesToken Select_Deprecated(ref int no, string[] from, int width = -1, bool forceDefalt = false)
         {
-            var needSearch = from.Length > SEARCH_SELECTIONTHOLD;
+            var needSearch = !forceDefalt && from.Length > SEARCH_SELECTIONTHOLD;
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI && !needSearch)
@@ -308,7 +316,7 @@ namespace QuizCanners.Inspect
             if (!PaintingGameViewUI)
                 " ".PL(10).Write();
 
-            from.TryGet(no, hint.F(no)).ConstL().IsFoldout();
+            from.TryGet(no, defaultValue: hint.F(no)).ConstL().IsFoldout().Nl();
 
             if (FoldoutManager.isFoldedOutOrEntered)
             {
@@ -322,27 +330,31 @@ namespace QuizCanners.Inspect
 
                 int maxCount = Mathf.Min(SEARCH_SELECTIONTHOLD + 4, from.Length);
 
-                int shownIndex = 0;
-                for (var i = 0; i < from.Length; i++)
+                using (Indent(3))
                 {
-                    if (i == no)
-                    {
-                        "[{0}]".F(from[i]).PL().ClickUnFocus().Nl();
-                        continue;
-                    }
 
-                    if (!searching || tmpSelectSearch.IsSubstringOf(from[i]))
+                    int shownIndex = 0;
+                    for (var i = 0; i < from.Length; i++)
                     {
-                        shownIndex++;
-
-                        if (from[i].PL().ClickUnFocus().Nl())
+                        if (i == no)
                         {
-                            no = i;
-                            return ChangesToken.True;
+                            "[{0}]".F(from[i]).PL().ClickUnFocus().Nl();
+                            continue;
                         }
 
-                        if (shownIndex >= maxCount)
-                            break;
+                        if (!searching || tmpSelectSearch.IsSubstringOf(from[i]))
+                        {
+                            shownIndex++;
+
+                            if (from[i].PL().ClickUnFocus().Nl())
+                            {
+                                no = i;
+                                return ChangesToken.True;
+                            }
+
+                            if (shownIndex >= maxCount)
+                                break;
+                        }
                     }
                 }
             }
@@ -522,14 +534,14 @@ namespace QuizCanners.Inspect
 
         #region Select Generic
 
-        public static ChangesToken Select<T>(this TextLabel text, ref T value, List<T> list, bool showIndex = false, bool stripSlashes = false, bool allowInsert = true)
+        public static ChangesToken Select<T>(this TextLabel text, ref T value, List<T> list, bool showIndex = false, bool stripSlashes = false, bool allowInsert = false)
         {
             text.FallbackWidthFraction = 0.25f;
              Write(text);
             return Select(ref value, list, showIndex, stripSlashes, allowInsert);
         }
 
-        public static ChangesToken Select<T>(ref T val, List<T> lst, bool showIndex = false, bool stripSlashes = false, bool allowInsert = true, bool dotsToSlashes = false)
+        public static ChangesToken Select<T>(ref T val, List<T> lst, bool showIndex = false, bool stripSlashes = false, bool allowInsert = false, bool dotsToSlashes = false)
         {
             var changed = ChangeTrackStart();
 
@@ -580,7 +592,7 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken Select_SameClass<T, G>(ref T val, List<G> lst, bool showIndex = false, bool allowInsert = true) where T : class where G : class
+        public static ChangesToken Select_SameClass<T, G>(ref T val, List<G> lst, bool showIndex = false, bool allowInsert = false) where T : class where G : class
         {
             var changed = ChangeTrackStart();
             var same = typeof(T) == typeof(G);
@@ -742,6 +754,40 @@ namespace QuizCanners.Inspect
             if (selectFinal_InternalDeprecated(val, ref current, names))
             {
                 val = indexes[current];
+                return ChangesToken.True;
+            }
+
+            return ChangesToken.False;
+        }
+
+        public static ChangesToken Select<T>(this TextLabel text, ref string val, List<T> lst, System.Func<T, string> valueGetter, bool showValue = true) 
+        {
+            Write(text);
+            return Select(ref val, lst, valueGetter: valueGetter, showValue: showValue);
+        }
+
+        public static ChangesToken Select<T>(ref string val, List<T> lst, System.Func<T, string> valueGetter, bool showValue = true)
+        {
+            CheckLine();
+
+            var names = new List<string>(lst.Count + 1);
+            var keys = new List<string>(lst.Count + 1);
+
+            var current = -1;
+
+            for (var j = 0; j < lst.Count; j++)
+            {
+                var tmp = lst[j];
+                var key = valueGetter(tmp);
+                if (key.Equals(val))
+                    current = j;
+                keys.Add(key);
+                names.Add(showValue ? "{0} : {1}".F(tmp.ToString(), keys[j]) : tmp.ToString());
+            }
+
+            if (selectFinal_InternalDeprecated(val, ref current, names))
+            {
+                val = keys[current];
                 return ChangesToken.True;
             }
 
@@ -915,10 +961,10 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken Select<TKey, TValue>(this TextLabel text, ref TKey key, Dictionary<TKey, TValue> from, bool showIndex = false)
+        public static ChangesToken Select<TKey, TValue>(this TextLabel text, ref TKey key, Dictionary<TKey, TValue> from, bool showIndex = false, bool showValue = true)
         {
             Write(text);
-            return Select(ref key, from, showIndex: showIndex);
+            return Select(ref key, from, showIndex: showIndex, showValue: showValue);
         }
 
         public static ChangesToken Select<TKey, TValue>(this TextLabel text, ref TValue value, Dictionary<TKey, TValue> from, bool showIndex = false)
@@ -1101,7 +1147,7 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static ChangesToken Select<TKey, TValue>(ref TKey currentKey, Dictionary<TKey, TValue> from, bool showIndex = false, 
+        public static ChangesToken Select<TKey, TValue>(ref TKey currentKey, Dictionary<TKey, TValue> from, bool showIndex = false, bool showValue = true,
             List<TKey> exclude = null, System.Func<KeyValuePair<TKey,TValue>, bool> optionValidator = null, System.Func<TValue, string> nameGenerator = null)
         {
             CheckLine();
@@ -1221,17 +1267,24 @@ namespace QuizCanners.Inspect
                     if (nameGenerator!= null) 
                     {
                         namesList.Add(nameGenerator(pair.Value));
+                        return;
                     }
-
-                    var valueName = pair.Value.GetNameForInspector();
 
                     if (!showIndex)
                     {
-                        namesList.Add(valueName);
+                        namesList.Add(pair.Value.GetNameForInspector());
                         return;
                     }
 
                     string entryKey = pair.Key.ToString();
+
+                    if (!showValue)
+                    {
+                        namesList.Add(entryKey);
+                        return;
+                    }
+
+                    var valueName = pair.Value.GetNameForInspector();
 
                     if (valueName.IndexOf(entryKey, System.StringComparison.CurrentCultureIgnoreCase) >= 0) //Contains(entryKey, System.StringComparison.CurrentCultureIgnoreCase))
                         namesList.Add(valueName);
@@ -1276,7 +1329,7 @@ namespace QuizCanners.Inspect
 
         }
 
-        public static ChangesToken Select_or_edit<T>(this TextLabel text, ref T obj, List<T> list, bool showIndex = false, bool stripSlahes = false, bool allowInsert = true) where T : Object
+        public static ChangesToken Select_or_edit<T>(this TextLabel text, ref T obj, List<T> list, bool showIndex = false, bool stripSlahes = false, bool allowInsert = false) where T : Object
         {
             if (list.IsNullOrEmpty())
             {
@@ -1303,7 +1356,7 @@ namespace QuizCanners.Inspect
             => Select_or_edit(new TextLabel(), ref obj, list, showIndex);
 
   
-        public static ChangesToken Select_or_edit(ref string val, List<string> list, bool showIndex = false, bool stripSlashes = true, bool allowInsert = true)
+        public static ChangesToken Select_or_edit(ref string val, List<string> list, bool showIndex = false, bool stripSlashes = true, bool allowInsert = false)
         {
             var changed = ChangeTrackStart();
 

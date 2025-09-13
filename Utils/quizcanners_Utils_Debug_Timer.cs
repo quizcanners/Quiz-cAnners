@@ -1,4 +1,3 @@
-using JetBrains.Annotations;
 using QuizCanners.Inspect;
 using System;
 using System.Collections.Generic;
@@ -109,6 +108,7 @@ namespace QuizCanners.Utils
                 protected readonly Stopwatch StopWatch = new();
                 protected string _timerStartLabel;
                 public float LogTreshold;
+                public bool IsFinished;
 
                 public Timer SetLogTreshold(float logTreshold)
                 {
@@ -126,7 +126,7 @@ namespace QuizCanners.Utils
                 public string End(string label = null, bool logInEditor = true, bool logInPlayer = false)
                 {
                     StopWatch.Stop();
-
+                    IsFinished = true;
                     label ??= _timerStartLabel;
 
                     _timerStartLabel = null;
@@ -398,20 +398,20 @@ namespace QuizCanners.Utils
 
                 public void Clear()
                 {
-                    _timings = null;
-                    _sortedTimings = null;
+                    _timings.Clear();
+                    _sortedTimings.Clear();
                 }
 
                 #region Inspector
 
                 public override string ToString() => "Dictionary";
 
-                private bool _sortByDuration;
+                private bool _sortByDuration = true;
                 private readonly pegi.CollectionInspectorMeta _listMeta = new("Timings", allowDeleting: false, showAddButton: false, showDictionaryKey: false);
 
                 void IPEGI.Inspect()
                 {
-                    if (_timings.IsNullOrEmpty())
+                    if (_timings.Count == 0)
                     {
                         "No timings".PL().Write_Hint();
                         return;
@@ -493,6 +493,7 @@ namespace QuizCanners.Utils
                     public string Key;
                     public double OperationsCount = -1;
                     protected int totalRuns;
+                    public bool IsFinished;
 
                     protected List<Stopwatch> activeRuns = new();
 
@@ -508,7 +509,7 @@ namespace QuizCanners.Utils
 
                     public void Measure(Action actionToTime, string details = "") 
                     {
-                        var disp = Start(details);
+                        DisposableTimer disp = Start(details);
 
                         try 
                         {
@@ -539,6 +540,8 @@ namespace QuizCanners.Utils
 
                         return new DisposableTimer(this, stopWatch, ()=>
                         {
+                            this.IsFinished = true;
+
                             try
                             {
                                 OnComplete(stopWatch.ElapsedTicks, details, operationsCount);

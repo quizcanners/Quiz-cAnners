@@ -256,6 +256,14 @@ namespace QuizCanners.Utils
                 set => Shader.SetGlobalFloat(id, value);
             }
 
+
+            public void Lerp(float target, float speed, bool unscaledTime)
+            {
+                GlobalValue = QuizCanners.Lerp.QcLerp.LerpBySpeed(LatestValue, target, speed, unscaledTime: unscaledTime);
+            }
+
+            #region Inspector
+
             public override void InspectInList(ref int edited, int ind) => InspectValue();
             
             public override void Inspect()
@@ -285,6 +293,10 @@ namespace QuizCanners.Utils
                       GlobalValue = LatestValue;
               });
 
+            #endregion
+
+
+            #region Persistance
             public CfgEncoder Encode() => new CfgEncoder()
                 .Add("val", GlobalValue);
 
@@ -295,6 +307,8 @@ namespace QuizCanners.Utils
                     case "val": GlobalValue = data.ToFloat(); break;
                 }
             }
+
+            #endregion
 
             public FloatValue() {}
 
@@ -328,6 +342,12 @@ namespace QuizCanners.Utils
 
             protected override bool DirectiveEnabledForLastValue => LatestValue > float.Epsilon * 10;
 
+            public void Lerp(bool shouldBeEnabled, float speed, bool unscaledTime)
+            {
+                GlobalValue = QuizCanners.Lerp.QcLerp.LerpBySpeed(LatestValue, shouldBeEnabled ? 1 : 0, speed, unscaledTime: unscaledTime);
+            }
+            #region Inspector
+
             public override void InspectInList(ref int edited, int ind) => InspectValue();
             public override void Inspect()
             {
@@ -360,6 +380,10 @@ namespace QuizCanners.Utils
                 return changes;
             }
 
+            #endregion
+
+
+            #region Persistance
             public CfgEncoder Encode() => new CfgEncoder()
                 .Add("val", GlobalValue);
 
@@ -370,6 +394,8 @@ namespace QuizCanners.Utils
                     case "val": GlobalValue = data.ToFloat(); break;
                 }
             }
+
+            #endregion
 
             public FloatFeature(string name, string featureDirective) : base(name, featureDirective) { }
         }
@@ -509,9 +535,11 @@ namespace QuizCanners.Utils
             private void CheckColorSpace()
             {
                 _colorSpaceChecked = true;
+                ConvertToLinear = QualitySettings.activeColorSpace == ColorSpace.Linear;
+                /*
                 #if UNITY_EDITOR
                 ConvertToLinear = UnityEditor.PlayerSettings.colorSpace == ColorSpace.Linear;
-                #endif
+                #endif*/
             }
 
             public override void Inspect()
@@ -593,10 +621,43 @@ namespace QuizCanners.Utils
 
             #endregion
 
-            public void SetGlobal(float x) => SetGlobal(new Vector4(x, 0));
-            public void SetGlobal(float x, float y) => SetGlobal(new Vector4(x, y));
-            public void SetGlobal(float x, float y, float z) => SetGlobal(new Vector4(x, y, z));
+            public void SetGlobal(float x) => SetGlobal(new Vector4(x, LatestValue.y, LatestValue.z, LatestValue.w));
+            public void SetGlobal_XY(float x, float y) => SetGlobal(new Vector4(x, y, LatestValue.z, LatestValue.w));
+
+            public void SetGlobal_XY(Vector2 vec) => SetGlobal(new Vector4(vec.x, vec.y, LatestValue.z, LatestValue.w));
+
+            public void SetGlobal(float x, float y, float z) => SetGlobal(new Vector4(x, y, z, LatestValue.w));
             public void SetGlobal(float x, float y, float z, float w) => SetGlobal(new Vector4(x, y, z, w));
+
+            public float Global_X
+            {
+                get => LatestValue.x;
+                set => GlobalValue = new Vector4(value, LatestValue.y, LatestValue.z, LatestValue.w);
+            }
+
+            public float Global_Y
+            {
+                get => LatestValue.y;
+                set => GlobalValue = new Vector4(LatestValue.x, value, LatestValue.z, LatestValue.w);
+            }
+
+            public float Global_Z
+            {
+                get => LatestValue.z;
+                set => GlobalValue = new Vector4(LatestValue.x, LatestValue.y, value, LatestValue.w);
+            }
+
+            public float Global_W
+            {
+                get => LatestValue.w;
+                set => GlobalValue = new Vector4(LatestValue.x, LatestValue.y, LatestValue.z, value);
+            }
+
+            public float Global_A
+            {
+                get => LatestValue.w;
+                set => GlobalValue = new Vector4(LatestValue.x, LatestValue.y, LatestValue.z, value);
+            }
 
             public VectorValue(string name) : base(name) { }
         }
@@ -741,7 +802,7 @@ namespace QuizCanners.Utils
             #if UNITY_EDITOR
             {
                 var lst = new List<TextureValue>();
-                foreach (var n in m.GetProperties(UnityEditor.MaterialProperty.PropType.Texture))
+                foreach (var n in m.GetProperties(UnityEngine.Rendering.ShaderPropertyType.Texture))
                     lst.Add(new TextureValue(n));
 
                 return lst;

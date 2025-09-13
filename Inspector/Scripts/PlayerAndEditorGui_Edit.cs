@@ -18,11 +18,22 @@ namespace QuizCanners.Inspect
         
         private static ChangesToken SetChangedTrue_Internal() { GlobChanged = true; return ChangesToken.True; }
 
-        private static ChangesToken FeedChanges_Internal(this bool changed, LatestInteractionEvent evnt)
+        internal static ChangesToken FeedChanges_Internal(this bool changed, LatestInteractionEvent evnt)
         {
             if (changed)
             {
                 GameView.LatestEvent = evnt;
+                GlobChanged = true;
+            }
+
+            return new ChangesToken(changed);
+        }
+
+        internal static ChangesToken FeedChanges_Toggle(this ChangesToken changed, bool value) // LatestInteractionEvent evnt)
+        {
+            if (changed)
+            {
+                GameView.LatestEvent = value ? LatestInteractionEvent.ToggleOn : LatestInteractionEvent.ToggleOff;
                 GlobChanged = true;
             }
 
@@ -197,8 +208,18 @@ namespace QuizCanners.Inspect
 
             var changes = ChangeTrackStart();
 
-            "X".ConstL().Write(); Edit_Range(ref x, ref x2, min, max).Nl();
-            "Y".ConstL().Write(); Edit_Range(ref y, ref y2, min, max).Nl();
+            "X ({0}-{1})".F(x, x2).PL().Nl();
+
+            using (Indent())
+            {
+                Edit_Range(ref x, ref x2, min, max).Nl();
+            }
+
+            "Y ({0}-{1})".F(y, y2).PL().Nl();
+            using (Indent())
+            {
+                Edit_Range(ref y, ref y2, min, max).Nl();
+            }
 
             if (changes) 
             {
@@ -535,10 +556,10 @@ namespace QuizCanners.Inspect
             return Edit_Enum(ref current, width: valueWidth);
         }
 
-        public static ChangesToken Edit_Enum<T>(this TextLabel label, ref T current, System.Func<T, object> nameGetter, int valueWidth = -1)
+        public static ChangesToken Edit_Enum<T>(this TextLabel label, ref T current, System.Func<T, object> nameGetter, int valueWidth = -1, bool forceDefalt = false)
         {
             Write(label, defaultWidthFraction: 0.33f);
-            return EditEnum_Internal(ref current, typeof(T), nameGetter, width: valueWidth);
+            return EditEnum_Internal(ref current, typeof(T), nameGetter, width: valueWidth, forceDefalt: forceDefalt);
         }
 
         public static ChangesToken Edit_Enum<T>(this TextLabel text, ref T eval)
@@ -547,58 +568,46 @@ namespace QuizCanners.Inspect
             return Edit_Enum(ref eval);
         }
 
+        public static ChangesToken Edit_Enum<T>(this TextLabel text, ref T eval, List<T> excludeValues)
+        {
+          //  Write(text, defaultWidthFraction: 0.33f);
+
+            var changes = pegi.ChangeTrackStart();
+
+            List<T> toInclude = new();
+
+            foreach (T v in System.Enum.GetValues(typeof(T)))
+            {
+                if (excludeValues.Contains(v))
+                    continue;
+
+                toInclude.Add(v);
+            }//.Cast<T>());
+
+            text.Select(ref eval, toInclude);
+
+            //foreach (var val in excludeValues)
+              //  allValues.Rem
+
+            return changes;
+            //return Edit_Enum(ref eval);
+        }
+
         public static ChangesToken Edit_Enum<T>(this TextLabel label, ref int current, List<int> options)
         {
             Write(label, defaultWidthFraction: 0.33f);
             return EditEnum_Internal<T>(ref current, options);
         }
 
-        private static int ConvertEnum_Internal<T>(T eval, out System.Type type)
-        {
-            type = System.Enum.GetUnderlyingType(typeof(T));
-
-            if (type == typeof(byte))
-                return System.Convert.ToByte(eval);
-
-            if (type == typeof(int))
-                return System.Convert.ToInt32(eval);
-
-            if (type == typeof(ushort))
-                return System.Convert.ToUInt16(eval);
-
-            if (type == typeof(short))
-                return System.Convert.ToInt16(eval);
-            
-            return System.Convert.ToInt32(eval);
-        }
-
-        private static T ConvertBackToEnum_Internal<T>(int val, System.Type underType) 
-        {
-            if (underType == typeof(byte))
-                return (T)((object)(byte)val);
-
-            if (underType == typeof(int))
-                return (T)(object)val;
-
-            if (underType == typeof(ushort))
-                return (T)(object)((ushort)val);
-
-            if (underType == typeof(short))
-                return (T)((object)((short)val));
-            
-            return (T)((object)val);
-        }
-
-
         public static ChangesToken Edit_Enum<T>(ref T eval, int width = -1)
         {
             try
             {
-                int val = ConvertEnum_Internal(eval, out var underType);
+                int val = Enum_Utils.ConvertEnumToInt(eval, out var underType);
 
                 if (Edit_Enum(typeof(T), ref val, width))
                 {
-                    eval = ConvertBackToEnum_Internal<T>(val, underType);
+                    eval = Enum_Utils.ConvertIntToEnum<T>(val, underType);
                     return ChangesToken.True;
                 }
 
@@ -650,14 +659,16 @@ namespace QuizCanners.Inspect
         public static ChangesToken Edit_Enum(System.Type type, ref int currentValue, int width = -1, bool showIndex = false) 
         {
             string currentName = System.Enum.GetName(type, currentValue);
-           
+
             System.Array values = System.Enum.GetValues(type);
 
             int currentIndex = 0;
 
-            if (Select(ref currentIndex, display: currentName.ToString(), values.Length, GetArrayAndInd))
+            if (Select(ref currentIndex, display: currentName, values.Length, GetArrayAndInd))
             {
-                currentValue = ConvertToInts(System.Enum.GetUnderlyingType(type))[currentIndex];
+                //var curValue = values.GetValue(currentIndex);
+                // System.Type underType = System.Enum.GetUnderlyingType(type);
+                currentValue = Enum_Utils.ConvertEnumToInts(type)[currentIndex];//Enum_Utils.ConvertEnumToInt(curValue, type); //  values[currentIndex];
                 return ChangesToken.True;
             }
 
@@ -668,7 +679,7 @@ namespace QuizCanners.Inspect
                 elementIndex = -1;
                 names = System.Enum.GetNames(type);
 
-                var ints = ConvertToInts(System.Enum.GetUnderlyingType(type));
+                var ints = Enum_Utils.ConvertEnumToInts(type);
 
                 for (int i= 0; i < names.Length; i++) 
                 {
@@ -687,9 +698,56 @@ namespace QuizCanners.Inspect
 
                 return;
             }
+        }
 
-            int[] ConvertToInts(System.Type underType)
+        private static class Enum_Utils
+        {
+            public static int ConvertEnumToInt<T>(T eval, out System.Type type)
             {
+                type = System.Enum.GetUnderlyingType(typeof(T));
+
+                if (type == typeof(byte))
+                    return System.Convert.ToByte(eval);
+
+                if (type == typeof(int))
+                    return System.Convert.ToInt32(eval);
+
+                if (type == typeof(ushort))
+                    return System.Convert.ToUInt16(eval);
+
+                if (type == typeof(short))
+                    return System.Convert.ToInt16(eval);
+
+                return System.Convert.ToInt32(eval);
+            }
+
+            public static T ConvertIntToEnum<T>(int val) 
+            {
+                System.Type underType = System.Enum.GetUnderlyingType(typeof(T));
+                return ConvertIntToEnum<T>(val, underType);
+            }
+
+            public static T ConvertIntToEnum<T>(int val, System.Type underType)
+            {
+                if (underType == typeof(byte))
+                    return (T)((object)(byte)val);
+
+                if (underType == typeof(int))
+                    return (T)(object)val;
+
+                if (underType == typeof(ushort))
+                    return (T)(object)((ushort)val);
+
+                if (underType == typeof(short))
+                    return (T)((object)((short)val));
+
+                return (T)((object)val);
+            }
+
+            public static int[] ConvertEnumToInts(System.Type type)
+            {
+                System.Type underType = System.Enum.GetUnderlyingType(type);
+
                 System.Array valsRaw = System.Enum.GetValues(type);
 
                 if (underType == typeof(int))
@@ -706,7 +764,6 @@ namespace QuizCanners.Inspect
 
                 return (int[])valsRaw;
             }
-
         }
 
         public static ChangesToken Edit_Enum_old(System.Type type, ref int current,  int width = -1, bool showIndex = false)
@@ -716,26 +773,7 @@ namespace QuizCanners.Inspect
 
             string[] names = System.Enum.GetNames(type);
 
-            int[] integerValue = ConvertToInts(System.Enum.GetUnderlyingType(type));
-
-            int[] ConvertToInts(System.Type underType)
-            {
-                System.Array valsRaw = System.Enum.GetValues(type);
-
-                if (underType == typeof(int))
-                    return (int[])valsRaw;
-
-                if (underType == typeof(byte))
-                    return System.Array.ConvertAll((byte[])valsRaw, s => (int)s);
-
-                if (underType == typeof(ushort))
-                    return System.Array.ConvertAll((ushort[])valsRaw, s => (int)s);
-
-                if (underType == typeof(short))
-                    return System.Array.ConvertAll((short[])valsRaw, s => (int)s);
-                
-                return (int[])valsRaw;
-            }
+            int[] integerValue = Enum_Utils.ConvertEnumToInts(type);
 
             for (int i=0; i < integerValue.Length; i++)
             {
@@ -762,7 +800,7 @@ namespace QuizCanners.Inspect
         private static ChangesToken EditEnum_Internal<T>(ref int eval, List<int> options, int width = -1)
             => EditEnum_Internal(ref eval, typeof(T), options, width);
 
-        private static ChangesToken EditEnum_Internal<T>(ref T value, System.Type type, System.Func<T, object> nameGetter, int width = -1, bool showIndex = false)
+        private static ChangesToken EditEnum_Internal<T>(ref T value, System.Type type, System.Func<T, object> nameGetter, int width = -1, bool showIndex = false, bool forceDefalt = false)
         {
 
            // var current = System.Convert.ToInt32(value);
@@ -793,7 +831,7 @@ namespace QuizCanners.Inspect
                     tmpVal = i;
             }
 
-            if (!Select_Deprecated(ref tmpVal, names, width)) return ChangesToken.False;
+            if (!Select_Deprecated(ref tmpVal, names, width, forceDefalt: forceDefalt)) return ChangesToken.False;
 
             value = val[tmpVal];
             return ChangesToken.True;
@@ -839,7 +877,9 @@ namespace QuizCanners.Inspect
 
             if (Edit_EnumFlags(ref val, typeof(T), width))
             {
-                eval = (T)((object)val);
+                eval = Enum_Utils.ConvertIntToEnum<T>(val);
+                //TODO: Convert correctly here
+                //eval = (T)((object)val);
                 return ChangesToken.True;
             }
 
@@ -853,14 +893,17 @@ namespace QuizCanners.Inspect
 
             var actualType = System.Enum.GetUnderlyingType(type);
 
-            if (actualType != typeof(int)) 
+            if (actualType != typeof(int) && actualType != typeof(byte)) 
             {
-                "Inspection of {0} not implemented.".F(actualType).PL().Nl();
+                "Enum Flags Inspection of {0} not implemented.".F(actualType).PL().WriteWarning().Nl();
                 return ChangesToken.False;
             }
 
             var names = System.Enum.GetNames(type);
-            var values = (int[])System.Enum.GetValues(type);
+
+            int[] values = Enum_Utils.ConvertEnumToInts(type);
+
+           // var values = (int[])System.Enum.GetValues(type);
 
             Dictionary<int, string> sortedNames = new();
 

@@ -90,7 +90,7 @@ namespace QuizCanners.Inspect
                         Key = key,
                         TabName = name,
                         Action = action,
-                        Icon = icon.GetIcon()
+                        Icon = icon.GetIcon().texture
                     });
 
                     gotIcons = true;
@@ -315,7 +315,6 @@ namespace QuizCanners.Inspect
             TabContext.s_tabs[^1].Add(tabName, key: tabKey, inspect);
         }
 
-
         public static void AddTab(string tabName, string tabKey, Action inspect, Object objectToSetDirty)
         {
             AddTab(tabName, tabKey: tabKey, () =>
@@ -370,7 +369,7 @@ namespace QuizCanners.Inspect
             {
                 Key = tabKey,
                 TabName = tabName,
-                Icon = icon.GetIcon(),
+                Icon = icon.GetIcon().texture,
                 Action = inspectAction,
             });
         }

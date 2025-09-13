@@ -1,6 +1,7 @@
 using QuizCanners.Inspect;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -26,15 +27,15 @@ namespace QuizCanners.Utils
             get => _forceDebug || Debug.isDebugBuild;
         }
 
-        private static readonly DebugInspector _inspector = new();
+        private static readonly OtherStuffInspector _inspector = new();
 
 
-        public static void Inspect() 
+        public static void InspectOther() 
         {
             _inspector.Nested_Inspect();
         }
 
-        private class DebugInspector : IPEGI
+        private class OtherStuffInspector : IPEGI
         {
             private readonly Migration.ICfgObjectExplorer iCfgExplorer = new();
             private readonly EncodedJsonInspector jsonInspector = new();
@@ -43,6 +44,9 @@ namespace QuizCanners.Utils
             private readonly pegi.EnterExitContext _context = new(playerPrefId: "utlsDbCtx");
             private readonly pegi.EnterExitContext _testsContext = new(playerPrefId: "qcDbgTst");
             private readonly pegi.CollectionInspectorMeta _blockersMeta = new();
+
+            private string _testString;
+            private string _testRegex;
 
             void IPEGI.Inspect()
             {
@@ -112,6 +116,29 @@ namespace QuizCanners.Utils
                                 Icon.Done.Draw();
                             s.path.PL().Nl();
                         }
+                    }
+
+                    if ("Regex tests".PL().IsEntered().Nl()) 
+                    {
+                        "Text".ConstL().Edit_Big(ref _testString).Nl();
+                        "Pattern".ConstL().Edit(ref _testRegex).Nl();
+
+                        if (!_testString.IsNullOrEmpty() && !_testRegex.IsNullOrEmpty())
+                        {
+
+                            // const string pattern = @"\b\d{5}\s\d{5}\b";
+                            Regex regex = new(_testRegex);
+
+                            //MatchCollection matches = regexp.Matches(_testString);
+                            MatchCollection matches = regex.Matches(_testRegex);
+
+                            for (int i = 0; i < matches.Count; i++)
+                            {
+                                var m = matches[i];
+                                m.Value.PL().Nl();
+                            }
+                        }
+
                     }
 
                     if (_context.IsAnyEntered == false)

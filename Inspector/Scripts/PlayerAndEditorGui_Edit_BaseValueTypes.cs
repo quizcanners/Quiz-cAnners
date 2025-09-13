@@ -1,8 +1,9 @@
+using QuizCanners.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using QuizCanners.Utils;
 using UnityEngine;
+using static QuizCanners.Inspect.pegi;
 namespace QuizCanners.Inspect
 {
     public static partial class pegi
@@ -263,7 +264,7 @@ namespace QuizCanners.Inspect
         }
 
         private static int editedInteger;
-        private static int editedIntegerIndex = -1;
+
         public static ChangesToken Edit_Delayed(ref int val, int width = -1)
         {
 
@@ -273,30 +274,39 @@ namespace QuizCanners.Inspect
 
 #endif
 
-            _elementIndex++;
+            //_elementIndex++;
 
             CheckLine();
 
-            var tmp = (editedIntegerIndex == _elementIndex) ? editedInteger : val;
-
-            if (KeyCode.Return.IsDown() && (_elementIndex == editedIntegerIndex))
+            switch (Focus.IsCurrentlyFocusedElement("editInteger")) 
             {
-                Edit(ref tmp);
-                val = editedInteger;
-                editedIntegerIndex = -1;
-                return SetChangedTrue_Internal();
+                case Focus.EditState.Started:
+
+                    editedInteger = val;
+                    Edit(ref editedInteger).IgnoreChanges();
+                    return ChangesToken.False;
+
+                case Focus.EditState.IsFocused:
+
+                    Edit(ref editedInteger).IgnoreChanges();
+                    return ChangesToken.False;
+
+                case Focus.EditState.PressedEnter:
+                case Focus.EditState.Ended:
+
+                    Edit(ref editedInteger);
+                    val = editedInteger;
+                    return SetChangedTrue_Internal();
+
+                default:
+
+                    var tmp = val;
+                    if (Edit(ref tmp).IgnoreChanges())
+                    {
+                        editedInteger = tmp;
+                    };
+                    return ChangesToken.False;
             }
-
-            if (Edit(ref tmp).IgnoreChanges())
-            {
-                editedInteger = tmp;
-                editedIntegerIndex = _elementIndex;
-            }
-
-          
-
-            return ChangesToken.False;
-
         }
 
         public static ChangesToken Edit_Delayed(this TextLabel label, ref int val)
@@ -502,6 +512,17 @@ namespace QuizCanners.Inspect
             if (!PaintingGameViewUI)
                 return PegiEditorOnly.Edit(ref val, width);
 #endif
+            /*
+            _START();
+            var tmp = val.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var newOne = GUILayout.TextField(tmp, GUILayout.MaxWidth(250));
+
+            if (!newOne.Equals(tmp)) 
+            { 
+            }
+
+            return _END();*/
+
 
             return Edit_Delayed(ref val, width);
             /* _START();
@@ -568,10 +589,10 @@ namespace QuizCanners.Inspect
                 return PegiEditorOnly.Edit_Delayed(ref val, width);
 #endif
 
-            return Edit_Delayed(ref val);
+            return Edit_Delayed(ref val, updateWhenParced: true);
         }
 
-        public static ChangesToken Edit_Delayed(ref float val)
+        public static ChangesToken Edit_Delayed(ref float val, bool updateWhenParced = false)
         {
 
 #if UNITY_EDITOR
@@ -579,13 +600,69 @@ namespace QuizCanners.Inspect
                 return PegiEditorOnly.Edit_Delayed(ref val);
 #endif
 
-            _elementIndex++;
 
+
+            //  _elementIndex++;
+            var tmp = val.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+
+            if (Edit_Delayed(ref tmp)) 
+            {
+                tmp = QcSharp.FixDecimalSeparator(tmp);
+
+                if (float.TryParse(tmp, out float newValue))
+                    val = newValue;
+
+                return ChangesToken.True;
+            }
+
+            return ChangesToken.False;
+            /*
             CheckLine();
 
-            var tmp = (editedFloatIndex == _elementIndex) ? editedFloat : val.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            switch (Focus.IsCurrentlyFocusedElement("editFloat"))
+            {
+                case Focus.EditState.JustFocused:
 
-            if (KeyCode.Return.IsDown() && (_elementIndex == editedFloatIndex))
+                    editedFloat = val.ToString();
+                    Edit(ref editedFloat).IgnoreChanges();
+                    return ChangesToken.False;
+
+                case Focus.EditState.IsFocused:
+
+                    Edit(ref editedFloat).IgnoreChanges();
+                    return ChangesToken.False;
+
+                case Focus.EditState.JustLostFocus:
+
+                    Edit(ref editedFloat);
+                    val = editedFloat;
+                    return SetChangedTrue_Internal();
+
+                default:
+
+                    var tmp = editedFloat;
+                    if (Edit(ref tmp).IgnoreChanges())
+                    {
+                        editedFloat = tmp;
+                    }
+                    ;
+                    return ChangesToken.False;
+            }
+            */
+
+            /*
+            CheckLine();
+
+            bool focused = Focus.IsCurrentlyFocusedElement("editFloat", out var finishedEditing);
+
+
+            var tmp = focused ? editedFloat : val.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+          //  var controlName = "Float " + _elementIndex;
+          //  GUI.SetNextControlName(controlName);
+
+            if (finishedEditing)
             {
                 Edit(ref tmp);
 
@@ -594,24 +671,25 @@ namespace QuizCanners.Inspect
                 if (float.TryParse(editedFloat, out float newValue))
                     val = newValue;
 
-                editedFloatIndex = -1;
+               // editedElementIndex = -1;
 
                 return SetChangedTrue_Internal();
             }
 
             if (Edit(ref tmp).IgnoreChanges())
             {
-                editedFloat = tmp;
-                editedFloatIndex = _elementIndex;
+                if (updateWhenParced && float.TryParse(tmp, out float tmpVal))
+                    val = tmpVal;
+
+               editedFloat = tmp;
+               // editedElementIndex = _elementIndex;
             }
 
-          
-
-            return ChangesToken.False;
+            return ChangesToken.False;*/
         }
 
-        private static string editedFloat;
-        private static int editedFloatIndex = -1;
+      //  private static string editedFloat;
+      
 
        /* public static ChangesToken edit(this PegiText label, ref float val)
         {
@@ -780,17 +858,36 @@ namespace QuizCanners.Inspect
                 return PegiEditorOnly.Edit_Delayed(ref val);
 #endif
 
-            _elementIndex++;
+            //  _elementIndex++;
+            var tmp = val.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
+
+            if (Edit_Delayed(ref tmp))
+            {
+                tmp = QcSharp.FixDecimalSeparator(tmp);
+
+                if (float.TryParse(tmp, out float newValue))
+                    val = newValue;
+
+                return ChangesToken.True;
+            }
+
+            return ChangesToken.False;
+
+            //  _elementIndex++;
+
+            /*
             CheckLine();
+
+            bool focused = Focus.IsCurrentlyFocusedElement("editDouble", out var finishedEditing);
 
             var curVal = val.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-            bool isCurrent = (_elementIndex == editedDoubleIndex);
+         //   bool isCurrent = (_elementIndex == editedDoubleIndex);
 
-            var tmp = isCurrent ? editedDouble : curVal;
+            var tmp = focused ? editedDouble : curVal;
 
-            if (KeyCode.Return.IsDown() && isCurrent)
+            if (finishedEditing)
             {
                 Edit(ref tmp);
 
@@ -801,10 +898,10 @@ namespace QuizCanners.Inspect
             if (Edit(ref tmp).IgnoreChanges())
             {
                 editedDouble = tmp;
-                editedDoubleIndex = _elementIndex;
+                //editedDoubleIndex = _elementIndex;
             }
 
-            if (isCurrent && editedDouble != curVal && Icon.Done.Click())
+            if (focused && editedDouble != curVal && Icon.Done.Click())
             {
                 SetValue(ref val);
                 return SetChangedTrue_Internal();
@@ -817,14 +914,14 @@ namespace QuizCanners.Inspect
                 if (double.TryParse(editedDouble, out double newValue))
                     value = newValue;
 
-                editedDoubleIndex = -1;
+              //  editedDoubleIndex = -1;
             }
 
-            return ChangesToken.False;
+            return ChangesToken.False;*/
         }
 
         private static string editedDouble;
-        private static int editedDoubleIndex = -1;
+      //  private static int editedDoubleIndex = -1;
 
         public static ChangesToken Edit(ref double val)
         {
@@ -876,7 +973,7 @@ namespace QuizCanners.Inspect
         #region String
 
         private static string editedText;
-        private static string editedHash = "";
+      //  private static string editedHash = "";
         public static ChangesToken Edit_Delayed(ref string val)
         {
             if (LengthIsTooLong(ref val)) 
@@ -889,13 +986,57 @@ namespace QuizCanners.Inspect
                 return PegiEditorOnly.Edit_Delayed(ref val);
 #endif
 
+
             CheckLine();
 
-            if ((KeyCode.Return.IsDown() && (val.GetHashCode().ToString() == editedHash)))
+            switch (Focus.IsCurrentlyFocusedElement("editStringNW"))
             {
-                GUILayout.TextField(val, Utils.GuiMaxWidthOption);
+                case Focus.EditState.Started:
+
+                    editedText = val;
+                    Edit(ref editedText).IgnoreChanges();
+                    return ChangesToken.False;
+
+                case Focus.EditState.IsFocused:
+
+                    Edit(ref editedText).IgnoreChanges();
+                    return ChangesToken.False;
+
+                case Focus.EditState.PressedEnter:
+                case Focus.EditState.Ended:
+
+                    Edit(ref editedText);
+                    val = editedText;
+                    return SetChangedTrue_Internal();
+
+                default:
+
+                    var tmp = val;
+                    if (Edit(ref tmp).IgnoreChanges())
+                    {
+                        editedText = tmp;
+                    }
+                    ;
+                    return ChangesToken.False;
+            }
+
+            /*
+            CheckLine();
+
+
+            bool focused = Focus.IsCurrentlyFocusedElement("editString", out var finishedEditing);
+
+        //    GUI.SetNextControlName("DelEditStr " + _elementIndex);
+
+         //   _elementIndex++;
+
+            if (finishedEditing)
+            {
+                GUILayout.TextField(editedText, Utils.GuiMaxWidthOption);
                 val = editedText;
-                editedHash = "dummy";
+               // editedHash = "dummy";
+
+             //   Debug.Log("Finished editing ");
 
                 return SetChangedTrue_Internal();
             }
@@ -904,11 +1045,10 @@ namespace QuizCanners.Inspect
             if (Edit(ref tmp).IgnoreChanges())
             {
                 editedText = tmp;
-                editedHash = val.GetHashCode().ToString();
+               // editedHash = val.GetHashCode().ToString();
             }
 
-            return ChangesToken.False;
-
+            return ChangesToken.False;*/
         }
 
         public static ChangesToken Edit_Delayed(this TextLabel label, ref string val)
@@ -937,6 +1077,41 @@ namespace QuizCanners.Inspect
 
             CheckLine();
 
+            switch (Focus.IsCurrentlyFocusedElement("editString"))
+            {
+                case Focus.EditState.Started:
+
+                    editedText = val;
+                    Edit(ref editedText).IgnoreChanges();
+                    return ChangesToken.False;
+
+                case Focus.EditState.IsFocused:
+
+                    Edit(ref editedText).IgnoreChanges();
+                    return ChangesToken.False;
+
+                case Focus.EditState.PressedEnter:
+                case Focus.EditState.Ended:
+
+                    Edit(ref editedText);
+                    val = editedText;
+                    return SetChangedTrue_Internal();
+
+                default:
+
+                    var tmp = val;
+                    if (Edit(ref tmp).IgnoreChanges())
+                    {
+                        editedText = tmp;
+                    }
+                    ;
+                    return ChangesToken.False;
+            }
+
+
+            /*
+            CheckLine();
+
             if ((KeyCode.Return.IsDown() && (val.GetHashCode().ToString() == editedHash)))
             {
                 GUILayout.TextField(val, Utils.GuiMaxWidthOption);
@@ -951,7 +1126,7 @@ namespace QuizCanners.Inspect
                 editedHash = val.GetHashCode().ToString();
             }
 
-            return ChangesToken.False;
+            return ChangesToken.False;*/
 
         }
 

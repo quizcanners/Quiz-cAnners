@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using QuizCanners.Inspect;
 using QuizCanners.Utils;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,12 +14,273 @@ namespace QuizCanners.Lerp
     {
         const MethodImplOptions INLINE = MethodImplOptions.AggressiveInlining;
 
+        public static class SmoothState
+        {
+            public abstract class Generic<T> : IPEGI
+            {
+                protected T _previousSpeed;
+                private T _speed;
+
+                protected T _from;
+                private T _target;
+
+                public T Target => _target;
+
+                protected float _totalDistance;
+
+                protected float _totalTime;
+                protected float _currentTime;
+                protected float _fraction01;
+
+              //  protected virtual bool IsNotInitialized(T val) => val.Equals(default(T));
+
+                public bool IsLerping { get; private set; }
+
+                private readonly Gate.Frame _updateFrame = new(Gate.InitialValue.StartArmed);
+
+                public void UpdateTargetContinious(T newTarget) 
+                {
+                    _target = newTarget;
+                    IsLerping = true;
+                }
+
+                public virtual void Inspect() => "Time: {0}/{1}".F(_currentTime, _totalTime).PL().Nl();
+                
+                protected abstract float GetDistance(T from, T to);
+
+                protected abstract void ActualLerp(ref T value, T target, T inertion, float fraction01, out T speed);
+                protected abstract T Multiply(T speed, float value);
+
+                public T SkipToFinish() 
+                {
+                    if (!IsLerping)
+                        return _target;
+
+                    IsLerping = false;
+                    _speed = default;
+                    return _target;
+                }
+
+                public virtual T Update(ref T value)
+                {
+                    if (!IsLerping)
+                    {
+                        return value;
+                    }
+
+                    if (!_updateFrame.TryEnter())
+                        return value;
+
+                    _currentTime += Time.deltaTime;
+
+                    var rawfraction01 = Mathf.Clamp01(_currentTime / _totalTime);
+
+                    if (Mathf.Approximately(rawfraction01, 1))
+                    {
+                        IsLerping = false;
+                        _speed = default;
+                        value = _target;
+                        return value;
+                    }
+
+                    _fraction01 = Mathf.SmoothStep(0, 1, Mathf.SmoothStep(0, 1, rawfraction01));
+                    T inertion = Multiply(_previousSpeed, _currentTime * (1 - rawfraction01));
+                    ActualLerp(ref value, target: _target, inertion, _fraction01, out _speed);
+
+                    return value;
+                }
+
+                public float GetHill() =>(0.5f - Mathf.Abs(_fraction01 - 0.5f));
+
+                protected virtual void Reset(T from, T to) 
+                {
+                    _from = from;
+                    _target = to;
+                    _currentTime = 0;
+
+                    if (_updateFrame.TryEnterIfFramesPassed(2))
+                        _speed = default;
+
+                    _previousSpeed = _speed;
+
+                    _totalDistance = GetDistance(to, from);
+                    IsLerping = _totalDistance > 0;
+                }
+
+                public void SetLerpByTime(ref T from, T to, float timeToReach)
+                {
+                    Reset(from, to);
+                    _totalTime = timeToReach;
+                    Update(ref from);
+                }
+
+                public void SetLerpBySpeed(ref T from, T to, float speed)
+                {
+                    Reset(from, to);
+                    if (IsLerping)
+                        _totalTime = _totalDistance / speed;
+                    else
+                        _totalTime = 0;
+                    Update(ref from);
+                }
+            }
+
+            public class Float : Generic<float>
+            {
+                protected override float Multiply(float speed, float value) => speed * value;
+                
+                protected override void ActualLerp(ref float value, float target, float inertion, float fraction01, out float speed)
+                {
+                    var prevValue = value;
+                    value = Mathf.Lerp(_from, target, fraction01) + inertion;
+                    speed = (value - prevValue) / Time.deltaTime;
+                }
+
+                protected override float GetDistance(float from, float to) => Math.Abs(to - from);
+            }
+
+            public class Vector2Value : Generic<Vector2>
+            {
+                protected override Vector2 Multiply(Vector2 speed, float value) => speed * value;
+
+                protected override void ActualLerp(ref Vector2 value, Vector2 target, Vector2 inertion, float fraction01, out Vector2 speed)
+                {
+                    var prevValue = value;
+                    value = Vector2.Lerp(_from , target, fraction01) + inertion;
+                    speed = (value - prevValue) / Time.deltaTime;
+                }
+
+                protected override float GetDistance(Vector2 from, Vector2 to) => Vector2.Distance(to, from);
+            }
+
+            public class Vector3Value : Generic<Vector3>
+            {
+                protected override Vector3 Multiply(Vector3 speed, float value) => speed * value;
+
+                protected override void ActualLerp(ref Vector3 value, Vector3 target, Vector3 inertion, float fraction01, out Vector3 speed)
+                {
+                    var prevValue = value;
+                    value = Vector3.Lerp(_from, target, fraction01) + inertion;
+                    speed = (value - prevValue) / Time.deltaTime;
+                }
+
+                protected override float GetDistance(Vector3 from, Vector3 to) => Vector3.Distance(to, from);
+            }
+
+            public class QuaternionValue : Generic<Quaternion>
+            {
+                public bool UseIntermediate;
+                public Quaternion IntermediateValue;
+
+                public void SetIntermediateValue(Quaternion quat) 
+                {
+                    UseIntermediate = true;
+                    IntermediateValue = quat;
+                }
+
+                protected override void Reset(Quaternion from, Quaternion to)
+                {
+                    UseIntermediate = false;
+                    base.Reset(from, to);
+                }
+
+                protected override Quaternion Multiply(Quaternion speed, float value) => Quaternion.Slerp(Quaternion.identity, speed, value);// speed * value;
+
+                protected override void ActualLerp(ref Quaternion value, Quaternion target, Quaternion inertion, float fraction01, out Quaternion speed)
+                {
+                    var prevValue = value;
+                    value = Quaternion.Lerp(_from, target, fraction01);
+                    value *= inertion;
+
+                    if (UseIntermediate)
+                        value = Quaternion.Lerp(value, IntermediateValue, GetHill());
+
+                    speed = Multiply(Quaternion.Inverse(prevValue) * value, 1f / Time.deltaTime);
+                }
+
+                protected override float GetDistance(Quaternion from, Quaternion to) => 2 * Mathf.Acos(Mathf.Clamp(Quaternion.Dot(from, to), -1.0f, 1.0f));
+            }
+
+        }
+
         #region Float
+
+        /*
+        public class SmoothLerpState 
+        {
+            private float _previousSpeed;
+            private float _from;
+            private float _target;
+
+            private float _totalDistance;
+            private float _speed;
+            float _totalTime;
+            float _currentTime;
+
+            bool _enabled;
+
+            private readonly Gate.Frame _updateFrame = new(Gate.InitialValue.StartArmed);
+
+            public void Update(ref float value) 
+            {
+                if (!_enabled)
+                    return;
+
+                if (!_updateFrame.TryEnter())
+                    return;
+
+                _currentTime += Time.deltaTime;
+
+                float previousInertion = _previousSpeed * _currentTime;
+
+                float rawfraction01 = Mathf.Clamp01(_currentTime / _totalTime);
+
+                if (Mathf.Approximately(rawfraction01, 1))
+                {
+                    _enabled = false;
+                    _speed = 0;
+                    value = _target;
+                }
+                else
+                {
+                    float fraction01 = Mathf.SmoothStep(0, 1, Mathf.SmoothStep(0, 1, rawfraction01));
+                    float inertion = Mathf.Lerp(previousInertion, 0, 1f - Mathf.Pow(1 - rawfraction01, 3));
+                    var prevValue = value;
+                    value = Mathf.Lerp(_from + inertion, _target, fraction01);
+                    _speed = (value - prevValue) / Time.deltaTime;
+                }
+            }
+
+            public void SetLerpTarget(ref float from, float to, float timeToReach) 
+            {
+                _from = from;
+                _target = to;
+                _totalDistance = Mathf.Abs(to - from);
+                _enabled = _totalDistance > 0;
+
+                _totalTime = timeToReach;
+                _currentTime = 0;
+                _previousSpeed = _speed;
+
+                Update(ref from);
+            }
+        }
+
+        public static bool IsSmoothLerp(ref float from, float to, float duration, bool unscaledTime, float precision = 0.01f)
+        {
+            var deltaTime = GetDeltaTime(unscaledTime);
+
+            float fraction = 1f - Mathf.Pow(precision, deltaTime / duration);
+
+            from = Mathf.Lerp(from, to, fraction);
+
+            return fraction > 0.999f;
+        }*/
 
         [MethodImpl(INLINE)]
         public static float ExpLerp(float from, float to, float portion) => Mathf.Pow(from, 1 - portion) * Mathf.Pow(to, portion);
         
-        private static float GetTime(bool unscaledTime) => unscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+        private static float GetDeltaTime(bool unscaledTime) => unscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
 
         private static float SpeedToPortion(float speed, float dist, bool unscaledTime)
         {
@@ -27,7 +289,7 @@ namespace QuizCanners.Lerp
 
             dist = Mathf.Abs(dist);
 
-            var time = GetTime(unscaledTime);
+            var time = GetDeltaTime(unscaledTime);
 
             float portion = Mathf.Clamp01(speed * time / dist);
 
@@ -76,13 +338,20 @@ namespace QuizCanners.Lerp
 
         public static bool IsLerpingBySpeed(ref float from, float to, float speed, bool unscaledTime)
         {
-            if (Mathf.Approximately(from, to))
+            if (from == to)
                 return false;
 
             from = Mathf.LerpUnclamped(from, to, SpeedToPortion(speed, Mathf.Abs(from - to), unscaledTime: unscaledTime));
+            
             return true;
         }
 
+        public static float LerpRadianBySpeed(float v1, float v2, float speed, bool unscaledTime)
+        {
+            float dist = Mathf.DeltaAngle(v1, v2);
+            float portion = SpeedToPortion(speed: speed, dist: dist, unscaledTime: unscaledTime);
+            return Mathf.LerpAngle(v1, v2, portion);
+        }
         public static float LerpBySpeed_Scaled(float from, float to, float speed)
             => Mathf.LerpUnclamped(from, to, SpeedToPortion_Scaled(speed, Mathf.Abs(from - to)));
 
@@ -107,7 +376,7 @@ namespace QuizCanners.Lerp
 
         public static bool IsLerpingBySpeed(ref double from, double to, double speed, bool unscaledTime)
         {
-            if (System.Math.Abs(from - to) < double.Epsilon * 10)
+            if (from == to) //System.Math.Abs(from - to) < double.Epsilon * 10)
             {
                 return false;
             }
@@ -116,20 +385,20 @@ namespace QuizCanners.Lerp
 
             double dist = System.Math.Abs(diff);
 
-            from += diff * QcMath.Clamp01(speed * GetTime(unscaledTime) / dist);
+            from += diff * QcMath.Clamp01(speed * GetDeltaTime(unscaledTime) / dist);
             return true;
         }
 
         public static double LerpBySpeed(double from, double to, double speed, bool unscaledTime)
         {
-            if (System.Math.Abs(from - to) < double.Epsilon * 10)
+            if ( from == to)
                 return from;
 
             double diff = to - from;
 
             double dist = System.Math.Abs(diff);
 
-            return from + diff * QcMath.Clamp01(speed * GetTime(unscaledTime) / dist);
+            return from + diff * QcMath.Clamp01(speed * GetDeltaTime(unscaledTime) / dist);
         }
 
         #endregion
@@ -306,20 +575,32 @@ namespace QuizCanners.Lerp
 
         #region Components
 
-        public static bool IsLerpingAlphaBySpeed(this CanvasGroup grp, float alpha, float speed)
+        public static bool IsLerpingAlphaBySpeed(this CanvasGroup grp, float alpha, float speed = 4, bool controlRaycasts = true, bool disableGameObject = false)
         {
             if (!grp) 
                 return false;
 
             var current = grp.alpha;
 
+            bool isLerping = false;
+
             if (IsLerpingBySpeed(ref current, alpha, speed, unscaledTime: true))
             {
                 grp.alpha = current;
-                return true;
+                isLerping = true;
             }
 
-            return false;
+            if (disableGameObject)
+                grp.gameObject.SetActive(alpha > 0);
+
+            if (controlRaycasts) 
+            {
+                bool rc = alpha > 0.25f;
+                grp.interactable = rc;
+                grp.blocksRaycasts = rc;
+            }
+
+            return isLerping;
         }
 
         public static bool IsLerpingAlphaBySpeed<T>(this List<T> graphicList, float alpha, float speed) where T : Graphic
@@ -335,7 +616,7 @@ namespace QuizCanners.Lerp
             return changing;
         }
 
-        public static bool IsLerpingAlphaBySpeed<T>(this T img, float alpha, float speed) where T : Graphic
+        public static bool IsLerpingAlphaBySpeed<T>(this T img, float alpha, float speed = 4) where T : Graphic
         {
             if (!img) return false;
 
@@ -364,6 +645,18 @@ namespace QuizCanners.Lerp
             return changing;
         }
 
+        public static bool IsLerpingColorBySpeed<T>(this List<T> graphicList, Color target, float speed) where T : Graphic
+        {
+            bool changing = false;
+
+            if (graphicList.IsNullOrEmpty()) return false;
+
+            foreach (var i in graphicList)
+                changing |= i.IsLerpingRgbBySpeed(target, speed);
+
+            return changing;
+        }
+
         public static bool IsLerpingBySpeed_Volume(this AudioSource src, float target, float speed)
         {
             if (!src)
@@ -382,14 +675,14 @@ namespace QuizCanners.Lerp
 
         #endregion
 
-        public static void Update(this LerpData ld, ILinkedLerping target, bool canSkipLerp)
+        public static void Update(this LerpContext ld, ILinkedLerping target, bool canSkipLerp)
         {
             ld.Reset();
             target.Portion(ld);
             target.Lerp(ld, canSkipLerp: canSkipLerp);
         }
 
-        public static void SkipLerp<T>(this T obj, LerpData ld) where T : ILinkedLerping
+        public static void SkipLerp<T>(this T obj, LerpContext ld) where T : ILinkedLerping
         {
             ld.Reset();
             obj.Portion(ld);
@@ -399,13 +692,13 @@ namespace QuizCanners.Lerp
 
         public static void SkipLerp<T>(this T obj) where T : ILinkedLerping
         {
-            var ld = new LerpData(unscaledTime: true);
+            var ld = new LerpContext(unscaledTime: true);
             obj.Portion(ld);
             ld.MinPortion = 1;
             obj.Lerp(ld, true);
         }
 
-        public static void Portion<T>(this T[] list, LerpData ld) where T : ILinkedLerping
+        public static void Portion<T>(this T[] list, LerpContext ld) where T : ILinkedLerping
         {
 
             if (typeof(Object).IsAssignableFrom(typeof(T)))
@@ -425,7 +718,7 @@ namespace QuizCanners.Lerp
                 }
         }
 
-        public static void Portion<T>(this List<T> list, LerpData ld) where T : ILinkedLerping
+        public static void Portion<T>(this List<T> list, LerpContext ld) where T : ILinkedLerping
         {
 
             if (typeof(Object).IsAssignableFrom(typeof(T)))
@@ -446,7 +739,7 @@ namespace QuizCanners.Lerp
 
         }
 
-        public static void Lerp<T>(this T[] array, LerpData ld, bool canSkipLerp = false) where T : ILinkedLerping
+        public static void Lerp<T>(this T[] array, LerpContext ld, bool canSkipLerp = false) where T : ILinkedLerping
         {
 
             if (typeof(Object).IsAssignableFrom(typeof(T)))
@@ -466,7 +759,7 @@ namespace QuizCanners.Lerp
                 }
         }
 
-        public static void Lerp<T>(this List<T> list, LerpData ld, bool canSkipLerp = false) where T : ILinkedLerping
+        public static void Lerp<T>(this List<T> list, LerpContext ld, bool canSkipLerp = false) where T : ILinkedLerping
         {
 
             if (typeof(Object).IsAssignableFrom(typeof(T)))
@@ -491,6 +784,12 @@ namespace QuizCanners.Lerp
         {
             int count = colors.Length;
 
+            if (count == 0)
+                return Color.magenta;
+
+            if (count == 1)
+                return colors[0];
+
             float step = Mathf.Clamp01(value01 - 0.01f) * (count - 1);
 
             int firstColorIndex = Mathf.FloorToInt(step);
@@ -499,6 +798,8 @@ namespace QuizCanners.Lerp
 
             return Color.Lerp(colors[firstColorIndex], colors[firstColorIndex + 1], transition);
         }
+
+
 
         public class DurationLerp 
         {

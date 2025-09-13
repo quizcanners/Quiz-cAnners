@@ -4,7 +4,6 @@ using QuizCanners.Lerp;
 
 namespace QuizCanners.Utils
 {
-
     [ExecuteInEditMode]
     public class Singleton_CameraOperatorGodMode : Singleton.BehaniourBase, IPEGI
     {
@@ -12,7 +11,6 @@ namespace QuizCanners.Utils
         public float offsetClip01 = 0;
         public float sensitivity = 5;
         public bool _disableRotation;
-        public bool rotateWithoutRmb;
         public bool simulateFlying;
         public bool _onlyInEditor;
         public Vector2 camOrbit;
@@ -62,9 +60,16 @@ namespace QuizCanners.Utils
             public Gate.Frame _pointedPositionUpdateGate = new(Gate.InitialValue.StartArmed);
             Vector3 _pointedPosition_Cached;
             bool _isPositionPointed_Cached;
+            readonly Gate.Bool _isRaycastSynced = new();
 
-            public bool TryGetPointedPosition(Camera cam, out Vector3 pos)
+            public bool TryGetPointedPosition(Camera cam, out Vector3 pos, bool forceUpdateTransforms)
             {
+                if (forceUpdateTransforms)
+                    QcUnity.TrySyncPhisixTransformsIfDirty();
+
+                if (_isRaycastSynced.TryChange(QcUnity.IsTransformSynced))
+                    _pointedPositionUpdateGate.ValueIsDefined = false;
+
                 if (_pointedPositionUpdateGate.TryEnter())
                 {
                     _isPositionPointed_Cached = Physics.Raycast(cam.ScreenPointToRay(Input.mousePosition), out var hit);
@@ -81,12 +86,19 @@ namespace QuizCanners.Utils
             public Gate.Frame _pointedPositionUpdateGate = new(Gate.InitialValue.StartArmed);
             Vector3 _pointedPosition_Cached;
             bool _isPositionPointed_Cached;
+            readonly Gate.Bool _isRaycastSynced = new();
 
-            public bool TryGetCenterPointedPosition(Camera cam, out Vector3 pos)
+            public bool TryGetCenterPointedPosition(Camera cam, out Vector3 pos, bool updateTransforms, float maxDistance)
             {
+                if (updateTransforms)
+                    QcUnity.TrySyncPhisixTransformsIfDirty();
+
+                if (_isRaycastSynced.TryChange(QcUnity.IsTransformSynced))
+                    _pointedPositionUpdateGate.ValueIsDefined = false;
+
                 if (_pointedPositionUpdateGate.TryEnter())
                 {
-                    _isPositionPointed_Cached = Physics.Raycast(cam.ScreenPointToRay(new Vector2(Screen.width/2f,Screen.height/2f)), out var hit);
+                    _isPositionPointed_Cached = Physics.Raycast(cam.ScreenPointToRay(new Vector2(Screen.width/2f,Screen.height/2f)), out var hit, maxDistance);
                     _pointedPosition_Cached = hit.point;
                 }
 
@@ -98,11 +110,11 @@ namespace QuizCanners.Utils
         readonly PointedPositionState _pointedPosition = new();
         readonly CenterPointedPositionState _centerPointedPosition = new();
 
-        public bool TryGetPointedPosition(out Vector3 pos)
-         => _pointedPosition.TryGetPointedPosition(Camera.main, out pos);
+        public bool TryGetPointedPosition(out Vector3 pos, bool updateTranforms)
+         => _pointedPosition.TryGetPointedPosition(Camera.main, out pos, updateTranforms);
 
-        public bool TryGetCenterPointedPosition(out Vector3 pos)
-       => _centerPointedPosition.TryGetCenterPointedPosition(Camera.main, out pos);
+        public bool TryGetCenterPointedPosition(out Vector3 pos, bool updateTranforms, float maxDistance)
+       => _centerPointedPosition.TryGetCenterPointedPosition(Camera.main, out pos, updateTranforms, maxDistance: maxDistance);
 
         public Camera MainCam
         {
@@ -118,6 +130,7 @@ namespace QuizCanners.Utils
             }
         }
 
+        public void RotateWithMouseInput() => Rotate(GetInput() * sensitivity);
         private void SpinAround()
         {
             var camTr = _mainCam.transform;
@@ -139,7 +152,7 @@ namespace QuizCanners.Utils
 
             if (downMMB)
             {
-                if (!TryGetPointedPosition(out var pos))
+                if (!TryGetPointedPosition(out var pos, updateTranforms: false))
                 {
                     _spinStarted = false;
                     return;
@@ -167,6 +180,8 @@ namespace QuizCanners.Utils
 
             var rot2 = Quaternion.Euler(camOrbit.y, camOrbit.x, 0);
             var campos = rot2 * new Vector3(0.0f, 0.0f, -_orbitDistance) + spinCenter;
+
+            MouseHideController.Hide();
 
             transform.position = campos;
 
@@ -257,6 +272,35 @@ namespace QuizCanners.Utils
             return true;        
         }
 
+        private static class MouseHideController 
+        {
+            private static bool _isHidden;
+            private static readonly Gate.Frame _hideGate = new(Gate.InitialValue.Uninitialized);
+
+            public static void Hide()
+            {
+                if (Cursor.visible)
+                    _isHidden = true;
+
+                _hideGate.TryEnter();
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+
+            public static void ManagedUpdate() 
+            {
+                if (!_isHidden)
+                    return;
+
+                if (!_hideGate.TryEnterIfFramesPassed(3))
+                    return;
+
+                _isHidden = false;
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+        }
+
         protected virtual void OnUpdateInternal()
         {
             var operatorTf = transform;
@@ -278,13 +322,16 @@ namespace QuizCanners.Utils
             if (TryDrag())
                 return;
 
-            if (rotateWithoutRmb || rightMouseButon)
+            if (rightMouseButon)
             {
-                RatateWithMouse();
+                if (MouseOutsideOfView)
+                    return;
+
+                MouseHideController.Hide();
+                Rotate(GetInput() * sensitivity);
             }
 
             SpinAround();
-           
             UpdateScroll();
 
             return;
@@ -293,7 +340,7 @@ namespace QuizCanners.Utils
             {
                 float ScrollWheelChange = Input.GetAxisRaw("Mouse ScrollWheel");
 
-                if (!mouseOutside && ScrollWheelChange != 0 && TryGetPointedPosition(out var pos))
+                if (!mouseOutside && ScrollWheelChange != 0 && TryGetPointedPosition(out var pos, updateTranforms: true))
                 {
                     var delta = (pos - transform.position);
 
@@ -309,6 +356,9 @@ namespace QuizCanners.Utils
 
         public void Rotate(Vector2 input)
         {
+            if (input == Vector2.zero)
+                return;
+
             var camTf = _mainCam.transform;
 
             var eul = camTf.localEulerAngles;
@@ -349,14 +399,6 @@ namespace QuizCanners.Utils
             camTf.rotation = platform.rotation * Quaternion.Euler(platformSpaceEul);
         }
 
-        public void RatateWithMouse() 
-        {
-            if (MouseOutsideOfView)
-                return;
-
-            Rotate(GetInput() * sensitivity);
-        }
-
         Vector2 GetInput() => (LEGACY_INPUT)
             ? new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"))
             : Vector2.zero;
@@ -373,6 +415,8 @@ namespace QuizCanners.Utils
         {
             if (!_mainCam || (_onlyInEditor && !Application.isEditor))
                 return;
+
+            MouseHideController.ManagedUpdate();
 
             mouseOutside = _mainCam.IsMouseOutsideViewArea(Input.mousePosition);
 
@@ -410,12 +454,10 @@ namespace QuizCanners.Utils
 
         }
 
-
         private readonly DragState Drag = new();
 
         public bool TryDrag()
         {
-
             bool pressedMB = Input.GetMouseButton(0) && Input.GetMouseButton(1);
             mouseOutside = MouseOutsideOfView;
 
@@ -484,10 +526,6 @@ namespace QuizCanners.Utils
             "Flying".PL("Looking up/down will make camera move up/down.").ToggleIcon(ref simulateFlying).Nl();
 
             "Disable Rotation".PL().ToggleIcon(ref _disableRotation).Nl();
-
-            if (!_disableRotation)
-                "Rotate without RMB".PL().ToggleIcon(ref rotateWithoutRmb).Nl();
-
 
             pegi.Nl();
 

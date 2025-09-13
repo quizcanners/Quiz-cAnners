@@ -9,25 +9,18 @@ namespace QuizCanners.Inspect.Examples
 #if UNITY_EDITOR
     public class PEGI_Utils_Window : EditorWindow
     {
+        private const string NAME = "Qc Utils";
+
         Vector2 scrollPos;
 
-
-        [MenuItem("Tools/Qc Utils")]
-        static void Init() => GetWindow<PEGI_Utils_Window>(title: "Qc Utils").ShowTab();
+        [MenuItem("Tools/"+ NAME)]
+        static void Init() => GetWindow<PEGI_Utils_Window>(title: NAME).ShowTab();
         
-
-        public override string ToString() => "Qc Utils";
+        public override string ToString() => NAME;
 
         void OnGUI()
         {
-            scrollPos = EditorGUILayout.BeginScrollView(scrollPos); //, GUILayout.Width(Screen.width-3), GUILayout.Height(Screen.height - 50));
-
-            using (pegi.StartInspector(null, pegi.PegiPaintingMode.EditorInspector))
-            {
-                pegi.Nested_Inspect(QcUtils.InspectAllUtils);
-            }
-
-            EditorGUILayout.EndScrollView();
+            pegi.InspectEditorWindowOnGUI(QcUtils.InspectAllUtils, ref scrollPos);
         }
     }
 

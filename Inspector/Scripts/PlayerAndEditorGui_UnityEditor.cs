@@ -82,12 +82,7 @@ namespace QuizCanners.Inspect
                     }
                     catch (Exception ex)
                     {
-                        if (IsExitGUIException(ex))
-                            throw ex;
-                        else if (change)
-                            Debug.LogException(ex);
-                        else
-                            Write_Exception(ex);
+                        WriteOrThrow_Exception(ex);
                     }
 
                     try
@@ -96,10 +91,7 @@ namespace QuizCanners.Inspect
                     }
                     catch (Exception ex)
                     {
-                        if (change)
-                            Debug.LogException(ex);
-                        else
-                            Write_Exception(ex);
+                        WriteOrThrow_Exception(ex);
                     }
 
                     if (change)
@@ -166,10 +158,7 @@ namespace QuizCanners.Inspect
                 }
                 catch (Exception ex)
                 {
-                    if (changes)
-                        Debug.LogException(ex);
-                    else
-                        Write_Exception(ex);
+                    WriteOrThrow_Exception(ex);
                 }
 
                 try
@@ -178,7 +167,7 @@ namespace QuizCanners.Inspect
                 }
                 catch (Exception ex)
                 {
-                    Write_Exception(ex);
+                    WriteOrThrow_Exception(ex);
                 }
 
                 return;
@@ -318,15 +307,17 @@ namespace QuizCanners.Inspect
             return  new StateToken(foldedOut);
         }
 
+        
         public static StateToken Foldout(TextLabel txt)
         {
             using (FoldoutManager.StartFoldoutDisposable(out _))
             {
-                Foldout(txt, ref FoldoutManager.selectedFold, _elementIndex);
+                Foldout(txt, ref FoldoutManager.selectedFold, Focus._elementIndex);
             }
 
             return FoldoutManager.isFoldedOutOrEntered;
         }
+        
 
         public static StateToken Foldout(TextLabel txt, ref bool state)
         {
@@ -1590,11 +1581,9 @@ namespace QuizCanners.Inspect
             _listMetaData = metas;
 
             START();
-            //EditorGUI.BeginChangeCheck();
 
             if (_currentReorderedList != l)
             {
-
                 var type = typeof(T);
 
                 _currentReorderedListTypes = Migration.ICfgExtensions.TryGetDerivedClasses(type);

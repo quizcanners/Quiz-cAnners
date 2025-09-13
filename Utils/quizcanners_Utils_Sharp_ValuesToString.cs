@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
@@ -8,6 +7,33 @@ namespace QuizCanners.Utils
 
     public static partial class QcSharp
     {
+
+        private static StringBuilder AppendIfNonZero(this StringBuilder sb, double value, double totalValue, string suffix, bool last)
+        {
+            if (sb.Length == 0)
+            {
+                value = Math.Floor(totalValue); // Use Full value if no previous
+            }
+
+            if (last && value == 0 && sb.Length == 0)
+            {
+                value = 1; // Not to return empty string
+            }
+
+            if (value > 0)
+            {
+                if (sb.Length > 0)
+                {
+                    sb.Append(", ");
+                }
+                sb.Append(value.ToString());
+                sb.Append(suffix);
+            }
+
+            return sb;
+        }
+
+
         private static readonly int charA = Convert.ToInt32('a');
 
         public enum LargeNumber
@@ -117,6 +143,26 @@ namespace QuizCanners.Utils
 
         private static readonly System.Globalization.CultureInfo provider = new("en-US");
 
+        public static byte[] StringToByteArray(string input, int fixedSize, bool nullTermination)
+        {
+            // Ensure the string is exactly fixedSize characters long
+            if (input.Length > fixedSize)
+            {
+                input = input.Substring(0, fixedSize);
+            }
+            // Convert to byte array
+            byte[] bytes = Encoding.UTF8.GetBytes(input);
+            byte[] fixedSizeBytes = new byte[fixedSize];
+
+            // Copy the bytes and add null terminator
+            Array.Copy(bytes, fixedSizeBytes, bytes.Length);
+
+            if (bytes.Length < fixedSize)
+                fixedSizeBytes[bytes.Length] = 0; // Null terminator
+
+            return fixedSizeBytes;
+        }
+
         public static byte[] StringToByteArray(string name) => Encoding.ASCII.GetBytes(name);
         
         public static string ByteArrayToString(byte[] arr)
@@ -222,6 +268,31 @@ namespace QuizCanners.Utils
             return "{0} Mb".F(bytes.ToString());
         }
 
+        public static string MetersToReadableString(double distance)
+        {
+            if (distance < 100000)
+                return MetersToReadableString((float)distance);
+
+            const double LIGHT_YEARS_IN_METER = 9.461e+15;
+            const double ASTRONOMIC_UNIT_IN_METERS = 1.496e+11;
+
+            if (distance >= LIGHT_YEARS_IN_METER)
+            {
+                double lightYears = distance / LIGHT_YEARS_IN_METER;
+                return "{0} ly".F(lightYears.ToString("F2"));
+            }
+            else if (distance >= ASTRONOMIC_UNIT_IN_METERS)
+            {
+                double astronomicalUnits = distance / ASTRONOMIC_UNIT_IN_METERS;
+                return "{0} AU".F(astronomicalUnits.ToString("F2"));
+            }
+            else
+            {
+                double kms = distance / 1000;
+                return "{0} km".F(kms.ToString("F0"));
+            }
+        }
+
         public static string MetersToReadableString(float distance) 
         {
             if (distance < 2000)
@@ -282,17 +353,120 @@ namespace QuizCanners.Utils
             if (date.Date == today.AddDays(-2)) return AddTimeIfneeded("Before Yesterday");
 
             if (date.Year != DateTime.Now.Year)
-                return AddTimeIfneeded(date.ToString("dd-MMMM-yyyy"));
+                return date.ToString("dd-MMMM-yyyy");
 
-            return AddTimeIfneeded(date.ToString("dd MMMM"));
+            return date.ToString("dd MMMM");
 
             string AddTimeIfneeded(string text)
             {
                 if (!showHours)
                     return text;
 
-                return "{0} at {1}".F(text, date.ToString("HHmm"));
+                return "{0} at {1}".F(text, date.ToString("HH:mm"));
             }
         }
+
+        #region Time
+
+        public static string SecondsToReadableString(int seconds, bool precise = true, bool showTicksOrMiliseconds = true) => TicksToReadableString(seconds * TimeSpan.TicksPerSecond, precise, showTicksOrMiliseconds);
+
+        public static string SecondsToReadableString(double seconds, bool precise = true, bool showTicksOrMiliseconds = true) => TicksToReadableString(((long)seconds * TimeSpan.TicksPerSecond), precise, showTicksOrMiliseconds);
+
+        public static string SecondsToReadableString(float seconds, bool precise = true, bool showTicksOrMiliseconds = true) => TicksToReadableString(((long)seconds) * TimeSpan.TicksPerSecond, precise, showTicksOrMiliseconds);
+
+        public static string SecondsToReadableString(long seconds, bool precise = true, bool showTicksOrMiliseconds = true) => TicksToReadableString(seconds * TimeSpan.TicksPerSecond, precise, showTicksOrMiliseconds);
+
+        public static string TicksToReadableString(long totalTicks, bool showFraction = true, bool showTicksOrMiliseconds = true)
+        {
+            return TimeSpan.FromTicks(totalTicks).ToShortDisplayString(showTicksAndMiliseconds: showTicksOrMiliseconds);
+            /*
+            double absElapsed = Math.Abs(totalTicks);
+
+            if (showFraction)
+            {
+                if (showTicksOrMiliseconds && absElapsed < (TimeSpan.TicksPerMillisecond * 10)) 
+                    return "{0} ms ({1} ticks)".F(ForScale(TimeSpan.TicksPerMillisecond), totalTicks.ToString("0.00"));
+
+                if (showTicksOrMiliseconds && absElapsed < TimeSpan.TicksPerSecond) 
+                    return "{0} s ({1} miliseconds)".F(ForScale(TimeSpan.TicksPerSecond), ForScale(TimeSpan.TicksPerMillisecond));
+
+                if (absElapsed < TimeSpan.TicksPerMinute) 
+                    return "{0} min ({1} seconds)".F(ForScale(TimeSpan.TicksPerMinute), ForScale(TimeSpan.TicksPerSecond));
+
+                if (absElapsed < TimeSpan.TicksPerHour) 
+                    return "{0} hours ({1} minutes)".F(ForScale(TimeSpan.TicksPerHour), ForScale(TimeSpan.TicksPerMinute));
+
+                return "{0} days ({1} hours)".F(ForScale(TimeSpan.TicksPerDay), ForScale(TimeSpan.TicksPerHour));
+            }
+           
+
+            if (showTicksOrMiliseconds && absElapsed < TimeSpan.TicksPerMillisecond) return "{0} ticks".F(totalTicks.ToString("0.00"));
+            if (showTicksOrMiliseconds && absElapsed < TimeSpan.TicksPerSecond) return "{0} ms".F(ForScale(TimeSpan.TicksPerMillisecond));
+            if (absElapsed < TimeSpan.TicksPerMinute) return "{0} s".F(ForScale(TimeSpan.TicksPerSecond));
+            if (absElapsed < TimeSpan.TicksPerHour) return "{0} m".F(ForScale(TimeSpan.TicksPerMinute));
+            if (absElapsed < TimeSpan.TicksPerDay) return "{0} hours".F(ForScale(TimeSpan.TicksPerHour));
+
+            return "{0} days".F(ForScale(TimeSpan.TicksPerDay));
+            
+
+            string ForScale(long scale)
+            {
+                var val = totalTicks / scale;
+                val = Math.Max(val, 0.01);
+                return val.ToString("0.00");
+            }
+            */
+        }
+
+        public static string ToShortDisplayString(this TimeSpan span, bool showTicksAndMiliseconds = true)
+        {
+            if (span == TimeSpan.MaxValue)
+                return "infinite";
+
+            if (span == TimeSpan.Zero)
+                return "zero";
+
+            var sb = new StringBuilder(16);
+
+            float daysInYear = 365.25f;
+
+            if (span.TotalDays > daysInYear)
+            {
+                sb.AppendIfNonZero(value: span.Days / daysInYear, span.TotalDays / daysInYear, suffix: "y", last: false)
+                  .AppendIfNonZero(value: span.Days, span.TotalDays, suffix: "d", last: true);
+            } else if (span.TotalDays >= 1)
+            {
+                sb.AppendIfNonZero(value: span.Days, span.TotalDays, suffix: "d", last: false)
+                  .AppendIfNonZero(value: span.Hours, span.TotalHours, suffix: "h", last: true);
+            }
+            else if (span.TotalHours >= 1)
+            {
+                sb.AppendIfNonZero(value: span.Hours, span.TotalHours, suffix: "h", last: false)
+                  .AppendIfNonZero(value: span.Minutes, span.TotalMinutes, suffix: "m", last: true);
+            }
+            else if (((!showTicksAndMiliseconds)) || span.TotalMinutes >= 1)
+            {
+                sb.AppendIfNonZero(value: span.Minutes, span.TotalMinutes, suffix: "m", last: false)
+                  .AppendIfNonZero(value: span.Seconds, span.TotalSeconds, suffix: "s", last: true);
+            }
+            else if (span.TotalSeconds >= 1)
+            {
+                sb.AppendIfNonZero(value: span.Seconds, span.TotalSeconds, suffix: "s", last: false)
+                  .AppendIfNonZero(value: span.Milliseconds, span.TotalMilliseconds, suffix: "ms", last: true);
+            }
+            else
+            {
+                sb.AppendIfNonZero(value: span.Milliseconds, span.TotalMilliseconds, suffix: "ms", last: false)
+                .AppendIfNonZero(value: 0, span.Ticks, suffix: "ticks", last: true);
+            }
+
+            return sb.ToString();
+        }
+
+
+
+        #endregion
+
+
     }
 }

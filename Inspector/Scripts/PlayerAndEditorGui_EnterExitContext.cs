@@ -48,6 +48,12 @@ namespace QuizCanners.Inspect
                 return _currentlyEntered;
             }
 
+            public void ExitAll() 
+            {
+                _currentlyEntered = -1;
+                OnChanged();
+            }
+
             internal int CurrentlyEntered
             {
                 get
@@ -82,11 +88,11 @@ namespace QuizCanners.Inspect
 
             public StateToken IsAnyEntered => new(GetCurrentlyEnteredInternal() != -1);
 
-            public StateToken IsCurrentEntered
+            public StateToken IsPreviousEntered
             {
                 get
                 {
-                    CheckUsingBlock(nameof(IsCurrentEntered));
+                    CheckUsingBlock(nameof(IsPreviousEntered));
                     return new StateToken(_currentIndex == CurrentlyEntered);
                 }
                 set => CurrentlyEntered = value ? _currentIndex : -1;
@@ -145,24 +151,28 @@ namespace QuizCanners.Inspect
             internal static void OnExitClick() 
             {
                 if (TryGet(out var context))
-                    context.IsCurrentEntered = StateToken.False;
+                    context.IsPreviousEntered = StateToken.False;
 
                 if (currentMode == PegiPaintingMode.UI_Toolkit) 
                     Toolkit.CurrentState.SetDirty();
+
+                Focus.OnContextChange(); // = 0;
             }
 
             internal static void OnEnterClick()
             {
                 if (TryGet(out var context))
-                    context.IsCurrentEntered = StateToken.True;
+                    context.IsPreviousEntered = StateToken.True;
 
                 if (currentMode == PegiPaintingMode.UI_Toolkit)
                     Toolkit.CurrentState.SetDirty();
+
+                Focus.OnContextChange(); // = 0;
             }
 
             internal static StateToken IsEnteredCurrent
             {
-                get => TryGet(out var context) ? context.IsCurrentEntered : StateToken.False;
+                get => TryGet(out var context) ? context.IsPreviousEntered : StateToken.False;
                 /*set
                 {
                     if (TryGet(out var context))
@@ -240,8 +250,8 @@ namespace QuizCanners.Inspect
                     if (!before && IsEnteredCurrent)
                         inspected = -1;
                 }
-                else
-                    EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => OnEnterClick());
+               // else
+                  //  EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => OnEnterClick());
             }
 
             internal static void Internal_isEntered_ListIcon<T>(TextLabel txt, List<T> list, ref int inspected)
@@ -263,8 +273,8 @@ namespace QuizCanners.Inspect
                 { 
                     if (!before && IsEnteredCurrent)
                         inspected = -1;
-                } else 
-                    EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => OnEnterClick());
+                } //else 
+                  //  EnterInternal.ClickEnter_DirectlyToElement_Internal(list, ref inspected).OnChanged(() => OnEnterClick());
             }
 
             internal static void Internal_exitOptionOnly(TextLabel txt, bool showLabelIfTrue = true)
@@ -273,15 +283,17 @@ namespace QuizCanners.Inspect
                     ExitClick(txt, showLabelIfTrue: showLabelIfTrue);
             }
 
-            internal static bool Internal_isEntered(TextLabel txt, bool showLabelIfTrue = true)
+            internal static bool Internal_isEntered(TextLabel txt, bool showLabelIfTrue = true, bool showLabelIfFalse = true)
             {
                 if (IsEnteredCurrent)
                     ExitClick(txt, showLabelIfTrue: showLabelIfTrue);
                 else
                 {
                     txt.style = Styles.Text.EnterLabel;
-                    (Icon.Enter.ClickUnFocus(txt.label).IgnoreChanges(LatestInteractionEvent.Enter) |
-                    txt.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter)).OnChanged(() => OnEnterClick());
+                    Icon.Enter.ClickUnFocus(txt.label).IgnoreChanges(LatestInteractionEvent.Enter).OnChanged(() => OnEnterClick());
+
+                    if (showLabelIfFalse)
+                       txt.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter).OnChanged(() => OnEnterClick());
                 }
 
                 return IsEnteredCurrent;
@@ -303,7 +315,7 @@ namespace QuizCanners.Inspect
                     return changed;
                 }
 
-                if (!cnt.IsCurrentEntered) //!IsEnteredCurrent)
+                if (!cnt.IsPreviousEntered) //!IsEnteredCurrent)
                 {
                     int current = cnt._currentIndex;
                     int entered = cnt.CurrentlyEntered;
@@ -319,7 +331,7 @@ namespace QuizCanners.Inspect
                
                 var label = new TextLabel(exitLabel.IsNullOrEmpty() ? var.GetNameForInspector() : exitLabel, style: Styles.Text.ExitLabel);
                 ExitClick(label, showLabelIfTrue: true);
-                Try_Nested_Inspect(var);
+                Nested_Inspect_OrFallback(var);
 
                 return changed;
             }
@@ -334,7 +346,7 @@ namespace QuizCanners.Inspect
                     return changed;
                 }
 
-                if (!cnt.IsCurrentEntered)
+                if (!cnt.IsPreviousEntered)
                 {
                     int current = cnt._currentIndex;
                     int entered = cnt.CurrentlyEntered;
@@ -353,7 +365,7 @@ namespace QuizCanners.Inspect
                 var label = new TextLabel(exitLabel.IsNullOrEmpty() ? var.GetNameForInspector() : exitLabel, style: Styles.Text.ExitLabel);
                 ExitClick(label, showLabelIfTrue: true);
 
-                NestedOrReflection_Inspect(ref var);
+                Nested_Inspect_Value_OrFallback(ref var);
                 //Nested_Inspect_Value(ref var);
                 //Nested_Inspect_Value(ref var);
 
@@ -367,8 +379,8 @@ namespace QuizCanners.Inspect
                     text.FallbackHint = ()=> Icon.Exit.GetDescription();
                     text.style = Styles.Text.ExitLabel;
                     (Icon.Exit.ClickUnFocus("{0} L {1}".F(Icon.Exit.GetText(), text)) |
-                        (showLabelIfTrue ? text.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit) : ChangesToken.False)
-                        ).OnChanged(() => OnExitClick()).IgnoreChanges();
+                        (showLabelIfTrue ? text.ClickLabel() : ChangesToken.False)
+                        ).OnChanged(() => OnExitClick()).IgnoreChanges(LatestInteractionEvent.Exit);
                 }
             }
 

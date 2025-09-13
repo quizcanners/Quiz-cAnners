@@ -10,7 +10,7 @@ namespace QuizCanners.Inspect
         public static ChangesToken ToggleInt(ref int val)
         {
             var before = val > 0;
-            if (Toggle(ref before))
+            if (Toggle(ref before).FeedChanges_Toggle(before))
             {
                 val = before ? 1 : 0;
                 return ChangesToken.True;
@@ -27,7 +27,7 @@ namespace QuizCanners.Inspect
 
             _START();
             val = GUILayout.Toggle(val, "", GUILayout.MaxWidth(30));
-            return _END();
+            return _END().FeedChanges_Toggle(val);
 
         }
 
@@ -44,9 +44,9 @@ namespace QuizCanners.Inspect
             var changed = ChangeTrackStart();
 
             if (isOn)
-                icon.Click_Selected(() => onChanged(false));
+                icon.Click_Selected(() => onChanged(false)).FeedChanges_Toggle(false);
             else
-                icon.Click(() => onChanged(true));
+                icon.Click(() => onChanged(true)).FeedChanges_Toggle(true);
 
             return changed;
         }
@@ -67,10 +67,11 @@ namespace QuizCanners.Inspect
             {
                Toggle(ref val, Icon.True, Icon.False, label.TooltipOrLabel, DEFAULT_TOGGLE_BUTTON_SIZE, Styles.ToggleButton);
             }
+
             if ((!val || !hideTextWhenTrue))
             {
                 label.style = Styles.ToggleLabel(val);
-                if (label.ClickLabel())
+                if (label.ClickLabel().FeedChanges_Toggle(!val))
                 {
                     val = !val;
                 }
@@ -84,23 +85,35 @@ namespace QuizCanners.Inspect
             var changed = ChangeTrackStart();
             using (SetBgColorDisposable(Color.clear))
             {
-                if ((val ? Icon.True : Icon.False).ClickConfirm(confirmationTag: confirmationTag, toolTip: tip, DEFAULT_TOGGLE_BUTTON_SIZE))
+                if ((val ? Icon.True : Icon.False).ClickConfirm(confirmationTag: confirmationTag, toolTip: tip, DEFAULT_TOGGLE_BUTTON_SIZE).FeedChanges_Toggle(!val))
                     val = !val;
             }
 
             if (!ConfirmationDialogue.IsRequestedFor(confirmationTag) && (!val || !hideTextWhenTrue))
             {
                 label.style = Styles.ToggleLabel(val);
-                if (label.ClickLabelConfirm(confirmationTag: confirmationTag))
+                if (label.ClickLabelConfirm(confirmationTag: confirmationTag).FeedChanges_Toggle(!val))
                     val = !val;
             }
 
             return changed;
         }
 
+        private static ChangesToken Toggle(ref bool val, Sprite TrueIcon, Sprite FalseIcon, string tip, int width = DEFAULT_BUTTON_SIZE, GUIStyle style = null)
+        {
+            var icon = val ? TrueIcon : FalseIcon;
+
+            if (ClickImage(ImageAndTip(icon ? icon.texture : null, tip), width, style).FeedChanges_Toggle(!val))
+            {
+                val = !val;
+                return ChangesToken.True;
+            }
+            return ChangesToken.False;
+        }
+
         private static ChangesToken Toggle(ref bool val, Texture2D TrueIcon, Texture2D FalseIcon, string tip, int width = DEFAULT_BUTTON_SIZE, GUIStyle style = null)
         {
-            if (ClickImage(ImageAndTip(val ? TrueIcon : FalseIcon, tip), width, style))
+            if (ClickImage(ImageAndTip(val ? TrueIcon : FalseIcon, tip), width, style).FeedChanges_Toggle(!val))
             {
                 val = !val;
                 return ChangesToken.True;

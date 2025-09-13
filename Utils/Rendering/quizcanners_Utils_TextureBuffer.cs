@@ -147,6 +147,7 @@ namespace QuizCanners.Utils
                             _ => new RenderTexture(width: Width, height: Height, depth: 0, RenderTextureFormat.ARGB32, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
                         };
 
+                        tex.filterMode = FilterMode.Bilinear;
                         tex.name = "{0} {1}".F(_name, i);
 
                         if (_clearOnCreate)
@@ -380,6 +381,7 @@ namespace QuizCanners.Utils
             private readonly bool _singleChannel;
             private readonly bool _isColor;
             private readonly DepthPrecision _depth;
+            private Color _clearColor;
 
 
             protected RenderTexture _renderTexture;
@@ -400,7 +402,7 @@ namespace QuizCanners.Utils
             public void Blit(Texture textureToCopyFrom) => Graphics.Blit(textureToCopyFrom, GetRenderTexture());
 
 
-            public RenderTexture GetRenderTexture()
+            public RenderTexture GetRenderTexture(bool clearIfCreatingNew = false)
             {
                 if (_renderTexture)
                     return _renderTexture;
@@ -414,10 +416,15 @@ namespace QuizCanners.Utils
                     name = "{0} {1}".F(_name, Height == Width ? Width : "{0}x{1}".F(Width, Height))
                 };
 
+                _renderTexture.filterMode = FilterMode.Bilinear;
+
+                if (clearIfCreatingNew)
+                    RenderTextureBlit.ClearTexture(_renderTexture, _clearColor);
+
                 return _renderTexture;
             }
 
-            public Single(string name, int size, bool isFloat, bool isColor , bool singleChannel = false, DepthPrecision depth = DepthPrecision.None)
+            public Single(string name, int size, bool isFloat, bool isColor , bool singleChannel = false, DepthPrecision depth = DepthPrecision.None, Color clearColor = default)
             {
                 _depth = depth;
                 _floatBuffer = isFloat;
@@ -428,9 +435,10 @@ namespace QuizCanners.Utils
 
                 Width = size;
                 Height = size;
+                _clearColor = clearColor;
             }
 
-            public Single(string name, int width, int height, bool isFloat, bool isColor, bool singleChannel = false, DepthPrecision depth = DepthPrecision.None)
+            public Single(string name, int width, int height, bool isFloat, bool isColor, bool singleChannel = false, DepthPrecision depth = DepthPrecision.None, Color clearColor = default)
             {
                 _depth = depth;
                 _floatBuffer = isFloat;
@@ -440,6 +448,8 @@ namespace QuizCanners.Utils
 
                 Width = width;
                 Height = height;
+
+                _clearColor = clearColor;
             }
 
             public void Clear() 
@@ -497,6 +507,15 @@ namespace QuizCanners.Utils
 
     public static class RenderTextureBlit
     {
+        public static void ClearTexture(RenderTexture rt, Color color)
+        {
+            CommandBuffer commandBuffer = new();
+            commandBuffer.SetRenderTarget(rt);
+            commandBuffer.ClearRenderTarget(true, true, color);
+            Graphics.ExecuteCommandBuffer(commandBuffer);
+            commandBuffer.Release();
+        }
+
         public static Material MaterialReuse(Shader shader) => MaterialInstancer.Get(shader);
 
         private static readonly MaterialInstancer.ByShader MaterialInstancer = new();

@@ -21,10 +21,10 @@ namespace QuizCanners.Utils
         }
 
         public static string IsNull<T>(T _, string context) =>
-            "{1}: {0} is not found".F(typeof(T).ToPegiStringType(), context);
+            "{0} ({1}) is not found".F(context, typeof(T).ToPegiStringType());
 
         public static string CaseNotImplemented(object unimplementedValue)
-            => "Case [{0}] for [{1}] is not implemented".F(
+            => "Case [{0}] ({1}) is not implemented".F(
                 unimplementedValue.ToString().SimplifyTypeName(),
                 unimplementedValue.GetType().ToPegiStringType());
 
@@ -372,6 +372,28 @@ namespace QuizCanners.Utils
                     Debug.LogWarning(msg, target);
                 else
                     Debug.LogWarning(msg);
+            }
+
+            public static void LogWarningsExpOnly(Func<string> action, string key, Object target = null)
+            {
+                if (key.IsNullOrEmpty())
+                {
+                    Debug.LogError("Chill Key is Null: " + action?.Invoke());
+                    return;
+                }
+
+                int count = loggedWarnings.GetOrCreate(key);
+                loggedWarnings[key]++;
+
+                if (count > 4 && !Mathf.IsPowerOfTwo(count))
+                    return;
+
+                string logText = (count > 0 ? "{0} times: ".F(count) : "") + action();
+
+                if (target)
+                    Debug.LogWarning(logText, target);
+                else
+                    Debug.LogWarning(logText);
             }
 
             public static void LogErrosExpOnly(Func<string> action, string key, Object target = null)

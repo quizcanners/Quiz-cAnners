@@ -20,117 +20,7 @@ namespace QuizCanners.Utils
 
     public static partial class QcSharp
     {
-        #region Time
 
-        public static string SecondsToReadableString(int seconds) => TicksToReadableString(seconds * TimeSpan.TicksPerSecond);
-
-        public static string SecondsToReadableString(double seconds) => TicksToReadableString(seconds * TimeSpan.TicksPerSecond);
-
-        public static string SecondsToReadableString(float seconds) => TicksToReadableString(seconds * TimeSpan.TicksPerSecond);
-
-        public static string SecondsToReadableString(long seconds) => TicksToReadableString(seconds * TimeSpan.TicksPerSecond);
-
-        public static string TicksToReadableString(double totalTicks, bool precise = false)
-        {
-            double absElapsed = Math.Abs(totalTicks);
-
-            if (precise)
-            {
-                if (absElapsed < TimeSpan.TicksPerMillisecond) return "{1} ms ({0} ticks)".F(totalTicks.ToString("0.00"), ForScale(TimeSpan.TicksPerMillisecond));
-                if (absElapsed < TimeSpan.TicksPerSecond) return "{1} s ({0} miliseconds)".F(ForScale(TimeSpan.TicksPerMillisecond), ForScale(TimeSpan.TicksPerSecond));
-                if (absElapsed < TimeSpan.TicksPerMinute) return "{1} min ({0} seconds)".F(ForScale(TimeSpan.TicksPerSecond), ForScale(TimeSpan.TicksPerMinute));
-                if (absElapsed < TimeSpan.TicksPerHour) return "{1} hours ({0} minutes)".F(ForScale(TimeSpan.TicksPerMinute), ForScale(TimeSpan.TicksPerHour));
-                return "{1} days ({0} hours)".F(ForScale(TimeSpan.TicksPerHour), ForScale(TimeSpan.TicksPerDay));
-            } else 
-            {
-                if (absElapsed < TimeSpan.TicksPerMillisecond) return "{0} ticks".F(totalTicks.ToString("0.00"));
-                if (absElapsed < TimeSpan.TicksPerSecond) return "{0} ms".F(ForScale(TimeSpan.TicksPerMillisecond));
-                if (absElapsed < TimeSpan.TicksPerMinute) return "{0} s".F(ForScale(TimeSpan.TicksPerSecond));
-                if (absElapsed < TimeSpan.TicksPerHour) return "{0} m".F(ForScale(TimeSpan.TicksPerMinute));
-                if (absElapsed < TimeSpan.TicksPerDay) return "{0} hours".F(ForScale(TimeSpan.TicksPerHour));
-                return "{0} days".F(ForScale(TimeSpan.TicksPerDay));
-            }
-
-            string ForScale(long scale)
-            {
-                var val = totalTicks / scale;
-                val = Math.Max(val, 0.01);
-                return val.ToString("0.00");
-            }
-
-        }
-
-        public static string ToShortDisplayString(this TimeSpan span)
-        {
-            if (span == TimeSpan.MaxValue)
-                return "infinite";
-
-            if (span == TimeSpan.Zero)
-                return "zero";
-
-            var sb = new StringBuilder(16);
-
-            float daysInYear = 365.25f;
-
-            if (span.TotalDays > daysInYear)
-            {
-                sb.AppendIfNonZero(value: span.Days / daysInYear, span.TotalDays / daysInYear, suffix: "y", last: false)
-                  .AppendIfNonZero(value: span.Days, span.TotalDays, suffix: "d", last: true);
-            }
-            if (span.TotalDays >= 1)
-            {
-                sb.AppendIfNonZero(value: span.Days, span.TotalDays, suffix: "d", last: false)
-                  .AppendIfNonZero(value: span.Hours, span.TotalHours, suffix: "h", last: true);
-            }
-            else if (span.TotalHours >=1 )
-            {
-                sb.AppendIfNonZero(value: span.Hours, span.TotalHours, suffix: "h", last: false)
-                  .AppendIfNonZero(value: span.Minutes, span.TotalMinutes, suffix: "m", last: true);
-            }
-            else if (span.TotalMinutes >=1 )
-            {
-                sb.AppendIfNonZero(value: span.Minutes, span.TotalMinutes, suffix: "m", last: false)
-                  .AppendIfNonZero(value: span.Seconds, span.TotalSeconds, suffix: "s", last: true);
-            }
-            else if (span.TotalSeconds >= 1)
-            {
-                sb.AppendIfNonZero(value: span.Seconds, span.TotalSeconds, suffix: "s", last: false)
-                  .AppendIfNonZero(value: span.Milliseconds, span.TotalMilliseconds, suffix: "ms", last: true);
-            } else //if (span.TotalMilliseconds >= 1) 
-            {
-                sb.AppendIfNonZero(value: span.Milliseconds, span.TotalMilliseconds, suffix: "ms", last: false)
-                .AppendIfNonZero(value: 0, span.Ticks, suffix: "ticks", last: true);
-            }
-
-            return sb.ToString();
-        }
-
-        private static StringBuilder AppendIfNonZero(this StringBuilder sb, double value, double totalValue, string suffix, bool last)
-        {
-            if (sb.Length == 0)
-            {
-                value = Math.Floor(totalValue); // Use Full value if no previous
-            }
-
-            if (last && value == 0 && sb.Length == 0)
-            {
-                value = 1; // Not to return empty string
-            }
-
-            if (value > 0)
-            {
-                if (sb.Length > 0)
-                {
-                    sb.Append(", ");
-                }
-                sb.Append(value.ToString());
-                sb.Append(suffix);
-            }
-
-            return sb;
-        }
-
-        #endregion
 
         #region Html Tags (For Text Mesh Pro)
 
@@ -195,6 +85,19 @@ namespace QuizCanners.Utils
 
         #region Collection Management
 
+        public static void EnqueueClearIfFull<T>(this System.Collections.Concurrent.ConcurrentQueue<T> queue, int maxCount, T value)
+        {
+            if (queue.Count >= maxCount)
+            {
+                if (queue.Count == maxCount)
+                    Debug.LogError("The ConcurrentQueue of {0} is {1} elements. Clearing".F(typeof(T).ToPegiStringType(), maxCount));
+
+                queue.Clear();
+            }
+
+            queue.Enqueue(value);
+        }
+
         internal static bool CanAdd<T>(List<T> list, ref object obj, out T conv, bool onlyIfNew = true)
         {
             conv = default;
@@ -218,9 +121,9 @@ namespace QuizCanners.Utils
                 else go = obj as GameObject;
 
                 if (go)
-#pragma warning disable UNT0014 // Invalid type for call to GetComponent
+//#pragma warning disable UNT0014 // Invalid type for call to GetComponent
                     conv = go.GetComponent<T>();
-#pragma warning restore UNT0014 // Invalid type for call to GetComponent
+//#pragma warning restore UNT0014 // Invalid type for call to GetComponent
             }
             else conv = t;
 
@@ -732,6 +635,34 @@ namespace QuizCanners.Utils
             return defaultVal;
         }
 
+        public static TValue GetOrCreate<TKey, TValue>(this IDictionary<TKey, TValue> dic, TKey key, out bool wasCreated) where TValue : new()
+        {
+            wasCreated = false;
+
+            if (dic == null)
+            {
+                Debug.LogError("Dictionary of {0}-{1} is null".F(typeof(TKey).ToPegiStringType(), typeof(TValue).ToPegiStringType()));
+                return default;
+            }
+
+            if (key == null)
+            {
+                Debug.LogError("Key is NULL for Dictionary of {0}-{1}".F(typeof(TKey).ToPegiStringType(), typeof(TValue).ToPegiStringType()));
+                return default;
+            }
+
+            TValue val;
+
+            if (dic.TryGetValue(key, out val))
+                return val;
+            
+            val = new TValue();
+            dic.Add(key, val);
+            wasCreated = true;
+
+            return val;
+        }
+
         public static TValue GetOrCreate<TKey, TValue>(this IDictionary<TKey, TValue> dic, TKey key) where TValue : new()
         {
             if (dic == null)
@@ -962,6 +893,48 @@ namespace QuizCanners.Utils
 
         #endregion
 
+        public static string AddNewLinesIntoText(string text, int maxLineLength)
+        {
+            var formattedName = new System.Text.StringBuilder(text.Length + (text.Length / maxLineLength) * 2);
+
+            int lineStart = 0;
+            int addedStart = 0;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                int indexOfWord = text.IndexOf(' ', i);
+
+                if (indexOfWord < 0)
+                {
+                    formattedName.Append(text[addedStart..]);
+                    break;
+                }
+
+                var length = indexOfWord - addedStart;
+
+                if ((i - lineStart + length) > maxLineLength - 8)
+                {
+                    lineStart = i;
+                    formattedName.Append('\n');
+                }
+
+                formattedName.Append(text[addedStart..indexOfWord]);
+                addedStart = indexOfWord;
+
+                i = indexOfWord;
+
+                /*
+                if ((i - lineStart) > maxLineLength - 16) //i > 0 && i % maxLineLength == 0)
+                {
+                    lineStart = i;
+                    formattedName.Append('\n');
+                }*/
+            }
+
+            return formattedName.ToString();
+        }
+
+
         private static int GetLastSlashIndex(string text) 
         {
             int lastBack = text.LastIndexOf('/');
@@ -1030,8 +1003,12 @@ namespace QuizCanners.Utils
             if (string.IsNullOrWhiteSpace(text))
                 return string.Empty;
             StringBuilder newText = new(text.Length * 2);
-            newText.Append(text[0]);
-            char previousCharacter = text[0];
+
+            var frst = text[0];
+
+            if (frst != '_')
+                newText.Append(frst);
+            char previousCharacter = frst;
             bool wasUnderscore = false;
                  
             for (int i = 1; i < text.Length; i++)

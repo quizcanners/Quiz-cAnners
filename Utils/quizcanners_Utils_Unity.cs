@@ -9,8 +9,6 @@ using System.Reflection;
 using UnityEngine.SceneManagement;
 using QuizCanners.Inspect;
 using UnityEngine.AI;
-using static UnityEngine.GraphicsBuffer;
-using static System.Collections.Specialized.BitVector32;
 
 
 
@@ -553,15 +551,21 @@ namespace QuizCanners.Utils {
 
         }
 
-        public static bool TrySetAlpha(this Graphic graphic, float alpha)
+        public static bool TrySetAlpha(this Graphic graphic, float alpha, bool andDisable = false)
         {
             if (!graphic) 
                 return false;
+
+     
 
             var col = graphic.color;
 
             col.a = alpha;
             graphic.color = col;
+
+            if (andDisable)
+                graphic.gameObject.SetActive(alpha > 0.01f);
+
             return true;
 
         }
@@ -760,9 +764,7 @@ namespace QuizCanners.Utils {
 
             var go = TryGetGameObjectFromObj(obj);
 
-#pragma warning disable UNT0014 // Can be component
             return go ? go.GetComponent<T>() : null;
-#pragma warning restore UNT0014 // Invalid type for call to GetComponent
         }
 
         public static bool IsNullOrDestroyed_Obj(object obj)
@@ -821,6 +823,20 @@ namespace QuizCanners.Utils {
             {
                 if (go)
                     go.gameObject.DestroyWhatever();
+            }
+
+            gos.Clear();
+        }
+
+        public static void DestroyAndClear<K,T>(this Dictionary<K,T> gos) where T : Component
+        {
+            if (gos.IsNullOrEmpty())
+                return;
+
+            foreach (var go in gos)
+            {
+                if (go.Value)
+                    go.Value.gameObject.DestroyWhatever();
             }
 
             gos.Clear();
@@ -1632,14 +1648,14 @@ namespace QuizCanners.Utils {
 
         public static List<string> GetColorProperties(this Material m) =>
 #if UNITY_EDITOR
-            m.GetProperties(MaterialProperty.PropType.Color);
+            m.GetProperties(UnityEngine.Rendering.ShaderPropertyType.Color);
 #else
             new List<String>();
 #endif
 
         public static List<string> MyGetTexturePropertiesNames(this Material m) =>
 #if UNITY_EDITOR
-             m.GetProperties(MaterialProperty.PropType.Texture);
+             m.GetProperties(UnityEngine.Rendering.ShaderPropertyType.Texture);
 #else
             new List<String>();
 #endif
@@ -1647,8 +1663,8 @@ namespace QuizCanners.Utils {
         public static List<string> GetFloatProperties(this Material m)
         {
 #if UNITY_EDITOR
-            var l = m.GetProperties(MaterialProperty.PropType.Float);
-            l.AddRange(m.GetProperties(MaterialProperty.PropType.Range));
+            var l = m.GetProperties(UnityEngine.Rendering.ShaderPropertyType.Float);
+            l.AddRange(m.GetProperties(UnityEngine.Rendering.ShaderPropertyType.Range));
             return l;
 #else
             return new List<string>();
@@ -1658,7 +1674,7 @@ namespace QuizCanners.Utils {
       
 
 #if UNITY_EDITOR
-        public static List<string> GetProperties(this Material m, MaterialProperty.PropType type)
+        public static List<string> GetProperties(this Material m, UnityEngine.Rendering.ShaderPropertyType type)
         {
             var fNames = new List<string>();
 
@@ -1682,7 +1698,7 @@ namespace QuizCanners.Utils {
 
             foreach (var p in props)
             {
-                if (p.type == type)
+                if (p.propertyType == type)
                     fNames.Add(p.name);
             }
             
@@ -1698,11 +1714,8 @@ namespace QuizCanners.Utils {
 
         #region Texture MGMT
 
-
-
         public static Color[] GetPixels(this Texture2D tex, int width, int height)
         {
-
             if ((tex.width == width) && (tex.height == height))
                 return tex.GetPixels();
 
@@ -1719,16 +1732,13 @@ namespace QuizCanners.Utils {
                 var srcIndex = ((int)(y * dY)) * tex.width;
                 for (var x = 0; x < width; x++)
                     dst[dstIndex + x] = src[srcIndex + (int)(x * dX)];
-
             }
-
 
             return dst;
         }
 
         public static Color32[] GetPixels32(this Texture2D tex, int width, int height)
         {
-
             if ((tex.width == width) && (tex.height == height))
                 return tex.GetPixels32();
 
@@ -1783,7 +1793,7 @@ namespace QuizCanners.Utils {
                 TextureFormat.RGBA32 => true,
                 TextureFormat.ARGB4444 => true,
                 TextureFormat.BGRA32 => true,
-                TextureFormat.PVRTC_RGBA4 => true,
+                //TextureFormat.PVRTC_RGBA4 => true,
                 TextureFormat.RGBAFloat => true,
                 TextureFormat.RGBAHalf => true,
                 TextureFormat.Alpha8 => true,
@@ -1805,14 +1815,43 @@ namespace QuizCanners.Utils {
             atlas.GetSprites(sAr);
 
             return sAr[0].texture;
-        } 
+        }
 
-#endregion
+        #endregion
 
         #region Texture Import Settings
 
-        public static Color[] GetPixelsFromNonReadableTexture(this Texture2D texture) 
+        public static Color32[] GetPixels32_Whatever(this Texture2D texture)
         {
+            if (texture.isReadable)
+                return texture.GetPixels32();
+
+            RenderTexture tmp = RenderTexture.GetTemporary(texture.width, texture.height, 0, RenderTextureFormat.Default, RenderTextureReadWrite.Linear);
+
+            using (QcSharp.DisposableAction(() => RenderTexture.ReleaseTemporary(tmp)))
+            {
+                Graphics.Blit(texture, tmp);
+                RenderTexture previous = RenderTexture.active;
+                RenderTexture.active = tmp;
+
+                Texture2D myTexture2D = new(texture.width, texture.height);
+
+                myTexture2D.ReadPixels(new Rect(0, 0, tmp.width, tmp.height), 0, 0);
+                myTexture2D.Apply();
+
+                RenderTexture.active = previous;
+                var pixels = myTexture2D.GetPixels32();
+                myTexture2D.DestroyWhatever();
+
+                return pixels;
+            }
+        }
+
+        public static Color[] GetColorPixels_Whatever(this Texture2D texture) 
+        {
+            if (texture.isReadable)
+                return texture.GetPixels();
+
             RenderTexture tmp = RenderTexture.GetTemporary(texture.width,texture.height,0,RenderTextureFormat.Default, RenderTextureReadWrite.Linear);
 
             using (QcSharp.DisposableAction(() => RenderTexture.ReleaseTemporary(tmp)))
@@ -1940,9 +1979,7 @@ namespace QuizCanners.Utils {
 
         public static bool WasClamped_Editor(this TextureImporter importer)
         {
-
             var needsReimport = false;
-
 
             if (importer.wrapMode != TextureWrapMode.Repeat)
             {
@@ -1951,7 +1988,6 @@ namespace QuizCanners.Utils {
             }
 
             return needsReimport;
-
         }
 
         public static void Reimport_IfNotReadale_Editor(this Texture2D tex)
@@ -2198,15 +2234,20 @@ return false;
 #endif
         }
 
-        public static byte[] GetPngBytes(this Texture tex)
+        public static byte[] GetPngBytes_Whatever(this Texture tex, bool gammaCorrect = false)
         {
             if (tex is RenderTexture rt)
-                return FromRenderTexture(tex as RenderTexture);
+                return FromRenderTexture(rt);
 
             Texture2D tex2D = tex as Texture2D;
 
             if (tex.isReadable)
+            {
+                if (gammaCorrect)
+                    GammaCorrect(tex2D);
+
                 return tex2D.EncodeToPNG();
+            }
 
             RenderTexture renderTex = RenderTexture.GetTemporary(
                 tex.width, tex.height, 0,
@@ -2224,8 +2265,12 @@ return false;
                 RenderTexture previous = RenderTexture.active;
                 RenderTexture.active = renderTex;
 
-                Texture2D tex2D = new Texture2D(renderTex.width, renderTex.height);
+                Texture2D tex2D = new(renderTex.width, renderTex.height, TextureFormat.RGBA32, false);
                 tex2D.ReadPixels(new Rect(0, 0, renderTex.width, renderTex.height), 0, 0);
+
+                if (gammaCorrect)
+                    GammaCorrect(tex2D);
+
                 tex2D.Apply();
 
                 RenderTexture.active = previous;
@@ -2236,6 +2281,22 @@ return false;
 
                 return result;
             }
+        }
+
+
+        public static void GammaCorrect(Texture2D tex2D)
+        {
+            Color[] pixels = tex2D.GetPixels();
+
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                pixels[i].r = Mathf.Pow(pixels[i].r, 1.0f / 2.2f);
+                pixels[i].g = Mathf.Pow(pixels[i].g, 1.0f / 2.2f);
+                pixels[i].b = Mathf.Pow(pixels[i].b, 1.0f / 2.2f);
+            }
+
+            tex2D.SetPixels(pixels);
+            tex2D.Apply();
         }
 
 
@@ -2735,6 +2796,40 @@ return false;
             Vector3 overlapMax = Vector3.Min(elementMax, volumeMax);
 
             return Vector3.Max(Vector3.zero, overlapMax - overlapMin);
+        }
+
+
+        private readonly static Gate.Frame _transformSyncedGate = new(Gate.InitialValue.StartArmed);
+        public static bool IsTransformSynced => _transformSyncedGate.DoneThisFrame;
+        public static bool TrySyncPhisixTransformsIfDirty()
+        {
+            if (!_transformSyncedGate.TryEnter())
+                return false;
+            
+            Physics.SyncTransforms();
+            return true;
+        }
+
+        public static Quaternion GetHorizontalForward(this Transform transform)
+        {
+            var forward = transform.forward;
+            float useDown = forward.y;
+            forward = forward.Y(0);
+            var up = transform.up.Y(0);
+            forward = Vector3.Lerp(forward, up, -useDown);
+            forward = Vector3.Lerp(forward, -up, useDown);
+            return Quaternion.LookRotation(forward, Vector3.up);
+
+        }
+
+        public static Vector3 GetScreenPositionOfTheCenter(this RectTransform myRectTransform, Camera cam)
+        {
+            Vector3[] corners = new Vector3[4];
+            myRectTransform.GetWorldCorners(corners);
+            Vector3 bottomLeft = corners[0];
+            Vector3 topRight = corners[2];
+
+            return RectTransformUtility.WorldToScreenPoint(cam, (bottomLeft + topRight) / 2f);
         }
     }
 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using QuizCanners.Utils;
 using UnityEngine;
-using static QuizCanners.Inspect.pegi;
+//using static QuizCanners.Inspect.pegi;
 using Object = UnityEngine.Object;
 
 // ReSharper disable InconsistentNaming
@@ -17,7 +17,19 @@ namespace QuizCanners.Inspect
 {
     public static partial class pegi
     {
-        public const char X_SYMBOL = '×';
+        
+
+        public static class SYMBOLS
+        {
+            public static char IsSuccess(bool condition) => condition ? CHECK : CROSS;
+
+            public const char X_SYMBOL = '×';                // Multiplication or close symbol
+            public const char BOX_TICKED = '✅';             // Checked box
+            public const char BOX_CROSSED = '❌';            // Crossed box
+            public const char BOX_EMPTY = '□';               // Empty box
+            public const char CROSS = '✖';               // Cross symbol
+            public const char CHECK = '✔';               // Check symbol
+        }
 
         public static StateToken Toggle_Enter (this TextLabel exitLabel, ref bool toggle, bool hideTextWhenTrue = false) 
         {
@@ -63,6 +75,29 @@ namespace QuizCanners.Inspect
 
         #region Enter & Exit
 
+        public static StateToken IsEntered(this Icon icon)
+        {
+            using (Context.IncrementDisposible(out bool canSkip))
+            {
+                if (canSkip)
+                    return StateToken.False;
+
+                if (Context.IsEnteredCurrent)
+                {
+                    using (Styles.Background.ExitLabel.SetDisposible())
+                    {
+                        Icon.Exit.ClickUnFocus("{0} {1}".F(Icon.Exit.GetText())).IgnoreChanges(LatestInteractionEvent.Exit).OnChanged(Context.OnExitClick);
+                    }
+                }
+                else
+                {
+                    icon.ClickUnFocus().IgnoreChanges(LatestInteractionEvent.Enter).OnChanged(() => Context.OnEnterClick());
+                }
+            }
+
+            return Context.IsEnteredCurrent;
+        }
+
         public static StateToken IsEntered(this TextLabel label, bool showLabelIfTrue = true, Styles.PegiGuiStyle enterLabelStyle = null)
         {
             using (Context.IncrementDisposible(out bool canSkip))
@@ -87,10 +122,9 @@ namespace QuizCanners.Inspect
                 else
                 {
                     label.style = enterLabelStyle ?? Styles.Text.EnterLabel;
-                    (
-                        Icon.Enter.ClickUnFocus(label.label).IgnoreChanges(LatestInteractionEvent.Enter)
-                        | label.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter)
-                    ).OnChanged(() => Context.OnEnterClick());
+                    (Icon.Enter.ClickUnFocus(label.label).IgnoreChanges(LatestInteractionEvent.Enter)
+                      | label.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter))
+                    .OnChanged(() => Context.OnEnterClick());
                 }
             }
 
@@ -183,11 +217,11 @@ namespace QuizCanners.Inspect
                 {
                     try
                     {
-                        Try_Nested_Inspect(target);
+                        Nested_Inspect_OrFallback(target);
                     }
                     catch (Exception ex)
                     {
-                        Write_Exception(ex);
+                        WriteOrThrow_Exception(ex);
                     }
                 }
 
@@ -214,7 +248,7 @@ namespace QuizCanners.Inspect
                         inspectFunction.Invoke();
                     } catch (Exception ex) 
                     {
-                        Write_Exception(ex);
+                        WriteOrThrow_Exception(ex);
                     }
                 }
 
@@ -457,7 +491,7 @@ namespace QuizCanners.Inspect
                             entered = -1;
                     }
 
-                    Try_Nested_Inspect(var);
+                    Nested_Inspect_OrFallback(var);
                 }
             }
             else if (entered == thisOne)
@@ -521,7 +555,7 @@ namespace QuizCanners.Inspect
                 return Context.IsEnteredCurrent;
             }
     
-      
+      /*
             public static ChangesToken ClickEnter_DirectlyToElement_Internal<K, V>(Dictionary<K, V> dic, ref int inspected)
             {
 
@@ -636,7 +670,7 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
-
+           
             public static StateToken IsEntered_DirectlyToElement<T>(List<T> list, ref int inspected)
             {
 
@@ -654,7 +688,7 @@ namespace QuizCanners.Inspect
 
                 return Context.IsEnteredCurrent;
             }
-
+            */
             public static StateToken isEntered_HeaderPart<T, V>(CollectionInspectorMeta meta, Dictionary<T, V> dic, bool showLabelIfTrue = false)
             {
                 using (Context.IncrementDisposible(out bool canSkip))
@@ -664,13 +698,13 @@ namespace QuizCanners.Inspect
 
                     var before = Context.IsEnteredCurrent;
 
-                    meta.Label.PL().AddCount(dic, Context.IsEnteredCurrent).IsEntered(showLabelIfTrue, dic.Count == 0 ? Styles.Text.Clipping : null);
+                    meta.Label.PL().AddCount(dic, Context.IsEnteredCurrent).IsEntered(showLabelIfTrue);
 
                     if (Context.IsEnteredCurrent && !before)
                         meta.InspectedElement = -1;
 
-                    if (Context.IsEnteredCurrent == false)
-                        ClickEnter_DirectlyToElement_Internal(dic, ref meta.inspectedElement_Internal).OnChanged(() => Context.OnEnterClick());
+                   // if (Context.IsEnteredCurrent == false)
+                      //  ClickEnter_DirectlyToElement_Internal(dic, ref meta.inspectedElement_Internal).OnChanged(() => Context.OnEnterClick());
 
                     return Context.IsEnteredCurrent;
                 }
@@ -685,7 +719,7 @@ namespace QuizCanners.Inspect
                 if (!Context.IsEnteredCurrent && before)
                     meta.InspectedElement = -1;
 
-                EnterInternal.IsEntered_DirectlyToElement(list, ref meta.inspectedElement_Internal);
+             //   EnterInternal.IsEntered_DirectlyToElement(list, ref meta.inspectedElement_Internal);
 
                 return Context.IsEnteredCurrent;
             }
@@ -699,7 +733,7 @@ namespace QuizCanners.Inspect
                 if (!Context.IsEnteredCurrent && before)
                     meta.InspectedElement = -1;
 
-                EnterInternal.IsEntered_DirectlyToElement(array, ref meta.inspectedElement_Internal);
+              //  EnterInternal.IsEntered_DirectlyToElement(array, ref meta.inspectedElement_Internal);
 
                 return Context.IsEnteredCurrent;
             }
@@ -736,7 +770,7 @@ namespace QuizCanners.Inspect
                 return "{0} is NULL".F(txt);
 
             if (lst.Count > 1)
-                return "{0} {1}{2}".F(txt, X_SYMBOL, lst.Count);
+                return "{0} {1}{2}".F(txt, SYMBOLS.X_SYMBOL, lst.Count);
 
             if (lst.Count == 0)
                 return "NO {0}".F(txt);

@@ -72,7 +72,7 @@ namespace QuizCanners.Utils
 
                 } catch (Exception ex) 
                 {
-                    pegi.Write_Exception(ex);
+                    pegi.WriteOrThrow_Exception(ex);
                 }
 
                 "Singletons".PL().IsEntered().Nl().If_Entered(Singleton.Collector.Inspect);
@@ -156,6 +156,9 @@ namespace QuizCanners.Utils
 
                 "Profiler".PL().Enter_Inspect(TimeProfiler.Instance).Nl();
     
+                if ("Performance Turntable".PL().IsEntered().Nl()) 
+                    PerformanceTurnTable.Token.InspectTokenStack();
+
                 if ("Time & Audio".PL().IsEntered().Nl_ifEntered())
                 {
                     if (Application.isEditor && Application.isPlaying && "Debug.Break()".PL().Click().Nl())
@@ -226,8 +229,8 @@ namespace QuizCanners.Utils
 
                     var changes = pegi.ChangeTrackStart();
 
-                    "Width".ConstL().Edit(ref width, 8, Display.main.renderingWidth).Nl();
-                    "Height".ConstL().Edit(ref height, 8, Display.main.renderingHeight).Nl();
+                    "Width".ConstL().Edit(ref width, 8, Display.main.systemWidth).Nl();
+                    "Height".ConstL().Edit(ref height, 8, Display.main.systemHeight).Nl();
 
                     if (changes)
                         Screen.SetResolution(width, height, fullscreen: true);
@@ -268,7 +271,7 @@ namespace QuizCanners.Utils
                         "Only in Editor".PL().WriteWarning();
                 }
 
-                "Debug".PL().IsEntered().Nl().If_Entered(QcDebug.Inspect);
+                "Other".PL().IsEntered().Nl().If_Entered(QcDebug.InspectOther);
 
                 if (!_context.IsAnyEntered)
                     QcScenes.Inspect();

@@ -111,6 +111,7 @@ namespace QuizCanners.Inspect
 
             public static PegiGuiStyle ImageButton = new(() => new GUIStyle(GUI.skin.button)
             {
+                clipping = TextClipping.Ellipsis,
                 overflow = new RectOffset(-3, -3, 0, 0),
                 margin = new RectOffset(1, -3, 1, 1)
             });
@@ -127,6 +128,7 @@ namespace QuizCanners.Inspect
             {
                 wordWrap = false,
                 fontStyle = FontStyle.Bold,
+                clipping = TextClipping.Ellipsis,
                 normal = { textColor = InGameView ? new Color32(120, 120, 255, 255) : new Color32(40, 40, 255, 255) },
                 margin = new RectOffset(0, 0, 0, -15),
                 fontSize = 14
@@ -174,7 +176,7 @@ namespace QuizCanners.Inspect
             {
                 margin = new RectOffset(9, 1, 6, 1),
                 fontSize = 14,
-                clipping = TextClipping.Clip,
+                clipping = TextClipping.Ellipsis,
                 richText = true,
                 wordWrap = false,
                 alignment = TextAnchor.MiddleCenter,
@@ -213,7 +215,7 @@ namespace QuizCanners.Inspect
                     fontSize = 13,
                     richText = true,
                     wordWrap = false,
-                    clipping = TextClipping.Clip,
+                    clipping = TextClipping.Ellipsis,
                     alignment = TextAnchor.MiddleLeft,
                     fontStyle = FontStyle.Italic,
                     contentOffset = InGameView ? new Vector2(0, 0) : new Vector2(0, -6),
@@ -226,7 +228,7 @@ namespace QuizCanners.Inspect
                     fontSize = 12,
                     richText = true,
                     wordWrap = false,
-                    clipping = TextClipping.Clip,
+                    clipping = TextClipping.Ellipsis,
                     alignment = TextAnchor.MiddleLeft,
                     fontStyle = FontStyle.Bold,
                     imagePosition = ImagePosition.ImageLeft,
@@ -240,6 +242,7 @@ namespace QuizCanners.Inspect
                 {
                     wordWrap = false,
                     fontStyle = FontStyle.Bold,
+                    //clipping = TextClipping.Ellipsis,
                     contentOffset = new Vector2(0, 4),
                     alignment = TextAnchor.MiddleLeft,
                     normal = { textColor = InGameView ? new Color32(220, 220, 255, 255) : new Color32(40, 40, 40, 255) }
@@ -249,7 +252,7 @@ namespace QuizCanners.Inspect
                 {
                     margin = new RectOffset(9, 1, 6, 1),
                     fontSize = 16,
-                    clipping = TextClipping.Clip,
+                    clipping = TextClipping.Ellipsis,
                     richText = true,
                     wordWrap = false,
                     alignment = TextAnchor.MiddleLeft,
@@ -293,7 +296,7 @@ namespace QuizCanners.Inspect
 
                 public static PegiGuiStyle Hint = new(() => new GUIStyle(GUI.skin.label)
                 {
-                    clipping = TextClipping.Overflow,
+                    clipping = TextClipping.Ellipsis,
                     wordWrap = true,
                     fontSize = 10,
                     fontStyle = FontStyle.Italic,
@@ -305,7 +308,7 @@ namespace QuizCanners.Inspect
 
                 public static PegiGuiStyle Warning = new(() => new GUIStyle(GUI.skin.label)
                 {
-                    clipping = TextClipping.Overflow,
+                    clipping = TextClipping.Ellipsis,
                     wordWrap = true,
                     fontSize = 13,
                     fontStyle = FontStyle.BoldAndItalic,

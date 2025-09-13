@@ -1,5 +1,6 @@
 using QuizCanners.Inspect;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace QuizCanners.Utils
@@ -8,14 +9,26 @@ namespace QuizCanners.Utils
     {
         public abstract class GateBase 
         {
-            public bool ValueIsDefined;
+            public virtual bool ValueIsDefined { get; set; }
         }
 
-        public abstract class GateGenericBase<T> : GateBase
+        public abstract class GenericBase<T> : GateBase
         {
             protected T previousValue;
 
             public T CurrentValue => previousValue;
+
+            private bool _valueIsDefined;
+            public override bool ValueIsDefined 
+            { 
+                get => _valueIsDefined; 
+                set
+                {
+                    _valueIsDefined = value;
+                    if (!value)
+                        previousValue = default;
+                } 
+            }
 
             public override string ToString() => ValueIsDefined ? previousValue.ToString() : "UNDEFINED {0}".F(typeof(T));
 
@@ -25,9 +38,9 @@ namespace QuizCanners.Utils
                 ValueIsDefined = true;
             }
 
-            protected abstract bool DifferentFromPrevious(T newValue);
+            protected abstract bool IsSameAsPrevious(T newValue);
 
-            public virtual bool IsDirty(T newValue) => (!ValueIsDefined) || (DifferentFromPrevious(newValue));
+            public virtual bool IsDirty(T comparedTo) => !(ValueIsDefined && IsSameAsPrevious(comparedTo));
 
             public virtual bool TryChange(T value)
             {
@@ -37,10 +50,8 @@ namespace QuizCanners.Utils
                     return true;
                 }
 
-                if (!DifferentFromPrevious(value))
-                {
+                if (IsSameAsPrevious(value))
                     return false;
-                }
 
                 previousValue = value;
 
@@ -54,15 +65,32 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class GateGenericValue<T> : GateGenericBase<T>
+        public class GenericValue<T> : GenericBase<T>
         {
-            protected override bool DifferentFromPrevious(T newValue) 
+            protected override bool IsSameAsPrevious(T newValue) 
             {
                 if (newValue == null)
                     return previousValue == null;
 
-                return !newValue.Equals(previousValue);
+                return newValue.Equals(previousValue);
             }
+        }
+
+        public class OncePerFrameUpdate<T>
+        {
+            private readonly Gate.Frame _check = new();
+            private T _cached;
+            public T Value
+            {
+                get => _cached;
+                set
+                {
+                    _cached = value;
+                    _check.TryEnter();
+                }
+            }
+
+            public bool TryEnter() => _check.TryEnter();
         }
 
         public class Frame : GateBase
@@ -122,12 +150,14 @@ namespace QuizCanners.Utils
                 return true;
             }
 
+            public int FramesPassed => CurrentFrame - _frameIndex;
+
             public bool IsFramesPassed(int frameCount) 
             { 
                 if (!ValueIsDefined && _initialValue == InitialValue.StartArmed)
                     return true;
 
-                return (CurrentFrame - _frameIndex) >= frameCount;
+                return FramesPassed >= frameCount;
             }
 
             public bool TryEnter(out bool wasInitialized)
@@ -154,7 +184,7 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public Frame(InitialValue initialValue) 
+            public Frame(InitialValue initialValue = InitialValue.StartArmed) 
             {
                 _initialValue = initialValue;
             }
@@ -214,7 +244,7 @@ namespace QuizCanners.Utils
                 return false;
             }
 
-            public double GetDeltaWithoutUpdate()
+            public double GetSecondsWithoutUpdate()
             {
                 if (!WasInitialized())
                     return 0;
@@ -235,7 +265,7 @@ namespace QuizCanners.Utils
                 if (!WasInitialized())
                     return _startArmed;
 
-                var delta = GetDeltaWithoutUpdate();
+                var delta = GetSecondsWithoutUpdate();
                 if (delta >= secondsPassed)
                 {
                     Update();
@@ -245,9 +275,20 @@ namespace QuizCanners.Utils
                 return false;
             }
 
+            public bool Update_IsTimePassed(double secondsPassed)
+            {
+                if (!WasInitialized())
+                    return _startArmed;
+
+                var delta = GetSecondsWithoutUpdate();
+                Update();
+
+                return delta >= secondsPassed;
+            }
+
             public double GetSecondsDeltaAndUpdate()
             {
-                _delta = GetDeltaWithoutUpdate();
+                _delta = GetSecondsWithoutUpdate();
                 Update();
 
                 return _delta;
@@ -258,7 +299,7 @@ namespace QuizCanners.Utils
                 if (!ValueIsDefined && _startArmed)
                     return true;
 
-                return GetDeltaWithoutUpdate() >= secondsPassed;
+                return GetSecondsWithoutUpdate() >= secondsPassed;
             }
 
             protected abstract double GetDeltaSeconds_Internal();
@@ -267,7 +308,7 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                "Delta: ".F(TimeSpan.FromSeconds(GetDeltaWithoutUpdate()).ToShortDisplayString()).PL().Write();
+                "Delta: ".F(TimeSpan.FromSeconds(GetSecondsWithoutUpdate()).ToShortDisplayString()).PL().Write();
             }
 
             #endregion
@@ -346,9 +387,9 @@ namespace QuizCanners.Utils
 
       
 
-        public class Bool : GateGenericBase<bool>
+        public class Bool : GenericBase<bool>
         {
-            protected override bool DifferentFromPrevious(bool newValue) => newValue != previousValue;
+            protected override bool IsSameAsPrevious(bool newValue) => newValue == previousValue;
 
             public Bool() { }
 
@@ -358,9 +399,9 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class Integer : GateGenericBase<int>
+        public class Integer : GenericBase<int>
         {
-            protected override bool DifferentFromPrevious(int newValue) => newValue != previousValue;
+            protected override bool IsSameAsPrevious(int newValue) => newValue == previousValue;
 
             public Integer() {}
             public Integer(int initialValue)
@@ -371,9 +412,9 @@ namespace QuizCanners.Utils
             public override string ToString() => ValueIsDefined ? previousValue.ToString() : "NOT INIT";
         }
 
-        public class UnsignedInteger : GateGenericBase<uint>
+        public class UnsignedInteger : GenericBase<uint>
         {
-            protected override bool DifferentFromPrevious(uint newValue) => newValue != previousValue;
+            protected override bool IsSameAsPrevious(uint newValue) => newValue == previousValue;
 
             public UnsignedInteger() { }
             public UnsignedInteger(uint initialValue)
@@ -384,9 +425,9 @@ namespace QuizCanners.Utils
             public override string ToString() => ValueIsDefined ? previousValue.ToString() : "NOT INIT";
         }
 
-        public class Double : GateGenericBase<double>
+        public class Double : GenericBase<double>
         {
-            protected override bool DifferentFromPrevious(double newValue) => Math.Abs(newValue - previousValue) > double.Epsilon * 10;
+            protected override bool IsSameAsPrevious(double newValue) => Math.Abs(newValue - previousValue) <= double.Epsilon * 10;
 
             protected virtual bool DifferentFromPrevious(double newValue, double changeTreshold) => Math.Abs(newValue - previousValue) >= changeTreshold;
 
@@ -425,9 +466,9 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class Float : GateGenericBase<float>
+        public class Float : GenericBase<float>
         {
-            protected override bool DifferentFromPrevious(float newValue) => Math.Abs(newValue - previousValue) > float.Epsilon * 10;
+            protected override bool IsSameAsPrevious(float newValue) => Math.Abs(newValue - previousValue) <= float.Epsilon * 10;
 
             public bool TryChange(float value, float changeTreshold)
             {
@@ -462,20 +503,20 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class String : GateGenericBase<string>
+        public class String : GenericBase<string>
         {
-            protected override bool DifferentFromPrevious(string newValue)
+            protected override bool IsSameAsPrevious(string newValue)
             {
-                var newIsNull = newValue == null;
-                var oldIsNull = previousValue == null;
+                var newIsNull = newValue.IsNullOrEmpty();
+                var oldIsNull = previousValue.IsNullOrEmpty();
 
-                if (newIsNull != oldIsNull)
+                if (newIsNull && oldIsNull) // Both are null - same
                     return true;
 
-                if (newIsNull)
+                if (newIsNull || oldIsNull) // One is null - different
                     return false;
 
-                return !newValue.Equals(previousValue);
+                return newValue.Equals(previousValue);
             }
             public String()
             {
@@ -489,9 +530,9 @@ namespace QuizCanners.Utils
         }
 
 
-        public class ColorValue : GateGenericBase<Color>
+        public class ColorValue : GenericBase<Color>
         {
-            protected override bool DifferentFromPrevious(Color newValue) => !newValue.Equals(previousValue);
+            protected override bool IsSameAsPrevious(Color newValue) => newValue.Equals(previousValue);
 
             public bool TryChange32(Color32 value) => TryChange(value);
 
@@ -514,9 +555,9 @@ namespace QuizCanners.Utils
             public override string ToString() => ValueIsDefined ? previousValue.ToString() : "NOT INIT";
         }
 
-        public class Vector2Value : GateGenericBase<Vector2>
+        public class Vector2Value : GenericBase<Vector2>
         {
-            protected override bool DifferentFromPrevious(Vector2 newValue) => newValue != previousValue;
+            protected override bool IsSameAsPrevious(Vector2 newValue) => newValue == previousValue;
 
             public bool TryChange(Vector2 value, double changeTreshold)
             {
@@ -551,9 +592,9 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class Vector3Value : GateGenericBase<Vector3>
+        public class Vector3Value : GenericBase<Vector3>
         {
-            protected override bool DifferentFromPrevious(Vector3 newValue) => newValue != previousValue;
+            protected override bool IsSameAsPrevious(Vector3 newValue) => newValue == previousValue;
 
             public bool TryChange(Vector3 value, double changeTreshold)
             {
@@ -588,9 +629,9 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class Vector4Value : GateGenericBase<Vector4>, IPEGI
+        public class Vector4Value : GenericBase<Vector4>, IPEGI
         {
-            protected override bool DifferentFromPrevious(Vector4 newValue) => newValue != previousValue;
+            protected override bool IsSameAsPrevious(Vector4 newValue) => newValue == previousValue;
 
             public bool TryChange(Vector4 value, double changeTreshold)
             {
@@ -630,9 +671,9 @@ namespace QuizCanners.Utils
             }
         }
 
-        public class QuaternionValue : GateGenericBase<Quaternion>
+        public class QuaternionValue : GenericBase<Quaternion>
         {
-            protected override bool DifferentFromPrevious(Quaternion newValue) => newValue != previousValue;
+            protected override bool IsSameAsPrevious(Quaternion newValue) => newValue == previousValue;
 
             public bool TryChange(Quaternion value, double changeTreshold)
             {
@@ -674,7 +715,7 @@ namespace QuizCanners.Utils
 
             private bool _isSet;
 
-            private static readonly PerformanceTurnTable.Token _performanceToken = new(delay: 0.1f, initialValue: InitialValue.Uninitialized);
+            private static readonly PerformanceTurnTable.Token _performanceToken = new("Screen Size", delay: 0.1f, initialValue: InitialValue.Uninitialized);
 
             public bool IsDirty => !_isSet || Screen.width != _width || Screen.height != _height;
 

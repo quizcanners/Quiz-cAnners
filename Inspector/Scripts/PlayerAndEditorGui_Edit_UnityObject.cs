@@ -336,7 +336,7 @@ namespace QuizCanners.Inspect
                     }
                     else
                     {
-                        if (Context.Internal_isEntered(label, showLabelIfEntered))
+                        if (Context.Internal_isEntered(label, showLabelIfEntered, showLabelIfFalse: false))
                         {
                             Nl();
                             var pgi = QcUnity.TryGetInterfaceFrom<IPEGI>(obj);
@@ -347,9 +347,8 @@ namespace QuizCanners.Inspect
                         }
                         else
                         {
-
                             SelectOrEdit(ref obj);
-                            ClickHighlight(obj);
+                            //ClickHighlight(obj);
                         }
                     }
 
@@ -359,6 +358,9 @@ namespace QuizCanners.Inspect
 
                 void SelectOrEdit(ref T obj) 
                 {
+                    if (PaintingGameViewUI)
+                        label.label.PL().Write(); //.TryWrite();
+
                     if (!selectFrom.IsNullOrEmpty())
                         Select_or_edit(ref obj, selectFrom);
                     else
@@ -414,7 +416,7 @@ namespace QuizCanners.Inspect
 
             if (obj)
             {
-                Try_Nested_Inspect(obj);
+                Nested_Inspect_OrFallback(obj);
             }
 
             return changed;
@@ -433,7 +435,7 @@ namespace QuizCanners.Inspect
                 }
             }
             else
-                Try_Nested_Inspect(obj);
+                Nested_Inspect_OrFallback(obj);
 
             return changed;
         }

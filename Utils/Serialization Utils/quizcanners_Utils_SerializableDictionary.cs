@@ -39,7 +39,9 @@ namespace QuizCanners.Utils
                 else
                 {
                     for (int i = 0; i < keys.Count; i++)
+                    {
                         Add(keys[i], values[i]);
+                    }
                 }
             }
 
@@ -54,9 +56,9 @@ namespace QuizCanners.Utils
             get 
             {
                 _collectionMeta ??= new pegi.CollectionInspectorMeta(labelName: ToString().Replace("Dictionary", ""), showAddButton: CanAdd, showDictionaryKey: ShowDictionaryKey)
-                    {
-                        ElementName = DefaultNewItemName
-                    };
+                {
+                    ElementName = DefaultNewItemName
+                };
                 return _collectionMeta;
             }
         }
@@ -68,12 +70,11 @@ namespace QuizCanners.Utils
 
         public override string ToString() =>
             Count > 0
-            ? "{0} {1}{2}".F( QcSharp.AddSpacesToSentence(GetType().ToPegiStringType()), pegi.X_SYMBOL, Count)
+            ? "{0} {1}{2}".F( QcSharp.AddSpacesToSentence(GetType().ToPegiStringType()), pegi.SYMBOLS.X_SYMBOL, Count)
             : QcSharp.AddSpacesToSentence(GetType().ToPegiStringType())
             ;
         #endregion
     }
-
 
     [System.Serializable]
     public abstract class SerializableDictionary_ForEnum<TKey, TValue> : SerializableDictionary<TKey, TValue> where TValue : new()
