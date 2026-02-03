@@ -6,6 +6,8 @@ using System.Runtime.Serialization.Formatters.Binary;
 using Object = UnityEngine.Object;
 using System;
 using System.Linq;
+using System.Text;
+
 
 
 
@@ -17,7 +19,7 @@ using AssetDatabase = UnityEditor.AssetDatabase;
 
 namespace QuizCanners.Utils
 {
-    public static class QcFile
+    public static partial class QcFile
     {
         private const string TEXT_FILE_TYPE = ".txt";
         private const string BYTES_FILE_TYPE = ".bytes";
@@ -29,9 +31,10 @@ namespace QuizCanners.Utils
         {
             public string FolderName;
             public string FileName;
-            public bool AsBytes;
+            public QcFile.Encryption.Secret Secret;
+            //  public bool AsBytes;
 
-            internal string Extension => AsBytes ? BYTES_FILE_TYPE : TEXT_FILE_TYPE;
+            internal string Extension => Secret == null ? TEXT_FILE_TYPE : Secret.FileExtension; // AsBytes ? BYTES_FILE_TYPE : TEXT_FILE_TYPE;
 
             public bool SaveGame(object saveData) => Save.ToPersistentPath.JsonTry(saveData, this);
             public bool LoadGame<T>(out T saveData)=> Load.FromPersistentPath.JsonTry(this, out saveData);
@@ -46,11 +49,12 @@ namespace QuizCanners.Utils
 
      
 
-            public RelativeLocation (string folderName, string fileName, bool asBytes = DEFAULT_IS_BINARY) 
+            public RelativeLocation (string folderName, string fileName, QcFile.Encryption.Secret secret = null) // bool asBytes = DEFAULT_IS_BINARY) 
             {
                 FolderName = folderName;
                 FileName = fileName;
-                AsBytes = asBytes;
+                Secret = secret;
+                //AsBytes = asBytes;
             }
         }
 
@@ -168,9 +172,9 @@ namespace QuizCanners.Utils
         {
             public class InPersistentFolder 
             {
-                public static bool FileTry(string subPath, string fileName, bool asBytes = DEFAULT_IS_BINARY)
+                public static bool FileTry(string subPath, string fileName)
                 {
-                    var location = new RelativeLocation(folderName: subPath, fileName: fileName, asBytes: asBytes);
+                    var location = new RelativeLocation(folderName: subPath, fileName: fileName);
                     return FileTry(location);
                 }
 
@@ -413,9 +417,9 @@ namespace QuizCanners.Utils
                     }
                 }
                */
-                public static bool StringTry(string subPath, string filename, out string result, bool asBytes = DEFAULT_IS_BINARY)
+                public static bool StringTry(string subPath, string filename, out string result) //, bool asBytes = DEFAULT_IS_BINARY)
                 {
-                    var location = new RelativeLocation(folderName: subPath, fileName: filename, asBytes: asBytes);
+                    var location = new RelativeLocation(folderName: subPath, fileName: filename);
                     return StringTry(location, out result);
                 }
 
@@ -428,6 +432,7 @@ namespace QuizCanners.Utils
                     if (!File.Exists(fullPath))
                         return false;
 
+                    /*
                     if (location.AsBytes)
                     {
                         var file = File.Open(fullPath, FileMode.Open);
@@ -436,6 +441,24 @@ namespace QuizCanners.Utils
                             result = (string)Formatter.Deserialize(file);
                             return true;
                         }
+                    }
+                    */
+
+                    if (location.Secret != null)
+                    {
+                        try
+                        {
+                            var bytes = Encryption.Load(fullPath, location.Secret);
+                            result = Encoding.UTF8.GetString(bytes);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError("Loading from " + fullPath);
+                            Debug.LogException(ex);
+                            return false;
+                        }
+
+                        return true;
                     }
 
                     result = File.ReadAllText(fullPath);
@@ -448,15 +471,15 @@ namespace QuizCanners.Utils
                     return result;
                 }
 
-                public static string String(string subPath, string filename, bool asBytes = DEFAULT_IS_BINARY)
+                public static string String(string subPath, string filename) //, bool asBytes = DEFAULT_IS_BINARY)
                 {
-                    StringTry(subPath: subPath, filename: filename, out string result, asBytes: asBytes);
+                    StringTry(subPath: subPath, filename: filename, out string result); //, asBytes: asBytes);
                     return result;
                 }
 
-                public static bool TryOverrideFromJson<T>(string subPath, string filename, ref T result, bool asBytes = DEFAULT_IS_BINARY) 
+                public static bool TryOverrideFromJson<T>(string subPath, string filename, ref T result)//, bool asBytes = DEFAULT_IS_BINARY) 
                 {
-                    var location = new RelativeLocation(folderName: subPath, fileName: filename, asBytes: asBytes);
+                    var location = new RelativeLocation(folderName: subPath, fileName: filename); //, asBytes: asBytes);
                     return TryOverrideFromJson(location, ref result);
                 }
 
@@ -492,9 +515,18 @@ namespace QuizCanners.Utils
                 {
                     try
                     {
-                        if (StringTry(location, out string data))
+                        if (StringTry(location, out string json))
                         {
-                            result = JsonUtility.FromJson<T>(data);
+                         //   if (location.Secret != null)
+                           // {
+                                //var bytes = Encryption.Load(data, location.Secret);  //SecureSaves.Load(Path.Combine(Application.persistentDataPath, "save.dat"));
+                               // var json = Encoding.UTF8.GetString(bytes);
+                             //   var saveObject = JsonUtility.FromJson<SaveType>(json);
+                            //}
+                            //else
+                            //{
+                                result = JsonUtility.FromJson<T>(json);
+                            //}
 
                             if (result == null)
                             {
@@ -681,9 +713,9 @@ namespace QuizCanners.Utils
                     }
                 }
                 */
-                public static bool JsonTry(object objectToSerialize, string folderName, string filename, bool asBytes = DEFAULT_IS_BINARY)
+                public static bool JsonTry(object objectToSerialize, string folderName, string filename) //, bool asBytes = DEFAULT_IS_BINARY)
                 {
-                    var location = new RelativeLocation(folderName: folderName, fileName: filename, asBytes: asBytes);
+                    var location = new RelativeLocation(folderName: folderName, fileName: filename);
 
                     return JsonTry(objectToSerialize: objectToSerialize, location: location);
                 }
@@ -702,40 +734,34 @@ namespace QuizCanners.Utils
                     }
                 }
 
-                public static bool String(string subPath, string fileName, string data, bool asBytes = DEFAULT_IS_BINARY)
+                public static bool String(string subPath, string fileName, string data) //, bool asBytes = DEFAULT_IS_BINARY)
                 {
-                    RelativeLocation location = new(folderName: subPath, fileName: fileName, asBytes: asBytes);
+                    RelativeLocation location = new(folderName: subPath, fileName: fileName);
                     return String(location, data: data);
                 }
 
                 public static bool String(RelativeLocation location, string data)
                 {
                     var path = CreateDirectoryPath(Application.persistentDataPath, location);
-                    return StringByFullPath(path, data);
+                    return StringByFullPath(path, data, location.Secret);
                 }
             }
 
             #endregion
 
-            public static bool StringByFullPath(string path, string data)
+            public static bool StringByFullPath(string path, string data, Encryption.Secret secret = null)
             {
                 var tmpPath = Path.ChangeExtension(path, ".tmp");
 
                 try
                 {
-                    /*
-                    if (asBytes)
-                    {
-                        var file = File.Create(tmpPath);
-                        using (file)
-                        {
-                            Formatter.Serialize(file, data);
-                        }
-                    }
-                    else
-                    {*/
+                    if (secret==null)
                         File.WriteAllText(tmpPath, data);
-                    //}
+                    else 
+                    {
+                        var asBytes = Encoding.UTF8.GetBytes(data);
+                        Encryption.Save(tmpPath, asBytes, secret);
+                    }
 
                     if (File.Exists(path))
                     {
@@ -750,7 +776,7 @@ namespace QuizCanners.Utils
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError("Saving to " + path);
+                    Debug.LogError("Exception while saving to " + path);
                     Debug.LogException(ex);
                     if (File.Exists(tmpPath))
                         File.Delete(tmpPath);
@@ -805,8 +831,8 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public Location(LocationEnum location, string folderName, string fileName, bool asBytes = DEFAULT_IS_BINARY)
-                : base(folderName: folderName, fileName: fileName, asBytes: asBytes)
+            public Location(LocationEnum location, string folderName, string fileName) //, bool asBytes = DEFAULT_IS_BINARY)
+                : base(folderName: folderName, fileName: fileName)
             {
                 LocationEnum = location;
             }

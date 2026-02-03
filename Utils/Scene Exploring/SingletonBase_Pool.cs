@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace QuizCanners.Utils
 {
-    public abstract class PoolBehaviourCore<T> : Singleton.BehaniourBase, IEnumerable<T>, IGotCount where T : Component
+    public abstract class PoolBehaviourCore<T> : Singleton.BehaviourBase, IEnumerable<T>, IGotCount where T : Component
     {
         [SerializeField] protected List<T> prefabs = new();
         protected int lastInstancePrefab;

@@ -179,9 +179,10 @@ namespace QuizCanners.Utils
 
                     "Time.frameCount: {0}".F(Time.frameCount).PL().Nl();
 
-                    var phA = Physics.autoSyncTransforms;
+                  //  var phA = Physics.autoSyncTransforms;
 
-                    "Physics Auto Sync Transforms".PL().ToggleIcon(ref phA).Nl(()=> Physics.autoSyncTransforms = phA);
+                   // "Physics Auto Sync Transforms".PL().ToggleIcon(ref phA).Nl(()=> Physics.autoSyncTransforms = phA);
+
 
                     Inspect_TimeScaleOption();
 
@@ -199,6 +200,9 @@ namespace QuizCanners.Utils
                     "Time.deltaTime: {0}".F(QcSharp.SecondsToReadableString(Time.deltaTime)).PL().Nl();
 
                     "Time.realtimeSinceStartup {0}".F(QcSharp.SecondsToReadableString(Time.realtimeSinceStartup)).PL().Nl();
+
+
+
 
                     
                 }

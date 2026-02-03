@@ -16,7 +16,7 @@ namespace QuizCanners.Inspect
 
         static void HierarchyItemCB(int instanceID, Rect selectionRect)
         {
-            var inst = EditorUtility.InstanceIDToObject(instanceID);
+            var inst = EditorUtility.EntityIdToObject(instanceID); //InstanceIDToObject(instanceID);
 
             if (!inst)
                 return;
@@ -38,13 +38,13 @@ namespace QuizCanners.Inspect
             if (msg.IsNullOrEmpty())
                 return;
 
-            Rect r = new Rect(selectionRect)
+            Rect r = new(selectionRect)
             {
                 x = 30,
                 width = 18
             };
 
-            GUIContent cnt = new GUIContent(Icon.Warning.GetIcon().texture, msg);
+            GUIContent cnt = new(Icon.Warning.GetIcon().texture, msg);
             GUI.Label(r, cnt);
         }
     }

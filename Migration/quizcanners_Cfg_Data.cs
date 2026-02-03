@@ -15,6 +15,12 @@ namespace QuizCanners.Migration
 #pragma warning disable IDE0019 // Use pattern matching
 #pragma warning disable IDE0018 // Inline variable declaration
 
+    public interface ICfgDecode_Events 
+    {
+        void OnBeforeDecode();
+        void OnAfterDecode();
+    }
+
     public interface ICfgDecode
     {
         void DecodeTag(string key, CfgData data);

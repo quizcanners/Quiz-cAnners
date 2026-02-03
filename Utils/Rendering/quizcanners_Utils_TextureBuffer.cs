@@ -10,6 +10,7 @@ namespace QuizCanners.Utils
     {
         public static void Set(this ShaderProperty.TextureValue tex, RenderTextureBufferBase buff) => tex.GlobalValue = buff.GetOrCreateTexture;
 
+
         public class ScreenSize : RenderTextureBufferBase, IPEGI
         {
             private readonly string _name;

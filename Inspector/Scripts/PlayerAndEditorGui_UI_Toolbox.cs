@@ -15,7 +15,7 @@ namespace QuizCanners.Inspect
         
         public static class Toolkit 
         {
-            internal static State CurrentState;
+            //internal static State CurrentState;
 
             [Serializable]
             public class State
@@ -211,12 +211,13 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
+            /*
             internal static ChangesToken Edit_Big(ref string val, int height)
             {
                 Start();
                 Write(val, "big Text");
                 return ChangesToken.False;
-            }
+            }*/
 
 
                         #if USE_UI_TOOLKIT

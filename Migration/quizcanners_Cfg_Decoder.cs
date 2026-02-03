@@ -16,6 +16,10 @@ namespace QuizCanners.Migration
 
         public static void Decode<T>(this T obj, CfgData data) where T : class, ICfgDecode
         {
+            var events = obj as ICfgDecode_Events;
+
+            events?.OnBeforeDecode();
+
             if (obj is ICfgCustom cstm)
             {
                 if (cstm == _loopSafe)
@@ -32,14 +36,22 @@ namespace QuizCanners.Migration
             }
             else
                 new CfgDecoder(data).DecodeTagsFor(obj);
+
+            events?.OnAfterDecode();
         }
 
         public static void DecodeTagsFrom<T>(this T obj, CfgData data) where T : class, ICfgCustom
         {
+            var events = obj as ICfgDecode_Events;
+
+            events?.OnBeforeDecode();
+
             if (!data.IsEmpty)
             {
                 new CfgDecoder(data).DecodeTagsFor(obj);
             }
+
+            events?.OnAfterDecode();
         }
         
         public static T TryDecodeInto<T>(this ICfg ovj, Type childType)

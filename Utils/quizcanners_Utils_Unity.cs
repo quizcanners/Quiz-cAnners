@@ -8,13 +8,11 @@ using Object = UnityEngine.Object;
 using System.Reflection;
 using UnityEngine.SceneManagement;
 using QuizCanners.Inspect;
-using UnityEngine.AI;
 
 
 
 #if UNITY_EDITOR
 using  UnityEditor;
-
 #endif
 
 namespace QuizCanners.Utils {
@@ -239,7 +237,7 @@ namespace QuizCanners.Utils {
 #endif
 
         #endregion
-
+        /*
         public static float GetLength(this NavMeshPath path) 
         {
             float totalLength = 0;
@@ -254,7 +252,7 @@ namespace QuizCanners.Utils {
 
             return totalLength;
         }
-
+        */
         public static void RefreshLayoutHack(MonoBehaviour tf)
         {
             if (!tf)
@@ -371,6 +369,8 @@ namespace QuizCanners.Utils {
 
         #region Color 
 
+        public static Color BrightnessMultiplyBy(this Color col, float fraction) => 
+            new Color(col.r * fraction, col.g * fraction, col.b * fraction, col.a);
         public static Color Alpha_MultiplyBy(this Color col, float alpha)
         {
             col.a *= alpha;
@@ -814,18 +814,18 @@ namespace QuizCanners.Utils {
         }
         public static void DestroyWhatever(this GameObject go) => go.DestroyWhateverUnityObject();
 
-        public static void DestroyAndClear<T>(this List<T> gos) where T : Component
+        public static void DestroyAndClear<T>(this List<T> comps) where T : Component
         {
-            if (gos.IsNullOrEmpty())
+            if (comps.IsNullOrEmpty())
                 return;
 
-            foreach (var go in gos)
+            foreach (var go in comps)
             {
                 if (go)
                     go.gameObject.DestroyWhatever();
             }
 
-            gos.Clear();
+            comps.Clear();
         }
 
         public static void DestroyAndClear<K,T>(this Dictionary<K,T> gos) where T : Component

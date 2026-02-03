@@ -52,6 +52,7 @@ namespace QuizCanners.Inspect
               //  if (value) // && !_globChanged)
                  //   Debug.Log("Glob Changed to true. Was changed: {0}".F(_globChanged));
 
+             
                 _globChanged = value;
             }
         }

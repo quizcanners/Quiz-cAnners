@@ -1,4 +1,4 @@
-﻿using QuizCanners.Utils;
+using QuizCanners.Utils;
 using UnityEngine;
 
 
@@ -560,17 +560,35 @@ namespace QuizCanners.Inspect
         {
 
             var text = value.label;
-            if (showCopyButton && "Copy text to clipboard".PL().Click().Nl())
-                SetCopyPasteBuffer(text);
+            if (showCopyButton)
+                WriteCopyTextButton();// && "Copy text to clipboard".PL().Click().Nl())
+                                      // SetCopyPasteBuffer(text);
+            
+            bool tooLong = text.Length > 2000;
 
-            if (PaintingGameViewUI && !text.IsNullOrEmpty() && ContainsAtLeast(value.label, '\n', 5)) // Due to MGUI BUG
-                ".....   Big Text Has Many Lines: {0}".F(text.FirstLine()).PL().Write();
+            if (PaintingGameViewUI && !text.IsNullOrEmpty() && (tooLong || ContainsAtLeast(value.label, '\n', 5)))
+            {// Due to MGUI BUG
+                var toShow = text.FirstLine();
+                if (toShow.Length > 50)
+                    toShow = toShow.Substring(0, 50) + "...";
+
+                ".....   Big Text Has Many Lines: {0}".F(toShow).PL().Write().Nl();
+                WriteCopyTextButton();
+            }
             else
             {
                 return Edit_Big(ref text, height: lines * TEXT_LINE_HEIGHT);
 
             }
             return ChangesToken.False;
+
+            void WriteCopyTextButton()
+            {
+                if ("Copy text to clipboard".PL().Click().Nl())
+                    SetCopyPasteBuffer(text);
+            }
+
+
         }
 
         public static ChangesToken Write_ForCopy_Big(this TextLabel label, string value, bool showCopyButton = false, int lines = 5)

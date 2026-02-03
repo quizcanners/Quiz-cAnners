@@ -113,7 +113,7 @@ namespace QuizCanners.Utils
 
             public void CaptureByScreenCaptureUtility()
             {
-                ScreenCapture.CaptureScreenshot("{0}".F(System.IO.Path.Combine(folderName, GetScreenShotName()) + ".png"), UpScale);
+               // ScreenCapture.CaptureScreenshot("{0}".F(System.IO.Path.Combine(folderName, GetScreenShotName()) + ".png"), UpScale);
             }
 
             public void RenderToCameraAndSave()

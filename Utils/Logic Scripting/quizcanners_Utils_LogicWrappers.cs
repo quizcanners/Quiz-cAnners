@@ -15,7 +15,11 @@ namespace QuizCanners.Utils
             private bool disableWhenBigger;
             private readonly Gate.Bool _enableGate = new();
 
-            public bool Enabled => _enableGate.CurrentValue;
+            public bool Enabled
+            {
+                get => _enableGate.CurrentValue;
+                set => _enableGate.TryChange(value);
+            }
 
             private bool IsEnabled_Internal(float value)
             {

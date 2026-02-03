@@ -153,8 +153,8 @@ namespace QuizCanners.Inspect
                 if (TryGet(out var context))
                     context.IsPreviousEntered = StateToken.False;
 
-                if (currentMode == PegiPaintingMode.UI_Toolkit) 
-                    Toolkit.CurrentState.SetDirty();
+               // if (currentMode == PegiPaintingMode.UI_Toolkit) 
+                  //  Toolkit.CurrentState.SetDirty();
 
                 Focus.OnContextChange(); // = 0;
             }
@@ -164,8 +164,8 @@ namespace QuizCanners.Inspect
                 if (TryGet(out var context))
                     context.IsPreviousEntered = StateToken.True;
 
-                if (currentMode == PegiPaintingMode.UI_Toolkit)
-                    Toolkit.CurrentState.SetDirty();
+              //  if (currentMode == PegiPaintingMode.UI_Toolkit)
+                  //  Toolkit.CurrentState.SetDirty();
 
                 Focus.OnContextChange(); // = 0;
             }

@@ -23,7 +23,11 @@ namespace QuizCanners.Utils
         public TValue this[TKey key] 
         {
             get => _dictionary[key];
-            set => _dictionary[key] = value;
+            set
+            {
+                _dictionary[key] = value;
+                _inverseDictionary[value] = key;
+            }
         } 
 
         public bool TryGetValue(TKey key, out TValue value) => _dictionary.TryGetValue(key, out value);
@@ -36,6 +40,9 @@ namespace QuizCanners.Utils
         public void Inspect()
         {
             _dictionary.Nested_Inspect().Nl();
+
+            if (_dictionary.Count != _inverseDictionary.Count)
+                "Dictionaries out of sync!".PL(pegi.Styles.Text.Warning);
         }
 
         #endregion
@@ -93,7 +100,19 @@ namespace QuizCanners.Utils
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            throw new System.NotImplementedException();
+            if (array == null)
+                throw new System.ArgumentNullException(nameof(array));
+
+            if (arrayIndex < 0 || arrayIndex > array.Length)
+                throw new System.ArgumentOutOfRangeException(nameof(arrayIndex));
+
+            if (array.Length - arrayIndex < Count)
+                throw new System.ArgumentException("The number of elements in the source collection is greater than the available space from arrayIndex to the end of the destination array.");
+
+            foreach (var kvp in _dictionary)
+            {
+                array[arrayIndex++] = kvp;
+            }
         }
 
         public bool Remove(KeyValuePair<TKey, TValue> item) => Remove(item.Key);

@@ -1,4 +1,4 @@
-﻿using QuizCanners.Inspect;
+using QuizCanners.Inspect;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -24,55 +24,67 @@ namespace QuizCanners.Utils
 
         #region Html Tags (For Text Mesh Pro)
 
-        public static string HtmlTag(string tag, string value) => "<{0}={1}>".F(tag, value);
-
-        public static string HtmlTag(string tag) => "<{0}>".F(tag);
-
-        public static string HtmlTagWrap(string tag, string content) => content.IsNullOrEmpty() ? "" : "<{0}>{1}</{0}>".F(tag, content);
-
-        public static string HtmlTagWrap(string tag, string tagValue, string content) => content.IsNullOrEmpty() ? "" : "<{0}={1}>{2}</{0}>".F(tag, tagValue, content);
-
-        public static void HtmlTagWrap(string tag, string tagValue, string content, StringBuilder sb)
+        public static class HtmlWrap 
         {
-            sb.Append('<')
-                .Append(tag)
-                .Append('=')
-                .Append(tagValue)
-                .Append('>')
-                .Append(content)
-                .Append("</")
-                .Append(tag)
-                .Append('>');
-           // content.IsNullOrEmpty() ? "" : "<{0}={1}>{2}</{0}>".F(tag, tagValue, content);
+            public static string TagAndValue(string tag, string value) => "<{0}={1}>".F(tag, value);
+
+            public static string Tag(string tag) => "<{0}>".F(tag);
+
+            public static string TagWrapContent(string tag, string content) => content.IsNullOrEmpty() ? "" : "<{0}>{1}</{0}>".F(tag, content);
+
+            public static string Bold( string content) => HtmlWrap.TagWrapContent("b", content);
+
+            public static string Italics( string content) => HtmlWrap.TagWrapContent("i", content);
+
+            public static string TagAndValueWrapContent(string tag, string tagValue, string content) => content.IsNullOrEmpty() ? "" : "<{0}={1}>{2}</{0}>".F(tag, tagValue, content);
+
+            public static void TagAndValueWrapContent(string tag, string tagValue, string content, StringBuilder sb)
+            {
+                sb.Append('<')
+                    .Append(tag)
+                    .Append('=')
+                    .Append(tagValue)
+                    .Append('>')
+                    .Append(content)
+                    .Append("</")
+                    .Append(tag)
+                    .Append('>');
+                // content.IsNullOrEmpty() ? "" : "<{0}={1}>{2}</{0}>".F(tag, tagValue, content);
+            }
+
+
+            public static string Color(string content, Color color) => content.IsNullOrEmpty() ? "" : "<{0}={1}>{2}</{0}>".F("color", "#" + ColorUtility.ToHtmlStringRGBA(color), content);
+
+            public static string Alpha(float alpha01) => TagAndValue("alpha", "#" + Mathf.FloorToInt(Mathf.Clamp01(alpha01) * 255).ToString("X2"));
+
+            public static string WrapAlpha(string content, float alpha01) => Alpha(alpha01) + content + Alpha(1f);
         }
 
+     
+        public static StringBuilder Append_Tab(this StringBuilder bld) => bld.Append('\t');
 
-        public static string HtmlTagWrap(string content, Color color) => content.IsNullOrEmpty() ? "" : "<{0}={1}>{2}</{0}>".F("color", "#" + ColorUtility.ToHtmlStringRGBA(color), content);
+        public static StringBuilder Append_HtmlTag(this StringBuilder bld, string tag) => bld.Append(HtmlWrap.Tag(tag));
 
-        public static string HtmlTagAlpha(float alpha01) => HtmlTag("alpha", "#" + Mathf.FloorToInt(Mathf.Clamp01(alpha01) * 255).ToString("X2"));
+        public static StringBuilder Append_HtmlTag(this StringBuilder bld, string tag, string value) => bld.Append(HtmlWrap.TagAndValue(tag, value));
 
-        public static string HtmlTagWrapAlpha(string content, float alpha01) => HtmlTagAlpha(alpha01) + content + HtmlTagAlpha(1f);
+        public static StringBuilder Append_HtmlText(this StringBuilder bld, string tag, string value, string content) => bld.Append(HtmlWrap.TagAndValueWrapContent(tag, value, content));
 
-        public static StringBuilder AppendHtmlTag(this StringBuilder bld, string tag) => bld.Append(HtmlTag(tag));
+        public static StringBuilder Append_HtmlText(this StringBuilder bld, string tag, string content) => bld.Append(HtmlWrap.TagWrapContent(tag, content));
 
-        public static StringBuilder AppendHtmlTag(this StringBuilder bld, string tag, string value) => bld.Append(HtmlTag(tag, value));
+        public static StringBuilder Append_HtmlColor(this StringBuilder bld, string content, Color col) => bld.Append(HtmlWrap.Color(content, col));
 
-        public static StringBuilder AppendHtmlText(this StringBuilder bld, string tag, string value, string content) => bld.Append(HtmlTagWrap(tag, value, content));
+        public static StringBuilder Append_HtmlAlpha(this StringBuilder bld, string content, float alpha) => bld.Append(HtmlWrap.WrapAlpha(content, alpha));
 
-        public static StringBuilder AppendHtmlText(this StringBuilder bld, string tag, string content) => bld.Append(HtmlTagWrap(tag, content));
+        public static StringBuilder Append_HtmlBold(this StringBuilder bld, string content) => bld.Append(HtmlWrap.TagWrapContent("b", content));
 
-        public static StringBuilder AppendHtmlAlpha(this StringBuilder bld, string content, float alpha) => bld.Append(HtmlTagWrapAlpha(content, alpha));
+        public static StringBuilder Append_HtmlItalics(this StringBuilder bld, string content) => bld.Append(HtmlWrap.TagWrapContent("i", content));
 
-        public static StringBuilder AppendHtmlBold(this StringBuilder bld, string content) => bld.Append(HtmlTagWrap("b", content));
+        public static StringBuilder AppendHtml(this StringBuilder bld, string content, Color col) => bld.Append(HtmlWrap.Color(content, col)); //content.IsNullOrEmpty() ? bld : bld.AppendHtmlText("color", "#"+ColorUtility.ToHtmlStringRGBA(col), content);
 
-        public static StringBuilder AppendHtmlItalics(this StringBuilder bld, string content) => bld.Append(HtmlTagWrap("i", content));
-
-        public static StringBuilder AppendHtml(this StringBuilder bld, string content, Color col) => bld.Append(HtmlTagWrap(content, col)); //content.IsNullOrEmpty() ? bld : bld.AppendHtmlText("color", "#"+ColorUtility.ToHtmlStringRGBA(col), content);
-
-        public static StringBuilder AppendHtmlLink(this StringBuilder bld, string content) => content.IsNullOrEmpty() ? bld : bld.AppendHtmlText("link", "dummy", content);
+        public static StringBuilder Append_HtmlLink(this StringBuilder bld, string content) => content.IsNullOrEmpty() ? bld : bld.Append_HtmlText("link", "dummy", content);
 
         public static StringBuilder AppendHtmlLink(this StringBuilder bld, string content, Color col) => content.IsNullOrEmpty() ? bld :
-            bld.AppendHtmlText("link", "dummy", HtmlTagWrap(content, col));
+            bld.Append_HtmlText("link", "dummy", HtmlWrap.Color(content, col));
 
 
         #endregion

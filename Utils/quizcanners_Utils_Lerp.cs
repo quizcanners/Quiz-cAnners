@@ -577,8 +577,11 @@ namespace QuizCanners.Lerp
 
         public static bool IsLerpingAlphaBySpeed(this CanvasGroup grp, float alpha, float speed = 4, bool controlRaycasts = true, bool disableGameObject = false)
         {
-            if (!grp) 
+            if (!grp)
+            {
+                QcLog.ChillLogger.LogErrosExpOnly(()=> "Missing Canvas Group", "NoCvsGrp");
                 return false;
+            }
 
             var current = grp.alpha;
 

@@ -23,12 +23,23 @@ namespace QuizCanners.Inspect
         {
             public static char IsSuccess(bool condition) => condition ? CHECK : CROSS;
 
+//#if UNITY_IOS
+            public const char X_SYMBOL = 'x';                // Multiplication or close symbol
+            public const char BOX_TICKED = 'y';             // Checked box
+            public const char BOX_CROSSED = 'x';            // Crossed box
+            public const char BOX_EMPTY = 'o';               // Empty box
+            public const char CROSS = 'x';               // Cross symbol
+            public const char CHECK = 'y';               // Check symbol
+
+            /*
+#else
             public const char X_SYMBOL = '×';                // Multiplication or close symbol
             public const char BOX_TICKED = '✅';             // Checked box
             public const char BOX_CROSSED = '❌';            // Crossed box
             public const char BOX_EMPTY = '□';               // Empty box
             public const char CROSS = '✖';               // Cross symbol
             public const char CHECK = '✔';               // Check symbol
+#endif*/
         }
 
         public static StateToken Toggle_Enter (this TextLabel exitLabel, ref bool toggle, bool hideTextWhenTrue = false) 
@@ -902,7 +913,7 @@ namespace QuizCanners.Inspect
                 return changes;
             }
         }
-#       endregion
+#endregion
 
         #endregion
 

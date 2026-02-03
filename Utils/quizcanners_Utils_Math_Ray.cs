@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using static UnityEngine.UI.Image;
 
 namespace QuizCanners.Utils
 {
@@ -224,5 +223,19 @@ namespace QuizCanners.Utils
             return uRay;
         }
 
+        public static float Azimuth(Vector3 startPos, Vector3 pointedPos)
+        {
+            Vector3 direction = pointedPos - startPos;
+
+            if (direction.sqrMagnitude < 0.0001f)
+                return 0f;
+
+            float azimuth = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+
+            if (azimuth < 0)
+                azimuth += 360f;
+
+            return azimuth;
+        }
     }
 }

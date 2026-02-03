@@ -123,7 +123,7 @@ namespace QuizCanners.Inspect
         }
 
         internal static void Nested_Inspect_Attention_MessageOnly(IPEGI ipg) => (ipg as INeedAttention).TryShow_AttentionMessage();
-
+        /*
         public static ChangesToken Nested_Inspect_VideoPlayer(this UnityEngine.Video.VideoPlayer player) 
         {
             if (!player) 
@@ -165,7 +165,7 @@ namespace QuizCanners.Inspect
             }
             Nl();
             return changed;
-        }
+        }*/
 
         public static ChangesToken Nested_Inspect(Action function, Object target = null)
         {

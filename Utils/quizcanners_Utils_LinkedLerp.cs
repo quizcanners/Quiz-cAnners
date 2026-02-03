@@ -585,7 +585,7 @@ namespace QuizCanners.Lerp
 
                 var tex = Current;
           
-                "On Start:".ConstL().Edit_Enum(ref _onStart).Nl();
+                "On StartThread:".ConstL().Edit_Enum(ref _onStart).Nl();
 
                 if ("Texture[{0}]".F(_targetTextures.Count).PL(90).Edit(ref tex).Nl())
                     TargetTexture = tex;
@@ -1781,7 +1781,7 @@ namespace QuizCanners.Lerp
             {
                 base.Inspect();
 
-                "Set zero On Start".PL().ToggleIcon(ref setZeroOnStart).Nl();
+                "Set zero On StartThread".PL().ToggleIcon(ref setZeroOnStart).Nl();
             }
 
             #endregion

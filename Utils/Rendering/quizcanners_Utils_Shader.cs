@@ -1,8 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using QuizCanners.Inspect;
-using UnityEngine;
+﻿using QuizCanners.Inspect;
 using QuizCanners.Migration;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.SocialPlatforms;
 
 namespace QuizCanners.Utils 
 {
@@ -815,6 +817,64 @@ namespace QuizCanners.Utils
         #endregion
 
         #region Keywords & Toggles
+
+        [Serializable]
+        public class LocalShaderKeyword : IPEGI
+        {
+            private readonly string _keyword;
+            private LocalKeyword _local;
+            private bool _keywordInitialized = false;
+
+            private readonly Gate.Bool _valueGate = new();
+
+           // private readonly QcUnity.DomainReloadGate _reloadGate = new();
+
+            public void SetOn(Material material, bool isTrue)
+            {
+                /*
+                if (_reloadGate.TryChange()) 
+                {
+                    Debug.Log("Clearing " + _keyword);
+                    _keywordInitialized = false;
+                    _valueGate.ValueIsDefined = false;
+                }*/
+
+                if (!_valueGate.TryChange(isTrue))
+                    return;
+
+                if (!_keywordInitialized)
+                {
+                    _keywordInitialized = true;
+                    _local = new LocalKeyword(material.shader, _keyword);
+                }
+
+                material.SetKeyword(_local, isTrue);
+            }
+
+            public void Clear()
+            {
+                _keywordInitialized = false;
+                _valueGate.ValueIsDefined = false;
+            }
+
+
+            public LocalShaderKeyword(string keyword) 
+            {
+                _keyword = keyword;
+            }
+
+            #region Inspect
+
+            public override string ToString() => _keyword;
+            public void Inspect()
+            {
+                "{0} = {1}".F(_keyword, _keywordInitialized ? _valueGate.CurrentValue : "Uninitialized").PL().Nl();
+            }
+
+        
+
+            #endregion
+        }
 
         [Serializable]
         public class KeywordEnum : IPEGI

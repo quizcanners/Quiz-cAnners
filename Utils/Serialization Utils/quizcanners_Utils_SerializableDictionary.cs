@@ -63,6 +63,8 @@ namespace QuizCanners.Utils
             }
         }
 
+        public bool IsEntered_Inspector => CollectionMeta.IsAnyEntered;
+
         public virtual void Inspect()
         {
             CollectionMeta.Edit_Dictionary(this).Nl();

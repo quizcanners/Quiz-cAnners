@@ -16,7 +16,7 @@ namespace QuizCanners.Utils
         {
             protected T previousValue;
 
-            public T CurrentValue => previousValue;
+            public T CurrentValue => _valueIsDefined ? previousValue : default;
 
             private bool _valueIsDefined;
             public override bool ValueIsDefined 
@@ -241,7 +241,16 @@ namespace QuizCanners.Utils
                     return true;
 
                 Update();
+
                 return false;
+            }
+
+            public bool Update_TryGetDelta(out float delta)
+            {
+                bool was = WasInitialized();
+                _delta = (float)GetSecondsDeltaAndUpdate();
+                delta = (float)_delta;
+                return was;
             }
 
             public double GetSecondsWithoutUpdate()

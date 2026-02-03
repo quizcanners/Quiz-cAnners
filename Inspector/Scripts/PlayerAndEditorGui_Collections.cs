@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using QuizCanners.Utils;
 using UnityEngine;
@@ -934,7 +934,7 @@ namespace QuizCanners.Inspect
 
         private static int _tmpKeyInt;
         private static readonly Dictionary<System.Type, string> dictionaryNamesForAddNewElement = new();
-        public static ChangesToken AddDictionaryPairOptions<TValue>(Dictionary<int, TValue> dic) 
+        public static ChangesToken AddDictionaryPairOptions<TValue>(Dictionary<int, TValue> dic, Action<int, TValue> onAdd = null) 
         {
             var changed = ChangeTrackStart();
             if (dic == null)
@@ -959,6 +959,9 @@ namespace QuizCanners.Inspect
                 if (Icon.Add.Click("Add new Value"))
                 {
                     dic.Add(_tmpKeyInt, System.Activator.CreateInstance<TValue>());
+                
+                    onAdd?.Invoke(_tmpKeyInt, dic[_tmpKeyInt]);
+
                     while (dic.ContainsKey(_tmpKeyInt))
                         _tmpKeyInt++;
                 }

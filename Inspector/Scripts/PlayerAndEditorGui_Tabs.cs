@@ -331,7 +331,7 @@ namespace QuizCanners.Inspect
         public static void AddTab(string constTabName, Action inspect, Object objectToSetDirty)
             => AddTab(constTabName, tabKey: constTabName, inspect, objectToSetDirty);
 
-        public static void AddTab<T>() where T : Singleton.BehaniourBase 
+        public static void AddTab<T>() where T : Singleton.BehaviourBase 
         {
             if (!Singleton.TryGet<T>(out var s))
                 return;

@@ -59,7 +59,7 @@ namespace QuizCanners.Utils
                );
         }*/
 
-        public static InspectableLogging LogHandler = new InspectableLogging();
+        public static InspectableLogging LogHandler = new();
 
         public class InspectableLogging : IPEGI
         {
@@ -174,14 +174,11 @@ namespace QuizCanners.Utils
 
             public string NeedAttention()
             {
-                switch (type)
+                return type switch
                 {
-                    case LogType.Log:
-                    case LogType.Warning:
-                        return null;
-                    default:
-                        return type.ToString().SimplifyTypeName();
-                }
+                    LogType.Log or LogType.Warning => null,
+                    _ => type.ToString().SimplifyTypeName(),
+                };
             }
 
             public IEnumerator SearchKeywordsEnumerator()

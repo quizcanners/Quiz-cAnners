@@ -217,10 +217,10 @@ namespace QuizCanners.Migration
                 }
             }
 
-            public override void ToICfg(ICfgDecode receiver, Action onRawParced = null)
+            public override void ToICfg_TagsOnly(ICfgDecode receiver, Action onRawParced = null)
             {
                 CheckWebRequest();
-                base.ToICfg(receiver, onRawParced);
+                base.ToICfg_TagsOnly(receiver, onRawParced);
             }
 
             public void StartDownload(QcCSVSheetToCfg parent)
@@ -355,54 +355,63 @@ namespace QuizCanners.Migration
     }
 
     [Serializable]
-    public class GoogleSheetCSV_AnyoneWithLink : GoogleSheetCSVBase , IPEGI
+    public class GoogleSheetCSV_AnyoneWithLink : GoogleSheetCSVBase, IPEGI
     {
-        
-        public string spreadShitId;
+
+        public string spreadSheetId;
         public int sheetId;
 
         const string CSV_URL = "https://docs.google.com/spreadsheets/d/{0}/export?format=csv&id={0}&gid={1}";
         const string OpenURL = "https://docs.google.com/spreadsheets/d/{0}/view?gid={1}";
-        public bool IsValid => !spreadShitId.IsNullOrEmpty();
+        public bool IsValid => !spreadSheetId.IsNullOrEmpty();
 
         [NonSerialized] private volatile string _dataRaw;
-        [NonSerialized] private State _state;
+        public LoadState State { get; private set; }
 
-        public enum State { None, NoLink, Loading, ReadyToProcess, FailedToLoad, FailedToParce,
+        public enum LoadState { None, NoLink, Loading, ReadyToProcess, FailedToLoad, FailedToParce,
             DataExtracted
         }
 
-        public void OnChanged() => _state = State.None;
-
-        public State Update(bool shouldLoad) 
+        public void Set(string spreadSheetId, int sheetId)
         {
-            switch (_state) 
+            this.spreadSheetId = spreadSheetId;
+            this.sheetId = sheetId;
+            SetDirty();
+        }
+
+        //  public void OnChanged() => _state = State.None;
+
+        public void SetDirty() => State = LoadState.None;
+
+        public LoadState Update(bool shouldLoad)
+        {
+            switch (State)
             {
-                case State.None:
-                    if (spreadShitId.IsNullOrEmpty()) 
+                case LoadState.None:
+                    if (spreadSheetId.IsNullOrEmpty())
                     {
-                        _state = State.NoLink;
+                        State = LoadState.NoLink;
                         break;
                     }
 
-                    if (shouldLoad) 
+                    if (shouldLoad)
                     {
                         StartLoad();
                     }
                     break;
 
-                case State.Loading:
+                case LoadState.Loading:
 
-                    if (!_dataRaw.IsNullOrEmpty()) 
+                    if (!_dataRaw.IsNullOrEmpty())
                     {
-                        try 
+                        try
                         {
-                            _state = State.ReadyToProcess;
+                            State = LoadState.ReadyToProcess;
                             Split(_dataRaw);
                             _dataRaw = null;
-                        } catch (Exception ex)                       {
+                        } catch (Exception ex) {
 
-                            _state = State.FailedToLoad;
+                            State = LoadState.FailedToLoad;
                             Debug.LogException(ex);
                         }
                     }
@@ -410,34 +419,34 @@ namespace QuizCanners.Migration
                     break;
             }
 
-            return _state;
+            return State;
 
         }
 
         protected override void OnExtracted()
         {
             Clear();
-            _state = State.DataExtracted;
-           // Debug.Log("Data Extracted");
+            State = LoadState.DataExtracted;
+            // Debug.Log("Data Extracted");
         }
 
         protected void StartLoad()
         {
-            _state = State.Loading;
-            System.Threading.Tasks.Task.Run(() => GetData(CSV_URL.F(spreadShitId, sheetId)));
+            State = LoadState.Loading;
+            System.Threading.Tasks.Task.Run(() => GetData(CSV_URL.F(spreadSheetId, sheetId)));
         }
 
-        public bool TrySetFromLink(string url) 
+        public bool TrySetFromLink(string url)
         {
             Match match = Regex.Match(url, @"/d/([a-zA-Z0-9-_]+)");
             if (!match.Success)
                 return false;
 
 
-            _state = State.None;
+            State = LoadState.None;
 
-            spreadShitId = match.Groups[1].Value;
-            
+            spreadSheetId = match.Groups[1].Value;
+
             Uri uri = new(url);
             string fragment = uri.Fragment;
             Match gidMatch = Regex.Match(fragment, @"gid=(\d+)");
@@ -460,18 +469,17 @@ namespace QuizCanners.Migration
                 var response = await client.GetAsync(url);
                 response.EnsureSuccessStatusCode();
                 _dataRaw = await response.Content.ReadAsStringAsync();
-                //Debug.Log(_dataRaw);
             }
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-                Debug.LogError("Failed to load "+ url);
+                Debug.LogError("Failed to load " + url);
             }
         }
 
         #region Inspector
 
-        public override string ToString() => _state.ToString();
+        public override string ToString() => (spreadSheetId.IsNullOrEmpty() ? "No Link" : "Got Link") + State.ToString();
 
         private Gate.SystemTime _sinceFailedPaste;
 
@@ -500,17 +508,19 @@ namespace QuizCanners.Migration
           
             if (Icon.Delete.ClickConfirm("DeleteSpreadsheet"))
             {
-                spreadShitId = null;
+                spreadSheetId = null;
                 sheetId = 0;
-                _state = State.None;
+                State = LoadState.None;
             }
 
             if (Icon.Copy.Click())//spreadShitId.PL(pegi.Styles.Text.ClickableText).ClickLabel())
-                pegi.CopyPasteBuffer = OpenURL.F(spreadShitId, sheetId);
-            
-            
+                pegi.CopyPasteBuffer = GetLink();
+
             return changes;
         }
+
+
+        public string GetLink() => OpenURL.F(spreadSheetId, sheetId);
 
         public override void Inspect()
         {
@@ -519,47 +529,40 @@ namespace QuizCanners.Migration
             var changes = pegi.ChangeTrackStart();
 
             "Anyone with a link".ConstL().Edit_Delayed(ref tmp).Nl(() => TrySetFromLink(tmp));
-            "Spread Sheet".ConstL().Edit(ref spreadShitId).Nl();
-            "Sheet Id".ConstL().Edit(ref sheetId).Nl();
+            "GoogleSheets KEY".ConstL().Edit(ref spreadSheetId).Nl();
+            "Sheet GID".ConstL().Edit(ref sheetId).Nl();
 
-            if (changes) 
-            {
-                if (_state == State.NoLink)
-                    _state = State.None;
-            }
+            if (changes && State == LoadState.NoLink)
+                State = LoadState.None;
 
             if ("Download".PL().Click().Nl())
-            {
                 StartLoad();
-            }
 
-            "State: {0}".F(_state).PL().Nl();
+            "State: {0}".F(State).PL().Nl();
 
-            switch (_state) 
+            switch (State) 
             {
-                case State.Loading:
+                case LoadState.Loading:
                     Update(true);
                     break;
-
-
             }
 
             base.Inspect();
         }
 
- 
+  
 
         #endregion
     }
 
-    public abstract class GoogleSheetCSVBase : IEnumerable<GoogleSheetCSVBase.Row>, IGotCount, IPEGI
+    public abstract class GoogleSheetCSVBase : IEnumerable<GoogleSheetCSVBase.Row>, IPEGI
     {
         [NonSerialized] internal List<string> Columns;
         [NonSerialized] public List<Row> Rows = new();
 
         public Row this[int index] => Rows[index];
 
-        public int GetCount() => Rows == null ? 0 : Rows.Count;
+        public virtual int GetCount() => Rows == null ? 0 : Rows.Count;
 
         public IEnumerator<Row> GetEnumerator()
         {
@@ -569,8 +572,12 @@ namespace QuizCanners.Migration
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public virtual void ToICfg(ICfgDecode receiver, Action onRawParced = null)
+        public virtual void ToICfg_TagsOnly(ICfgDecode receiver, Action onRawParced = null)
         {
+            var events = receiver as ICfgDecode_Events;
+
+            events?.OnBeforeDecode();
+
             for (int r = 0; r < Rows.Count; r++) // var row in rows)
             {
                 var row = Rows[r];
@@ -589,6 +596,8 @@ namespace QuizCanners.Migration
 
                 onRawParced?.Invoke();
             }
+
+            events?.OnAfterDecode();
 
             OnExtracted();
         }

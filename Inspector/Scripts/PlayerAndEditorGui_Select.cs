@@ -1,4 +1,4 @@
-﻿using QuizCanners.Migration;
+using QuizCanners.Migration;
 using QuizCanners.Utils;
 using System.Collections;
 using System.Collections.Generic;
@@ -252,8 +252,11 @@ namespace QuizCanners.Inspect
             bool currentShown = false;
             int tmpCurrent = current_Index;
 
-            if (current_Index >= 0 && current_Index < from.Length && current_Index >= maxCount) 
+            if (current_Index >= 0 && current_Index < from.Length && current_Index >= maxCount)
+            {
+                shownCount++;
                 ShowCurrent();
+            }
             
             for (var i = 0; i < from.Length; i++)
             {
@@ -280,7 +283,7 @@ namespace QuizCanners.Inspect
             }
 
             if (shownCount < from.Length)
-                "...{0} more items".F(from.Length- shownCount).PL(Styles.Text.Header).Nl();
+                "...{0} more items".F(from.Length- shownCount).PL().Nl();
 
             GUILayout.Space(10);
             return ChangesToken.False;
@@ -421,6 +424,12 @@ namespace QuizCanners.Inspect
         #region UnityObject
 
         private static readonly Dictionary<System.Type, List<Object>> s_assets = new();
+
+        public static ChangesToken SelectInAssets<T>(this TextLabel text, ref T obj) where T : Object
+        {
+            Write(text);
+            return SelectInAssets(ref obj);
+        }
 
         public static ChangesToken SelectInAssets<T>(ref T obj) where T : Object
         {

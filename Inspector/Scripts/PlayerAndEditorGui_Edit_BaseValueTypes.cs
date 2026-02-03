@@ -1236,7 +1236,7 @@ namespace QuizCanners.Inspect
                     return _END();
 
                 case PegiPaintingMode.UI_Toolkit:
-                    return Toolkit.Edit_Big(ref val, height);
+                    return ChangesToken.False; // Toolkit.Edit_Big(ref val, height);
 
                 default: return ChangesToken.False;
 
@@ -1288,6 +1288,11 @@ namespace QuizCanners.Inspect
             label.FallbackHint = () => Msg.EditDelayed_HitEnter.GetText();
             label.Write();
 
+            return Edit(ref val, time: time);
+        }
+
+        public static ChangesToken Edit( ref DateTime val, bool time = true)
+        {
             var asString = val.ToString(time ? "yyyy-MM-dd HH:mm:ss" : "yyyy-MM-dd");
             
             if (Edit_Delayed(ref asString)) 

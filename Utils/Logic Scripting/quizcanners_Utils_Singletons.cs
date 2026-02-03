@@ -437,7 +437,7 @@ namespace QuizCanners.Utils
             public const string POOL = "Pools";
         }
 
-        public abstract class BehaniourBase : MonoBehaviour, IQcSingleton, IPEGI, IPEGI_ListInspect, INeedAttention
+        public abstract class BehaviourBase : MonoBehaviour, IQcSingleton, IPEGI, IPEGI_ListInspect, INeedAttention
         {
             protected enum SingletonCollisionSolutionEnum { DestroyNew, DestroyPrevious, KeepBothAssignNew, KeepBothAssignOld }
 
@@ -518,7 +518,7 @@ namespace QuizCanners.Utils
                     var previous = Collector.Get(type);
                     if (previous != null)
                     {
-                        var previousObj = previous as BehaniourBase;
+                        var previousObj = previous as BehaviourBase;
 
                         if (previousObj && previousObj != this)
                         {

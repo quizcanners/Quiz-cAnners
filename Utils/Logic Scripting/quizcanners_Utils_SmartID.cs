@@ -1,4 +1,4 @@
-﻿using QuizCanners.Inspect;
+using QuizCanners.Inspect;
 using QuizCanners.Migration;
 using System;
 using System.Collections;
@@ -524,7 +524,7 @@ namespace QuizCanners.Utils
 
         public static bool IsValid<T>(this StringGeneric<T> id) where T:IGotStringId => id != null && !id.Id.IsNullOrEmpty();
 
-        public abstract class IntGeneric<TValue> : Base, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable
+        public abstract class IntGeneric_List<TValue> : Base, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable
         {
             public int Id = -1;
 
@@ -559,7 +559,7 @@ namespace QuizCanners.Utils
                 return default(TValue);
             }
 
-            public void SetEntity(IntGeneric<TValue> value) => Id = value.Id;
+            public void SetEntity(IntGeneric_List<TValue> value) => Id = value.Id;
 
             public virtual void SetEntity(TValue value)
             {
@@ -585,7 +585,7 @@ namespace QuizCanners.Utils
                 if (GetType() != other.GetType())
                     return false;
 
-                var asId = other as SmartId.IntGeneric<TValue>;
+                var asId = other as SmartId.IntGeneric_List<TValue>;
 
                 return Id.Equals(asId.Id);
             }

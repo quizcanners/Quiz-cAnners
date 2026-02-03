@@ -5,7 +5,7 @@ using QuizCanners.Lerp;
 namespace QuizCanners.Utils
 {
     [ExecuteInEditMode]
-    public class Singleton_CameraOperatorGodMode : Singleton.BehaniourBase, IPEGI
+    public class Singleton_CameraOperatorGodMode : Singleton.BehaviourBase, IPEGI
     {
         public float speed = 20;
         public float offsetClip01 = 0;

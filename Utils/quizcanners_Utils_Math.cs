@@ -287,18 +287,17 @@ namespace QuizCanners.Utils
             return dist < percision;
         }
 
-        public static Vector3 GetClosestPointOnALine(Vector3 lineA, Vector3 lineB, Vector3 point)
+        public static Vector3 GetClosestPointOnALine(Vector3 a, Vector3 b, Vector3 p)
         {
-            Vector3 a_to_p = point - lineA;
-            Vector3 a_to_b = lineB - lineA;
+            Vector3 ab = b - a;
+            float abLenSq = Vector3.Dot(ab, ab); // |ab|^2
 
-            float atb2 = Vector3.Scale(a_to_b, a_to_b).magnitude;
+            //if (abLenSq < 1e-8f) // a and b are the same point
+            //  return a;
+            abLenSq += 0.001f;
 
-            var atp_dot_atb = Vector3.Dot(a_to_p, a_to_b);
-
-            float t = atp_dot_atb / atb2; // new Vector3(atp_dot_atb.x/ atb2.x, atp_dot_atb.y / atb2.y, atp_dot_atb.z / atb2.z) ;
-
-            return Vector3.Lerp(lineA, lineB, t);//lineA + Vector3.Scale( a_to_b; 
+            float t = Vector3.Dot(p - a, ab) / abLenSq;
+            return a + ab * t; // closest point on infinite line
         }
 
 
@@ -804,6 +803,11 @@ namespace QuizCanners.Utils
         {
             var ratio = container / element;
             return Mathf.Min(ratio.x, ratio.y) * element;
+        }
+
+        public static float UnclampedInverseLerp(float a, float b, float value)
+        {
+            return (value - a) / (b - a);
         }
 
         [Serializable]
