@@ -6,11 +6,39 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using System.Security.Cryptography;
 
 namespace QuizCanners.Utils
 {
     public static partial class QcNet
     {
+        public static partial class Cryptography
+        {
+            public static string GenerateUrlSafeSecret(int byteCount = 32)
+            {
+                byte[] bytes = new byte[byteCount];
+                RandomNumberGenerator.Fill(bytes);
+
+                return Convert.ToBase64String(bytes)
+                    .Replace("+", "-")
+                    .Replace("/", "_")
+                    .Replace("=", "");
+            }
+
+            internal static void Inspect()
+            {
+                if ("Generate URL-safe secret".PL().Click().NL())
+                {
+                    string secret = GenerateUrlSafeSecret();
+
+                    Debug.Log(secret);
+
+                    pegi.CopyPasteBuffer = secret;
+                }
+            }   
+        }
+
+
         //private static DateTime syncedUtcTimeAtStartup;
         private static bool IsSynced;
         private static readonly TimeThreadManager _timeRequestManager = new();
@@ -116,6 +144,11 @@ namespace QuizCanners.Utils
 
             public TimeStamp() {}
 
+            public TimeStamp(DateTime dateUpdateUtc)
+            {
+                SetUTC(dateUpdateUtc);
+            }
+
             public static TimeStamp CreateCurrentTimeStamp()
             {
                 TimeStamp ts = new();
@@ -136,17 +169,17 @@ namespace QuizCanners.Utils
 
             public void Inspect()
             {
-                ToString().PL().Nl();
+                ToString().NL();
 
                 var dt = GetUTC();
 
-                dt.ToRelativeString(showHours: true).PL().Nl();
+                dt.ToRelativeString(showHours: true).NL();
 
-                "Creating time".ConstL().Edit(ref dt).Nl(()=>SetUTC(dt));
+                "Creating time".ConstL().Edit(ref dt).NL(()=>SetUTC(dt));
 
-                "Synchronized: {0}".F(_gotSynchronizedData).PL().Nl();
-                "Creation time: {0}".F(GetUTC()).PL().Nl();
-                if ("Set Unsynchronized".PL().Click().Nl())
+                "Synchronized: {0}".F(_gotSynchronizedData).NL();
+                "Creation time: {0}".F(GetUTC()).NL();
+                if ("Set Unsynchronized".PL().Click().NL())
                 {
                     SetTimestampUnsinchronizedNow();
                 }
@@ -172,7 +205,7 @@ namespace QuizCanners.Utils
 
                 var dt = GetUTC();
 
-                pegi.Edit(ref dt).Nl(() => SetUTC(dt));
+                pegi.Edit(ref dt).NL(() => SetUTC(dt));
 
              //   ToString().PL().Write();
 
@@ -229,7 +262,7 @@ namespace QuizCanners.Utils
 
                 long GetUtcSynchronizedNow()
                 {
-                    if (!_utsNowFrameGate.TryEnter())
+                    if (!_utsNowFrameGate.TryConsume())
                         return _utcNow_Miliseconds_Cached;
 
                     if (!IsSynced)
@@ -253,19 +286,19 @@ namespace QuizCanners.Utils
             {
                 "State: {0}".F(_state).PL().Write();
 
-                if ("Start".PL().Click().Nl())
+                if ("Start".PL().Click().NL())
                 {
                     StartThread();
                 }
 
                 if (_stopwatchFromThreadStartToRequestReturn != null)
-                    "Elapsed: {0} ms".F(_stopwatchFromThreadStartToRequestReturn.Elapsed.TotalMilliseconds).PL().Nl();
+                    "Elapsed: {0} ms".F(_stopwatchFromThreadStartToRequestReturn.Elapsed.TotalMilliseconds).NL();
 
-                "Unity time at Stopwatch Start: {0} s".F(QcSharp.SecondsToReadableString(unityTimeAtStopwatchStart_Seconds)).PL().Nl();
-                "Delta with Unsynched: {0}".F(SynchedMinusLocal_Miliseconds()).PL().Nl();
+                "Unity time at Stopwatch Start: {0} s".F(QcSharp.SecondsToReadableString(unityTimeAtStopwatchStart_Seconds)).NL();
+                "Delta with Unsynched: {0}".F(SynchedMinusLocal_Miliseconds()).NL();
             }
 
-            private readonly Gate.UnityTimeUnScaled _timeRequestTask = new(Gate.InitialValue.StartArmed);
+            private readonly Gate.UnityTimeUnScaled _timeRequestTask = new();
 
             public JobState TryGet(out long value)
             {
@@ -273,7 +306,7 @@ namespace QuizCanners.Utils
                 {
                     case JobState.Failed:
                     case JobState.Uninitialized:
-                        if (_timeRequestTask.TryUpdateIfTimePassed(10))
+                        if (_timeRequestTask.TryConsume_IfElapsedOrFirst(10))
                         {
                             StartThread();
                         }
@@ -361,7 +394,7 @@ namespace QuizCanners.Utils
             /// <summary>Returns UTC Unix time in milliseconds from an NTP server.</summary>
             public static async Task<long> GetUnixTimeMsAsync(
                 string host = "pool.ntp.org",
-                int timeoutMs = 1500,
+                int timeoutMs = 5000,
                 CancellationToken ct = default)
             {
                 // 48-byte NTP request packet

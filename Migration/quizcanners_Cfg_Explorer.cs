@@ -27,12 +27,12 @@ namespace QuizCanners.Migration
             var changed = false;
 
             "Load File:".ConstL().Write();
-            target.LoadCfgOnDrop(); pegi.Nl();
+            target.LoadCfgOnDrop(); pegi.NL();
 
-            if (Icon.Copy.Click("Copy Component Data").Nl())
+            if (Icon.Copy.Click("Copy Component Data").NL())
                 ICfgExtensions.copyBufferValue = target.Encode().ToString();
 
-            pegi.Nl();
+            pegi.NL();
 
             return changed;
         }
@@ -95,7 +95,7 @@ namespace QuizCanners.Migration
                     }
                 }
                 */
-                pegi.Nl();
+                pegi.NL();
             }
 
             inspectedCfg = null;
@@ -158,7 +158,7 @@ namespace QuizCanners.Migration
                 if (inspectedTag == -1)
                 {
                     //"data".PegiLabel().edit(40, ref data).changes(ref dirty);
-                    pegi.Nested_Inspect_Value(ref data).Nl();
+                    pegi.Nested_Inspect_Value(ref data).NL();
 
                     dirty |= changes;
                    /* UnityEngine.Object myType = null;
@@ -174,18 +174,18 @@ namespace QuizCanners.Migration
                         if (Icon.Refresh.Click("Update data string from tags"))
                             UpdateData();
 
-                        if (Icon.Load.Click("Load from data String").Nl())
+                        if (Icon.Load.Click("Load from data String").NL())
                         {
                             _tags = null;
                             this.Decode(data);//.DecodeTagsFor(this);
                             dirty = false;
                         }
                     }
-                    pegi.Nl();
+                    pegi.NL();
                 }
 
                 dirty |= changes;
-                pegi.Nl();
+                pegi.NL();
             }
 
             public void InspectInList(ref int edited, int ind)
@@ -204,7 +204,7 @@ namespace QuizCanners.Migration
                     if (pegi.Edit(ref tag))
                         dirty = true;
 
-                    pegi.Nested_Inspect_Value(ref data).Nl(); //.Inspect(); //.changes(ref dirty);
+                    pegi.Nested_Inspect_Value(ref data).NL(); //.Inspect(); //.changes(ref dirty);
                     //pegi.edit(ref data).changes(ref dirty);
                 }
 
@@ -214,7 +214,7 @@ namespace QuizCanners.Migration
                     ICfgExtensions.copyBufferTag = tag;
                 }
 
-                if (ICfgExtensions.copyBufferValue != null && Icon.Paste.Click("Paste " + ICfgExtensions.copyBufferTag + " Data").Nl())
+                if (ICfgExtensions.copyBufferValue != null && Icon.Paste.Click("Paste " + ICfgExtensions.copyBufferTag + " Data").NL())
                 {
                     dirty = true;
                     data = new CfgData(ICfgExtensions.copyBufferValue);
@@ -280,7 +280,7 @@ namespace QuizCanners.Migration
                         QcUnity.RefreshAssetDatabase();
                     }
 
-                    pegi.Nl();
+                    pegi.NL();
 
                     if (Cfg != null)
                     {
@@ -294,12 +294,12 @@ namespace QuizCanners.Migration
                         if (uObj && Icon.Done.Click("Use the same directory as current object."))
                             Mgmt.fileFolderHolder = QcUnity.GetAssetFolder(uObj);
 
-                        pegi.ClickHighlight(uObj).Nl();
+                        pegi.ClickHighlight(uObj).NL();
                     }
 
-                    if ("Description".PL().IsFoldout().Nl())
+                    if ("Description".PL().IsFoldout().NL())
                     {
-                        pegi.Edit_Big(ref comment).Nl();
+                        pegi.Edit_Big(ref comment).NL();
                     }
                 }
 

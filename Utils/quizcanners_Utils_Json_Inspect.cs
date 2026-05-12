@@ -64,14 +64,14 @@ namespace QuizCanners.Utils
                 else if (foldedOut && "Decode 1 layer".PL().Click())
                     TryDecode(ref j);
                 
-                pegi.Nl();
+                pegi.NL();
             }
 
             if (!foldedOut)
                 return;
 
             j.Inspect();
-            pegi.Nl();
+            pegi.NL();
         }
 
         public EncodedJsonInspector() { rootJson = new JsonString(); }
@@ -119,7 +119,7 @@ namespace QuizCanners.Utils
         void IPEGI.Inspect()
         {
 
-            pegi.Nl();
+            pegi.NL();
 
             if (Icon.Delete.Click())
             {
@@ -136,7 +136,7 @@ namespace QuizCanners.Utils
             else if (jsonDestination.Length > 5)
                 jsonDestination.PL().Write();
 
-            pegi.Nl();
+            pegi.NL();
 
             inspectedPathForErrorDebug.Clear();
 
@@ -214,7 +214,7 @@ namespace QuizCanners.Utils
                         pegi.SetCopyPasteBuffer(data);
                     }
 
-                    pegi.Nl();
+                    pegi.NL();
                 }
                 else
                 {
@@ -470,7 +470,7 @@ namespace QuizCanners.Utils
             {
                 inspected = this;
 
-                pegi.Nl();
+                pegi.NL();
 
                 if (data.GetCount() > 0)
                 {
@@ -485,7 +485,7 @@ namespace QuizCanners.Utils
                 else
                     (name + " " + data.ToString()).PL().Write();
 
-                pegi.Nl();
+                pegi.NL();
 
                 inspected = null;
             }
@@ -521,9 +521,9 @@ namespace QuizCanners.Utils
 
                             if (previewFoldout)
                             {
-                                "Select value to preview:".PL().Nl();
+                                "Select value to preview:".NL();
 
-                                if (previewValue.Length > 0 && "NO PREVIEW VALUE".PL().Click().Nl())
+                                if (previewValue.Length > 0 && "NO PREVIEW VALUE".PL().Click().NL())
                                 {
                                     previewValue = "";
                                     previewFoldout = false;
@@ -534,10 +534,10 @@ namespace QuizCanners.Utils
                                     if (p.name.Equals(previewValue))
                                     {
                                         Icon.Next.Draw();
-                                        if ("CURRENT: {0}".F(previewValue).PL().ClickUnFocus().Nl())
+                                        if ("CURRENT: {0}".F(previewValue).PL().ClickUnFocus().NL())
                                             previewFoldout = false;
                                     }
-                                    else if (p.name.PL().Click().Nl())
+                                    else if (p.name.PL().Click().NL())
                                     {
                                         previewValue = p.name;
                                         previewFoldout = false;
@@ -547,7 +547,7 @@ namespace QuizCanners.Utils
                         }
                     }
 
-                    pegi.Nl();
+                    pegi.NL();
 
                     pegi.Indent();
 
@@ -580,7 +580,7 @@ namespace QuizCanners.Utils
                         }
                         else Icon.DownLast.Draw();
 
-                        pegi.Nl();
+                        pegi.NL();
                     }
 
                     int last = Math.Min(showElementsStart + MAX_ELEMENTS, elements.Count);
@@ -613,7 +613,7 @@ namespace QuizCanners.Utils
                             foldedOut.SetContains(i, contains: contains);
                         }
 
-                        pegi.Nested_Inspect(() => DecodeOrInspectJson(ref val, contains)).Nl();
+                        pegi.Nested_Inspect(() => DecodeOrInspectJson(ref val, contains)).NL();
                         elements[i] = val;
                     }
                 }

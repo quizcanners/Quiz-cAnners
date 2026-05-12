@@ -19,11 +19,11 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                pegi.Nl();
+                pegi.NL();
 
                 "Camera ".PL().SelectInScene(ref cameraToTakeScreenShotFrom);
 
-                pegi.Nl();
+                pegi.NL();
 
                 "Transparent Background".PL().ToggleIcon(ref AlphaBackground);
 
@@ -38,7 +38,7 @@ namespace QuizCanners.Utils
                     }
                 }
 
-                pegi.Nl();
+                pegi.NL();
 
                 var ssName = _screenShotName.GetValue();
                 "Img Name".ConstL().Edit(ref ssName).OnChanged(() => _screenShotName.SetValue(ssName));
@@ -46,7 +46,7 @@ namespace QuizCanners.Utils
                 if (Icon.Folder.Click("Open Screen Shots Folder : {0}".F(path)))
                     QcFile.Explorer.OpenPath(path);
 
-                pegi.Nl();
+                pegi.NL();
 
                 "Up Scale".PL("Resolution of the texture will be multiplied by a given value", 60).Edit(ref UpScale);
 
@@ -61,7 +61,7 @@ namespace QuizCanners.Utils
                         if ("Take Very large ScreenShot".PL("This will try to take a very large screen shot. Are we sure?").ClickConfirm("tbss"))
                             RenderToCameraAndSave();
                     }
-                    else if (Icon.ScreenGrab.Click("Render Screenshoot from camera").Nl())
+                    else if (Icon.ScreenGrab.Click("Render Screenshoot from camera").NL())
                         RenderToCameraAndSave();
                 }
 
@@ -69,9 +69,9 @@ namespace QuizCanners.Utils
                                                               "You probably also want Transparent Background turned on. Or not, depending on your situation. " +
                                                               "Who am I to tell you what to do, I'm just a hint.");
 
-                pegi.Nl();
+                pegi.NL();
 
-                if ("Other Options".PL().IsFoldout(ref _showAdditionalOptions).Nl())
+                if ("Other Options".PL().IsFoldout(ref _showAdditionalOptions).NL())
                 {
 
                     if (!grab)
@@ -85,7 +85,7 @@ namespace QuizCanners.Utils
                             .Write_Hint();
 
 
-                    pegi.Nl();
+                    pegi.NL();
 
                     if ("ScreenCapture.CaptureScreenshot".PL().Click())
                         CaptureByScreenCaptureUtility();
@@ -98,7 +98,7 @@ namespace QuizCanners.Utils
 
                 }
 
-                pegi.Nl();
+                pegi.NL();
 
             }
 

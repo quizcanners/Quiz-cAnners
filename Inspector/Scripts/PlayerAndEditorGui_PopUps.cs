@@ -242,7 +242,7 @@ namespace QuizCanners.Inspect
                     }
 
 
-                    Nl();
+                    NL();
 
                     popUpText.PL().WriteBig();
 
@@ -256,7 +256,7 @@ namespace QuizCanners.Inspect
                         ClosePopUp();
                     else
                     {
-                        WriteHeaderIfAny().Nl();
+                        WriteHeaderIfAny().NL();
                         inspectDocumentationDelegate();
                         ContactOptions();
                     }
@@ -267,7 +267,7 @@ namespace QuizCanners.Inspect
                 if (!popUpText.IsNullOrEmpty())
                 {
 
-                    WriteHeaderIfAny().Nl();
+                    WriteHeaderIfAny().NL();
 
                     popUpText.PL(
                         toolTip: "Click the blue text below to close this toolTip. This is basically a toolTip for a toolTip. It is the world we are living in now.")
@@ -286,7 +286,7 @@ namespace QuizCanners.Inspect
             }
             private static void ContactOptions()
             {
-                Nl();
+                NL();
                 "Didn't get the answer you need?".PL().Write();
                 "Discord".PL().ClickLink(DISCORD_SERVER);
                 "Email".PL().Click(() => QcUnity.SendEmail(
@@ -297,9 +297,9 @@ namespace QuizCanners.Inspect
             }
             private static void ConfirmLabel()
             {
-                Nl();
+                NL();
 
-                if (_understoodPopUpText.PL().ClickText(15).Nl())
+                if (_understoodPopUpText.PL().ClickText(15).NL())
                     ClosePopUp();
 
                 ContactOptions();

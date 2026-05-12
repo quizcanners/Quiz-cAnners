@@ -46,7 +46,7 @@ namespace QuizCanners.Inspect
 #endif
                     }
 
-                    "{0} on {1}".F(n.IsNullOrEmpty() ? "NULL" : n, t ? t.name : "NULL").PL().Nl();
+                    "{0} on {1}".F(n.IsNullOrEmpty() ? "NULL" : n, t ? t.name : "NULL").NL();
                 }
             }
 

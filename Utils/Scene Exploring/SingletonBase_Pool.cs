@@ -338,20 +338,20 @@ namespace QuizCanners.Utils
             if (pool.Count > 0 || instances.Count > 0)
                 Icon.Delete.Click().OnChanged(ClearAll);
 
-            pegi.Nl();
+            pegi.NL();
 
             bool isPooling = !DisablePooling;
-            "Pooling".PL().ToggleIcon(ref isPooling).OnChanged(() => DisablePooling = !isPooling).Nl();
+            "Pooling".PL().ToggleIcon(ref isPooling).OnChanged(() => DisablePooling = !isPooling).NL();
 
             using (_tab.StartContext())
             {
                 pegi.AddTab("Prefabs", ()=>
                 {
-                    "Prefabs".PL(60).Edit_List_UObj(prefabs).Nl();
-                    "Capacity: {0}/{1}".F(pool.Count + instances.Count, MAX_INSTANCES).PL().Nl();
+                    "Prefabs".PL(60).Edit_List_UObj(prefabs).NL();
+                    "Capacity: {0}/{1}".F(pool.Count + instances.Count, MAX_INSTANCES).NL();
                 });
 
-                pegi.AddTab("Instance", ()=> _active.Edit_List(instances).Nl());
+                pegi.AddTab("Instance", ()=> _active.Edit_List(instances).NL());
             }
         }
 
@@ -561,20 +561,20 @@ namespace QuizCanners.Utils
 
             "Pool of {0}".F(typeof(T).Name).PL(pegi.Styles.ListLabel).Write();
 
-            pegi.Nl();
+            pegi.NL();
 
             using (_tab.StartContext())
             {
                 pegi.AddTab("Prefabs", ()=>
                 {
-                    _prefabsMeta.Edit_List(prefabs).Nl();
+                    _prefabsMeta.Edit_List(prefabs).NL();
                     if (Application.isPlaying)
-                        "Capacity: {0}/{1} ({2})".F(InstancesCount, RECOMMENDED_INSTANCES, MAX_INSTANCES).PL().Nl();
+                        "Capacity: {0}/{1} ({2})".F(InstancesCount, RECOMMENDED_INSTANCES, MAX_INSTANCES).NL();
                 });
 
                 pegi.AddTab("Instance", ()=>
                 {
-                    _instancesMeta.Edit_List(allInstances).Nl();
+                    _instancesMeta.Edit_List(allInstances).NL();
                 });
 
                 pegi.AddTab("Debug", ()=>
@@ -582,8 +582,8 @@ namespace QuizCanners.Utils
                     if (Application.isPlaying && Icon.Play.Click())
                         TrySpawn(Vector3.zero, out _);
 
-                    "First Inactive:{0}".F(_firstInactiveIndex).PL().Nl();
-                    "Last Active: {0}".F(_maxActiveIndex).PL().Nl();
+                    "First Inactive:{0}".F(_firstInactiveIndex).NL();
+                    "Last Active: {0}".F(_maxActiveIndex).NL();
                 });
             }
         }

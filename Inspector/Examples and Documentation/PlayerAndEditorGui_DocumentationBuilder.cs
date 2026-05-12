@@ -32,14 +32,14 @@ namespace QuizCanners.Inspect.Examples
             protected void DrawExample(Action drawElement, string code)
             {
                 pegi.Line();
-                pegi.Nl();
+                pegi.NL();
 
                 using (pegi.Indent())
                 {
-                    code.PL(pegi.Styles.Text.Hint).Write_ForCopy(showCopyButton: true, writeAsEditField: false).Nl(); //DrawExample();
+                    code.PL(pegi.Styles.Text.Hint).Write_ForCopy(showCopyButton: true, writeAsEditField: false).NL(); //DrawExample();
                     drawElement.Invoke();
                 }
-                pegi.Nl();
+                pegi.NL();
             }
 
             public virtual IEnumerator SearchKeywordsEnumerator()
@@ -99,23 +99,23 @@ namespace QuizCanners.Inspect.Examples
                     switch (ReturnType)
                     {
                         case ReturnType.State:
-                            "Returns {0} which can be cast to bool. True every time if {1} is being entered or folded out.".F(nameof(pegi.StateToken), FunctionName).PL().Write_Hint().Nl(); break;
+                            "Returns {0} which can be cast to bool. True every time if {1} is being entered or folded out.".F(nameof(pegi.StateToken), FunctionName).PL().Write_Hint().NL(); break;
                         case ReturnType.Click:
-                            "Returns {0} which can be cast to bool. True if user clicked on the {1}.".F(nameof(pegi.ChangesToken), FunctionName).PL().Write_Hint().Nl(); break;
+                            "Returns {0} which can be cast to bool. True if user clicked on the {1}.".F(nameof(pegi.ChangesToken), FunctionName).PL().Write_Hint().NL(); break;
                         case ReturnType.Changes:
-                            "Returns {0} which can be cast to bool. True if user modified the value {1}.".F(nameof(pegi.ChangesToken), FunctionName).PL().Write_Hint().Nl(); break;
+                            "Returns {0} which can be cast to bool. True if user modified the value {1}.".F(nameof(pegi.ChangesToken), FunctionName).PL().Write_Hint().NL(); break;
                         case ReturnType.ChangesTracker:
-                            "Returns {0} which casts to True if any changes were made between the moment it was Started to the moment of the case.".F(nameof(pegi.ChangesTracker), FunctionName).PL().Write_Hint().Nl(); break;
+                            "Returns {0} which casts to True if any changes were made between the moment it was Started to the moment of the case.".F(nameof(pegi.ChangesTracker), FunctionName).PL().Write_Hint().NL(); break;
                         case ReturnType.SameReturnType:
-                            "{0} can work as an extension on top of {1}, {2} and {3}. Will return the same type and value as extended.".F(FunctionName, nameof(pegi.ChangesToken), nameof(pegi.StateToken), nameof(pegi.TextToken)).PL().Write_Hint().Nl(); break;
+                            "{0} can work as an extension on top of {1}, {2} and {3}. Will return the same type and value as extended.".F(FunctionName, nameof(pegi.ChangesToken), nameof(pegi.StateToken), nameof(pegi.TextToken)).PL().Write_Hint().NL(); break;
                         case ReturnType.TextToken:
-                            "Text token is returned by write functions. Main purpouse is to allow writing .nl() extension at the end of the text.".PL().Write_Hint().Nl(); break;
-                        default: "Undocumented {0}".F(ReturnType).PL().Write_Hint().Nl(); break;
+                            "Text token is returned by write functions. Main purpouse is to allow writing .nl() extension at the end of the text.".PL().Write_Hint().NL(); break;
+                        default: "Undocumented {0}".F(ReturnType).PL().Write_Hint().NL(); break;
                     }
 
                     foreach (var v in Parameters)
                     {
-                        v.Nested_Inspect().Nl();
+                        v.Nested_Inspect().NL();
                     }
                 }
 
@@ -146,7 +146,7 @@ namespace QuizCanners.Inspect.Examples
 
                 void IPEGI.Inspect()
                 {
-                    ((Optional ? "(Optional) " : "") + Name).PL(toolTip: "Parameter Name", style: pegi.Styles.Text.Bald).Nl();
+                    ((Optional ? "(Optional) " : "") + Name).PL(toolTip: "Parameter Name", style: pegi.Styles.Text.Bald).NL();
 
                     using (pegi.Indent())
                     {

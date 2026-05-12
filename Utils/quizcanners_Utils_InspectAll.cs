@@ -45,11 +45,11 @@ namespace QuizCanners.Utils
         {   
             if (!_inspectionLoopLock.Unlocked) 
             {
-                "Recursively entered".PL().WriteWarning().Nl();
+                "Recursively entered".PL().WriteWarning().NL();
                 return;
             }
 
-            pegi.Nl();
+            pegi.NL();
 
 
             using (_inspectionLoopLock.Lock())
@@ -57,9 +57,9 @@ namespace QuizCanners.Utils
             {
                 if (!_context.IsAnyEntered && Application.isPlaying) 
                 {
-                    pegi.Nl();
+                    pegi.NL();
                     FrameRate.Inspect();
-                    pegi.Nl();
+                    pegi.NL();
                 }
 
                 var valid = !QcUnity.IsNullOrDestroyed_Obj(CurrentProjectInspector);
@@ -68,24 +68,29 @@ namespace QuizCanners.Utils
 
                 try
                 {
-                    pegi.Conditionally_Enter_Inspect(current.PL(), valid, CurrentProjectInspector).Nl();
+                    pegi.Conditionally_Enter_Inspect(current.PL(), valid, CurrentProjectInspector).NL();
 
                 } catch (Exception ex) 
                 {
                     pegi.WriteOrThrow_Exception(ex);
                 }
 
-                "Singletons".PL().IsEntered().Nl().If_Entered(Singleton.Collector.Inspect);
+                "Singletons".PL().IsEntered().NL().If_Entered(Singleton.Collector.Inspect);
 
-                "PEGI Documentation".PL().IsEntered(showLabelIfTrue: false).Nl_ifNotEntered().If_Entered(PlayerAndEditorGui_Documentation.Inspect);
+                "PEGI Documentation".PL().IsEntered(showLabelIfTrue: false).NL_ifNotEntered().If_Entered(PlayerAndEditorGui_Documentation.Inspect);
 
-                if ("Data".PL().IsEntered().Nl())
+                if ("Data".PL().IsEntered().NL())
                 {
                     using (_enteredData.StartContext())
                     {
-                        if ("Cache".PL().IsEntered().Nl())
+                        if ("Cryptography".PL().IsEntered().NL())
                         {
-                            if ("Caching.ClearCache() [{0}]".F(Caching.cacheCount).PL().ClickConfirm("clCach").Nl())
+                            QcNet.Cryptography.Inspect();
+                        }
+
+                        if ("Cache".PL().IsEntered().NL())
+                        {
+                            if ("Caching.ClearCache() [{0}]".F(Caching.cacheCount).PL().ClickConfirm("clCach").NL())
                             {
                                 if (Caching.ClearCache())
                                     pegi.GameView.ShowNotification("Bundles were cleared");
@@ -119,31 +124,31 @@ namespace QuizCanners.Utils
                             });
                         }
 
-                        "Reflection".PL().IsEntered().Nl().If_Entered(QcSharp.Reflector.Inspect).Nl();
+                        "Reflection".PL().IsEntered().NL().If_Entered(QcSharp.Reflector.Inspect).NL();
 
                         if (_enteredData.IsAnyEntered == false)
                         {
-                            if ("Player Data Folder".PL().Click().Nl())
+                            if ("Player Data Folder".PL().Click().NL())
                             {
                                 QcFile.Explorer.OpenPersistentFolder();
                                 pegi.SetCopyPasteBuffer(Application.persistentDataPath, sendNotificationIn3Dview: true);
                             }
 
-                            if (Application.isEditor && "Editor Data Folder".PL().Click().Nl())
+                            if (Application.isEditor && "Editor Data Folder".PL().Click().NL())
                                 QcFile.Explorer.OpenPath(
                                     "C:/Users/{0}/AppData/Local/Unity/Editor/Editor.log".F(Environment.UserName));
 
-                            "Mono Heap Size Long {0}".F(QcSharp.ToMegabytes(Profiler.GetMonoHeapSizeLong())).PL().Nl();
+                            "Mono Heap Size Long {0}".F(QcSharp.ToMegabytes(Profiler.GetMonoHeapSizeLong())).NL();
 
-                            "Mono Used Size Long {0}".F(QcSharp.ToMegabytes(Profiler.GetMonoUsedSizeLong())).PL().Nl();
+                            "Mono Used Size Long {0}".F(QcSharp.ToMegabytes(Profiler.GetMonoUsedSizeLong())).NL();
 
-                            "Temp Allocated Size {0}".F(QcSharp.ToMegabytes(Profiler.GetTempAllocatorSize())).PL().Nl();
+                            "Temp Allocated Size {0}".F(QcSharp.ToMegabytes(Profiler.GetTempAllocatorSize())).NL();
 
-                            "Total Allocated Memmory Long {0}".F(QcSharp.ToMegabytes(Profiler.GetTotalAllocatedMemoryLong())).PL().Nl();
+                            "Total Allocated Memmory Long {0}".F(QcSharp.ToMegabytes(Profiler.GetTotalAllocatedMemoryLong())).NL();
 
-                            "Total Unused Reserved Memmory Long {0}".F(QcSharp.ToMegabytes(Profiler.GetTotalUnusedReservedMemoryLong())).PL().Nl();
+                            "Total Unused Reserved Memmory Long {0}".F(QcSharp.ToMegabytes(Profiler.GetTotalUnusedReservedMemoryLong())).NL();
 
-                            if ("Unload Unused Assets".PL().Click().Nl())
+                            if ("Unload Unused Assets".PL().Click().NL())
                             {
                                 Resources.UnloadUnusedAssets();
                             }
@@ -152,32 +157,32 @@ namespace QuizCanners.Utils
                     }
                 }
 
-                "Logs".PL().IsEntered().Nl().If_Entered(() => QcLog.LogHandler.Nested_Inspect());
+                "Logs".PL().IsEntered().NL().If_Entered(() => QcLog.LogHandler.Nested_Inspect());
 
-                "Profiler".PL().Enter_Inspect(TimeProfiler.Instance).Nl();
+                "Profiler".PL().Enter_Inspect(TimeProfiler.Instance).NL();
     
-                if ("Performance Turntable".PL().IsEntered().Nl()) 
+                if ("Performance Turntable".PL().IsEntered().NL()) 
                     PerformanceTurnTable.Token.InspectTokenStack();
 
-                if ("Time & Audio".PL().IsEntered().Nl_ifEntered())
+                if ("Time & Audio".PL().IsEntered().NL_ifEntered())
                 {
-                    if (Application.isEditor && Application.isPlaying && "Debug.Break()".PL().Click().Nl())
+                    if (Application.isEditor && Application.isPlaying && "Debug.Break()".PL().Click().NL())
                         Debug.Break();
 
                     var maxDt = Time.maximumDeltaTime;
-                    "Time.maximumDeltaTime".PL().Edit_Delayed(ref maxDt).Nl().OnChanged(()=> Time.maximumDeltaTime = maxDt);
+                    "Time.maximumDeltaTime".PL().Edit_Delayed(ref maxDt).NL().OnChanged(()=> Time.maximumDeltaTime = maxDt);
 
-                    "Time.time: {0}".F(QcSharp.SecondsToReadableString(Time.time)).PL().Nl();
+                    "Time.time: {0}".F(QcSharp.SecondsToReadableString(Time.time)).NL();
 
-                    "AudioSettings.dspTime: {0}".F(QcSharp.SecondsToReadableString(AudioSettings.dspTime)).PL().Nl();
+                    "AudioSettings.dspTime: {0}".F(QcSharp.SecondsToReadableString(AudioSettings.dspTime)).NL();
 
                     "Use it to schedule Audio Clips: audioSource.PlayScheduled(AudioSettings.dspTime + 0.5);".PL().Write_Hint();
 
                     "Clip Duration: double duration = (double)AudioClip.samples / AudioClip.frequency;".PL().Write_Hint();
 
-                    "Time.unscaled time: {0}".F(QcSharp.SecondsToReadableString(Time.unscaledTime)).PL().Nl();
+                    "Time.unscaled time: {0}".F(QcSharp.SecondsToReadableString(Time.unscaledTime)).NL();
 
-                    "Time.frameCount: {0}".F(Time.frameCount).PL().Nl();
+                    "Time.frameCount: {0}".F(Time.frameCount).NL();
 
                   //  var phA = Physics.autoSyncTransforms;
 
@@ -189,17 +194,17 @@ namespace QuizCanners.Utils
                     if (Mathf.Approximately(Time.timeScale, 1) == false && Icon.Refresh.Click())
                         Time.timeScale = 1;
 
-                    pegi.Nl();
+                    pegi.NL();
 
                     var fTScale = Time.fixedDeltaTime;
                     if ("Time.fixedDeltaTime".ConstL().Edit(ref fTScale, 0, 0.5f))
                         Time.fixedDeltaTime = fTScale;
 
-                    pegi.Nl();
+                    pegi.NL();
 
-                    "Time.deltaTime: {0}".F(QcSharp.SecondsToReadableString(Time.deltaTime)).PL().Nl();
+                    "Time.deltaTime: {0}".F(QcSharp.SecondsToReadableString(Time.deltaTime)).NL();
 
-                    "Time.realtimeSinceStartup {0}".F(QcSharp.SecondsToReadableString(Time.realtimeSinceStartup)).PL().Nl();
+                    "Time.realtimeSinceStartup {0}".F(QcSharp.SecondsToReadableString(Time.realtimeSinceStartup)).NL();
 
 
 
@@ -210,12 +215,12 @@ namespace QuizCanners.Utils
                 if (!_context.IsAnyEntered && Application.isPlaying && Time.timeScale < 0.1f)
                     Icon.Warning.Draw("Delta time is "+ Time.timeScale);
 
-                pegi.Nl();
+                pegi.NL();
 
-                if ("Graphics".PL().IsEntered().Nl()) 
+                if ("Graphics".PL().IsEntered().NL()) 
                 {
                     var fr = Application.targetFrameRate;
-                    if ("Frame-Rate".ConstL().Edit(ref fr).Nl() && fr > 0)
+                    if ("Frame-Rate".ConstL().Edit(ref fr).NL() && fr > 0)
                     {
                         Application.targetFrameRate = fr;
                     }
@@ -225,26 +230,26 @@ namespace QuizCanners.Utils
                     int width = res.width;
                     int height = res.height;
 
-                    "Screen: {0}x{1}".F(Screen.width, Screen.height).PL().Nl();
+                    "Screen: {0}x{1}".F(Screen.width, Screen.height).NL();
 
-                    "Display: {0}x{1}".F(Display.main.renderingWidth, Display.main.renderingHeight).PL().Nl();
+                    "Display: {0}x{1}".F(Display.main.renderingWidth, Display.main.renderingHeight).NL();
 
-                    "Resolution: {0}x{1}".F(width, height).PL().Nl();
+                    "Resolution: {0}x{1}".F(width, height).NL();
 
                     var changes = pegi.ChangeTrackStart();
 
-                    "Width".ConstL().Edit(ref width, 8, Display.main.systemWidth).Nl();
-                    "Height".ConstL().Edit(ref height, 8, Display.main.systemHeight).Nl();
+                    "Width".ConstL().Edit(ref width, 8, Display.main.systemWidth).NL();
+                    "Height".ConstL().Edit(ref height, 8, Display.main.systemHeight).NL();
 
                     if (changes)
                         Screen.SetResolution(width, height, fullscreen: true);
 
                 }
 
-                if ("Screen Shots".PL().IsEntered().Nl())
+                if ("Screen Shots".PL().IsEntered().NL())
                     screenShots.Nested_Inspect();
 
-                if ("Texture Utils".PL().IsEntered().Nl())
+                if ("Texture Utils".PL().IsEntered().NL())
                 {
                     if (Application.isEditor)
                     {
@@ -275,7 +280,7 @@ namespace QuizCanners.Utils
                         "Only in Editor".PL().WriteWarning();
                 }
 
-                "Other".PL().IsEntered().Nl().If_Entered(QcDebug.InspectOther);
+                "Other".PL().IsEntered().NL().If_Entered(QcDebug.InspectOther);
 
                 if (!_context.IsAnyEntered)
                     QcScenes.Inspect();

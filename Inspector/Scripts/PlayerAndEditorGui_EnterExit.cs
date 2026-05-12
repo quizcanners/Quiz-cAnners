@@ -109,6 +109,57 @@ namespace QuizCanners.Inspect
             return Context.IsEnteredCurrent;
         }
 
+        public struct CanSkipEnteredToken 
+        {
+            public IDisposable disposible;
+        }
+
+        public static bool SkipNot(out CanSkipEnteredToken token) 
+        {
+            token = new CanSkipEnteredToken
+            {
+                disposible = Context.IncrementDisposible(out bool canSkip)
+            };
+
+            if (canSkip)
+                token.disposible.Dispose();
+
+            return !canSkip;
+        }
+
+        public static StateToken IsEntered(this CanSkipEnteredToken token, TextLabel label, bool showLabelIfTrue = true, Styles.PegiGuiStyle enterLabelStyle = null) 
+        {
+            using (token.disposible)
+            {
+                if (Context.IsEnteredCurrent)
+                {
+                    using (Styles.Background.ExitLabel.SetDisposible())
+                    {
+                        Icon.Exit.ClickUnFocus("{0} {1}".F(Icon.Exit.GetText(), label)).IgnoreChanges(LatestInteractionEvent.Exit).OnChanged(Context.OnExitClick);
+                    }
+
+                    if (showLabelIfTrue)
+                    {
+                        label.style = Styles.Text.ExitLabel;
+                        if (label.ClickLabel().IgnoreChanges(LatestInteractionEvent.Exit))
+                            Context.OnExitClick();
+                    }
+                }
+                else
+                {
+                    label.style = enterLabelStyle ?? Styles.Text.EnterLabel;
+                    (Icon.Enter.ClickUnFocus(label.label).IgnoreChanges(LatestInteractionEvent.Enter)
+                      | label.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter))
+                    .OnChanged(() => Context.OnEnterClick());
+                }
+
+            }
+
+            return Context.IsEnteredCurrent;
+            //token.disposible.Dispose();
+        }
+
+
         public static StateToken IsEntered(this TextLabel label, bool showLabelIfTrue = true, Styles.PegiGuiStyle enterLabelStyle = null)
         {
             using (Context.IncrementDisposible(out bool canSkip))
@@ -815,7 +866,7 @@ namespace QuizCanners.Inspect
                     return ChangesToken.False;
 
                 if (EnterInternal.isEntered_HeaderPart(meta, list))
-                    return meta.Edit_List(list).Nl();
+                    return meta.Edit_List(list).NL();
 
                 return ChangesToken.False;
             }
@@ -829,7 +880,7 @@ namespace QuizCanners.Inspect
                     return ChangesToken.False;
 
                 if (IsEntered_ListIcon(label, list))
-                    return label.Edit_List_UObj(list).Nl();
+                    return label.Edit_List_UObj(list).NL();
 
                 return ChangesToken.False;
             }
@@ -874,7 +925,7 @@ namespace QuizCanners.Inspect
                     return ChangesToken.False;
 
                 if (EnterInternal.isEntered_HeaderPart(meta, array))
-                    return meta.Edit_Array(ref array).Nl();
+                    return meta.Edit_Array(ref array).NL();
 
                 return ChangesToken.False;
             }
@@ -887,7 +938,7 @@ namespace QuizCanners.Inspect
         public static ChangesToken Enter_Dictionary<TKey, TValue>(this CollectionInspectorMeta meta, Dictionary<TKey, TValue> list)
         {
             if (EnterInternal.isEntered_HeaderPart(meta, list))
-                return meta.Edit_Dictionary(list).Nl();
+                return meta.Edit_Dictionary(list).NL();
             return ChangesToken.False;
         }
 
@@ -923,7 +974,7 @@ namespace QuizCanners.Inspect
 
         public static void Line(Color col)
         {
-            Nl();
+            NL();
 
             var c = GUI.color;
             GUI.color = col;

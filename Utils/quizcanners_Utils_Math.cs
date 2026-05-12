@@ -92,7 +92,7 @@ namespace QuizCanners.Utils
 
         public static bool ClampIndexToCount(this ICollection list, ref int value, int min = 0)
         {
-            if (!list.IsNullOrEmpty())
+            if (!list.IsNullOrEmptyNonGeneric())
             {
                 value = Mathf.Max(min, Mathf.Min(value, list.Count - 1));
                 return true;
@@ -287,7 +287,7 @@ namespace QuizCanners.Utils
             return dist < percision;
         }
 
-        public static Vector3 GetClosestPointOnALine(Vector3 a, Vector3 b, Vector3 p)
+        public static Vector3 GetClosestPointOnInfiniteLine(Vector3 a, Vector3 b, Vector3 p)
         {
             Vector3 ab = b - a;
             float abLenSq = Vector3.Dot(ab, ab); // |ab|^2
@@ -300,15 +300,48 @@ namespace QuizCanners.Utils
             return a + ab * t; // closest point on infinite line
         }
 
+        public static Vector3 GetClosestPointOnSegment(Vector3 a, Vector3 b, Vector3 point)
+        {
+            Vector3 ab = b - a;
+            float abLenSq = Vector3.Dot(ab, ab);
+
+            // Degenerate segment (a == b)
+            if (abLenSq <= 1e-8f)
+                return a;
+
+            float t = Vector3.Dot(point - a, ab) / abLenSq;
+            t = Mathf.Clamp01(t);
+
+            return a + ab * t;
+        }
 
 
-        public static bool IsPointOnLine(Vector3 a, Vector3 b, Vector3 point, float percision)
+
+        public static Vector3 GetClosestPointOnSegment_Details(Vector3 a, Vector3 b, Vector3 point, out float t)
+        {
+            Vector3 ab = b - a;
+            float abLenSq = Vector3.Dot(ab, ab);
+
+            // Degenerate segment (a == b)
+            if (abLenSq <= 1e-8f)
+            {
+                t = 0;
+                return a;
+            }
+
+            t = Vector3.Dot(point - a, ab) / abLenSq;
+            t = Mathf.Clamp01(t);
+
+            return a + ab * t;
+        }
+
+        public static bool IsPointOnLine(Vector3 a, Vector3 b, Vector3 point, float percisionMeters)
         {
             float line = (b - a).magnitude;
             float pnta = (point - a).magnitude;
             float pntb = (point - b).magnitude;
 
-            return ((line > pnta) && (line > pntb) && ((pnta + pntb) < line + percision));
+            return ((line > pnta) && (line > pntb) && ((pnta + pntb) < line + percisionMeters));
         }
 
         public static float HeronHforBase(float _base, float a, float b)
@@ -872,9 +905,9 @@ namespace QuizCanners.Utils
                     if (Icon.FoldedOut.ClickUnFocus("Hide Range"))
                         _showRange = false;
 
-                    pegi.Nl();
+                    pegi.NL();
 
-                    "[{0} : {1}] - {2}".F(dynamicMin, dynamicMax, "Focused Range").PL().Nl();
+                    "[{0} : {1}] - {2}".F(dynamicMin, dynamicMax, "Focused Range").NL();
 
                     "Range: [".ConstL().Write();
 
@@ -908,13 +941,13 @@ namespace QuizCanners.Utils
 
                     }
 
-                    pegi.Nl();
+                    pegi.NL();
 
                     "Tap Enter to apply Range change in the field (will Clamp current value)".PL().Write_Hint();
 
 
 
-                    pegi.Nl();
+                    pegi.NL();
 
                     if (rangeChanged)
                     {

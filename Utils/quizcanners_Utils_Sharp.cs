@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -524,10 +525,18 @@ namespace QuizCanners.Utils
             (list[indexB], list[indexA]) = (list[indexA], list[indexB]);
         }
 
+        public static bool IsNullOrEmpty<T>(this ICollection<T> collection) => collection == null || collection.Count == 0;
+
+        public static bool IsNullOrEmptyNonGeneric(this ICollection collection) => collection == null || collection.Count == 0;
+
+        // public static bool IsNullOrEmpty(this ICollection collection)
+        //  => collection == null || collection.Count == 0;
+
+        /*
         public static bool IsNullOrEmpty(this ICollection list) => list == null || list.Count == 0;
 
         public static bool IsNullOrEmpty<T>(this HashSet<T> hashSet) => hashSet == null || hashSet.Count == 0;
-
+        */
         public static void SetContains(this HashSet<int> vals, int index, bool contains)
         {
             if (contains)
@@ -739,129 +748,144 @@ namespace QuizCanners.Utils
 
         public static string F(this string format, Type type)
         {
-#if UNITY_EDITOR
             try
             {
-#endif
                 return string.Format(format, type.ToPegiStringType());
-#if UNITY_EDITOR
             }
             catch
             {
+#if UNITY_EDITOR
                 return BadFormat + format + " " + (type == null ? "null type" : type.ToString());
-            }
+#else
+                if (QcLog.LogHandler.SavingLogs)
+                    return BadFormat + format + " " + (type == null ? "null type" : type.ToString());
+                return format;
 #endif
+            }
         }
 
         public static string F(this string format, Func<string> func)
         {
             string result;
-#if UNITY_EDITOR
             try
             {
-#endif
                 result = func();
-#if UNITY_EDITOR
             }
             catch (Exception ex)
             {
+#if UNITY_EDITOR
                 Debug.LogException(ex);
+#else
+                if (QcLog.LogHandler.SavingLogs)
+                    Debug.LogException(ex);
+#endif
                 result = "ERR";
             }
-#endif
 
             return format.F(result);
         }
 
         public static string F(this string format, string obj)
         {
-#if UNITY_EDITOR
             try
             {
-#endif
                 return string.Format(format, obj);
-#if UNITY_EDITOR
             }
             catch
             {
+#if UNITY_EDITOR
                 return BadFormat + format + " " + obj;
-            }
+#else
+                if (QcLog.LogHandler.SavingLogs)
+                    return BadFormat + format + " " + obj;
+                return format;
 #endif
+            }
         }
         public static string F(this string format, object obj1)
         {
-#if UNITY_EDITOR
             try
             {
-#endif
                 return string.Format(format, obj1.GetNameForInspector());
-#if UNITY_EDITOR
             }
             catch
             {
+#if UNITY_EDITOR
                 return BadFormat + format + " " + obj1.GetNameForInspector();
-            }
+#else
+                if (QcLog.LogHandler.SavingLogs)
+                    return BadFormat + format + " " + obj1.GetNameForInspector();
+                return format;
 #endif
+            }
         }
         public static string F(this string format, string obj1, string obj2)
         {
-#if UNITY_EDITOR
             try
             {
-#endif
                 return string.Format(format, obj1, obj2);
-#if UNITY_EDITOR
             }
             catch
             {
+#if UNITY_EDITOR
                 return BadFormat + format + " " + obj1 + " " + obj2;
-            }
+#else
+                if (QcLog.LogHandler.SavingLogs)
+                    return BadFormat + format + " " + obj1 + " " + obj2;
+                return format;
 #endif
+            }
         }
         public static string F(this string format, object obj1, object obj2)
         {
-#if UNITY_EDITOR
             try
             {
-#endif
                 return string.Format(format, obj1.GetNameForInspector(), obj2.GetNameForInspector());
-#if UNITY_EDITOR
             }
             catch
             {
+#if UNITY_EDITOR
                 return BadFormat + format;
-            }
+#else
+                if (QcLog.LogHandler.SavingLogs)
+                    return BadFormat + format;
+                return format;
 #endif
+            }
         }
         public static string F(this string format, string obj1, string obj2, string obj3)
         {
-#if UNITY_EDITOR
             try
             {
-#endif
                 return string.Format(format, obj1, obj2, obj3);
-#if UNITY_EDITOR
             }
             catch
             {
+#if UNITY_EDITOR
                 return BadFormat + format;
-            }
+#else
+                if (QcLog.LogHandler.SavingLogs)
+                    return BadFormat + format;
+                return format;
 #endif
+            }
         }
         public static string F(this string format, object obj1, object obj2, object obj3)
         {
-#if UNITY_EDITOR
             try
             {
-#endif
                 return string.Format(format, obj1.GetNameForInspector(), obj2.GetNameForInspector(), obj3.GetNameForInspector());
-#if UNITY_EDITOR
             }
             catch
             {
+#if UNITY_EDITOR
                 return BadFormat + format;
-            }
+#else
+                if (QcLog.LogHandler.SavingLogs)
+                    return BadFormat + format;
+                return format;
 #endif
+            }
         }
         public static string F(this string format, params object[] objs)
         {
@@ -889,18 +913,20 @@ namespace QuizCanners.Utils
 
         public static string F(this string format, params string[] objs)
         {
-#if UNITY_EDITOR
             try
             {
-#endif
                 return string.Format(format, objs);
-#if UNITY_EDITOR
             }
             catch
             {
+#if UNITY_EDITOR
                 return BadFormat + format;
-            }
+#else
+                if (QcLog.LogHandler.SavingLogs)
+                    return BadFormat + format;
+                return format;
 #endif
+            }
         }
 
         #endregion
@@ -1233,6 +1259,31 @@ namespace QuizCanners.Utils
             return mostSimilar;
         }
 
+        public static List<int> SortByLevenshteinDistance<T>(this Dictionary<int, T> dic, string toCompareAgainst, Func<T, string> toStringFunc) 
+        {
+            if (dic == null || dic.Count == 0)
+                return new List<int>();
+
+            var scored = new List<(int key, int distance)>(dic.Count);
+
+            foreach (var kvp in dic)
+            {
+                int distance = toStringFunc(kvp.Value).LevenshteinDistance(toCompareAgainst);
+                scored.Add((kvp.Key, distance));
+            }
+
+            scored.Sort((a, b) => a.distance.CompareTo(b.distance));
+
+            var result = new List<int>(scored.Count);
+
+            for (int i = 0; i < scored.Count; i++)
+            {
+                result.Add(scored[i].key);
+            }
+
+            return result;
+        }
+
         private static int LevenshteinDistance(this string s, string t)
         {
 
@@ -1326,7 +1377,58 @@ namespace QuizCanners.Utils
             }
 
             return name;
-            
+        }
+
+        public static string TRIM_TO_UPPER_KEY(this string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return string.Empty;
+
+            int start = 0;
+            int end = name.Length - 1;
+
+            while (start <= end && !IsNameChar(name[start]))
+                start++;
+
+            while (end >= start && !IsNameChar(name[end]))
+                end--;
+
+            if (start > end)
+                return string.Empty;
+
+            int length = end - start + 1;
+
+            return string.Create(length, (name, start), static (span, state) =>
+            {
+                string source = state.name;
+                int src = state.start;
+
+                for (int i = 0; i < span.Length; i++)
+                {
+                    char c = source[src + i];
+
+                    // Fast ASCII uppercase
+                    if ((uint)(c - 'a') <= ('z' - 'a'))
+                        c = (char)(c - 32);
+                    else
+                        c = char.ToUpperInvariant(c);
+
+                    span[i] = c;
+                }
+            });
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsNameChar(char c)
+        {
+            // Fast ASCII path first
+            if ((uint)(c - 'A') <= ('Z' - 'A')) return true;
+            if ((uint)(c - 'a') <= ('z' - 'a')) return true;
+            if ((uint)(c - '0') <= ('9' - '0')) return true;
+            if (c == '_') return true; // keep underscore if you want
+
+            // Fallback for Unicode letters/digits
+            return char.IsLetterOrDigit(c);
         }
 
         private class DisposableActionToken : IDisposable

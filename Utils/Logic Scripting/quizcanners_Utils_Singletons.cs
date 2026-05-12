@@ -26,9 +26,9 @@ namespace QuizCanners.Utils
         public static pegi.ChangesToken TryEnter_Inspect<TSingleton>() where TSingleton : MonoBehaviour, IQcSingleton, IPEGI
         {
             if (TryGet<TSingleton>(out var sng))
-                return sng.Enter_Inspect().Nl();
+                return sng.Enter_Inspect().NL();
 
-            "Sng".PL().IsConditionally_Entered(canEnter: false).Nl();
+            "Sng".PL().IsConditionally_Entered(canEnter: false).NL();
             return pegi.ChangesToken.False;
         }
 
@@ -244,8 +244,8 @@ namespace QuizCanners.Utils
             {
                 if (!_singletonLoop.Unlocked) 
                 {
-                    pegi.Nl();
-                    "Recursion detected.".PL().Write().Nl();
+                    pegi.NL();
+                    "Recursion detected.".PL().Write().NL();
                     return;
 
                 }
@@ -255,14 +255,14 @@ namespace QuizCanners.Utils
 
                     int inspectedService = _prsstInspectedIndex.GetValue();
 
-                    pegi.Nl();
+                    pegi.NL();
 
                     HashSet<Type> processedTypes = new();
                     HashSet<string> processedCategories = new();
 
                     if (_prsstInspectedCategory.GetValue().IsNullOrEmpty() == false)
                     {
-                        if (Icon.Exit.Click() | _prsstInspectedCategory.GetValue().PL().ClickLabel().Nl())
+                        if (Icon.Exit.Click() | _prsstInspectedCategory.GetValue().PL().ClickLabel().NL())
                             _prsstInspectedCategory.SetValue("");
                     }
 
@@ -278,7 +278,7 @@ namespace QuizCanners.Utils
                         {
                             "Search".ConstL().Edit(ref _searchText);
                             Icon.Clear.Click(() => _searchText = "");
-                            pegi.Nl();
+                            pegi.NL();
 
                             inspectingSearch = _searchText.IsNullOrEmpty() == false;
 
@@ -291,7 +291,7 @@ namespace QuizCanners.Utils
                                     if (pegi.Try_SearchMatch_Obj(s, _searchText))
                                     {
                                         InspectServiceInList(s, i);
-                                        pegi.Nl();
+                                        pegi.NL();
                                     }
 
                                 }
@@ -319,7 +319,7 @@ namespace QuizCanners.Utils
                                             continue;
 
                                         processedCategories.Add(myCategory);
-                                        if (Icon.List.Click() | myCategory.PL().ClickLabel().Nl())
+                                        if (Icon.List.Click() | myCategory.PL().ClickLabel().NL())
                                             _prsstInspectedCategory.SetValue(myCategory);
                                     }
                                 }
@@ -334,9 +334,9 @@ namespace QuizCanners.Utils
                                 var service = el.Value;
                                 if (QcUnity.IsNullOrDestroyed_Obj(service))
                                 {
-                                    pegi.Nl();
+                                    pegi.NL();
                                     "Service {0} destroyed".F(el.Key).PL().WriteWarning();
-                                    pegi.Nl();
+                                    pegi.NL();
                                     continue;
                                 }
 
@@ -347,7 +347,7 @@ namespace QuizCanners.Utils
 
                                 InspectServiceInList(service, i);
 
-                                pegi.Nl();
+                                pegi.NL();
                             }
                         }
                     }
@@ -357,14 +357,14 @@ namespace QuizCanners.Utils
 
                         using (pegi.Styles.Background.ExitLabel.SetDisposible())
                         {
-                            if (Icon.Exit.Click() | s.GetNameForInspector().PL(style: pegi.Styles.Text.ExitLabel).ClickLabel().Nl())
+                            if (Icon.Exit.Click() | s.GetNameForInspector().PL(style: pegi.Styles.Text.ExitLabel).ClickLabel().NL())
                                 inspectedService = -1;
                         }
 
                         if (s != null)
                             pegi.Nested_Inspect_Object(ref s);
                         else
-                            "NULL".PL().Nl();
+                            "NULL".NL();
                     }
 
 
@@ -412,14 +412,14 @@ namespace QuizCanners.Utils
                             {
                                "{0} {1}%  ({2})".F(s.Key, Mathf.FloorToInt(progress01 * 100), state).PL().DrawProgressBar(progress01);
                             }
-                            pegi.Nl();
+                            pegi.NL();
 
                         }
                     } catch (Exception ex) 
                     {
                         Debug.LogException(ex);
                         ex.ToString().PL().WriteWarning();
-                        pegi.Nl();
+                        pegi.NL();
                     }
                 }
             }
@@ -587,7 +587,7 @@ namespace QuizCanners.Utils
                         gameObject.name = preferedName;
                 }
 
-                pegi.Nl();
+                pegi.NL();
             }
 
             protected virtual bool AllowDisableSingleton => true;

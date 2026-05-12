@@ -101,7 +101,7 @@ namespace QuizCanners.Inspect
                         PrefabUtility.RecordPrefabInstancePropertyModifications(o);
                 }
                 
-                Nl();
+                NL();
                 paintedPegi = true;
             }
 
@@ -209,7 +209,7 @@ namespace QuizCanners.Inspect
                     "Toggle Between regular and PEGI Material inspector", PEGI_Inspector_Material.drawDefaultInspector ? ICON_SIZE_FOR_DEFAULT : ICON_SIZE_FOR_CUSTOM);
 
                 if (PEGI_Inspector_Material.drawDefaultInspector &&
-                    BACK_TO_CUSTOM.PL(style: Styles.Text.ExitLabel).ClickLabel().Nl())
+                    BACK_TO_CUSTOM.PL(style: Styles.Text.ExitLabel).ClickLabel().NL())
                     PEGI_Inspector_Material.drawDefaultInspector = false;
             }
             else
@@ -223,7 +223,7 @@ namespace QuizCanners.Inspect
                         "Toggle Between regular and PEGI inspector", isDefault ? ICON_SIZE_FOR_DEFAULT : ICON_SIZE_FOR_CUSTOM))
                         DrawDefaultInspector = isDefault ? target : null;
 
-                    if (isDefault && BACK_TO_CUSTOM.PL(style: Styles.Text.ExitLabel).ClickLabel().Nl())
+                    if (isDefault && BACK_TO_CUSTOM.PL(style: Styles.Text.ExitLabel).ClickLabel().NL())
                         DrawDefaultInspector = null;
                 }
                 else
@@ -599,7 +599,7 @@ namespace QuizCanners.Inspect
         {
             CheckLine_Editor();
             EditorGUILayout.Separator();
-            Nl();
+            NL();
         }
 
         #region Edit
@@ -1034,7 +1034,7 @@ namespace QuizCanners.Inspect
             return END();
         }
 
-        public static ChangesToken Edit(ref Vector4 val) => "X".PL(15).Edit(ref val.x).Nl() | "Y".PL(15).Edit(ref val.y).Nl() | "Z".PL(15).Edit(ref val.z).Nl() | "W".PL(15).Edit(ref val.w).Nl();
+        public static ChangesToken Edit(ref Vector4 val) => "X".PL(15).Edit(ref val.x).NL() | "Y".PL(15).Edit(ref val.y).NL() | "Z".PL(15).Edit(ref val.z).NL() | "W".PL(15).Edit(ref val.w).NL();
         #endregion
 
         #region Delayed
@@ -1491,7 +1491,7 @@ namespace QuizCanners.Inspect
 
         public static IEnumerable<T> DropAreaGUI<T>() where T : Object
         {
-            Nl();
+            NL();
 
             var evt = Event.current;
             var drop_area = GUILayoutUtility.GetRect(0.0f, 50.0f, GUILayout.ExpandWidth(true));

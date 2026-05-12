@@ -113,19 +113,19 @@ namespace QuizCanners.Utils
             void IPEGI.Inspect()
             {
                 var sub = SavingLogs;
-                if ("Save Logs".PL().ToggleIcon(ref sub).Nl())
+                if ("Save Logs".PL().ToggleIcon(ref sub).NL())
                     SavingLogs = sub;
 
                 if (!_logMeta.IsAnyEntered)
                 {
                     if (logs.Count > 10)
                     {
-                        if ("Clear All But 5".PL().ClickConfirm(confirmationTag: "Del Logs").Nl())
+                        if ("Clear All But 5".PL().ClickConfirm(confirmationTag: "Del Logs").NL())
                             logs.RemoveRange(0, logs.Count - 5);
                     }
                     else
                     {
-                        if (SavingLogs && "Create Test Logs".PL().Click().Nl())
+                        if (SavingLogs && "Create Test Logs".PL().Click().NL())
                         {
                             Debug.Log("Debug Log");
                             Debug.LogWarning("Log Warning");
@@ -144,7 +144,7 @@ namespace QuizCanners.Utils
                 }
 
                 if (logs.Count == 0)
-                    "NO LOGS YET".PL().Nl();
+                    "NO LOGS YET".NL();
                 else
                     _logMeta.Edit_List(logs);
             }
@@ -168,8 +168,8 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                "Log:".ConstL().Write_ForCopy(Log, showCopyButton: true).Nl();
-                "Stack:".PL().Write_ForCopy_Big(Stack, showCopyButton: true).Nl();
+                "Log:".ConstL().Write_ForCopy(Log, showCopyButton: true).NL();
+                "Stack:".PL().Write_ForCopy_Big(Stack, showCopyButton: true).NL();
             }
 
             public string NeedAttention()

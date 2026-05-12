@@ -233,7 +233,7 @@ namespace QuizCanners.Inspect
 
             //private static TextToken Write(string text, int width) => Write(text, text, width);
 
-            private static TextToken Write(string text, string toolTip)
+            internal static TextToken Write(string text, string toolTip)
             {
 
                 textAndTip.text = text;
@@ -402,9 +402,9 @@ namespace QuizCanners.Inspect
 
         public static TextToken Draw(this TextLabel text, Texture image, bool alphaBlend = false) 
         {
-            text.Write().Nl();
+            text.Write().NL();
             var ret = Draw(image, width: Screen.width, alphaBlend: alphaBlend);
-            Nl();
+            NL();
             return ret;
         }
 
@@ -480,17 +480,17 @@ namespace QuizCanners.Inspect
 
         public static TextToken WriteBig(this TextLabel text, string contents)
         {
-            text.Nl();
+            text.NL();
             contents.PL().WriteBig();
-            Nl();
+            NL();
             return TEXT_TOK;
         }
 
         public static TextToken WriteBig(this TextLabel text, TextLabel contents)
         {
-            text.Nl();
+            text.NL();
             contents.WriteBig();
-            Nl();
+            NL();
             return TEXT_TOK;
         }
 
@@ -498,7 +498,7 @@ namespace QuizCanners.Inspect
         {
             text.style = Styles.Text.Overflow;
             text.Write();
-            Nl();
+            NL();
             return TEXT_TOK;
         }
 
@@ -570,9 +570,9 @@ namespace QuizCanners.Inspect
             {// Due to MGUI BUG
                 var toShow = text.FirstLine();
                 if (toShow.Length > 50)
-                    toShow = toShow.Substring(0, 50) + "...";
+                    toShow = toShow[..50] + "...";
 
-                ".....   Big Text Has Many Lines: {0}".F(toShow).PL().Write().Nl();
+                ".....   Big Text Has Many Lines: {0}".F(toShow).PL().Write().NL();
                 WriteCopyTextButton();
             }
             else
@@ -584,7 +584,7 @@ namespace QuizCanners.Inspect
 
             void WriteCopyTextButton()
             {
-                if ("Copy text to clipboard".PL().Click().Nl())
+                if ("Copy text to clipboard".PL().Click().NL())
                     SetCopyPasteBuffer(text);
             }
 
@@ -601,7 +601,7 @@ namespace QuizCanners.Inspect
             if (showCopyButton && Icon.Copy.Click("Copy text to clipboard"))
                 SetCopyPasteBuffer(value, hint);
 
-            Nl();
+            NL();
 
             if (PaintingGameViewUI && !value.IsNullOrEmpty() && ContainsAtLeast(value, '\n', 5)) // Due to MGUI BUG
                 ".....   Big Text Has Many Lines: {0}".F(value.FirstLine()).PL().Write();
@@ -618,14 +618,14 @@ namespace QuizCanners.Inspect
         {
             get
             {
-                if (_copyPasteBufferCheck.TryEnter())
+                if (_copyPasteBufferCheck.TryConsume())
                     _copyPasteCached = GUIUtility.systemCopyBuffer;
 
                 return _copyPasteCached;
             }
             set
             {
-                _copyPasteBufferCheck.TryEnter();
+                _copyPasteBufferCheck.TryConsume();
                 GUIUtility.systemCopyBuffer = value;
                 _copyPasteCached = value;
             }
@@ -669,7 +669,7 @@ namespace QuizCanners.Inspect
             Write_ForCopy(txt.PL(), showCopyButton: true);
             if ("Log".PL().Click())
                 Debug.LogException(ex);
-            Nl();
+            NL();
             return TEXT_TOK;
         }
 
@@ -680,7 +680,7 @@ namespace QuizCanners.Inspect
             if (!PaintingGameViewUI)
             {
                 PegiEditorOnly.WriteHint(text, MessageType.Warning);
-                Nl();
+                NL();
                 //PegiEditorOnly.newLine();
                 return TEXT_TOK;
             }
@@ -688,7 +688,7 @@ namespace QuizCanners.Inspect
 
             CheckLine();
             GUILayout.Label(text.label, Styles.Text.Warning.Current, Utils.GuiMaxWidthOption);
-            Nl();
+            NL();
             return TEXT_TOK;
 
         }
@@ -701,7 +701,7 @@ namespace QuizCanners.Inspect
             {
                 PegiEditorOnly.WriteHint(text, MessageType.Info);
                 if (startNewLineAfter)
-                    Nl();
+                    NL();
                 return TEXT_TOK;
             }
 #endif
@@ -709,7 +709,7 @@ namespace QuizCanners.Inspect
             CheckLine();
             GUILayout.Label(text.label, Styles.Text.Hint.Current, Utils.GuiMaxWidthOption);
             if (startNewLineAfter)
-                Nl();
+                NL();
 
             return TEXT_TOK;
         }
@@ -723,7 +723,7 @@ namespace QuizCanners.Inspect
 
             if (PlayerPrefs.GetInt(key) != 0) return StateToken.False;
 
-            Nl();
+            NL();
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
@@ -737,7 +737,7 @@ namespace QuizCanners.Inspect
                 GUILayout.Label(text.label, Styles.Text.Hint.Current, Utils.GuiMaxWidthOption);
             }
 
-            if (Icon.Done.ClickUnFocus("Got it").Nl()) 
+            if (Icon.Done.ClickUnFocus("Got it").NL()) 
                 PlayerPrefs.SetInt(key, 1);
 
             return StateToken.True;
@@ -748,22 +748,22 @@ namespace QuizCanners.Inspect
         #region Progress Bar
 
 
-        public static TextToken DrawProgressBar(this TextLabel text, float value, bool addPercentage = false)
+        public static TextToken DrawProgressBar(this TextLabel text, float value01, bool addPercentage = false)
         {
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
             {
                 if (addPercentage)
-                    text.label = "{0}: {1}%".F(text, Mathf.FloorToInt(value * 100));
+                    text.label = "{0}: {1}%".F(text, Mathf.FloorToInt(value01 * 100));
 
-                PegiEditorOnly.ProgressBar(text, value);
+                PegiEditorOnly.ProgressBar(text, value01);
                 return TEXT_TOK;
             }
 #endif
             
             CheckLine();
-            text.label = "{0}: {1}%".F(text, Mathf.FloorToInt(value * 100));
+            text.label = "{0}: {1}%".F(text, Mathf.FloorToInt(value01 * 100));
             text.Write();
 
             return TEXT_TOK;

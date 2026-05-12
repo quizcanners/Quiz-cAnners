@@ -52,16 +52,16 @@ namespace QuizCanners.Utils
             {
                 using (_context.StartContext())
                 {
-                    "Json Inspector".PL().Enter_Inspect(jsonInspector).Nl();
+                    "Json Inspector".PL().Enter_Inspect(jsonInspector).NL();
 
-                    if ("ICfg Inspector".PL().IsEntered().Nl())
+                    if ("ICfg Inspector".PL().IsEntered().NL())
                         iCfgExplorer.Inspect(null);
 
-                    if ("Blockers [0]".F(InspectableBlock.allBlocks.Count).PL().IsEntered().Nl()) 
+                    if ("Blockers [0]".F(InspectableBlock.allBlocks.Count).PL().IsEntered().NL()) 
                     {
-                        _blockersMeta.Edit_List(InspectableBlock.allBlocks).Nl();
+                        _blockersMeta.Edit_List(InspectableBlock.allBlocks).NL();
 
-                        if ("Create Test Blocks".PL().Click().Nl()) 
+                        if ("Create Test Blocks".PL().Click().NL()) 
                         {
                             new InspectableBlock("Test A");
                             new InspectableBlock("Test B");
@@ -69,59 +69,59 @@ namespace QuizCanners.Utils
                         }
                     }
 
-                    if ("Managed Coroutines [{0}]".F(QcAsync.DefaultCoroutineManager.GetActiveCoroutinesCount).PL().IsEntered().Nl())
+                    if ("Managed Coroutines [{0}]".F(QcAsync.DefaultCoroutineManager.GetActiveCoroutinesCount).PL().IsEntered().NL())
                         QcAsync.DefaultCoroutineManager.Nested_Inspect();
 
-                    if ("Tests".PL().IsEntered().Nl())
+                    if ("Tests".PL().IsEntered().NL())
                     {
                         using (_testsContext.StartContext())
                         {
-                            if ("Gui Styles".PL().IsEntered().Nl())
+                            if ("Gui Styles".PL().IsEntered().NL())
                             {
                                 pegi.Styles.Inspect();
-                                pegi.Nl();
+                                pegi.NL();
                             }
 
-                            if ("Random Seed Test".PL().IsEntered().Nl())
+                            if ("Random Seed Test".PL().IsEntered().NL())
                             {
-                                "Seed".ConstL().Edit(ref _testSeed).Nl();
+                                "Seed".ConstL().Edit(ref _testSeed).NL();
 
                                 using (QcMath.RandomBySeedDisposable(_testSeed))
                                 {
                                     for (int i = 0; i < 4; i++)
-                                        "Value {0}: {1}".F(i, UnityEngine.Random.value * 100).PL().Nl();
+                                        "Value {0}: {1}".F(i, UnityEngine.Random.value * 100).NL();
                                 }
 
                                 using (QcMath.RandomBySeedDisposable(_testSeed))
                                 {
                                     for (int i = 0; i < 4; i++)
-                                        "B Value {0}: {1}".F(i, UnityEngine.Random.value * 100).PL().Nl();
+                                        "B Value {0}: {1}".F(i, UnityEngine.Random.value * 100).NL();
                                 }
                             }
 
-                            if ("Probability Calculator".PL().IsEntered().Nl())
+                            if ("Probability Calculator".PL().IsEntered().NL())
                             {
                                 Percentages = QcMath.NormalizeToPercentage(probabilities, prob => prob.Chances);
-                                "Probabilities".PL().Edit_List(probabilities).Nl();
+                                "Probabilities".PL().Edit_List(probabilities).NL();
                             }
                         }
                     }
 
-                    if ("Scenes".PL().IsEntered().Nl()) 
+                    if ("Scenes".PL().IsEntered().NL()) 
                     {
                         for (int i=0; i< SceneManager.sceneCount; i++) 
                         {
                             var s = SceneManager.GetSceneAt(i);
                             if (s.isLoaded)
                                 Icon.Done.Draw();
-                            s.path.PL().Nl();
+                            s.path.NL();
                         }
                     }
 
-                    if ("Regex tests".PL().IsEntered().Nl()) 
+                    if ("Regex tests".PL().IsEntered().NL()) 
                     {
-                        "Text".ConstL().Edit_Big(ref _testString).Nl();
-                        "Pattern".ConstL().Edit(ref _testRegex).Nl();
+                        "Text".ConstL().Edit_Big(ref _testString).NL();
+                        "Pattern".ConstL().Edit(ref _testRegex).NL();
 
                         if (!_testString.IsNullOrEmpty() && !_testRegex.IsNullOrEmpty())
                         {
@@ -135,7 +135,7 @@ namespace QuizCanners.Utils
                             for (int i = 0; i < matches.Count; i++)
                             {
                                 var m = matches[i];
-                                m.Value.PL().Nl();
+                                m.Value.NL();
                             }
                         }
 
@@ -144,7 +144,7 @@ namespace QuizCanners.Utils
                     if (_context.IsAnyEntered == false)
                     {
                         var release = IsRelease;
-                        if ("Release".PL().ToggleIcon(ref release).Nl())
+                        if ("Release".PL().ToggleIcon(ref release).NL())
                             IsRelease = release;
                     }
                 }
@@ -206,15 +206,15 @@ namespace QuizCanners.Utils
             {
                 if (allBlocks.Count > 0) 
                 {
-                    "Blocking In Progress".PL().WriteWarning().Nl();
+                    "Blocking In Progress".PL().WriteWarning().NL();
 
-                    _context.Edit_List(allBlocks).Nl();
+                    _context.Edit_List(allBlocks).NL();
                 }
             }
 
             void IPEGI.Inspect()
             {
-                if (_blocked && "Load {0}".F(_loadingStage).PL().Click().Nl())
+                if (_blocked && "Load {0}".F(_loadingStage).PL().Click().NL())
                     _blocked = false;
             }
 
@@ -262,7 +262,7 @@ namespace QuizCanners.Utils
                 pegi.Edit(ref name);
                 pegi.Edit(ref Chances);
 
-                "= {0}%".F(Percentages[index].ToString()).PL().Nl();
+                "= {0}%".F(Percentages[index].ToString()).NL();
             }
         }
         #endregion

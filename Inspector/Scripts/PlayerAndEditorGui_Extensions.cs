@@ -116,7 +116,7 @@ namespace QuizCanners.Inspect
                 var msg = na.NeedAttention();
                 if (!msg.IsNullOrEmpty())
                 {
-                    Nl();
+                    NL();
                     msg.PL().WriteWarning();
                 }
             }
@@ -220,7 +220,7 @@ namespace QuizCanners.Inspect
         public static ChangesToken Nested_Inspect<T>(this T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : class, IPEGI
         {
             if (fromNewLine)
-                Nl();
+                NL();
 
             if (pgi.IsNullOrDestroyed_Obj())
             {
@@ -294,18 +294,22 @@ namespace QuizCanners.Inspect
         public static ChangesToken Nested_Inspect<T>(ref T pgi, bool fromNewLine = true, bool writeWhenNeedsAttention = true) where T : IPEGI
         {
             if (!InspectorStarted)
-                Debug.LogError("Inspector not started");
+            {
 
+                QcLog.ChillLogger.LogErrosExpOnly(() => "Inspector not started. Stack: ", "NestedInspectNoStart");
+                return ChangesToken.False;
+                //   Debug.LogError("Inspector not started");
+            }
             //using (InspectorStarted ? null : StartInspector(pgi))
             //{
             if (pgi == null)
             {
-                "NULL".PL().WriteWarning().Nl();
+                "NULL".PL().WriteWarning().NL();
                 return ChangesToken.False;
             }
 
             if (fromNewLine)
-                Nl();
+                NL();
 
             var changed = ChangeTrackStart();
 
@@ -370,7 +374,7 @@ namespace QuizCanners.Inspect
 
             if (pgi == null)
             {
-                "NULL".PL().WriteWarning().Nl();
+                "NULL".PL().WriteWarning().NL();
                 return ChangesToken.False;
             }
 
@@ -440,7 +444,7 @@ namespace QuizCanners.Inspect
 
             if (inspected == current)
             {
-                if (Icon.Back.Click() | obj.GetNameForInspector().PL().ClickLabel().Nl())
+                if (Icon.Back.Click() | obj.GetNameForInspector().PL().ClickLabel().NL())
                     inspected = -1;
                 else
                     Nested_Inspect_Value_OrFallback(ref obj);
@@ -501,7 +505,7 @@ namespace QuizCanners.Inspect
                 Fallback_Inspect(ref obj);
 
 
-            Nl();
+            NL();
 
             UnIndent();
 
@@ -540,7 +544,7 @@ namespace QuizCanners.Inspect
                     obj = pgi;
             }
 
-            Nl();
+            NL();
 
             UnIndent();
 
@@ -558,7 +562,7 @@ namespace QuizCanners.Inspect
                     obj = pgi;
             }
 
-            Nl();
+            NL();
 
             UnIndent();
 
@@ -576,7 +580,7 @@ namespace QuizCanners.Inspect
                 if (ed == null)
                     return ChangesToken.False;
 
-                Nl();
+                NL();
                 UnityEditor.EditorGUI.BeginChangeCheck();
 
                 ed.DrawDefaultInspector();
@@ -608,7 +612,7 @@ namespace QuizCanners.Inspect
                     if (ed == null)
                         return ChangesToken.False;
 
-                    Nl();
+                    NL();
                     UnityEditor.EditorGUI.BeginChangeCheck();
                     ed.DrawDefaultInspector();
 
@@ -670,7 +674,7 @@ namespace QuizCanners.Inspect
         {
             var changes = ChangeTrackStart();
 
-            Nl();
+            NL();
 
             using (_reflectiveInspectLoopLock.Unlocked ? _reflectiveInspectLoopLock.Lock() : null)
             {
@@ -726,7 +730,7 @@ namespace QuizCanners.Inspect
             if (value == null)
             {
                 if (!IsEntered())
-                    "NULL {0} ({1})".F(name, type.ToPegiStringType()).PL(Styles.Text.Bald).Nl();
+                    "NULL {0} ({1})".F(name, type.ToPegiStringType()).PL(Styles.Text.Bald).NL();
 
                 return;
             }
@@ -738,7 +742,7 @@ namespace QuizCanners.Inspect
 
                 var val = value as string;
 
-                if (name.PL().Edit(ref val).Nl())
+                if (name.PL().Edit(ref val).NL())
                 {
                     prop?.SetValue(parentObject, val);
                 }
@@ -754,9 +758,9 @@ namespace QuizCanners.Inspect
                 var val = QcSharp.ByteArrayToString(value as byte[]);
 
                 if (val.Length > 32)
-                    name.PL().Edit_Big(ref val).Nl();
+                    name.PL().Edit_Big(ref val).NL();
                 else
-                    "{0} = {1}".F(name, val).PL().Nl();
+                    "{0} = {1}".F(name, val).NL();
 
                 return;
             }
@@ -774,11 +778,11 @@ namespace QuizCanners.Inspect
                 {
                     var asInt = (int)value;
 
-                    if (Edit_Enum(type, ref asInt).Nl() && prop != null)
+                    if (Edit_Enum(type, ref asInt).NL() && prop != null)
                         prop.SetValue(parentObject, asInt);
                 } else 
                 {
-                    "{0} ({1})".F(value, underType).PL().Nl();
+                    "{0} ({1})".F(value, underType).NL();
                 }
 
                 return;
@@ -794,7 +798,7 @@ namespace QuizCanners.Inspect
 
                 if (_reflectiveInspectionDepth.Contains(value))
                 {
-                    "Recursive reference to {0} = {1}".F(name, value.ToString()).PL().Nl();
+                    "Recursive reference to {0} = {1}".F(name, value.ToString()).NL();
                     return;
                 }
 
@@ -838,7 +842,7 @@ namespace QuizCanners.Inspect
             {
                 var val = (bool)value;
 
-                if (name.PL().Toggle(ref val).Nl() && prop != null)
+                if (name.PL().Toggle(ref val).NL() && prop != null)
                     prop.SetValue(parentObject, val);
 
                 return;
@@ -848,7 +852,7 @@ namespace QuizCanners.Inspect
             {
                 var val = (int)value;
 
-                if (name.PL().Edit(ref val).Nl() && prop != null)
+                if (name.PL().Edit(ref val).NL() && prop != null)
                     prop.SetValue(parentObject, val);
 
                 return;
@@ -858,7 +862,7 @@ namespace QuizCanners.Inspect
             {
                 var val = (long)value;
 
-                if (name.PL().Edit(ref val).Nl() && prop != null)
+                if (name.PL().Edit(ref val).NL() && prop != null)
                     prop.SetValue(parentObject, val);
 
                 return;
@@ -868,7 +872,7 @@ namespace QuizCanners.Inspect
             {
                 var val = (double)value;
 
-                if (name.PL().Edit(ref val).Nl() && prop != null)
+                if (name.PL().Edit(ref val).NL() && prop != null)
                     prop.SetValue(parentObject, val);
 
                 return;
@@ -878,13 +882,13 @@ namespace QuizCanners.Inspect
             {
                 var val = (float)value;
 
-                if (name.PL().Edit(ref val).Nl() && prop != null)
+                if (name.PL().Edit(ref val).NL() && prop != null)
                     prop.SetValue(parentObject, val);
 
                 return;
             }
             
-            "{0} = {1}".F(name, value).PL().Nl();
+            "{0} = {1}".F(name, value).NL();
 
             return;
 
@@ -896,17 +900,17 @@ namespace QuizCanners.Inspect
                 {
                     if (asPgi != null)
                     {
-                        asPgi.Enter_Inspect().Nl();
+                        asPgi.Enter_Inspect().NL();
                     }
                     else
                     {
-                        if ("{0}: {1}".F(name, value.ToString()).PL().IsEntered().Nl())
+                        if ("{0}: {1}".F(name, value.ToString()).PL().IsEntered().NL())
                             TryReflectionInspectFields_Inernal(ref value);
                     }
                 }
                 else
                 {
-                    "{0}: {1}".F(name, value.GetNameForInspector()).PL(Styles.Text.Bald).Nl();
+                    "{0}: {1}".F(name, value.GetNameForInspector()).PL(Styles.Text.Bald).NL();
 
                     using (Indent())
                     {
@@ -930,11 +934,11 @@ namespace QuizCanners.Inspect
 
                 if (context != null)
                 {
-                    if (!listlabel.IsEntered().Nl())
+                    if (!listlabel.IsEntered().NL())
                         return;
                 }
                 else
-                    listlabel.Nl();
+                    listlabel.NL();
 
                 const int MAX_ELEMENTS_TO_SHOW = 64;
 
@@ -950,15 +954,15 @@ namespace QuizCanners.Inspect
                         TryReflectionInspectElement(name: index.ToString(), type: el.GetType(), ref tmp);
                     }
                     else
-                        "{0} = NULL".PL().Nl();
+                        "{0} = NULL".NL();
                     //TryReflectionInspectFields_Inernal(el);
 
-                    Nl();
+                    NL();
 
                     counter--;
                     if (counter <= 0)
                     {
-                        "+ {0} elements".F(col.Count - MAX_ELEMENTS_TO_SHOW).PL().Write_Hint().Nl();
+                        "+ {0} elements".F(col.Count - MAX_ELEMENTS_TO_SHOW).PL().Write_Hint().NL();
                         break;
                     }
                 }
@@ -970,7 +974,7 @@ namespace QuizCanners.Inspect
             var pgi = obj as IPEGI;
             var ch = pgi?.Nested_Inspect() ?? Fallback_Inspect(ref obj);
 
-            Nl();
+            NL();
 
             UnIndent();
 
@@ -988,12 +992,12 @@ namespace QuizCanners.Inspect
                 if (Nested_Inspect_Value(ref pgi) && typeof(T).IsValueType)
                     value = (T)pgi;
 
-                Nl();
+                NL();
                 return changes;
             }
           
             Fallback_Inspect(ref value);
-            Nl();
+            NL();
             return changes;
         }
 
@@ -1262,11 +1266,11 @@ namespace QuizCanners.Inspect
 
             QcLog.ChillLogger.LogExceptionExpOnly(ex, key: "InspEx");
 
-            Nl();
+            NL();
             if (Icon.Debug.Click(toolTip: "Log Exception"))
                 Debug.LogException(ex);
 
-            ex.StackTrace.PL().Write_ForCopy_Big(showCopyButton: true, lines: 10).Nl();
+            ex.StackTrace.PL().Write_ForCopy_Big(showCopyButton: true, lines: 10).NL();
         }
     }
 }

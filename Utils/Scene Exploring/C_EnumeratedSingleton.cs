@@ -69,10 +69,10 @@ namespace QuizCanners.Utils
 
         void IPEGI.Inspect()
         {
-            pegi.Nl();
+            pegi.NL();
 
-            "Role".ConstL().Edit_Enum(ref _role).Nl();
-            "On Conflict".ConstL().Edit_Enum(ref _conflictResolve).Nl();
+            "Role".ConstL().Edit_Enum(ref _role).NL();
+            "On Conflict".ConstL().Edit_Enum(ref _conflictResolve).NL();
 
             "Object to enable (Optional)".ConstL().Edit(ref _child);
 
@@ -85,23 +85,23 @@ namespace QuizCanners.Utils
                 if (!_child.name.Equals(name) && Icon.Refresh.Click("Assign Name by Role"))
                     _child.name = name;
             }
-            pegi.Nl();
+            pegi.NL();
 
             if (!Application.isPlaying && _child) 
             {
                 if (gameObject == _child)
                 {
-                    "Should be child of this object".PL().WriteWarning().Nl();
+                    "Should be child of this object".PL().WriteWarning().NL();
                 }
                 else
                 {
                     if (!_child.transform.IsChildOf(transform))
-                        "Child is not a child of this object. Could be a mistake".PL().WriteWarning().Nl();
+                        "Child is not a child of this object. Could be a mistake".PL().WriteWarning().NL();
 
                     if (_child.activeSelf)
                     {
-                        "Child object probably needs to be disabled".PL().WriteWarning().Nl();
-                        if ("Disable".PL().Click().Nl())
+                        "Child object probably needs to be disabled".PL().WriteWarning().NL();
+                        if ("Disable".PL().Click().NL())
                             _child.SetActive(false);
                     }
                 }

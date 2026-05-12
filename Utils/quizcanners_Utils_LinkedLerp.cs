@@ -150,12 +150,12 @@ namespace QuizCanners.Lerp
             public virtual void Inspect()
             {
 
-                ToString().PL().Write_ForCopy().Nl();
+                ToString().PL().Write_ForCopy().NL();
 
-                "Lerp Speed Mode ".ConstL().Edit_Enum(ref lerpMode).Nl();
+                "Lerp Speed Mode ".ConstL().Edit_Enum(ref lerpMode).NL();
 
                 if (Application.isPlaying)
-                    (Enabled ? Icon.Active : Icon.InActive).Nl(Enabled ? "Lerp Possible" : "Lerp Not Possible");
+                    (Enabled ? Icon.Active : Icon.InActive).NL(Enabled ? "Lerp Possible" : "Lerp Not Possible");
 
                 switch (lerpMode)
                 {
@@ -254,12 +254,12 @@ namespace QuizCanners.Lerp
 
             public override void Inspect()
             {
-                pegi.Nl();
+                pegi.NL();
 
                 var changed = pegi.ChangeTrackStart();
 
                 base.Inspect();
-                pegi.Nl();
+                pegi.NL();
 
                 if (changed)
                 {
@@ -267,7 +267,7 @@ namespace QuizCanners.Lerp
                 }
 
                 if (lerpMode != LerpSpeedMode.LerpDisabled)
-                    "Target".PL().Edit(ref targetValue).Nl();
+                    "Target".PL().Edit(ref targetValue).NL();
             }
 
             #endregion
@@ -342,18 +342,18 @@ namespace QuizCanners.Lerp
 
             public override void Inspect()
             {
-                pegi.Nl();
+                pegi.NL();
 
                 var changed = pegi.ChangeTrackStart();
 
                 base.Inspect();
-                pegi.Nl();
+                pegi.NL();
 
                 if (changed)
                     targetValue = CurrentValue;
 
                 if (lerpMode != LerpSpeedMode.LerpDisabled)
-                    "Target".PL().Edit(ref targetValue).Nl();
+                    "Target".PL().Edit(ref targetValue).NL();
             }
 
             #endregion
@@ -410,7 +410,7 @@ namespace QuizCanners.Lerp
                 base.Inspect();
 
                 if (Application.isPlaying)
-                    "{0} => {1}".F(CurrentValue, TargetValue).PL().Nl();
+                    "{0} => {1}".F(CurrentValue, TargetValue).NL();
 
             }
 
@@ -585,9 +585,9 @@ namespace QuizCanners.Lerp
 
                 var tex = Current;
           
-                "On StartThread:".ConstL().Edit_Enum(ref _onStart).Nl();
+                "On StartThread:".ConstL().Edit_Enum(ref _onStart).NL();
 
-                if ("Texture[{0}]".F(_targetTextures.Count).PL(90).Edit(ref tex).Nl())
+                if ("Texture[{0}]".F(_targetTextures.Count).PL(90).Edit(ref tex).NL())
                     TargetTexture = tex;
             }
 
@@ -813,7 +813,7 @@ namespace QuizCanners.Lerp
             {
                 base.Inspect();
 
-                pegi.Edit(ref targetValue).Nl();
+                pegi.Edit(ref targetValue).NL();
             }
 
             #endregion
@@ -1031,18 +1031,18 @@ namespace QuizCanners.Lerp
 
             public override void Inspect()
             {
-                pegi.Nl();
+                pegi.NL();
 
                 var changed = pegi.ChangeTrackStart();
 
                 base.Inspect();
-                pegi.Nl();
+                pegi.NL();
 
                 if (changed)
                     targetValue = CurrentValue;
 
                 if (lerpMode != LerpSpeedMode.LerpDisabled)
-                    "Target".PL().Edit(ref targetValue).Nl();
+                    "Target".PL().Edit(ref targetValue).NL();
             }
 
             #endregion
@@ -1438,9 +1438,9 @@ namespace QuizCanners.Lerp
             {
                 base.Inspect();
 
-                "Target".ConstL().Edit(ref targetValue).Nl();
+                "Target".ConstL().Edit(ref targetValue).NL();
 
-                if ("Value".ConstL().Edit(ref _property.LatestValue).Nl())
+                if ("Value".ConstL().Edit(ref _property.LatestValue).NL())
                     Set();
             }
 
@@ -1642,10 +1642,10 @@ namespace QuizCanners.Lerp
             {
                 base.Inspect();
 
-                pegi.Nl();
+                pegi.NL();
 
                 var val = TargetValue;
-                "Target value".PL().Edit(ref val).Nl(()=> TargetValue = val);
+                "Target value".PL().Edit(ref val).NL(()=> TargetValue = val);
             }
 
         }
@@ -1781,7 +1781,7 @@ namespace QuizCanners.Lerp
             {
                 base.Inspect();
 
-                "Set zero On StartThread".PL().ToggleIcon(ref setZeroOnStart).Nl();
+                "Set zero On StartThread".PL().ToggleIcon(ref setZeroOnStart).NL();
             }
 
             #endregion
@@ -1870,8 +1870,8 @@ namespace QuizCanners.Lerp
 
         void IPEGI.Inspect()
         {
-            "Slowest:".PL().Write_ForCopy(dominantParameter).Nl();
-            "Updates: {0}".F(_resets).PL().Nl();
+            "Slowest:".PL().Write_ForCopy(dominantParameter).NL();
+            "Updates: {0}".F(_resets).NL();
         }
 
         public void InspectInList(ref int edited, int ind)

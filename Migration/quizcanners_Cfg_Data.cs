@@ -1,8 +1,9 @@
-﻿using System;
+﻿using QuizCanners.Inspect;
+using QuizCanners.Utils;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
-using QuizCanners.Inspect;
-using QuizCanners.Utils;
+using System.Text;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -673,6 +674,36 @@ namespace QuizCanners.Migration
     #region Extensions
     public static class ICfgExtensions {
 
+        public static string CopyForSpreadSheet<T>(this List<T> list) where T: ICfg 
+        {
+            var sb = new StringBuilder();
+
+            if (list.Count == 0)
+                return "";
+
+            foreach (KeyValuePair<string, string> item in list[0].Encode()) 
+            {
+                sb.Append(item.Key);
+                sb.Append('\t');
+            }
+
+            sb.Append('\n');
+
+            for (int i=0; i<list.Count; i++)
+            {
+                var e = list[i];
+
+                foreach (KeyValuePair<string, string> item in e.Encode())
+                {
+                    sb.Append(item.Value);
+                    sb.Append('\t');
+                }
+
+                sb.Append('\n');
+            }
+
+            return sb.ToString();
+        }
 
         public static void TryCopyIcfg(object from, object into)
         {

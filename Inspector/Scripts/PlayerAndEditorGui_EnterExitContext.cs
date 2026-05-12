@@ -12,8 +12,14 @@ namespace QuizCanners.Inspect
         {
             internal static bool TryGetCurrent(out EnterExitContext cnt) => s_contexts.TryGetLast(out cnt);
             internal static List<EnterExitContext> s_contexts = new();
+            [NonSerialized] internal int _currentIndex = -1;
+            [HideInInspector] [SerializeField] private int _currentlyEntered = -1;
+            [NonSerialized] internal bool contextUsed;
+            private readonly PlayerPrefValue.Int _playerPref = null;
+            private readonly LogicWrappers.Request checkPlayerPrefs = new();
+            private bool insideUsinglock;
 
-            internal static void Clear() 
+            internal static void Clear()
             {
                 if (s_contexts.Count > 0)
                 {
@@ -22,15 +28,6 @@ namespace QuizCanners.Inspect
                 }
             }
 
-
-            [NonSerialized] internal int _currentIndex = -1;
-            [HideInInspector] [SerializeField] private int _currentlyEntered = -1;
-
-            [NonSerialized] internal bool contextUsed;
-            private readonly PlayerPrefValue.Int _playerPref = null;
-            private readonly LogicWrappers.Request checkPlayerPrefs = new();
-            private bool insideUsinglock;
-           
             private void CheckUsingBlock(string function) 
             {
                 if (!insideUsinglock)
@@ -99,14 +96,29 @@ namespace QuizCanners.Inspect
 
             }
 
+            public bool IndentHandled;
+
             public IDisposable StartContext()
             {
                 _currentIndex = -1;
                 s_contexts.Add(this);
                 insideUsinglock = true;
+                IndentHandled = false;
+
+                IDisposable _indent = null;
+
+                if (s_contexts.Count > 1) 
+                {
+                    _indent = pegi.Indent(width: 5);
+                }
+
                 return QcSharp.DisposableAction(() =>
                 {
+                    IndentHandled = true;
                     s_contexts.Remove(this);
+
+                    _indent?.Dispose();
+                    // pegi.UnIndent();
 
                     if (CurrentlyEntered > _currentIndex)
                     {
@@ -120,8 +132,8 @@ namespace QuizCanners.Inspect
             #region Inspector
             void IPEGI.Inspect()
             {
-                "Currently Entered".PL().Edit(ref _currentlyEntered).Nl();
-                "Current Index".PL().Edit(ref _currentIndex).Nl();
+                "Currently Entered".PL().Edit(ref _currentlyEntered).NL();
+                "Current Index".PL().Edit(ref _currentIndex).NL();
             }
             #endregion
 
@@ -186,9 +198,9 @@ namespace QuizCanners.Inspect
                 if (!TryGet(out var context)) 
                 {
                     canSkip = true;
-                    Nl();
+                    NL();
                     Icon.Copy.Click(toolTip: "Log").OnChanged(()=> Debug.LogError("Check out this Stack Trace!")); ;
-                    "You have forgotten to use Context".PL().WriteWarning().Nl();
+                    "You have forgotten to use Context".PL().WriteWarning().NL();
                     return null;
                 }
 
@@ -311,7 +323,7 @@ namespace QuizCanners.Inspect
 
                 if (!EnterExitContext.TryGetCurrent(out var cnt))
                 {
-                    "No Context".PL().WriteWarning().Nl();
+                    "No Context".PL().WriteWarning().NL();
                     return changed;
                 }
 
@@ -342,7 +354,7 @@ namespace QuizCanners.Inspect
 
                 if (!EnterExitContext.TryGetCurrent(out var cnt))
                 {
-                    "No Context".PL().WriteWarning().Nl();
+                    "No Context".PL().WriteWarning().NL();
                     return changed;
                 }
 

@@ -36,12 +36,12 @@ namespace QuizCanners.Inspect.Examples
 
             public override void Inspect_About()
             {
-                "This script is a Documentation & Example at the same time:".PL().Nl();
-                nameof(PlayerAndEditorGui_Documentation).PL().Write_ForCopy(showCopyButton: true).Nl();
+                "This script is a Documentation & Example at the same time:".NL();
+                nameof(PlayerAndEditorGui_Documentation).PL().Write_ForCopy(showCopyButton: true).NL();
 
-                "Override Inspector".PL(pegi.Styles.ListLabel).Nl();
+                "Override Inspector".PL(pegi.Styles.ListLabel).NL();
 
-                "The following can be used for {0} and {1}. Material inspector override is different ({2}).".F(nameof(MonoBehaviour), nameof(ScriptableObject), nameof(PEGI_Inspector_Material)).PL().Nl();
+                "The following can be used for {0} and {1}. Material inspector override is different ({2}).".F(nameof(MonoBehaviour), nameof(ScriptableObject), nameof(PEGI_Inspector_Material)).NL();
 
                 var sb = new CodeStringBuilder();
                 sb.AppendLine("class Example : {0}, IPEGI".F(nameof(MonoBehaviour)))
@@ -58,7 +58,7 @@ namespace QuizCanners.Inspect.Examples
                 (" This is a wrapper on top of Unity's EditorGUILayout and GUI, rendering one in Inspector window and second in GameView. {0}"
                     ).F(pegi.EnvironmentNl).PL().WriteBig();
 
-                "Player Inspector".PL(pegi.Styles.ListLabel).Nl();
+                "Player Inspector".PL(pegi.Styles.ListLabel).NL();
 
                 sb = new CodeStringBuilder();
                 sb.AppendLine("class ExampleMono : {0}, IPEGI".F(nameof(MonoBehaviour)))
@@ -97,7 +97,7 @@ namespace QuizCanners.Inspect.Examples
 
                 static void WriteInterface<T>() 
                 {
-                    typeof(T).ToPegiStringType().PL(style: pegi.Styles.Text.Bald).Write_ForCopy(writeAsEditField: true).Nl();
+                    typeof(T).ToPegiStringType().PL(style: pegi.Styles.Text.Bald).Write_ForCopy(writeAsEditField: true).NL();
                 }
 
             }
@@ -113,8 +113,8 @@ namespace QuizCanners.Inspect.Examples
 
             public override void Inspect_About()
             {
-                "{0} extension creates a structure that includes text with optional: width, tooltip & GuiStyle. As arguments you can add tooltip, width and GuiStyle. Most other pegi functions are extensions on top of this fucntions.".F(nameof(pegi.PL)).PL().Write_Hint().Nl();
-                "SomeText.PegiLabel(toolTip, width, stype);".PL(toolTip: "tip", width: 310, style: pegi.Styles.Text.Bald).Nl();
+                "{0} extension creates a structure that includes text with optional: width, tooltip & GuiStyle. As arguments you can add tooltip, width and GuiStyle. Most other pegi functions are extensions on top of this fucntions.".F(nameof(pegi.PL)).PL().Write_Hint().NL();
+                "SomeText.PegiLabel(toolTip, width, stype);".PL(toolTip: "tip", width: 310, style: pegi.Styles.Text.Bald).NL();
 
                 DrawExample(() => "label".PL().Write(),
                                     "\"label\".PegiLabel().Write();");
@@ -125,7 +125,7 @@ namespace QuizCanners.Inspect.Examples
                 DrawExample(() => "label".PL(toolTip: "tooltip", width: 50, style: pegi.Styles.Text.Bald).Select(ref exampleKey, exampleDictionary),
                                     "\"label\".PegiLabel(toolTip: tooltip, width: 50, style: pegi.Styles.Text.Text_Bald).Select(ref exampleKey, exampleDictionary);");
 
-                "If label text will not change and there are more elements that need space next to it, consider using ConstLabel (added recently)".PL(pegi.Styles.Text.Bald).Nl();
+                "If label text will not change and there are more elements that need space next to it, consider using ConstLabel (added recently)".PL(pegi.Styles.Text.Bald).NL();
 
                 DrawExample(() => "const label".ConstL(toolTip: "toolTip").Edit(ref _testInt),
                                     "\"const label\".ConstLabel(toolTip: \"toolTip\").Edit(ref _testInt);");
@@ -148,7 +148,7 @@ namespace QuizCanners.Inspect.Examples
             {
                 "Label Example 1".PL(width: 120).Write();
                 "Label Example 2".PL().Click().OnChanged(()=> Debug.Log("Click!"));
-                pegi.Nl();
+                pegi.NL();
                 "Label Example 3".PL().Write();
 
 
@@ -161,7 +161,7 @@ namespace QuizCanners.Inspect.Examples
 
                 pegi.Line();
 
-                "Label Example 2".PL(toolTip: "description text", width: 90, pegi.Styles.Text.Bald).Write().Nl();
+                "Label Example 2".PL(toolTip: "description text", width: 90, pegi.Styles.Text.Bald).Write().NL();
 
                 new CodeStringBuilder()
                    .AppendLine("label2.PegiLabel(toolTip: description, width: 90, pegi.Styles.Text.Text_Bald).write().nl()")
@@ -169,12 +169,12 @@ namespace QuizCanners.Inspect.Examples
 
                 pegi.Line();
 
-                "Handling Long Text".PL(pegi.Styles.Text.Header).Nl();
+                "Handling Long Text".PL(pegi.Styles.Text.Header).NL();
 
                 ("Line 1 write {0}" + "Line 2 write {0}" + "Line 3 write {0}").F(pegi.EnvironmentNl).PL().Write();
-                pegi.Nl();
+                pegi.NL();
 
-                nameof(pegi.WriteBig).PL(pegi.Styles.Text.Bald).Nl();
+                nameof(pegi.WriteBig).PL(pegi.Styles.Text.Bald).NL();
                 ("Line 1 writeBig {0}" + "Line 2 writeBig {0}" + "Line 3 writeBig {0}").F(pegi.EnvironmentNl).PL().WriteBig();
                 
             }
@@ -208,14 +208,14 @@ namespace QuizCanners.Inspect.Examples
 
             public override void Inspect_About()
             {
-                "nl() is short for New Line. By default all the elements are placed in a single line.{0} Use nl() to make following elements drawn from a new line. {0}".F(nameof(pegi.EnvironmentNl)).PL().Write_Hint().Nl();
+                "nl() is short for New Line. By default all the elements are placed in a single line.{0} Use nl() to make following elements drawn from a new line. {0}".F(nameof(pegi.EnvironmentNl)).PL().Write_Hint().NL();
             }
 
             protected override List<FunctionData> GetFunctions() => functions;
 
             private readonly List<FunctionData> functions = new()
             {
-                new FunctionData(nameof(pegi.Nl), ReturnType.SameReturnType,
+                new FunctionData(nameof(pegi.NL), ReturnType.SameReturnType,
                     about: "Makes sure that the next elements is drawn from a new line.",
                     extendsPegiLabel: false),
             };
@@ -252,7 +252,7 @@ namespace QuizCanners.Inspect.Examples
             {
                 ("A field to edit most common value types, such as: double, float, long, int, string, Vector2, Vector3, Vector4, Quaternion, Color, Color32, Rect {0}" +
                     "To edit bool and enum use toggle & editEnum respectively. {0}" +
-                    "To edit Lists, Arrays and Dictionaries go to Collections entry").F(pegi.EnvironmentNl).PL().Write_Hint().Nl();
+                    "To edit Lists, Arrays and Dictionaries go to Collections entry").F(pegi.EnvironmentNl).PL().Write_Hint().NL();
             }
 
             protected override List<FunctionData> GetFunctions() => functions;
@@ -318,7 +318,7 @@ namespace QuizCanners.Inspect.Examples
                     .In().AppendLine("Debug.Log(message)").Out()
                     .DrawExample();
 
-                pegi.Nl();
+                pegi.NL();
             }
 
             protected override List<FunctionData> GetFunctions() => functions;
@@ -377,20 +377,20 @@ namespace QuizCanners.Inspect.Examples
             {
                 "{0} helps to create a menu. Replaces traditional FoldOut. Create context where Enter/Exit elements will be mutually exclusive.".F(nameof(pegi.EnterExitContext)).PL().WriteBig();
 
-                "Using Foldouts".PL(pegi.Styles.ListLabel).Nl();
+                "Using Foldouts".PL(pegi.Styles.ListLabel).NL();
 
-                "Element A".PL().IsFoldout(ref _foldedOutIndex, 0).Nl().If_Entered(() => WriteStuff("A"));
-                "Element B".PL().IsFoldout(ref _foldedOutIndex, 1).Nl().If_Entered(() => WriteStuff("B"));
-                "Element C".PL().IsFoldout(ref _foldedOutIndex, 2).Nl().If_Entered(() => WriteStuff("C"));
+                "Element A".PL().IsFoldout(ref _foldedOutIndex, 0).NL().If_Entered(() => WriteStuff("A"));
+                "Element B".PL().IsFoldout(ref _foldedOutIndex, 1).NL().If_Entered(() => WriteStuff("B"));
+                "Element C".PL().IsFoldout(ref _foldedOutIndex, 2).NL().If_Entered(() => WriteStuff("C"));
 
 
-                "Using Enter".PL(pegi.Styles.ListLabel).Nl();
+                "Using Enter".PL(pegi.Styles.ListLabel).NL();
 
                 using (_enteredIndex.StartContext())
                 {
-                    "Element A".PL().IsEntered().Nl().If_Entered(() => WriteStuff("A"));
-                    "Element B".PL().IsEntered().Nl().If_Entered(() => WriteStuff("B"));
-                    "Element C".PL().IsEntered().Nl().If_Entered(() => WriteStuff("C"));
+                    "Element A".PL().IsEntered().NL().If_Entered(() => WriteStuff("A"));
+                    "Element B".PL().IsEntered().NL().If_Entered(() => WriteStuff("B"));
+                    "Element C".PL().IsEntered().NL().If_Entered(() => WriteStuff("C"));
                 }
 
                 var sb = new CodeStringBuilder();
@@ -413,7 +413,7 @@ namespace QuizCanners.Inspect.Examples
                 {
                     using(pegi.Indent())
                     {
-                        "Some stuff {0}".F(label).PL().Write().Nl();
+                        "Some stuff {0}".F(label).PL().Write().NL();
                     }
                 }
 
@@ -447,13 +447,13 @@ namespace QuizCanners.Inspect.Examples
 
             public override void Inspect_About()
             {
-                "Index".PL(50).Edit(ref exampleIndex).Nl();
+                "Index".PL(50).Edit(ref exampleIndex).NL();
 
-                "Select Index".PL(width: 90).Select_Index(ref exampleIndex, exampleList).Nl();
+                "Select Index".PL(width: 90).Select_Index(ref exampleIndex, exampleList).NL();
 
-                "Key".PL(50).Edit(ref exampleKey).Nl();
+                "Key".PL(50).Edit(ref exampleKey).NL();
 
-                "Select Key from Dictionary".PL(170).Select(ref exampleKey, exampleDictionary).Nl();
+                "Select Key from Dictionary".PL(170).Select(ref exampleKey, exampleDictionary).NL();
 
             }
 
@@ -482,7 +482,7 @@ namespace QuizCanners.Inspect.Examples
 
             public override void Inspect_About()
             {
-                "edit_List, edit_Dictionary".PL().Nl();
+                "edit_List, edit_Dictionary".NL();
             }
         }
 
@@ -492,7 +492,7 @@ namespace QuizCanners.Inspect.Examples
 
             public override void Inspect_About()
             {
-                "Draw fucntion allows to display textures, sprites and some pegi icons".PL().WriteBig().Nl();
+                "Draw fucntion allows to display textures, sprites and some pegi icons".PL().WriteBig().NL();
             }
 
             protected override List<FunctionData> GetFunctions() => functions;
@@ -528,7 +528,7 @@ namespace QuizCanners.Inspect.Examples
 
             public override void Inspect_About()
             {
-                "edit_List, edit_Dictionary".PL().Nl();
+                "edit_List, edit_Dictionary".NL();
             }
         }
 

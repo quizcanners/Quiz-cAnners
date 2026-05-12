@@ -270,7 +270,7 @@ namespace QuizCanners.Inspect
             {
                 if (listMeta == null)
                 {
-                    "List MEta is Null".PL().WriteWarning(); Nl();
+                    "List MEta is Null".PL().WriteWarning(); NL();
                 }
                 else
                     Edit_or_select_List_UObj(list, ref listMeta.inspectedElement_Internal, listMeta).OnChanged(listMeta.OnChanged);
@@ -322,7 +322,7 @@ namespace QuizCanners.Inspect
                     var ch = GUI.changed;
 
                     var tmpEl = lambda(el);
-                    Nl();
+                    NL();
                     if (ch || !GUI.changed) 
                         continue;
 
@@ -330,7 +330,7 @@ namespace QuizCanners.Inspect
                     list[i] = tmpEl;
                 }
             }
-            Nl();
+            NL();
             return changed;
         }
 
@@ -367,7 +367,7 @@ namespace QuizCanners.Inspect
                         else
                             collectionInspector.InspectClassInList(list, i, ref inspected, listMeta);
 
-                        Nl();
+                        NL();
                     }
 
                     CopyPaste.InspectOptions<T>(listMeta);
@@ -379,7 +379,7 @@ namespace QuizCanners.Inspect
             }
             else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
 
-            Nl();
+            NL();
             return changed;
 
         }
@@ -391,7 +391,7 @@ namespace QuizCanners.Inspect
         public static ChangesToken Edit_List_Enum<T>(this TextLabel label, List<T> list, T defaultValue = default) 
         {
             label.style = Styles.ListLabel;
-            label.Nl();
+            label.NL();
             return Edit_List_Enum(list, defaultValue: defaultValue);
         }
 
@@ -408,7 +408,7 @@ namespace QuizCanners.Inspect
                 if (Edit_Enum(ref d))
                     list[i] = d;
 
-                Nl();
+                NL();
             }
 
             if (toDelete != -1)
@@ -475,7 +475,7 @@ namespace QuizCanners.Inspect
             {
                 if (listMeta == null)
                 {
-                    "List Meta is Null".PL().WriteWarning(); Nl();
+                    "List Meta is Null".PL().WriteWarning(); NL();
                 }
                 else
                     Edit_List(list, ref listMeta.inspectedElement_Internal, out _, listMeta).OnChanged(listMeta.OnChanged);
@@ -501,7 +501,7 @@ namespace QuizCanners.Inspect
             if (list == null)
             {
                 Icon.List.Draw();
-                Nl();
+                NL();
                 "List of {0} is null".F(listMeta == null ? typeof(T).ToPegiStringType() : listMeta.Label).PL().Write_Hint();
 
                 return changes;
@@ -524,8 +524,8 @@ namespace QuizCanners.Inspect
 
                     if (list.Count == 0)
                     {
-                        Nl();
-                        "Empty List of {0}".F(listMeta == null ? typeof(T).ToPegiStringType() : listMeta.Label).PL(Styles.Text.Header).Nl();
+                        NL();
+                        "Empty List of {0}".F(listMeta == null ? typeof(T).ToPegiStringType() : listMeta.Label).PL(Styles.Text.Header).NL();
                     }
                     else
                     {
@@ -549,7 +549,7 @@ namespace QuizCanners.Inspect
                                 InspectValueInList(el, list, i, ref inspected, listMeta);
                            // }
 
-                            Nl();
+                            NL();
                         }
                     }
 
@@ -560,7 +560,7 @@ namespace QuizCanners.Inspect
             }
             else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
 
-            Nl();
+            NL();
 
             if (changes && listMeta != null) 
             {
@@ -662,17 +662,17 @@ namespace QuizCanners.Inspect
                         {
                             InspectValueInList(el, list, i, ref inspected, listMeta);
                         }
-                        Nl();
+                        NL();
                     }
 
-                    collectionInspector.TryShowListCreateNewOptions(list, ref added, types, listMeta).Nl();
+                    collectionInspector.TryShowListCreateNewOptions(list, ref added, types, listMeta).NL();
 
                     CopyPaste.InspectOptions<T>(listMeta);
                 }
             }
             else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
 
-            Nl();
+            NL();
             return changes;
         }
 
@@ -774,10 +774,10 @@ namespace QuizCanners.Inspect
                     {
                         list[i] = tmpEl;
                     }
-                    Nl();
+                    NL();
                 }
             }
-            Nl();
+            NL();
             return changed;
         }
 
@@ -812,7 +812,7 @@ namespace QuizCanners.Inspect
 
                     var ch = GUI.changed;
                     var tmpEl = lambda(el);
-                    Nl();
+                    NL();
                     if (ch || !GUI.changed) continue;
 
                     changed.Feed(isChanged: true);
@@ -821,7 +821,7 @@ namespace QuizCanners.Inspect
 
             }
 
-            Nl();
+            NL();
             return changed;
         }
 
@@ -879,7 +879,7 @@ namespace QuizCanners.Inspect
                             InspectValueInHashSet(el, list, i, ref inspected, listMeta);
                         }
 
-                        Nl();
+                        NL();
                     }
 
                     //collectionInspector.TryShowListCreateNewOptions(list, ref added, listMeta);
@@ -889,7 +889,7 @@ namespace QuizCanners.Inspect
             }
            // else collectionInspector.ExitOrDrawPEGI(list, ref inspected);
 
-            Nl();
+            NL();
             return changes;
         }
 
@@ -967,7 +967,7 @@ namespace QuizCanners.Inspect
                 }
             }
 
-            Nl();
+            NL();
 
             return changed;
 
@@ -995,7 +995,7 @@ namespace QuizCanners.Inspect
 
             if (dic.ContainsKey(newElementName))
             {
-                Nl();
+                NL();
                 "Key {0} already exists".F(newElementName).PL().WriteWarning();
             }
             else
@@ -1017,7 +1017,7 @@ namespace QuizCanners.Inspect
                 }
             }
 
-            Nl();
+            NL();
 
             if (changed)
                 dictionaryNamesForAddNewElement[typeof(TValue)] = newElementName;
@@ -1122,7 +1122,7 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
-            Nl();
+            NL();
 
             if (listMeta != null)
                 showKey = listMeta[CollectionInspectParams.showDictionaryKey];
@@ -1174,7 +1174,7 @@ namespace QuizCanners.Inspect
                         if (listMeta != null && Icon.Enter.Click("Enter " + el))
                             listMeta.InspectedElement = collectionInspector.Index;
                     }
-                    Nl();
+                    NL();
                 }
             }
             return changed;
@@ -1184,7 +1184,7 @@ namespace QuizCanners.Inspect
         {
             var changed = ChangeTrackStart();
 
-            Nl();
+            NL();
 
             if (dic == null)
             {
@@ -1311,11 +1311,11 @@ namespace QuizCanners.Inspect
                             modified = true;
                         }
                     }
-                    Nl();
+                    NL();
                 }
 
                 if (count == 0)
-                    "Empty Dictionary of {0} : {1}".F(typeof(TKey).ToPegiStringType(), typeof(TValue).ToPegiStringType()).PL(Styles.Text.Bald).Nl();
+                    "Empty Dictionary of {0} : {1}".F(typeof(TKey).ToPegiStringType(), typeof(TValue).ToPegiStringType()).PL(Styles.Text.Bald).NL();
 
                 if (modified) 
                     dic[modifiedElement.Key] = modifiedElement.Value;
@@ -1330,7 +1330,7 @@ namespace QuizCanners.Inspect
 
                 if ((listMeta == null || listMeta[CollectionInspectParams.showAddButton]) && typeof(TKey).Equals(typeof(string)))
                 {
-                    Nl();
+                    NL();
                     var stringDick = dic as Dictionary<string, TValue>;
 
                     string defaultName = (listMeta == null ? ("New " + QcSharp.AddSpacesToSentence(typeof(TValue).ToPegiStringType())) : listMeta.ElementName);
@@ -1342,7 +1342,7 @@ namespace QuizCanners.Inspect
             else
                 collectionInspector.ExitOrDrawPEGI(dic, ref inspected);
 
-            Nl();
+            NL();
             return changed;
         }
 
@@ -1357,7 +1357,7 @@ namespace QuizCanners.Inspect
             {
                 if (listMeta == null)
                 {
-                    "Array Meta is Null".PL().WriteWarning(); Nl();
+                    "Array Meta is Null".PL().WriteWarning(); NL();
                 }
                 else
                     Edit_Array(ref array, ref listMeta.inspectedElement_Internal, out _, listMeta).OnChanged(listMeta.OnChanged);
@@ -1387,7 +1387,7 @@ namespace QuizCanners.Inspect
 
             if (array == null)
             {
-                if (Msg.Init.F(Msg.Array).PL().ClickUnFocus().Nl())
+                if (Msg.Init.F(Msg.Array).PL().ClickUnFocus().NL())
                     array = new T[0];
             }
             else
@@ -1408,14 +1408,14 @@ namespace QuizCanners.Inspect
                 else if (Icon.Create.ClickUnFocus(Msg.AddNewCollectionElement))
                     QcSharp.AddAndInit(ref array, 1);
 
-                collectionInspector.Edit_Array_Order(ref array, metaDatas).Nl();
+                collectionInspector.Edit_Array_Order(ref array, metaDatas).NL();
 
                 if (array == collectionInspector._editingArrayOrder) 
                     return changed;
 
                 for (var i = 0; i < array.Length; i++)
                 {
-                    InspectValueInArray(ref array, i, ref inspected, metaDatas).Nl();
+                    InspectValueInArray(ref array, i, ref inspected, metaDatas).NL();
                 }
             }
 
@@ -1565,11 +1565,11 @@ namespace QuizCanners.Inspect
             {
                 using (_context.StartContext())
                 {
-                    Nl();
+                    NL();
                     if (!_context.IsAnyEntered)
                     {
-                        "List Label".PL(70).Edit(ref Label).Nl();
-                        "Config".PL().Edit_EnumFlags(ref _config).Nl();
+                        "List Label".PL(70).Edit(ref Label).NL();
+                        "Config".PL().Edit_EnumFlags(ref _config).NL();
                     }
 
                     "Elements".PL().Edit_Dictionary(elementDatas);
@@ -1742,7 +1742,7 @@ namespace QuizCanners.Inspect
                 if (_sectionStartIndex >= _count)
                     _sectionStartIndex = Mathf.Max(0, _sectionStartIndex - _sectionSizeOptimal);
 
-                Nl();
+                NL();
 
                 bool needScrollArrows = _sectionStartIndex > 0 || _sectionSizeOptimal < _count;
 
@@ -1767,7 +1767,7 @@ namespace QuizCanners.Inspect
                     else
                         Icon.UpLast.Write("Is the first section of the list.", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT);
                
-                    Nl();
+                    NL();
                 }
 
                 #endregion
@@ -1815,7 +1815,7 @@ namespace QuizCanners.Inspect
 
                         if ((_sectionStartIndex > 0) || (_count > _lastElementToShow))
                         {
-                            Nl();
+                            NL();
                             if (_count > _lastElementToShow)
                             {
                                 if (Icon.Down.Click("To next elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
@@ -1862,7 +1862,7 @@ namespace QuizCanners.Inspect
 
                         if (_sectionStartIndex > 0 || gotToShow)
                         {
-                            Nl();
+                            NL();
                             if (gotToShow)
                             {
                                 if (Icon.Down.Click("To next elements of the list. ", SCROLL_ARROWS_WIDTH, SCROLL_ARROWS_HEIGHT).UnfocusOnChange())
@@ -1934,11 +1934,11 @@ namespace QuizCanners.Inspect
                     var selectingDerrived = lst == addingNewOptionsInspected;
 
                     if (selectingDerrived)
-                        Line(); Nl();
+                        Line(); NL();
 
                     (derrivedTypesExplicit == null ? "Create new {0}".F(typeof(T).ToPegiStringType()) : "Create new {0}".F(typeof(T).ToPegiStringType())).PL(Styles.Text.ClickableText).Write();
 
-                    Icon.Add.IsFoldout("Instantiate Class Options", ref selectingDerrived).Nl();
+                    Icon.Add.IsFoldout("Instantiate Class Options", ref selectingDerrived).NL();
 
                     if (selectingDerrived)
                         addingNewOptionsInspected = lst;
@@ -1953,7 +1953,7 @@ namespace QuizCanners.Inspect
 
                             if (derrivedTypesExplicit.Count > 5)
                             {
-                                "Search".PL(width: 60, style: Styles.Text.FoldedOut).Edit(ref _listTypeSearch).Nl();
+                                "Search".PL(width: 60, style: Styles.Text.FoldedOut).Edit(ref _listTypeSearch).NL();
                                 searchString = _listTypeSearch;
                             }
 
@@ -1964,7 +1964,7 @@ namespace QuizCanners.Inspect
                                 if (searchString == null || typeName.Contains(searchString))
                                 {
                                     typeName.PL().Write();
-                                    if (Icon.Create.ClickUnFocus().Nl())
+                                    if (Icon.Create.ClickUnFocus().NL())
                                     {
                                         added = (T)System.Activator.CreateInstance(t);
                                         QcSharp.AddWithUniqueStringIdAndIndex(lst, added, addingNewNameHolder);
@@ -1987,7 +1987,7 @@ namespace QuizCanners.Inspect
                                     availableOptions++;
 
                                     tagTypes.DisplayNames[i].PL().Write();
-                                    if (Icon.Create.ClickUnFocus().Nl())
+                                    if (Icon.Create.ClickUnFocus().NL())
                                     {
                                         added = (T)System.Activator.CreateInstance(tagTypes.TaggedTypes.GetValueOrDefault(k[i]));
                                         QcSharp.AddWithUniqueStringIdAndIndex(lst, added, addingNewNameHolder);
@@ -2007,7 +2007,7 @@ namespace QuizCanners.Inspect
                 }
                 else
                     Icon.Add.GetText("Input a name for a new element", 40).Write();
-                Nl();
+                NL();
 
                 return true;
             }
@@ -2033,7 +2033,7 @@ namespace QuizCanners.Inspect
                 {
                     var selectingDerrived = lst == addingNewOptionsInspected;
 
-                    Icon.Add.IsFoldout("Instantiate Class Options", ref selectingDerrived).Nl();
+                    Icon.Add.IsFoldout("Instantiate Class Options", ref selectingDerrived).NL();
 
                     if (selectingDerrived)
                         addingNewOptionsInspected = lst;
@@ -2046,7 +2046,7 @@ namespace QuizCanners.Inspect
                         for (var i = 0; i < k.Count; i++)
                         {
                             types.DisplayNames[i].PL().Write();
-                            if (Icon.Create.ClickUnFocus().Nl())
+                            if (Icon.Create.ClickUnFocus().NL())
                             {
                                 changed = true;
                                 added = (T)System.Activator.CreateInstance(types.TaggedTypes.GetValueOrDefault(k[i]));
@@ -2058,7 +2058,7 @@ namespace QuizCanners.Inspect
                 }
                 else
                     Icon.Add.GetText("Input a name for a new element", 40).Write();
-                Nl();
+                NL();
 
                 return new ChangesToken(changed);
             }
@@ -2313,11 +2313,11 @@ namespace QuizCanners.Inspect
 
                 if (index >= 0)
                 {
-                    if (!exitOptionHandled && (array == null || index >= array.Length || Icon.ExitToList.ClickUnFocus("Return to {0} array".F(GetCurrentListLabel<T>(ld))).Nl()))
+                    if (!exitOptionHandled && (array == null || index >= array.Length || Icon.ExitToList.ClickUnFocus("Return to {0} array".F(GetCurrentListLabel<T>(ld))).NL()))
                         index = -1;
                     else
                     {
-                        Nl();
+                        NL();
 
                         object obj = array[index];
                         if (Nested_Inspect_Object(ref obj))
@@ -2333,11 +2333,11 @@ namespace QuizCanners.Inspect
             {
                 var changed = ChangeTrackStart();
 
-                if (!exitOptionHandled && Icon.ExitToList.ClickUnFocus("{0}[{1}] of {2}".F(Msg.ReturnToCollection.GetText(), dic.Count, GetCurrentListLabel<T>(ld))).Nl())
+                if (!exitOptionHandled && Icon.ExitToList.ClickUnFocus("{0}[{1}] of {2}".F(Msg.ReturnToCollection.GetText(), dic.Count, GetCurrentListLabel<T>(ld))).NL())
                     index = -1;
                 else
                 {
-                    Nl();
+                    NL();
 
                     var item = dic.GetElementAt(index);
                     var key = item.Key;
@@ -2359,11 +2359,11 @@ namespace QuizCanners.Inspect
             {
                 var changed = ChangeTrackStart();
 
-                if (!exitOptionHandled && Icon.ExitToList.ClickUnFocus("{0}[{1}] of {2}".F(Msg.ReturnToCollection.GetText(), list.Count, GetCurrentListLabel<T>(ld))).Nl())
+                if (!exitOptionHandled && Icon.ExitToList.ClickUnFocus("{0}[{1}] of {2}".F(Msg.ReturnToCollection.GetText(), list.Count, GetCurrentListLabel<T>(ld))).NL())
                     index = -1;
                 else
                 {
-                    Nl();
+                    NL();
 
                     object obj = list[index];
                     if (Nested_Inspect_Object(ref obj) && typeof(T).IsValueType)
@@ -2490,7 +2490,7 @@ namespace QuizCanners.Inspect
                         _editingArrayOrder = array;
                 }
 
-                else if (Icon.Done.ClickUnFocus(Msg.FinishMovingCollectionElements.GetText(), 28).Nl())
+                else if (Icon.Done.ClickUnFocus(Msg.FinishMovingCollectionElements.GetText(), 28).NL())
                 {
                     _editingArrayOrder = null;
                 }
@@ -2552,7 +2552,7 @@ namespace QuizCanners.Inspect
                     else
                         "{0} {1}".F(Icon.Empty.GetText(), typeof(T).ToPegiStringType()).PL().Write();
 
-                    Nl();
+                    NL();
                 }
 
                 return changed;
@@ -2577,10 +2577,10 @@ namespace QuizCanners.Inspect
 
                 if (!PaintingGameViewUI)
                 {
-                    Nl();
+                    NL();
 #if UNITY_EDITOR
                     PegiEditorOnly.Reorder_List(list, listMeta);
-                    Nl();
+                    NL();
 #endif
                 }
                 else
@@ -2648,7 +2648,7 @@ namespace QuizCanners.Inspect
                         else
                             "{0} {1}".F(Icon.Empty.GetText(), typeof(T).ToPegiStringType()).PL().Write();
 
-                        Nl();
+                        NL();
                     }
 
                 }
@@ -2847,7 +2847,7 @@ namespace QuizCanners.Inspect
 
                 if (listMeta != null && listMeta.inspectListMeta)
                     listMeta.Nested_Inspect();
-                else if (typeof(Object).IsAssignableFrom(typeof(T)) || !listCopyBuffer.IsNullOrEmpty())
+                else if (typeof(Object).IsAssignableFrom(typeof(T)) || !listCopyBuffer.IsNullOrEmptyNonGeneric())
                 {
                     "Allow Duplicants".PL("Will add elements to the list even if they are already there", 120).Toggle(ref duplicants).IgnoreChanges(LatestInteractionEvent.Click);
 

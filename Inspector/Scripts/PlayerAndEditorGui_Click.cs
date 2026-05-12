@@ -89,7 +89,7 @@ namespace QuizCanners.Inspect
         
         private static ChangesToken ConfirmClick()
         {
-            Nl();
+            NL();
 
             System.IDisposable disp = null;
 
@@ -110,7 +110,7 @@ namespace QuizCanners.Inspect
                 }
             }
 
-            Nl();
+            NL();
 
             return ChangesToken.False;
         }

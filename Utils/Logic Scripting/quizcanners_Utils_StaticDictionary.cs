@@ -17,7 +17,7 @@ namespace QuizCanners.Utils
         private int _inspectedElement = -1;
         void IPEGI.Inspect()
         {
-            typeof(T).ToPegiStringType().PL().Edit_Dictionary(AllElements, ref _inspectedElement).Nl();
+            typeof(T).ToPegiStringType().PL().Edit_Dictionary(AllElements, ref _inspectedElement).NL();
         }
     }
 }

@@ -291,68 +291,7 @@ namespace QuizCanners.Utils {
 
         #endregion
 
-        #region Rendering
 
-        private static readonly Gate.Frame _cameraCullingCache = new(Gate.InitialValue.StartArmed);
-
-        private static readonly Dictionary<Camera, Dictionary<Vector3, bool>> s_camsCulling = new();
-
-        public static bool IsMouseOutsideViewArea(this Camera cam, Vector3 mousePos) 
-        {
-            var view = cam.ScreenToViewportPoint(mousePos);
-            return view.x < 0 || view.x > 1 || view.y < 0 || view.y > 1;
-        }
-
-        public static bool IsInCameraViewArea(this Camera cam, Vector3 worldPosition, float objectSize = 1, float maxDistance = -1)
-        {
-            if (_cameraCullingCache.TryEnter()) 
-            {
-                s_camsCulling.Clear();
-            }
-
-            if (!cam)
-            {
-                return true;
-            }
-
-            var camTf = cam.transform;
-
-            float distanceToCamera = Vector3.Distance(camTf.position + camTf.forward * cam.nearClipPlane, worldPosition);
-
-            if (distanceToCamera < objectSize + 2)
-            {
-                return true;
-            }
-
-            if (maxDistance > 0 && distanceToCamera > maxDistance)
-            {
-                return false;
-            }    
-
-            var dic = s_camsCulling.GetOrCreate(cam);
-
-            if (dic.TryGetValue(worldPosition, out var resul))
-                return resul;
-
-            var pos = cam.WorldToViewportPoint(worldPosition);
-
-            float angularSize = 2.0f * Mathf.Atan(objectSize / (2.0f * distanceToCamera));
-            float fovDeg = cam.fieldOfView * Mathf.Deg2Rad;
-            float screenSpaceSize = angularSize / fovDeg;
-
-            if (screenSpaceSize > 0.5f)
-                return true;
-
-            bool isVisible = pos.x >= -screenSpaceSize && pos.x <= (1f + screenSpaceSize) 
-                            && pos.y >= -screenSpaceSize && pos.y <= (1f + screenSpaceSize);
-                
-            dic[worldPosition] = isVisible;
-            return isVisible;
-        }
-
-
-
-        #endregion
 
         #region Raycasts
 
@@ -370,7 +309,7 @@ namespace QuizCanners.Utils {
         #region Color 
 
         public static Color BrightnessMultiplyBy(this Color col, float fraction) => 
-            new Color(col.r * fraction, col.g * fraction, col.b * fraction, col.a);
+            new(col.r * fraction, col.g * fraction, col.b * fraction, col.a);
         public static Color Alpha_MultiplyBy(this Color col, float alpha)
         {
             col.a *= alpha;
@@ -380,6 +319,12 @@ namespace QuizCanners.Utils {
         public static Color Alpha(this Color col, float alpha)
         {
             col.a = alpha;
+            return col;
+        }
+
+        public static Color32 Alpha_255(this Color32 col, int alpha)
+        {
+            col.a = (byte)alpha;
             return col;
         }
 
@@ -508,7 +453,7 @@ namespace QuizCanners.Utils {
 
             if (!createdForSelection)
             {
-                var canvas = Object.FindFirstObjectByType<Canvas>();
+                var canvas = Object.FindAnyObjectByType<Canvas>();
 
                 if (!canvas)
                     canvas = new GameObject("Canvas").AddComponent<Canvas>();
@@ -2799,11 +2744,11 @@ return false;
         }
 
 
-        private readonly static Gate.Frame _transformSyncedGate = new(Gate.InitialValue.StartArmed);
+        private readonly static Gate.Frame _transformSyncedGate = new();
         public static bool IsTransformSynced => _transformSyncedGate.DoneThisFrame;
         public static bool TrySyncPhisixTransformsIfDirty()
         {
-            if (!_transformSyncedGate.TryEnter())
+            if (!_transformSyncedGate.TryConsume())
                 return false;
             
             Physics.SyncTransforms();
@@ -2831,10 +2776,19 @@ return false;
 
             return RectTransformUtility.WorldToScreenPoint(cam, (bottomLeft + topRight) / 2f);
         }
+
+        public static bool IsInLayerMask(this GameObject go, LayerMask mask)
+        {
+            return ((1 << go.layer) & mask.value) != 0;
+        }
     }
 
 #pragma warning restore IDE0019 // Use pattern matching
 }
+
+
+
+
 
 
 

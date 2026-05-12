@@ -67,7 +67,7 @@ namespace QuizCanners.Utils
 
         public virtual void Inspect()
         {
-            CollectionMeta.Edit_Dictionary(this).Nl();
+            CollectionMeta.Edit_Dictionary(this).NL();
         }
 
         public override string ToString() =>
@@ -139,18 +139,18 @@ namespace QuizCanners.Utils
         {
             var type = typeof(TKey);
 
-            type.ToString().PL(style: pegi.Styles.ListLabel).Nl();
+            type.ToString().PL(style: pegi.Styles.ListLabel).NL();
 
             TKey[] Keys = (TKey[])System.Enum.GetValues(typeof(TKey));
 
             if (CollectionMeta.IsAnyEntered)
             {
                 var key = Keys[CollectionMeta.InspectedElement];
-                if (key.ToString().SimplifyTypeName().PL().IsEntered(ref CollectionMeta.inspectedElement_Internal, CollectionMeta.InspectedElement).Nl())
+                if (key.ToString().SimplifyTypeName().PL().IsEntered(ref CollectionMeta.inspectedElement_Internal, CollectionMeta.InspectedElement).NL())
                 {
                     CollectionMeta.OnChanged();
                     InspectElement(key);
-                    pegi.Nl();
+                    pegi.NL();
                 }
             }
             else
@@ -158,7 +158,7 @@ namespace QuizCanners.Utils
                 for (int i = 0; i < Keys.Length; i++)
                 {
                     InspectElementInList(Keys[i], i);
-                    pegi.Nl();
+                    pegi.NL();
                 }
             }
 

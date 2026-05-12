@@ -29,29 +29,45 @@ namespace QuizCanners.Inspect
             }
 
 
+            static string _editingControl;
+            static bool _wasKeyboardVisible;
+
             internal static EditState IsCurrentlyFocusedElement(string context)
             {
-
                 _elementIndex++;
-
-                if (_framesToClearPReviousFocus.TryEnterIfFramesPassed(3))
-                    _previouslyFocused = "";
 
                 var controlName = context + _elementIndex;
                 GUI.SetNextControlName(controlName);
 
                 if (Event.current.type != EventType.Repaint)
-                {
                     _latestActualFocused = GUI.GetNameOfFocusedControl();
-                }
 
-                if (!_latestActualFocused.Equals(controlName))
+                bool isFocused = _latestActualFocused == controlName;
+
+#if UNITY_IOS || UNITY_ANDROID
+                bool keyboardClosed =
+                    _editingControl == controlName &&
+                    _wasKeyboardVisible &&
+                    !TouchScreenKeyboard.visible;
+
+                _wasKeyboardVisible = TouchScreenKeyboard.visible;
+
+                if (keyboardClosed)
                 {
-                    if ((!currentFocused.CurrentValue.IsNullOrEmpty() && currentFocused.CurrentValue.Equals(controlName))
-                        || (!_previouslyFocused.IsNullOrEmpty() && _previouslyFocused.Equals(controlName))
-                        )
+                    GUI.FocusControl(null);
+                    currentFocused.ValueIsDefined = false;
+                    _editingControl = null;
+                    return EditState.Ended;
+                }
+#endif
+
+                if (!isFocused)
+                {
+                    if (currentFocused.CurrentValue == controlName ||
+                        _previouslyFocused == controlName)
                     {
                         currentFocused.ValueIsDefined = false;
+                        _editingControl = null;
                         return EditState.Ended;
                     }
 
@@ -62,16 +78,26 @@ namespace QuizCanners.Inspect
                 {
                     _previouslyFocused = currentFocused.CurrentValue;
                     currentFocused.TryChange(controlName);
-                    _framesToClearPReviousFocus.TryEnter();
+                    _editingControl = controlName;
+
+#if UNITY_IOS || UNITY_ANDROID
+                    _wasKeyboardVisible = TouchScreenKeyboard.visible;
+#endif
+
                     return EditState.Started;
                 }
-                else if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Return)
+
+                if (Event.current.type == EventType.KeyDown &&
+                    Event.current.keyCode == KeyCode.Return)
                 {
                     Event.current.Use();
+                    GUI.FocusControl(null);
+                    currentFocused.ValueIsDefined = false;
+                    _editingControl = null;
                     return EditState.PressedEnter;
                 }
-                else
-                    return EditState.IsFocused;
+
+                return EditState.IsFocused;
             }
         }
 

@@ -59,7 +59,7 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                "Instance".PL().Edit(ref _materialInstance).Nl();
+                "Instance".PL().Edit(ref _materialInstance).NL();
             }
         }
 
@@ -94,12 +94,12 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                "Material User".PL().Edit_List(materialUsers).Nl();
+                "Material User".PL().Edit_List(materialUsers).NL();
 
                 if (materialUsers.Count > 0 && materialUsers[0])
-                    "Is Part of the PRefab: {0} ".F(QcUnity.IsPartOfAPrefab(materialUsers[0].gameObject)).PL().Nl();
+                    "Is Part of the PRefab: {0} ".F(QcUnity.IsPartOfAPrefab(materialUsers[0].gameObject)).NL();
 
-                "Instance".PL().Edit(ref materialInstance).Nl();
+                "Instance".PL().Edit(ref materialInstance).NL();
             }
 
             public override Material GetInstance()
@@ -127,6 +127,8 @@ namespace QuizCanners.Utils
                 materialInstance = UnityEngine.Object.Instantiate(first.sharedMaterial);
 
                 materialInstance.name = "Instanced material of {0}".F(first.name);
+
+            //    Debug.Log("Instancing material for {0}".F(first.name));
 
                 foreach (var u in materialUsers)
                     if (u)
@@ -163,10 +165,10 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                 "Source Material".ConstL().Edit(ref sourceMaterial).Nl(Clear);
+                 "Source Material".ConstL().Edit(ref sourceMaterial).NL(Clear);
 
                 if (instance)
-                    "Instance".PL().Edit(ref instance).Nl();
+                    "Instance".PL().Edit(ref instance).NL();
 
             }
 
@@ -221,7 +223,7 @@ namespace QuizCanners.Utils
             #region Inspector
             void IPEGI.Inspect()
             {
-                "Shader to Use: ".PL().Edit(ref shaderToUse).Nl(Clear);
+                "Shader to Use: ".PL().Edit(ref shaderToUse).NL(Clear);
                 //"Material Instance".PegiLabel().Edit(ref instance).Nl();
             }
 

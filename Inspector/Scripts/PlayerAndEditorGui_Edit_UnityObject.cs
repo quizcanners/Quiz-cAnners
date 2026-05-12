@@ -289,7 +289,7 @@ namespace QuizCanners.Inspect
                     {
                         if (Context.Internal_isEntered(label, showLabelIfEntered))
                         {
-                            Nl();
+                            NL();
                             var pgi = QcUnity.TryGetInterfaceFrom<IPEGI>(obj);
                             if (pgi != null)
                                 pgi.Nested_Inspect();
@@ -338,7 +338,7 @@ namespace QuizCanners.Inspect
                     {
                         if (Context.Internal_isEntered(label, showLabelIfEntered, showLabelIfFalse: false))
                         {
-                            Nl();
+                            NL();
                             var pgi = QcUnity.TryGetInterfaceFrom<IPEGI>(obj);
                             if (pgi != null)
                                 pgi.Nested_Inspect();
@@ -412,7 +412,7 @@ namespace QuizCanners.Inspect
         {
             var changed = ChangeTrackStart();
 
-            label.Edit(ref obj).Nl();
+            label.Edit(ref obj).NL();
 
             if (obj)
             {

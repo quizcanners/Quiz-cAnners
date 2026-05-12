@@ -222,9 +222,9 @@ namespace QuizCanners.Inspect
         public static string F(this Msg msg, Msg other) =>
             msg.GetText() + " " + other.GetText();
         public static void DocumentationClick(this Msg msg) => msg.Get().DocumentationClick();
-        public static void Nl(this Msg m) { m.GetText().PL().Nl(); }
-        public static void Nl(this Msg m, int width) { m.GetText().PL(width: width).Nl(); }
-        public static void Nl(this Msg m, string tip, int width) { m.GetText().PL(tip, width).Nl(); }
+        public static void Nl(this Msg m) { m.GetText().NL(); }
+        public static void Nl(this Msg m, int width) { m.GetText().PL(width: width).NL(); }
+        public static void Nl(this Msg m, string tip, int width) { m.GetText().PL(tip, width).NL(); }
         public static void Write(this Msg m) { m.GetText().PL().Write(); }
         public static void Write(this Msg m, int width) { m.GetText().PL(width).Write(); }
         public static void Write(this Msg m, string tip, int width) { m.GetText().PL(tip, width).Write(); }
@@ -390,13 +390,13 @@ namespace QuizCanners.Inspect
 
                 if (_copyPasteBuffs.TryGetValue(type, out Buffer buff))
                 {
-                    Nl();
+                    NL();
 
                     "Copy Paste: {0}".F(buff.CopyPasteJsonSourceName).PL().Write();
                     if (Icon.Clear.Click())
                         _copyPasteBuffs.Remove(type);
 
-                    Nl();
+                    NL();
                 }
 
                 return false;

@@ -103,7 +103,7 @@ namespace QuizCanners.Migration
 
             using (context.StartContext())
             {
-                pegi.Nl();
+                pegi.NL();
 
                 if (!context.IsAnyEntered)
                 {
@@ -120,39 +120,39 @@ namespace QuizCanners.Migration
                     pegi.FullWindow.DocumentationClickOpen(() =>
                         "GoogleSheet->File->Publish To Web-> Publish... Copy link for .csv document");
 
-                    pegi.Nl();
+                    pegi.NL();
 
                     if (Url.IsNullOrEmpty() == false)
                     {
                         InspectUrlEndingNeedsCleanup();
-                        pegi.Nl();
+                        pegi.NL();
                     }
 
-                    pegi.Nl();
+                    pegi.NL();
 
                     "Page:".ConstL().Select_Index(ref _selectedPage, pages);
                 
-                    pegi.Nl();
+                    pegi.NL();
                 }
 
 
-                _pagesMeta.Enter_List(pages).Nl();
+                _pagesMeta.Enter_List(pages).NL();
 
                 if ("Link".PL().IsEntered())
                 {
-                    pegi.Nl();
+                    pegi.NL();
                     "Sheet Edit Link".ConstL().Edit(ref editUrl);
 
                     if ("Open".PL().Click())
                         Application.OpenURL(editUrl);
 
-                    pegi.Nl();
+                    pegi.NL();
                 }
 
                 if (!context.IsAnyEntered && !editUrl.IsNullOrEmpty()  && "Open in Browser".PL().Click())
                     Application.OpenURL(editUrl);
 
-                pegi.Nl();
+                pegi.NL();
 
                
 
@@ -296,19 +296,19 @@ namespace QuizCanners.Migration
                     if (_csvFile)
                         "Split".PL().Click(ProcessCSV);
 
-                    pegi.Nl();
+                    pegi.NL();
 
                     if (!_csvFile)
                     {
                         InspectRequest();
 
-                        "Raw Data".ConstL().IsConditionally_Entered(canEnter: IsDownloaded).Nl().If_Entered(() =>
+                        "Raw Data".ConstL().IsConditionally_Entered(canEnter: IsDownloaded).NL().If_Entered(() =>
                         {
                             request.downloadHandler.text.PL().Write_ForCopy_Big();
                         });
                     }
 
-                    _rowsInspector.Edit_List(Rows).Nl();
+                    _rowsInspector.Edit_List(Rows).NL();
 
                     return;
 
@@ -316,7 +316,7 @@ namespace QuizCanners.Migration
                     {
                         if (request == null)
                         {
-                            if ("Download".PL().Click().Nl())
+                            if ("Download".PL().Click().NL())
                                 StartDownload(s_inspectedSheet);
                             return;
                         }
@@ -330,14 +330,14 @@ namespace QuizCanners.Migration
 
                         if (!request.isDone)
                         {
-                            "Thread state: ".F(Mathf.FloorToInt(request.downloadProgress * 100).ToString()).PL().Nl();
+                            "Thread state: ".F(Mathf.FloorToInt(request.downloadProgress * 100).ToString()).NL();
 
-                            if ("Cancel Trhread".PL().Click().Nl())
+                            if ("Cancel Trhread".PL().Click().NL())
                                 request.Dispose();
                             return;
                         }
 
-                        "Download finished".PL().Nl();
+                        "Download finished".NL();
                     }
                 }
             }
@@ -438,6 +438,9 @@ namespace QuizCanners.Migration
 
         public bool TrySetFromLink(string url)
         {
+            if (url.IsNullOrEmpty())
+                return false;
+
             Match match = Regex.Match(url, @"/d/([a-zA-Z0-9-_]+)");
             if (!match.Success)
                 return false;
@@ -481,7 +484,7 @@ namespace QuizCanners.Migration
 
         public override string ToString() => (spreadSheetId.IsNullOrEmpty() ? "No Link" : "Got Link") + State.ToString();
 
-        private Gate.SystemTime _sinceFailedPaste;
+        private Gate.SystemTime _sinceFailedPaste_Armed;
 
         public pegi.ChangesToken Inspect_Short() 
         {
@@ -489,16 +492,20 @@ namespace QuizCanners.Migration
 
             if (!IsValid)
             {
-                if (!pegi.CopyPasteBuffer.IsNullOrEmpty() && Icon.Paste.Click())
+                if (
+#if !UNITY_IOS
+                    !pegi.CopyPasteBuffer.IsNullOrEmpty() &&
+#endif                    
+                    Icon.Paste.Click())
                 {
                     if (!TrySetFromLink(pegi.CopyPasteBuffer))
                     {
-                        _sinceFailedPaste = new Gate.SystemTime(Gate.InitialValue.StartArmed);
-                        _sinceFailedPaste.Update();
+                        _sinceFailedPaste_Armed = new Gate.SystemTime();
+                        _sinceFailedPaste_Armed.Start();
                     }
                 }
 
-                if (_sinceFailedPaste != null && !_sinceFailedPaste.WillAllowIfTimePassed(10))
+                if (_sinceFailedPaste_Armed != null && _sinceFailedPaste_Armed.IsStartedWithin(10)) //IsTimePassed_LEGACY(10))
                     "Bad Link".PL().Write();
                 else
                     "No Scene".ConstL().Write();
@@ -528,17 +535,17 @@ namespace QuizCanners.Migration
 
             var changes = pegi.ChangeTrackStart();
 
-            "Anyone with a link".ConstL().Edit_Delayed(ref tmp).Nl(() => TrySetFromLink(tmp));
-            "GoogleSheets KEY".ConstL().Edit(ref spreadSheetId).Nl();
-            "Sheet GID".ConstL().Edit(ref sheetId).Nl();
+            "Anyone with a link".ConstL().Edit_Delayed(ref tmp).NL(() => TrySetFromLink(tmp));
+            "GoogleSheets KEY".ConstL().Edit(ref spreadSheetId).NL();
+            "Sheet GID".ConstL().Edit(ref sheetId).NL();
 
             if (changes && State == LoadState.NoLink)
                 State = LoadState.None;
 
-            if ("Download".PL().Click().Nl())
+            if ("Download".PL().Click().NL())
                 StartLoad();
 
-            "State: {0}".F(State).PL().Nl();
+            "State: {0}".F(State).NL();
 
             switch (State) 
             {
@@ -584,6 +591,9 @@ namespace QuizCanners.Migration
 
                 for (int i = 0; i < Columns.Count; i++)
                 {
+                    if (row.Data.Count <= i)
+                        break;
+
                     try
                     {
                         receiver.DecodeTag(Columns[i], row.Data[i]);
@@ -761,8 +771,8 @@ namespace QuizCanners.Migration
 
         public virtual void Inspect()
         {
-            "Columnst".ConstL().Edit_List(Columns).Nl();
-            "Rows".ConstL().Edit_List(Rows).Nl();
+            "Columnst".ConstL().Edit_List(Columns).NL();
+            "Rows".ConstL().Edit_List(Rows).NL();
         }
 
         #endregion
@@ -794,7 +804,7 @@ namespace QuizCanners.Migration
             private readonly pegi.CollectionInspectorMeta _cellsMeta = new("Cells");
             public void Inspect()
             {
-                _cellsMeta.Edit_List(Data).Nl();
+                _cellsMeta.Edit_List(Data).NL();
             }
 
             #endregion

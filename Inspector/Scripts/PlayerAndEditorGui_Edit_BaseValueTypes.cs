@@ -1221,13 +1221,13 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit_Big(ref string val, int height = 100)
         {
-            Nl();
+            NL();
 
             switch (currentMode) 
             {
 #if UNITY_EDITOR
                 case PegiPaintingMode.EditorInspector:
-                    return PegiEditorOnly.EditBig(ref val, height).Nl();
+                    return PegiEditorOnly.EditBig(ref val, height).NL();
 #endif
 
                 case PegiPaintingMode.GameViewGUI:

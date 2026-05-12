@@ -441,10 +441,10 @@ namespace QuizCanners.Utils
 
         void IPEGI.Inspect()
         {
-            if (!Exited && !_stopAndCancel && "Stop & Cancel".PL().Click().Nl())
+            if (!Exited && !_stopAndCancel && "Stop & Cancel".PL().Click().NL())
                 _stopAndCancel = true;
 
-            if (!Exited && "Yield".PL().Click().Nl())
+            if (!Exited && "Yield".PL().Click().NL())
                 MoveNext();
 
             _state.PL().WriteBig();

@@ -19,32 +19,35 @@ namespace QuizCanners.Lerp
             public abstract class Generic<T> : IPEGI
             {
                 protected T _previousSpeed;
-                private T _speed;
+                protected T _speed;
 
                 protected T _from;
-                private T _target;
+                protected T _target;
 
                 public T Target => _target;
 
                 protected float _totalDistance;
 
-                protected float _totalTime;
+                protected float _totalTimeToReach;
                 protected float _currentTime;
                 protected float _fraction01;
 
-              //  protected virtual bool IsNotInitialized(T val) => val.Equals(default(T));
+                //  protected virtual bool IsNotInitialized(T val) => val.Equals(default(T));
+
+                public bool HasTarget { get; private set; }
 
                 public bool IsLerping { get; private set; }
 
-                private readonly Gate.Frame _updateFrame = new(Gate.InitialValue.StartArmed);
+                private readonly Gate.Frame _updateFrame_Armed = new();
 
-                public void UpdateTargetContinious(T newTarget) 
+                public virtual void SetTarget(T newTarget) 
                 {
                     _target = newTarget;
+                    HasTarget = true;
                     IsLerping = true;
                 }
 
-                public virtual void Inspect() => "Time: {0}/{1}".F(_currentTime, _totalTime).PL().Nl();
+                public virtual void Inspect() => "Time: {0}/{1}".F(_currentTime, _totalTimeToReach).NL();
                 
                 protected abstract float GetDistance(T from, T to);
 
@@ -68,12 +71,12 @@ namespace QuizCanners.Lerp
                         return value;
                     }
 
-                    if (!_updateFrame.TryEnter())
+                    if (!_updateFrame_Armed.TryConsume())
                         return value;
 
                     _currentTime += Time.deltaTime;
 
-                    var rawfraction01 = Mathf.Clamp01(_currentTime / _totalTime);
+                    var rawfraction01 = Mathf.Clamp01(_currentTime / _totalTimeToReach);
 
                     if (Mathf.Approximately(rawfraction01, 1))
                     {
@@ -95,10 +98,10 @@ namespace QuizCanners.Lerp
                 protected virtual void Reset(T from, T to) 
                 {
                     _from = from;
-                    _target = to;
+                    SetTarget(to);
                     _currentTime = 0;
 
-                    if (_updateFrame.TryEnterIfFramesPassed(2))
+                    if (_updateFrame_Armed.TryConsume_IfElapsedOrFirst(2))
                         _speed = default;
 
                     _previousSpeed = _speed;
@@ -110,7 +113,7 @@ namespace QuizCanners.Lerp
                 public void SetLerpByTime(ref T from, T to, float timeToReach)
                 {
                     Reset(from, to);
-                    _totalTime = timeToReach;
+                    _totalTimeToReach = timeToReach;
                     Update(ref from);
                 }
 
@@ -118,9 +121,9 @@ namespace QuizCanners.Lerp
                 {
                     Reset(from, to);
                     if (IsLerping)
-                        _totalTime = _totalDistance / speed;
+                        _totalTimeToReach = _totalDistance / speed;
                     else
-                        _totalTime = 0;
+                        _totalTimeToReach = 0;
                     Update(ref from);
                 }
             }
@@ -219,7 +222,7 @@ namespace QuizCanners.Lerp
 
             bool _enabled;
 
-            private readonly Gate.Frame _updateFrame = new(Gate.InitialValue.StartArmed);
+            private readonly Gate.Frame _updateFrame = new();
 
             public void Update(ref float value) 
             {
@@ -541,6 +544,15 @@ namespace QuizCanners.Lerp
             return Quaternion.LerpUnclamped(from, to, portion);
         }
 
+        public static bool IsLerpingBySpeed(ref Quaternion from, Quaternion to, float speedInDegrees, bool unscaledTime)
+        {
+            if (from == to)
+                return false;
+
+            from = Quaternion.LerpUnclamped(from, to, SpeedToPortion(speedInDegrees, Quaternion.Angle(from, to), unscaledTime: unscaledTime));
+            return true;
+        }
+
         public static float DistanceRgb(Color col, Color other)
             =>
                 (Mathf.Abs(col.r - other.r) + Mathf.Abs(col.g - other.g) + Mathf.Abs(col.b - other.b));
@@ -811,7 +823,7 @@ namespace QuizCanners.Lerp
                 private readonly float _speed = 1;
                 private float _totalFraction;
                 private float _deltaFraction;
-                private readonly Gate.Frame _frameGate = new(Gate.InitialValue.StartArmed);
+                private readonly Gate.Frame _frameGate = new();
 
                 public bool IsDone => _totalFraction >= 1f;
 
@@ -841,7 +853,7 @@ namespace QuizCanners.Lerp
 
                 private void CheckUpdate() 
                 {
-                    if (_frameGate.TryEnter())
+                    if (_frameGate.TryConsume())
                     {
                         float newTotalFraction = Mathf.Clamp01(_totalFraction + DeltaFraction);
                         _deltaFraction = Mathf.Clamp01((newTotalFraction - _totalFraction) / (1 - _totalFraction));

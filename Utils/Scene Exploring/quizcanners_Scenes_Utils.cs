@@ -20,23 +20,23 @@ namespace QuizCanners.Utils
                     return false;
 #endif
 
-                if (!_afterLastLoad.IsFramesPassed(3))
+                if (!_afterLastLoad.IsFramesPassed_OrNotStarted(3))
                     return true;
 
                 if (s_currentlyLoadingScene != null || s_scenesInQueueForLoading.Count > 0)
                 {
-                    _afterLastLoad.TryEnter();
+                    _afterLastLoad.TryConsume();
                     return true;
                 }
 
                 return false;
             }
         }
-        private static readonly Gate.Frame _afterLastLoad = new(Gate.InitialValue.StartArmed);
+        private static readonly Gate.Frame _afterLastLoad = new();
 
         private static void LoadNextScene(AsyncOperation previous)
         {
-            _afterLastLoad.TryEnter();
+            _afterLastLoad.TryConsume();
 
             s_currentlyLoadingScene = null;
 
@@ -67,19 +67,19 @@ namespace QuizCanners.Utils
         {
             if (s_currentlyLoadingScene == null && s_scenesInQueueForLoading.Count ==0)
             {
-                "All Scenes Loaded".PL().Nl();
+                "All Scenes Loaded".NL();
                 return;
             }
 
             if (s_currentlyLoadingScene == null)
-                "No current loading".PL().Nl();
+                "No current loading".NL();
             else
-                s_currentlyLoadingScene.InspectInList_Nested().Nl();
+                s_currentlyLoadingScene.InspectInList_Nested().NL();
 
             if (s_scenesInQueueForLoading.Count == 0)
-                "No scenes in queue".PL().Nl();
+                "No scenes in queue".NL();
             else 
-                _loadingQueue.Edit_List(s_scenesInQueueForLoading).Nl();
+                _loadingQueue.Edit_List(s_scenesInQueueForLoading).NL();
         }
     }
 }

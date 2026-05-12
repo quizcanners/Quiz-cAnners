@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.SocialPlatforms;
 
 namespace QuizCanners.Utils 
 {
@@ -34,7 +33,7 @@ namespace QuizCanners.Utils
             public abstract void SetLatestValueOn(Material mat);
             public abstract void SetLatestValueOn(MaterialPropertyBlock block);
 
-            public Renderer SetLatestValueOn(Renderer renderer, MaterialPropertyBlock block, int materialIndex = 0)
+            public virtual Renderer SetLatestValueOn(Renderer renderer, MaterialPropertyBlock block, int materialIndex = 0)
             {
                 renderer.GetPropertyBlock(block, materialIndex);
                 SetLatestValueOn(block);
@@ -142,9 +141,9 @@ namespace QuizCanners.Utils
             public override void Inspect()
             {
                 base.Inspect();
-                pegi.Nl();
+                pegi.NL();
                 if (GlobalValueSet)
-                    "Global Value Set: {0}".F(GlobalValue).PL().Nl();
+                    "Global Value Set: {0}".F(GlobalValue).NL();
             }
 
             #endregion
@@ -174,19 +173,31 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public override Material SetOn(Material material, T value) 
+            public override void SetLatestValueOn(Material mat)
             {
-                var ret =  base.SetOn(material, value);
-                material.SetShaderKeyword(_featureDirective, DirectiveEnabledForLastValue);
-                return ret;
+                mat.SetShaderKeyword(_featureDirective, DirectiveEnabledForLastValue);
             }
 
+            /*
+            public virtual Renderer SetOn(Renderer renderer, MaterialPropertyBlock block, T value)
+            {
+                LatestValue = value;
+                SetLatestValueOn(renderer, block);
+                return renderer;
+            }
+            */
             protected IndexWithShaderFeatureGeneric(string name, string featureDirective) : base(name)
             {
                 _featureDirective = featureDirective;
             }
 
             protected abstract bool DirectiveEnabledForLastValue { get; }
+        }
+
+        public static MaterialInstancer.Base Set(this MaterialInstancer.Base inst, LocalShaderKeyword property, bool value)
+        {
+            property.SetOn(inst.GetInstance(), value);
+            return inst;
         }
 
         public static MaterialPropertyBlock Set<T>(this MaterialPropertyBlock block, IndexGeneric<T> property)
@@ -210,6 +221,12 @@ namespace QuizCanners.Utils
         public static MaterialInstancer.Base Set<T>(this MaterialInstancer.Base inst, IndexGeneric<T> property, T value)
         {
             property.SetOn(inst.GetInstance(), value);
+            return inst;
+        }
+
+        public static MaterialInstancer.Base Set(this MaterialInstancer.Base inst, TextureValue property, OnDemandRenderTexture.Single value)
+        {
+            property.SetOn(inst.GetInstance(), value.GetRenderTexture());
             return inst;
         }
 
@@ -247,7 +264,10 @@ namespace QuizCanners.Utils
             private readonly float _min;
             private readonly float _max;
 
-            public override void SetLatestValueOn(Material material) => material.SetFloat(id, LatestValue);
+            public override void SetLatestValueOn(Material material)
+            {
+                material.SetFloat(id, LatestValue);
+            }
             public override float Get(Material material) => material ? material.GetFloat(id) : LatestValue;
             public override float Get(MaterialPropertyBlock block) => block.GetFloat(id);
             public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetFloat(id, LatestValue);
@@ -271,8 +291,8 @@ namespace QuizCanners.Utils
             public override void Inspect()
             {
                 base.Inspect();
-                pegi.Nl();
-                InspectValue().Nl();
+                pegi.NL();
+                InspectValue().NL();
             }
 
             public pegi.ChangesToken InspectValue(Material mat)
@@ -327,10 +347,21 @@ namespace QuizCanners.Utils
 
         public class FloatFeature : IndexWithShaderFeatureGeneric<float>, ICfg
         {
-            public override void SetLatestValueOn(Material material) => material.SetFloat(id, LatestValue);
+
+
             public override float Get(Material material) => material.GetFloat(id);
             public override float Get(MaterialPropertyBlock block) => block.GetFloat(id);
-            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetFloat(id, LatestValue);
+
+            public override void SetLatestValueOn(Material material)
+            {
+                base.SetLatestValueOn(material);
+                material.SetFloat(id, LatestValue);
+            }
+
+            public override void SetLatestValueOn(MaterialPropertyBlock block)
+            {
+                Debug.LogError("Can't set float feature on MaterialPropertyBlock");
+            }
 
             protected override float GlobalValue_Internal
             {
@@ -355,7 +386,7 @@ namespace QuizCanners.Utils
             {
                // base.Inspect();
                // pegi.Nl();
-                InspectValue().Nl();
+                InspectValue().NL();
             }
 
             private pegi.ChangesToken InspectValue()
@@ -397,6 +428,8 @@ namespace QuizCanners.Utils
                 }
             }
 
+ 
+
             #endregion
 
             public FloatFeature(string name, string featureDirective) : base(name, featureDirective) { }
@@ -430,8 +463,8 @@ namespace QuizCanners.Utils
             public override void Inspect()
             {
                 base.Inspect();
-                pegi.Nl();
-                InspectValue().Nl();
+                pegi.NL();
+                InspectValue().NL();
             }
 
             private pegi.ChangesToken InspectValue() =>
@@ -465,11 +498,20 @@ namespace QuizCanners.Utils
 
             public static readonly ColorValue tintColor = new ("_TintColor");
 
-            public override void SetLatestValueOn(Material material) => material.SetColor(id, LatestValue);
+            public override void SetLatestValueOn(Material material)
+            {
+                base.SetLatestValueOn(material);
+                material.SetColor(id, LatestValue);
+            }
+            
             public override Color Get(Material material) => material.GetColor(id);
             public override Color Get(MaterialPropertyBlock material) => material.GetColor(id);
-            public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetColor(id, LatestValue);
-            
+            public override void SetLatestValueOn(MaterialPropertyBlock block)
+            {
+                Debug.LogError("Can't set color feature on MaterialPropertyBlock");
+                block.SetColor(id, LatestValue);
+            }
+
             protected override Color GlobalValue_Internal
             {
                 get => Shader.GetGlobalColor(id);
@@ -484,9 +526,9 @@ namespace QuizCanners.Utils
             public override void Inspect()
             {
                 ToString().PL().Write(); 
-                (DirectiveEnabledForLastValue ? Icon.Active: Icon.InActive).Nl();
+                (DirectiveEnabledForLastValue ? Icon.Active: Icon.InActive).NL();
                 
-                if (pegi.Edit(ref LatestValue).Nl())
+                if (pegi.Edit(ref LatestValue).NL())
                     GlobalValue = LatestValue;
             }
 
@@ -547,7 +589,7 @@ namespace QuizCanners.Utils
             public override void Inspect()
             {
                //base.Inspect();
-                if (name.PL().Edit(ref LatestValue, hdr: true).Nl() && GlobalValueSet)
+                if (name.PL().Edit(ref LatestValue, hdr: true).NL() && GlobalValueSet)
                     GlobalValue = LatestValue;
             }
 
@@ -607,7 +649,7 @@ namespace QuizCanners.Utils
 
             public override void Inspect()
             {
-                InspectValue().Nl();
+                InspectValue().NL();
             }
 
             private pegi.ChangesToken InspectValue()
@@ -784,7 +826,7 @@ namespace QuizCanners.Utils
             public override void Inspect()
             {
                 pegi.Draw(mainTexture.GlobalValue);
-                pegi.Nl();
+                pegi.NL();
             }
 
         }
@@ -823,28 +865,18 @@ namespace QuizCanners.Utils
         {
             private readonly string _keyword;
             private LocalKeyword _local;
-            private bool _keywordInitialized = false;
+            private Shader _cachedShader;
 
             private readonly Gate.Bool _valueGate = new();
 
-           // private readonly QcUnity.DomainReloadGate _reloadGate = new();
-
             public void SetOn(Material material, bool isTrue)
             {
-                /*
-                if (_reloadGate.TryChange()) 
-                {
-                    Debug.Log("Clearing " + _keyword);
-                    _keywordInitialized = false;
-                    _valueGate.ValueIsDefined = false;
-                }*/
-
                 if (!_valueGate.TryChange(isTrue))
                     return;
 
-                if (!_keywordInitialized)
+                if (_cachedShader == null || _cachedShader != material.shader)
                 {
-                    _keywordInitialized = true;
+                    _cachedShader = material.shader;
                     _local = new LocalKeyword(material.shader, _keyword);
                 }
 
@@ -853,7 +885,7 @@ namespace QuizCanners.Utils
 
             public void Clear()
             {
-                _keywordInitialized = false;
+                _cachedShader = null;
                 _valueGate.ValueIsDefined = false;
             }
 
@@ -868,7 +900,7 @@ namespace QuizCanners.Utils
             public override string ToString() => _keyword;
             public void Inspect()
             {
-                "{0} = {1}".F(_keyword, _keywordInitialized ? _valueGate.CurrentValue : "Uninitialized").PL().Nl();
+                "{0} = {1}".F(_keyword, _cachedShader != null ? _valueGate.CurrentValue : "Uninitialized").NL();
             }
 
         
@@ -939,7 +971,7 @@ namespace QuizCanners.Utils
             void IPEGI.Inspect()
             {
                 _name.PL().Write_ForCopy();
-                pegi.Nl();
+                pegi.NL();
 
                 for ( int i=0; i<EnumValues.Length; i++) 
                 {
@@ -950,7 +982,7 @@ namespace QuizCanners.Utils
                     else
                         "Add {0}".F(val).PL().Click(()=> this[i] = true);
 
-                    pegi.Nl();
+                    pegi.NL();
                 }
             }
 
@@ -964,7 +996,9 @@ namespace QuizCanners.Utils
 
             public override string ToString() => _name;
             
-            [SerializeField] private bool lastValue;
+            private readonly Gate.Bool lastValue = new();
+
+            public bool IsSet => lastValue.ValueIsDefined;
 
             public IDisposable EnableDisposible()
             {
@@ -974,20 +1008,31 @@ namespace QuizCanners.Utils
 
             public bool Enabled 
             {
-                get => lastValue;
-                set { lastValue = value; QcUnity.SetShaderKeyword(_name, value); }
+                get => lastValue.CurrentValue;
+                set 
+                { 
+                    if (lastValue.TryChange(value))
+                        QcUnity.SetShaderKeyword(_name, value); 
+                }
             }
 
             public GlobalFeature(string name) {  _name = name; }
 
-
+            public void Clear()
+            {
+                lastValue.ValueIsDefined = false;
+                Enabled = false;
+            }
 
             void IPEGI.Inspect()
             {
-                if (pegi.ToggleIcon(ref lastValue))
-                    Enabled = lastValue;
+                var en = Enabled;
+                if (pegi.ToggleIcon(ref en))
+                    Enabled = en;
                 _name.PL().Write_ForCopy();
             }
+
+         
         }
 
         [Serializable]

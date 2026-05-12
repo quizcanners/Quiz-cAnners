@@ -7,9 +7,11 @@ namespace QuizCanners.Inspect
     {
         public enum LatestInteractionEvent { None, Click, SliderScroll, Enter, Exit, ToggleOn, ToggleOff }
 
+        public static int ContextVersion { get; private set; }
+
         public static class GameView
         {
-            private static readonly Gate.Frame _interactionFrame = new(Gate.InitialValue.StartArmed);
+            private static readonly Gate.Frame _interactionFrame = new();
             private static LatestInteractionEvent _latestEvent;
 
 
@@ -18,7 +20,7 @@ namespace QuizCanners.Inspect
             {
                 get
                 {
-                    if (_interactionFrame.TryEnter())
+                    if (_interactionFrame.TryConsume())
                         _latestEvent = LatestInteractionEvent.None;
 
                     return _latestEvent;
@@ -26,8 +28,15 @@ namespace QuizCanners.Inspect
 
                 set
                 {
-                    _interactionFrame.TryEnter();
+                    _interactionFrame.TryConsume();
                     _latestEvent = value;
+
+                    switch (_latestEvent) 
+                    {
+                        case LatestInteractionEvent.Enter:
+                        case LatestInteractionEvent.Exit:
+                            ContextVersion++; break;
+                    }
                 }
             }
 
@@ -76,7 +85,6 @@ namespace QuizCanners.Inspect
 
             public class Window
             {
-              
                 private WindowFunction _function;
                 private Rect _windowRect;
                 private Vector2 _scrollPosition;
@@ -86,6 +94,14 @@ namespace QuizCanners.Inspect
                 private bool _foldedIn;
                 private bool _customUpscale;
                 private float _upscale;
+
+                private bool _dragging;
+                private Vector2 _lastPos;
+               // private int _dragControlId;
+                private readonly Gate.Integer _contextVersionGate = new();
+                private bool _pointerDown;
+                private Vector2 _pressPos;
+                private const float DragThresholdPx = 8f;
 
                 public void SetUpscale(float upscale) 
                 {
@@ -124,6 +140,93 @@ namespace QuizCanners.Inspect
                 }
 
                 protected bool UseWindow => Mathf.Approximately(Upscale, 1);
+
+                private void DoScrollDrag() 
+                {
+                    var e = Event.current;
+
+                    // --- pointer down: DO NOT consume (allows normal clicks) ---
+                    if (e.type == EventType.MouseDown && e.button == 0)
+                    {
+                        // if (!_dragArea.Contains(e.mousePosition)) return;
+
+                        _pointerDown = true;
+                        _dragging = false;
+                        _pressPos = e.mousePosition;
+                        _lastPos = e.mousePosition;
+
+                        // Don't use hotControl yet.
+                        // Don't e.Use() here.
+                    }
+
+                    // --- drag detection / scrolling ---
+                    if (e.type == EventType.MouseDrag && _pointerDown)
+                    {
+                        // If not dragging yet, decide if movement is enough to become a drag
+                        if (!_dragging)
+                        {
+                            Vector2 totalDelta = e.mousePosition - _pressPos;
+
+                            // compare squared magnitude to avoid sqrt
+                            if (Mathf.Abs(totalDelta.y) >= DragThresholdPx)
+                            {
+                              //  Debug.LogError("Dragging detected");
+                                _dragging = true;
+
+                                // Claim control only after threshold exceeded
+                                GUIUtility.hotControl = GUIUtility.GetControlID(FocusType.Passive);
+
+                                // Reset lastPos so first drag frame doesn't jump
+                                _lastPos = e.mousePosition;
+                            }
+                        }
+
+                        // If drag mode active -> scroll + consume
+                        if (_dragging)
+                        {
+                            Vector2 delta = e.mousePosition - _lastPos;
+                            _lastPos = e.mousePosition;
+
+                            _scrollPosition -= delta;
+
+                            // Clamp min
+                            if (_scrollPosition.x < 0f) _scrollPosition.x = 0f;
+                            if (_scrollPosition.y < 0f) _scrollPosition.y = 0f;
+
+                            GUI.changed = true;
+
+                          //  Debug.LogError("Using scroll drag");
+                            e.Use(); // only consume once we are sure it's a drag
+                        }
+                        // else: still under threshold -> don't consume, keep click behavior alive
+                    }
+
+                    // --- pointer up ---
+                    if (e.type == EventType.MouseUp && e.button == 0)
+                    {
+                        // If we were dragging, consume MouseUp so controls don't "click" after drag
+                        if (_dragging)
+                        {
+                           // Debug.LogError("Using scroll drag");
+                            e.Use();
+                        }
+
+                        _pointerDown = false;
+                        _dragging = false;
+
+                      //  if (GUIUtility.hotControl != 0)
+                          //  GUIUtility.hotControl = 0;
+                    }
+
+                    // Safety: if event stream is interrupted
+                    if (e.rawType == EventType.MouseUp && _pointerDown == false && _dragging)
+                    {
+                        _dragging = false;
+                       //// if (GUIUtility.hotControl != 0)
+                          //  GUIUtility.hotControl = 0;
+                    }
+                }
+
                 private void DrawFunctionWrapper(int windowID)
                 {
                     bool matrixOverride = false;
@@ -137,6 +240,9 @@ namespace QuizCanners.Inspect
                     {
                         try
                         {
+                            if (_contextVersionGate.TryChange(ContextVersion))
+                                _scrollPosition = Vector2.zero;
+
                             if (!UseWindow)
                             {
                                 matrix = GUI.matrix;
@@ -146,15 +252,25 @@ namespace QuizCanners.Inspect
 
                                 var safeArea = Screen.safeArea;
 
-                                GUILayout.BeginArea(new Rect((40 + safeArea.x) / Upscale, (20 + safeArea.y) / Upscale, safeArea.width / Upscale,
-                                    safeArea.height / Upscale));
+                                var area = new Rect((40 + safeArea.x) / Upscale, (20 + safeArea.y) / Upscale, safeArea.width / Upscale,
+                                    safeArea.height / Upscale);
+
+                                GUILayout.BeginArea(area);
 
                                 FoldedIn = false;
+
+                                var e = Event.current;
+                                if (area.Contains(e.mousePosition))
+                                    DoScrollDrag();
+
                             }
                             else
                             {
-                                if (Icon.FoldedOut.Click().Nl())
+                                if (Icon.FoldedOut.Click().NL())
                                     FoldedIn = !FoldedIn;
+
+                                if (!FoldedIn)
+                                    DoScrollDrag();
                             }
 
                             if (!FoldedIn)
@@ -188,8 +304,8 @@ namespace QuizCanners.Inspect
                                     _tooltip = _tooltipDelay > 0 ? _tooltip : " ";
                                 }
 
-                                Nl();
-                                _tooltip.PL(toolTip: "This is the Tooltip text's tooltip",style: Styles.Text.Hint).Nl();
+                                NL();
+                                _tooltip.PL(toolTip: "This is the Tooltip text's tooltip",style: Styles.Text.Hint).NL();
                                 UnIndent();
                             }
 
@@ -246,6 +362,7 @@ namespace QuizCanners.Inspect
                         }
                         else
                         {
+                            
                             DrawFunctionWrapper(0);
                         }
                     }

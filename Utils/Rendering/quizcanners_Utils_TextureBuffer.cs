@@ -17,6 +17,7 @@ namespace QuizCanners.Utils
             private readonly bool depth;
             private readonly bool _isColor;
             private RenderTexture _actualTexture;
+          
 
             public bool IsInitialized
             {
@@ -40,7 +41,9 @@ namespace QuizCanners.Utils
                 {
                     if (IsScreenSizeTextureInvalid(_actualTexture))
                     {
+                       // Debug.Log("Recreating screen size render texture");
                         _actualTexture = new RenderTexture(width: Screen.width, height: Screen.height, depth ? 24 : 0, RenderTextureFormat.ARGB32, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear) { name = _name };
+                        Version++;
                     }
                     return _actualTexture;
                 }
@@ -63,11 +66,11 @@ namespace QuizCanners.Utils
             void IPEGI.Inspect()
             {
                 var init = IsInitialized;
-                "{0}".F(_name).PL().ToggleIcon(ref init).Nl().OnChanged(() => IsInitialized = init);
+                "{0}".F(_name).PL().ToggleIcon(ref init).NL().OnChanged(() => IsInitialized = init);
 
                 if (IsInitialized)
                 {
-                    pegi.Draw(_actualTexture, width: 256, alphaBlend: false).Nl();
+                    pegi.Draw(_actualTexture, width: 256, alphaBlend: false).NL();
                 }
             }
 
@@ -92,6 +95,26 @@ namespace QuizCanners.Utils
 
         public enum PrecisionType { Regular, Half, Float }
 
+        public static RenderTextureFormat GetFormat_4Channels(this PrecisionType precision)
+        {
+            return precision switch
+            {
+                PrecisionType.Float => RenderTextureFormat.ARGBFloat,
+                PrecisionType.Half => RenderTextureFormat.ARGBHalf,
+                _ => RenderTextureFormat.ARGB32,
+            };
+        }
+
+        public static RenderTextureFormat GetFormat_SingleChannel(this PrecisionType precision)
+        {
+            return precision switch
+            {
+                PrecisionType.Float => RenderTextureFormat.RFloat,
+                PrecisionType.Half => RenderTextureFormat.RHalf,
+                _ => RenderTextureFormat.R8,
+            };
+        }
+
         public class DoubleBuffer : RenderTextureBufferBase, IPEGI, IPEGI_ListInspect
         {
             private readonly string _name;
@@ -102,8 +125,9 @@ namespace QuizCanners.Utils
             private readonly bool _clearOnCreate;
             private readonly bool _isColor;
             private bool _latestIsZero;
-
             private static readonly ShaderProperty.TextureValue _PREVIOUS_TEXTURE = new("_PreviousTex");
+            readonly bool _singleChannel;
+
 
             public bool IsInitialized => _renderTextures != null && _renderTextures.Count > 0;
 
@@ -131,6 +155,8 @@ namespace QuizCanners.Utils
 
             protected List<RenderTexture> _renderTextures;
 
+   
+
             private List<RenderTexture> RenderTextures
             {
                 get
@@ -141,15 +167,13 @@ namespace QuizCanners.Utils
                     _renderTextures = new List<RenderTexture>();
                     for (int i = 0; i < 2; i++)
                     {
-                        RenderTexture tex = _precision switch
+                        RenderTexture tex = new(width: Width, height: Height, depth: 0,
+                            _singleChannel ? _precision.GetFormat_SingleChannel() : _precision.GetFormat_4Channels(),
+                            readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear)
                         {
-                            PrecisionType.Float => new RenderTexture(width: Width, height: Height, depth: 0, RenderTextureFormat.ARGBFloat, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
-                            PrecisionType.Half => new RenderTexture(width: Width, height: Height, depth: 0, RenderTextureFormat.ARGBHalf, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
-                            _ => new RenderTexture(width: Width, height: Height, depth: 0, RenderTextureFormat.ARGB32, readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear),
+                            filterMode = FilterMode.Bilinear,
+                            name = "{0} {1}".F(_name, i)
                         };
-
-                        tex.filterMode = FilterMode.Bilinear;
-                        tex.name = "{0} {1}".F(_name, i);
 
                         if (_clearOnCreate)
                             tex.Clear(Color.clear);
@@ -324,17 +348,17 @@ namespace QuizCanners.Utils
             {
                 if (!_renderTextures.IsNullOrEmpty())
                 {
-                    _name.PL().Edit_List_UObj(_renderTextures).Nl();
-                    if ("Precision".PL().Edit_Enum(ref _precision).Nl())
+                    _name.PL().Edit_List_UObj(_renderTextures).NL();
+                    if ("Precision".PL().Edit_Enum(ref _precision).NL())
                     {
                         Clear();
                     }
                     Icon.Clear.Click(Clear);
-                    pegi.Click(Swap).Nl();
-                    pegi.Draw(Target, width: 256).Nl();
+                    pegi.Click(Swap).NL();
+                    pegi.Draw(Target, width: 256).NL();
                 }
                 else
-                    "{0} not initialized".F(_name).PL().Nl();
+                    "{0} not initialized".F(_name).NL();
 
             
             }
@@ -348,12 +372,14 @@ namespace QuizCanners.Utils
             }
             #endregion
 
-            public DoubleBuffer(string name, int size, PrecisionType precision, bool clearOnCreate, bool isColor)
+          
+
+            public DoubleBuffer(string name, int size, PrecisionType precision, bool clearOnCreate, bool isColor, bool singleChannel = false)
             {
                 _clearOnCreate = clearOnCreate;
                 _precision = precision;
                 _name = name;
-
+                _singleChannel = singleChannel;
                 CheckPowerOfTwo(ref size);
 
                 Width = size;
@@ -361,12 +387,12 @@ namespace QuizCanners.Utils
                 _isColor = isColor;
             }
 
-            public DoubleBuffer(string name, int width, int height, PrecisionType precision, bool clearOnCreate, bool isColor)
+            public DoubleBuffer(string name, int width, int height, PrecisionType precision, bool clearOnCreate, bool isColor, bool singleChannel = false)
             {
                 _clearOnCreate = clearOnCreate;
                 _precision = precision;
                 _name = name;
-
+                _singleChannel = singleChannel;
                 Width = width;
                 Height = height;
                 _isColor = isColor;
@@ -378,12 +404,12 @@ namespace QuizCanners.Utils
             private readonly string _name;
             public readonly int Width;
             public readonly int Height;
-            private readonly bool _floatBuffer;
+           // private readonly bool _floatBuffer;
             private readonly bool _singleChannel;
             private readonly bool _isColor;
             private readonly DepthPrecision _depth;
             private Color _clearColor;
-
+            private readonly PrecisionType _precision;
 
             protected RenderTexture _renderTexture;
 
@@ -409,15 +435,15 @@ namespace QuizCanners.Utils
                     return _renderTexture;
 
                 _renderTexture = new RenderTexture(width: Width, height: Height, depth: (int)_depth,
-                    _singleChannel ? (_floatBuffer ? RenderTextureFormat.RFloat : RenderTextureFormat.RHalf) :
-                    (_floatBuffer ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGBHalf),
-                    _isColor ? RenderTextureReadWrite.sRGB: RenderTextureReadWrite.Linear
+                    _singleChannel ? _precision.GetFormat_SingleChannel() : _precision.GetFormat_4Channels() // (_floatBuffer ? RenderTextureFormat.RFloat : RenderTextureFormat.RHalf) :
+                                                                                                             // (_floatBuffer ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGBHalf)
+                    ,
+                    _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear
                     )
                 {
-                    name = "{0} {1}".F(_name, Height == Width ? Width : "{0}x{1}".F(Width, Height))
+                    name = "{0} {1}".F(_name, Height == Width ? Width : "{0}x{1}".F(Width, Height)),
+                    filterMode = FilterMode.Bilinear
                 };
-
-                _renderTexture.filterMode = FilterMode.Bilinear;
 
                 if (clearIfCreatingNew)
                     RenderTextureBlit.ClearTexture(_renderTexture, _clearColor);
@@ -425,10 +451,10 @@ namespace QuizCanners.Utils
                 return _renderTexture;
             }
 
-            public Single(string name, int size, bool isFloat, bool isColor , bool singleChannel = false, DepthPrecision depth = DepthPrecision.None, Color clearColor = default)
+            public Single(string name, int size, PrecisionType precision, bool isColor , bool singleChannel = false, DepthPrecision depth = DepthPrecision.None, Color clearColor = default)
             {
                 _depth = depth;
-                _floatBuffer = isFloat;
+                _precision = precision;
                 _name = name;
                 _singleChannel = singleChannel;
                 _isColor = isColor;
@@ -439,10 +465,10 @@ namespace QuizCanners.Utils
                 _clearColor = clearColor;
             }
 
-            public Single(string name, int width, int height, bool isFloat, bool isColor, bool singleChannel = false, DepthPrecision depth = DepthPrecision.None, Color clearColor = default)
+            public Single(string name, int width, int height, PrecisionType precision, bool isColor, bool singleChannel = false, DepthPrecision depth = DepthPrecision.None, Color clearColor = default)
             {
                 _depth = depth;
-                _floatBuffer = isFloat;
+                _precision = precision;
                 _name = name;
                 _singleChannel = singleChannel;
                 _isColor = isColor;
@@ -462,17 +488,17 @@ namespace QuizCanners.Utils
             }
 
             #region Inspector
-            public override string ToString() => "{0} ({1}): {2}".F(_name, _floatBuffer ? "Floaf" : "Half", _renderTexture ? "Initialized" : "Uninitialized");
+            public override string ToString() => "{0} ({1}): {2}".F(_name, _precision.ToString(), _renderTexture ? "Initialized" : "Uninitialized");
 
             void IPEGI.Inspect()
             {
                 if (_renderTexture)
                 {
-                    pegi.Edit(ref _renderTexture).Nl();
+                    pegi.Edit(ref _renderTexture).NL();
                     pegi.Draw(_renderTexture, 256, alphaBlend: false);
                 }
                 else
-                    "{0} not initialized".F(_name).PL().Nl();
+                    "{0} not initialized".F(_name).NL();
             }
             #endregion
         }

@@ -39,7 +39,7 @@ namespace QuizCanners.Utils
 
         public void Inspect()
         {
-            _dictionary.Nested_Inspect().Nl();
+            _dictionary.Nested_Inspect().NL();
 
             if (_dictionary.Count != _inverseDictionary.Count)
                 "Dictionaries out of sync!".PL(pegi.Styles.Text.Warning);

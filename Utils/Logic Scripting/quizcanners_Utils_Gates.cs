@@ -1,6 +1,5 @@
 using QuizCanners.Inspect;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace QuizCanners.Utils
@@ -10,6 +9,8 @@ namespace QuizCanners.Utils
         public abstract class GateBase 
         {
             public virtual bool ValueIsDefined { get; set; }
+
+            public bool IsUndefined => !ValueIsDefined;
         }
 
         public abstract class GenericBase<T> : GateBase
@@ -40,7 +41,9 @@ namespace QuizCanners.Utils
 
             protected abstract bool IsSameAsPrevious(T newValue);
 
-            public virtual bool IsDirty(T comparedTo) => !(ValueIsDefined && IsSameAsPrevious(comparedTo));
+            public bool IsDefinedAs(T value) => ValueIsDefined && IsSameAsPrevious(value);
+
+            public bool IsDirty(T comparedTo) => !IsDefinedAs(comparedTo); //ValueIsDefined && IsSameAsPrevious(comparedTo));
 
             public virtual bool TryChange(T value)
             {
@@ -86,19 +89,18 @@ namespace QuizCanners.Utils
                 set
                 {
                     _cached = value;
-                    _check.TryEnter();
+                    _check.TryConsume();
                 }
             }
 
-            public bool TryEnter() => _check.TryEnter();
+            public bool TryEnter() => _check.TryConsume();
         }
 
         public class Frame : GateBase
         {
-            private int _frameIndex;
-            private readonly SystemTime _editorGateTime = new(initialValue: InitialValue.StartArmed);
+            private int _startFrame;
+            private readonly SystemTime _editorGateTime = new();
             private int _editorFrames;
-            private readonly InitialValue _initialValue;
 
             public bool DoneThisFrame
             {
@@ -107,63 +109,97 @@ namespace QuizCanners.Utils
                     if (!ValueIsDefined)
                         return false;
 
-                    return _frameIndex == CurrentFrame;
-                }
-                set
-                {
-                    ValueIsDefined = true;
-
-                    if (value)
-                        _frameIndex = CurrentFrame;
-                    else
-                        _frameIndex = CurrentFrame - 1;
+                    return _startFrame == CurrentFrame;
                 }
             }
 
-            public bool TryEnterIfFramesPassed(int framesCount) 
+            public void Start()
             {
-                if (!IsFramesPassed(framesCount))
-                {
-                    if (!ValueIsDefined)
-                        DoneThisFrame = true;
+                ValueIsDefined = true;
+                _startFrame = CurrentFrame;
+            }
 
-                    return false;
+            // TRUE / CHECK / CHECK
+            public bool TryConsume_IfElapsedOrFirst(int frames)
+            {
+                if (!ValueIsDefined)
+                {
+                    Start();
+                    return true;
                 }
 
-                DoneThisFrame = true;
+                if ((CurrentFrame - _startFrame) < frames)
+                    return false;
+
+                Start();
                 return true;
             }
 
-            public bool Enter_IsFramesPassed(int framesCount)
+            // FALSE / CHECK / CHECK
+            public bool TryConsume_RestartIfFirst(float frames)
             {
-                bool passed = IsFramesPassed(framesCount);
-                DoneThisFrame = true;
+                if (!ValueIsDefined)
+                {
+                    Start();
+                    return false;
+                }
+
+                if ((CurrentFrame - _startFrame) < frames)
+                    return false;
+
+                Start();
+                return true;
+            }
+
+            public bool TryPeekElapsed(out int frames)
+            {
+                if (!ValueIsDefined)
+                {
+                    frames = 0;
+                    return false;
+                }
+                frames = CurrentFrame - _startFrame;
+                return true;
+            }
+
+            public int Consume()
+            {
+                var passed = (CurrentFrame - _startFrame);
+                Start();
                 return passed;
             }
 
-            public bool TryEnter()
+            public bool TryConsume()
             {
                 if (DoneThisFrame)
                     return false;
 
-                DoneThisFrame = true;
+                Start();
                 return true;
             }
 
-            public int FramesPassed => CurrentFrame - _frameIndex;
+            public bool IsFramesPassed_SinceStart(int frameCount)
+            {
+                if (!ValueIsDefined)
+                    return false;
 
-            public bool IsFramesPassed(int frameCount) 
-            { 
-                if (!ValueIsDefined && _initialValue == InitialValue.StartArmed)
-                    return true;
-
-                return FramesPassed >= frameCount;
+                return (CurrentFrame - _startFrame) >= frameCount;
             }
 
-            public bool TryEnter(out bool wasInitialized)
+            public bool IsFramesPassed_OrNotStarted(int frameCount)
             {
-                wasInitialized = ValueIsDefined;
-                return TryEnter();
+                if (!ValueIsDefined)
+                    return true;
+
+                return (CurrentFrame - _startFrame) >= frameCount;
+            }
+
+            public bool IsStartedWithin(int frameCount)
+            {
+                if (!ValueIsDefined)
+                    return false;
+
+                return (CurrentFrame - _startFrame) < frameCount;
             }
 
             private int CurrentFrame
@@ -174,7 +210,7 @@ namespace QuizCanners.Utils
                     if (Application.isPlaying)
                         return Time.frameCount;
 
-                    if (_editorGateTime.TryUpdateIfTimePassed(0.01f))
+                    if (_editorGateTime.TryConsume_IfElapsedOrFirst(0.01f))
                         _editorFrames++;
                         
                     return Time.frameCount + _editorFrames;
@@ -184,150 +220,142 @@ namespace QuizCanners.Utils
                 }
             }
 
-            public Frame(InitialValue initialValue = InitialValue.StartArmed) 
-            {
-                _initialValue = initialValue;
-            }
-        }
-
-        public class ConsecutiveFrames
-        {
-            private int _lastFrameIndex;
-            private int _consequtiveRequests;
-
-            private int FrameIndex => Time.frameCount;
-
-            public void Reset() 
-            {
-                _consequtiveRequests = 0;
-                _lastFrameIndex = FrameIndex;
-            }
-
-            public bool TryEnter(int requestsNeeded = 2)
-            {
-                if (FrameIndex == _lastFrameIndex) 
-                {
-                    return _consequtiveRequests >= requestsNeeded;
-                }
-
-                if (FrameIndex - _lastFrameIndex > 1) 
-                {
-                    Reset();
-                    return false;
-                }
-
-                _lastFrameIndex = FrameIndex;
-                _consequtiveRequests++;
-
-                return _consequtiveRequests >= requestsNeeded;
-            }
-        }
-
-        public enum InitialValue
-        {
-            Uninitialized, StartArmed
+            public Frame() { }
         }
 
         public abstract class TimeBase : GateBase, IPEGI
         {
-            protected double _delta;
-            private readonly bool _startArmed;
+            public abstract void Start();
 
-            public abstract void Update();
-
-            protected bool WasInitialized()
+            // TRUE / CHECK / CHECK
+            public bool TryConsume_IfElapsedOrFirst(float secondsPassed)
             {
-                if (ValueIsDefined)
-                    return true;
-
-                Update();
-
-                return false;
-            }
-
-            public bool Update_TryGetDelta(out float delta)
-            {
-                bool was = WasInitialized();
-                _delta = (float)GetSecondsDeltaAndUpdate();
-                delta = (float)_delta;
-                return was;
-            }
-
-            public double GetSecondsWithoutUpdate()
-            {
-                if (!WasInitialized())
-                    return 0;
-
-                _delta = GetDeltaSeconds_Internal();
-
-                return _delta;
-            }
-
-            public bool TryUpdateIfTimePassed(double secondsPassed, out bool wasInitialized)
-            {
-                wasInitialized = ValueIsDefined;
-                return TryUpdateIfTimePassed(secondsPassed);
-            }
-
-            public bool TryUpdateIfTimePassed(double secondsPassed)
-            {
-                if (!WasInitialized())
-                    return _startArmed;
-
-                var delta = GetSecondsWithoutUpdate();
-                if (delta >= secondsPassed)
+                if (!ValueIsDefined)
                 {
-                    Update();
+                    Start();
                     return true;
                 }
 
-                return false;
+                if (ElapsedSeconds_Internal() < secondsPassed)
+                    return false;
+
+                Start();
+                return true;
             }
 
-            public bool Update_IsTimePassed(double secondsPassed)
+            // FALSE / CHECK / CHECK
+            public bool TryConsume_RestartIfFirst(float secondsPassed)
             {
-                if (!WasInitialized())
-                    return _startArmed;
+                if (!ValueIsDefined)
+                {
+                    Start();
+                    return false;
+                }
 
-                var delta = GetSecondsWithoutUpdate();
-                Update();
+                if (ElapsedSeconds_Internal() < secondsPassed)
+                    return false;
 
-                return delta >= secondsPassed;
+                Start();
+                return true;
             }
 
-            public double GetSecondsDeltaAndUpdate()
+            public bool IsStartedWithin(float secondsPassed)
             {
-                _delta = GetSecondsWithoutUpdate();
-                Update();
+                if (!ValueIsDefined)
+                    return false;
 
-                return _delta;
+                return ElapsedSeconds_Internal() < secondsPassed;
             }
 
-            public bool WillAllowIfTimePassed(double secondsPassed)
+            public bool IsPassed_OrNeverStarted(float secondsPassed)
             {
-                if (!ValueIsDefined && _startArmed)
+                if (!ValueIsDefined)
                     return true;
 
-                return GetSecondsWithoutUpdate() >= secondsPassed;
+                return ElapsedSeconds_Internal() >= secondsPassed;
             }
 
-            protected abstract double GetDeltaSeconds_Internal();
+            public bool IsPassed_SinceStart(float secondsPassed)
+            {
+                if (!ValueIsDefined)
+                    return false;
+
+                return ElapsedSeconds_Internal() >= secondsPassed;
+            }
+
+            // Start if Unstarted?
+            // Return true if unstarted?
+            // Start if returning true?
+            // True if time passed?
+
+            public float ElapsedSeconds
+            {
+                get
+                {
+                    if (!ValueIsDefined)
+                        return 0;
+
+                    return ElapsedSeconds_Internal();
+                }
+            }
+
+            public bool TryPeekElapsed(out float time)
+            {
+                if (!ValueIsDefined)
+                {
+                    time = default;
+                    return false;
+                }
+                time = ElapsedSeconds_Internal();
+                return true;
+            }
+
+            // 0 / DELTA / 2 x DELTA
+
+            public float Peek_OrFirstStart()
+            {
+                if (!ValueIsDefined)
+                {
+                    Start();
+                    return 0;
+                }
+
+                return ElapsedSeconds_Internal();
+            }
+
+            // 0 / DELTA / DELTA
+            public float Consume()
+            {
+                if (!ValueIsDefined)
+                {
+                    Start();
+                    return 0;
+                }
+
+                var delta = ElapsedSeconds_Internal();
+                Start();
+
+                return delta;
+            }
+
+            // FALSE / EXT_START / INV_CHECK / 2xINV_CHECK
+
+  
+
+            protected abstract float ElapsedSeconds_Internal();
 
             #region Inspector
 
             void IPEGI.Inspect()
             {
-                "Delta: ".F(TimeSpan.FromSeconds(GetSecondsWithoutUpdate()).ToShortDisplayString()).PL().Write();
+                "Delta: ".F(TimeSpan.FromSeconds(Peek_OrFirstStart()).ToShortDisplayString()).PL().Write();
             }
 
             #endregion
 
-            public TimeBase(InitialValue initialValue)
+            public TimeBase()
             {
-                switch (initialValue)
-                {
-                    case InitialValue.StartArmed: _startArmed = true; break;
-                }
+
             }
         }
 
@@ -337,61 +365,44 @@ namespace QuizCanners.Utils
            
             protected abstract T GetCurrent { get; }
 
-            public T LastTime
-            {
-                get
-                {
-                    WasInitialized();
-                    return _lastTime;
-                }
-                set
-                {
-                    WasInitialized();
-                    _lastTime = value;
-                }
-            }
-
-
-            public override void Update()
+            public override void Start()
             {
                 ValueIsDefined = true;
                 _lastTime = GetCurrent;
             }
 
-            public TimeGeneric(InitialValue initialValue) : base(initialValue) { }
+            public TimeGeneric() : base() { }
         }
 
         public class SystemTime : TimeGeneric<DateTime>
         {
             protected override DateTime GetCurrent => DateTime.Now;
-            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime).TotalSeconds;
+            protected override float ElapsedSeconds_Internal() => (float)((GetCurrent - _lastTime).TotalSeconds);
 
-            public SystemTime (InitialValue initialValue) : base (initialValue){}
 
         }
 
         public class UnityTimeScaled : TimeGeneric<float>, IPEGI
         {
             protected override float GetCurrent => Time.time;
-            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
+            protected override float ElapsedSeconds_Internal() => (GetCurrent - _lastTime);
 
-            public UnityTimeScaled(InitialValue initialValue) : base(initialValue) { }
         }
 
         public class UnityTimeUnScaled : TimeGeneric<float>, IPEGI
         {
             protected override float GetCurrent => Time.unscaledTime;
-            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
+            protected override float ElapsedSeconds_Internal() => (GetCurrent - _lastTime);
 
-            public UnityTimeUnScaled(InitialValue initialValue) : base(initialValue) { }
+
+            public UnityTimeUnScaled() : base() { }
         }
 
-        public class UnityTimeSinceStartup : TimeGeneric<double>, IPEGI
+        public class UnityTimeSinceStartup : TimeGeneric<float>, IPEGI
         {
-            protected override double GetCurrent => QcUnity.TimeSinceStartup();
-            protected override double GetDeltaSeconds_Internal() => (GetCurrent - _lastTime);
+            protected override float GetCurrent => (float)QcUnity.TimeSinceStartup();
+            protected override float ElapsedSeconds_Internal() => (GetCurrent - _lastTime);
 
-            public UnityTimeSinceStartup(InitialValue initialValue) : base(initialValue) { }
         }
 
       
@@ -724,7 +735,7 @@ namespace QuizCanners.Utils
 
             private bool _isSet;
 
-            private static readonly PerformanceTurnTable.Token _performanceToken = new("Screen Size", delay: 0.1f, initialValue: InitialValue.Uninitialized);
+            private static readonly PerformanceTurnTable.Token _performanceToken = new("Screen Size", delay: 0.1f);
 
             public bool IsDirty => !_isSet || Screen.width != _width || Screen.height != _height;
 

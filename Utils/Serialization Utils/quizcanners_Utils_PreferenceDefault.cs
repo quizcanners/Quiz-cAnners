@@ -138,6 +138,17 @@ namespace QuizCanners.Utils
 
             public Bool(string key, bool defaultValue) : base(key, defaultValue) { }
 
+            public pegi.ChangesToken Inspect_Toggle(string name) 
+            {
+                var changes = pegi.ChangeTrackStart();
+
+                var tmp = GetValue();
+                if (name.PL().ToggleIcon(ref tmp))
+                    SetValue(tmp);
+
+                return changes;
+            }
+
             void IPEGI.Inspect()
             {
                 var tmp = GetValue();

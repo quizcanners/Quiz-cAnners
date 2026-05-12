@@ -122,7 +122,7 @@ namespace QuizCanners.Inspect
                                 names[i] = tab.TabName;
                             }
 
-                            changed = Tabs(ref _token.tab, keys, names).Nl();
+                            changed = Tabs(ref _token.tab, keys, names).NL();
                         }
                         else
                         {
@@ -151,7 +151,7 @@ namespace QuizCanners.Inspect
                                 }
                             }
 
-                            changed = Tabs(ref _token.tab, keys, contents).Nl();
+                            changed = Tabs(ref _token.tab, keys, contents).NL();
                         }
 
                         if (changed)
@@ -308,7 +308,7 @@ namespace QuizCanners.Inspect
         {
             if (TabContext.s_tabs.Count == 0)
             {
-                "NO TAB CONTEXT FOR {0}".F(tabName).PL().Nl();
+                "NO TAB CONTEXT FOR {0}".F(tabName).NL();
                 return;
             }
 
@@ -361,7 +361,7 @@ namespace QuizCanners.Inspect
         {
             if (TabContext.s_tabs.Count == 0)
             {
-                "NO TAB CONTEXT FOR {0}".F(tabName).PL().Nl();
+                "NO TAB CONTEXT FOR {0}".F(tabName).NL();
                 return;
             }
 

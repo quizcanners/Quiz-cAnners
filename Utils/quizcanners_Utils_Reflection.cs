@@ -115,16 +115,16 @@ namespace QuizCanners.Utils
             {
                 var changes = pegi.ChangeTrackStart();
 
-                if ("Assmeblies".PL().IsFoldout(ref foldoutAssemblies).Nl())
+                if ("Assmeblies".PL().IsFoldout(ref foldoutAssemblies).NL())
                 {
-                    "Assemblies to search in".PL().Edit_List(AllAssemblies).Nl().OnChanged(Clear);
+                    "Assemblies to search in".PL().Edit_List(AllAssemblies).NL().OnChanged(Clear);
 
-                    "Refresh".PL().Click().OnChanged(() => _allAssemblies = null).Nl();
+                    "Refresh".PL().Click().OnChanged(() => _allAssemblies = null).NL();
                 }
                 else
                 {
                     var typeName = _reflectCLassName.GetValue();
-                    "Class Name".ConstL().Edit_Delayed(ref typeName).OnChanged(() => _reflectCLassName.SetValue(typeName)).OnChanged(Clear).UnfocusOnChange().Nl();
+                    "Class Name".ConstL().Edit_Delayed(ref typeName).OnChanged(() => _reflectCLassName.SetValue(typeName)).OnChanged(Clear).UnfocusOnChange().NL();
 
                     if (matches == null && !typeName.IsNullOrEmpty())
                     {
@@ -150,7 +150,7 @@ namespace QuizCanners.Utils
                         {
                             foreach (var t in matches)
                             {
-                                if (t.Name.PL(toolTip: t.FullName).Click().UnfocusOnChange().Nl())
+                                if (t.Name.PL(toolTip: t.FullName).Click().UnfocusOnChange().NL())
                                     selectedType = t;
                             }
                         }
@@ -180,12 +180,12 @@ namespace QuizCanners.Utils
                             }
 
                             if (derrivedFromSelected.Count == 0)
-                                "No classes are assignable from {0}".F(selectedType.Name).PL().Nl();
+                                "No classes are assignable from {0}".F(selectedType.Name).NL();
                             else
                             {
-                                "Assignable From {0}".F(selectedType.Name).PL(pegi.Styles.ListLabel).Nl();
+                                "Assignable From {0}".F(selectedType.Name).PL(pegi.Styles.ListLabel).NL();
 
-                                if ("{0}s To Clipboard".F(selectedType.Name).PL().Click().Nl())
+                                if ("{0}s To Clipboard".F(selectedType.Name).PL().Click().NL())
                                 {
                                     var sb = new StringBuilder();
                                     foreach (var t in derrivedFromSelected)
@@ -196,7 +196,7 @@ namespace QuizCanners.Utils
                                     pegi.CopyPasteBuffer = sb.ToString();
                                 }
 
-                                "Assignable Types".PL().Edit_List(derrivedFromSelected).Nl();
+                                "Assignable Types".PL().Edit_List(derrivedFromSelected).NL();
                             }
                         }
                     }
@@ -207,7 +207,7 @@ namespace QuizCanners.Utils
             {
                 var rews = GetTypesAssignableFrom<T>(); 
 
-                if ("{0}s To Clipboard".F(typeof(T).Name).PL().Click().Nl())
+                if ("{0}s To Clipboard".F(typeof(T).Name).PL().Click().NL())
                 {
                     var sb = new StringBuilder();
                     foreach (var t in rews)
@@ -220,7 +220,7 @@ namespace QuizCanners.Utils
 
                 foreach (var t in rews)
                 {
-                    t.Name.PL().Write_ForCopy(showCopyButton: true).Nl();
+                    t.Name.PL().Write_ForCopy(showCopyButton: true).NL();
                 }
             }
         }

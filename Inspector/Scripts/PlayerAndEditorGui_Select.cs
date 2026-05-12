@@ -148,9 +148,9 @@ namespace QuizCanners.Inspect
             if (FoldoutManager.isFoldedOutOrEntered)
             {
                 if (from.Count > 1)
-                    Nl();
+                    NL();
                 for (var i = 0; i < from.Count; i++)
-                    if (i != no && "{0}: {1}".F(i, from[i]).PL().ClickUnFocus().Nl())
+                    if (i != no && "{0}: {1}".F(i, from[i]).PL().ClickUnFocus().NL())
                     {
                         no = i;
                         FoldoutManager.FoldInNow();
@@ -236,11 +236,11 @@ namespace QuizCanners.Inspect
 
                 Edit(ref tmpSelectSearch);
                 Icon.Search.Draw();
-                Nl();
+                NL();
             }
 
             if (from.Length > 1)
-                Nl();
+                NL();
 
             bool searching = needSearch && !tmpSelectSearch.IsNullOrEmpty();
 
@@ -271,7 +271,7 @@ namespace QuizCanners.Inspect
                 {
                     shownCount++;
 
-                    if (from[i].PL().ClickUnFocus().Nl())
+                    if (from[i].PL().ClickUnFocus().NL())
                     {
                         current_Index = i;
                         return ChangesToken.True;
@@ -283,7 +283,7 @@ namespace QuizCanners.Inspect
             }
 
             if (shownCount < from.Length)
-                "...{0} more items".F(from.Length- shownCount).PL().Nl();
+                "...{0} more items".F(from.Length- shownCount).NL();
 
             GUILayout.Space(10);
             return ChangesToken.False;
@@ -292,7 +292,7 @@ namespace QuizCanners.Inspect
             {
                 using (SetGuiColorDisposable(Color.yellow))
                 {
-                    "[{0}]".F(from[tmpCurrent]).PL().ClickUnFocus().Nl(FoldoutManager.FoldInNow);
+                    "[{0}]".F(from[tmpCurrent]).PL().ClickUnFocus().NL(FoldoutManager.FoldInNow);
                 }
                 shownCount++;
                 currentShown = true;
@@ -319,15 +319,15 @@ namespace QuizCanners.Inspect
             if (!PaintingGameViewUI)
                 " ".PL(10).Write();
 
-            from.TryGet(no, defaultValue: hint.F(no)).ConstL().IsFoldout().Nl();
+            from.TryGet(no, defaultValue: hint.F(no)).ConstL().IsFoldout().NL();
 
             if (FoldoutManager.isFoldedOutOrEntered)
             {
                 if (from.Length > 1)
-                    Nl();
+                    NL();
 
                 if (needSearch)
-                    "Search".PL(70).Edit(ref tmpSelectSearch).Nl();
+                    "Search".PL(70).Edit(ref tmpSelectSearch).NL();
 
                 bool searching = needSearch && !tmpSelectSearch.IsNullOrEmpty();
 
@@ -341,7 +341,7 @@ namespace QuizCanners.Inspect
                     {
                         if (i == no)
                         {
-                            "[{0}]".F(from[i]).PL().ClickUnFocus().Nl();
+                            "[{0}]".F(from[i]).PL().ClickUnFocus().NL();
                             continue;
                         }
 
@@ -349,7 +349,7 @@ namespace QuizCanners.Inspect
                         {
                             shownIndex++;
 
-                            if (from[i].PL().ClickUnFocus().Nl())
+                            if (from[i].PL().ClickUnFocus().NL())
                             {
                                 no = i;
                                 return ChangesToken.True;
@@ -486,7 +486,7 @@ namespace QuizCanners.Inspect
         {
             if (!s_objectsInScene.TryGetValue(typeof(T), out List<Object> objects))
             {
-                objects = new List<Object>(Object.FindObjectsByType<T>(FindObjectsSortMode.None));
+                objects = new List<Object>(Object.FindObjectsByType<T>());//FindObjectsSortMode.None));
                 s_objectsInScene[typeof(T)] = objects;
             }
 
@@ -898,7 +898,7 @@ namespace QuizCanners.Inspect
 
             var type = obj?.GetType();
 
-            if (cfg.Inspect_Select(ref type).Nl())
+            if (cfg.Inspect_Select(ref type).NL())
             {
                 TaggedTypesExtensions.ChangeType(ref obj, type);
                 return ChangesToken.True;
@@ -990,7 +990,7 @@ namespace QuizCanners.Inspect
             public string[] names;
             public int elementIndex;
 
-            public Gate.UnityTimeUnScaled SearchGate = new(Gate.InitialValue.StartArmed);
+            public Gate.UnityTimeUnScaled SearchGate = new();
 
             public void UpdateCachedValues(IDictionary collection, ICollection newKeys, string[] filteredNames, int index, object cachedKey) 
             {
@@ -1003,7 +1003,7 @@ namespace QuizCanners.Inspect
 
             public bool SameKey<T>(T key) 
             {
-                if (SearchGate.TryUpdateIfTimePassed(10))
+                if (SearchGate.TryConsume_IfElapsedOrFirst(10))
                     return false;
 
                 if (key == null && elementIndex == -1)
@@ -1012,7 +1012,7 @@ namespace QuizCanners.Inspect
                     return true;
                 }
 
-                if (keys.IsNullOrEmpty() || elementIndex >= keys.Count)
+                if (keys.IsNullOrEmptyNonGeneric() || elementIndex >= keys.Count)
                 {
                     //Debug.Log("Index is above Count");
                     return false;
@@ -1200,14 +1200,14 @@ namespace QuizCanners.Inspect
                 {
                     bool sameCollection = SelectCache.Dictionary.collectionFiltered == from;
                     bool sameKey = SelectCache.Dictionary.SameKey(tmpCurKey);
-                    bool timeOut = SelectCache.Dictionary.SearchGate.TryUpdateIfTimePassed(10);
+                    bool timeOut = SelectCache.Dictionary.SearchGate.TryConsume_IfElapsedOrFirst(10);
 
                     if (sameCollection && sameKey && !timeOut)
                     {
                         arr = SelectCache.Dictionary.names;
                         keysList = (List<TKey>)SelectCache.Dictionary.keys;
                         elementIndex = SelectCache.Dictionary.elementIndex;
-                        SelectCache.Dictionary.SearchGate.Update();
+                        SelectCache.Dictionary.SearchGate.Start();
                         return;
                     }
 

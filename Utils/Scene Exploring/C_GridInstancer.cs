@@ -71,7 +71,7 @@ namespace QuizCanners
 
             if (!_prefab || InstanceCount == 0)
             {
-                "Prefab".PL().Edit(ref _prefab).Nl();
+                "Prefab".PL().Edit(ref _prefab).NL();
             }
 
             if (InstanceCount > 0)
@@ -87,13 +87,13 @@ namespace QuizCanners
                 }
 
 
-                pegi.Nl();
+                pegi.NL();
             }
 
-            "X".PL(20).Edit(ref x_Max, 1, 100).Nl();
-            "Y".PL(20).Edit(ref y_Max, 1, 100).Nl();
-            "Z".PL(20).Edit(ref z_Max, 1, 100).Nl();
-            "Gap".ConstL().Edit(ref _gap, 0.1f, 3f).Nl();
+            "X".PL(20).Edit(ref x_Max, 1, 100).NL();
+            "Y".PL(20).Edit(ref y_Max, 1, 100).NL();
+            "Z".PL(20).Edit(ref z_Max, 1, 100).NL();
+            "Gap".ConstL().Edit(ref _gap, 0.1f, 3f).NL();
 
             if (changed && _prefab) 
             {

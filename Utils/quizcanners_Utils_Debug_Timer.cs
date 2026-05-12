@@ -162,12 +162,12 @@ namespace QuizCanners.Utils
                 private List<TimerCollectionElements.Base> _sortedTimings = new();
                 protected readonly Stopwatch StopWatch = new();
 
-                private readonly Gate.Frame _tickRecalculateGate = new(Gate.InitialValue.StartArmed);
+                private readonly Gate.Frame _tickRecalculateGate = new();
                 private long _totalTicks;
 
                 internal long TotalTicks()
                 {
-                    if (_tickRecalculateGate.TryEnter())
+                    if (_tickRecalculateGate.TryConsume())
                     {
                         _totalTicks = 0;
                         foreach (var el in _timings)
@@ -233,7 +233,7 @@ namespace QuizCanners.Utils
                         if (_timings.Count > 500)
                             "Maximum Timings Count reached".PL().WriteWarning();
 
-                        pegi.Nl();
+                        pegi.NL();
 
                         if (_timings.Count > 1)
                             "Sort by duration.".PL().ToggleIcon(ref _sortByDuration);
@@ -242,7 +242,7 @@ namespace QuizCanners.Utils
                             if ("Clear".PL().ClickConfirm(confirmationTag: "clLog"))
                                 Clear();
 
-                        pegi.Nl();
+                        pegi.NL();
                     }
 
                     var percentages = QcMath.NormalizeToPercentage(_timings, el => el.GetTotalTicksDuration());
@@ -251,7 +251,7 @@ namespace QuizCanners.Utils
                         _timings[i].Percentage = percentages[i];
 
                     if (!_sortByDuration)
-                        collectionMeta.Edit_List(_timings).Nl();
+                        collectionMeta.Edit_List(_timings).NL();
                     else
                     {
                         if (_sortedTimings == null)
@@ -260,7 +260,7 @@ namespace QuizCanners.Utils
                             _sortedTimings.Sort((a, b) => (int)(b.GetTotalTicksDuration() - a.GetTotalTicksDuration()));
                         }
 
-                        collectionMeta.Edit_List(_sortedTimings).Nl();
+                        collectionMeta.Edit_List(_sortedTimings).NL();
                     }
                 }
 
@@ -286,12 +286,12 @@ namespace QuizCanners.Utils
                 private Dictionary<string, TimerCollectionElements.Base> _timings = new();
                 private List<TimerCollectionElements.Base> _sortedTimings = new();
 
-                private readonly Gate.Frame _tickRecalculateGate = new(Gate.InitialValue.StartArmed);
+                private readonly Gate.Frame _tickRecalculateGate = new();
                 private long _totalTicks;
 
                 internal long TotalTicks()
                 {
-                    if (_tickRecalculateGate.TryEnter())
+                    if (_tickRecalculateGate.TryConsume())
                     {
                         _totalTicks = 0;
                         foreach (var el in _timings)
@@ -422,12 +422,12 @@ namespace QuizCanners.Utils
                         if (_timings.Count > 500)
                             "Maximum Timings Count reached".PL().WriteWarning();
 
-                        pegi.Nl();
+                        pegi.NL();
 
                         if (_timings.Count > 1)
                             "Sort by duration.".PL().ToggleIcon(ref _sortByDuration);
 
-                        pegi.Nl();
+                        pegi.NL();
 
                         if (_timings.Count > 0)
                             if (Icon.Clear.ClickConfirm(confirmationTag: "clLog", toolTip: "Clear timings"))
@@ -438,7 +438,7 @@ namespace QuizCanners.Utils
                             "Total: {0} ".F(QcSharp.TicksToReadableString(TotalTicks())).PL().Write();
                         }
 
-                        pegi.Nl();
+                        pegi.NL();
 
 
                     }
@@ -451,7 +451,7 @@ namespace QuizCanners.Utils
                         _timings.ElementAt(i).Value.Percentage = percentages[i];
 
                     if (!_sortByDuration)
-                        _listMeta.Edit_Dictionary(_timings).Nl();
+                        _listMeta.Edit_Dictionary(_timings).NL();
                     else
                     {
                         if (_sortedTimings == null)
@@ -460,7 +460,7 @@ namespace QuizCanners.Utils
                             _sortedTimings.Sort((a, b) => (int)(b.GetTotalTicksDuration() - a.GetTotalTicksDuration()));
                         }
 
-                        _listMeta.Edit_List(_sortedTimings).Nl();
+                        _listMeta.Edit_List(_sortedTimings).NL();
                     }
                 }
 

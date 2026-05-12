@@ -367,16 +367,16 @@ namespace QuizCanners.Utils
             public virtual void Inspect()
             {
                 if (AllowEdit)
-                    InspectSelectPart().Nl();
+                    InspectSelectPart().NL();
 
                 using (pegi.Indent())
                 {
                     TValue val = GetEntity();
 
                     if (val != null)
-                        pegi.Nested_Inspect_Value_OrFallback(ref val).Nl();
+                        pegi.Nested_Inspect_Value_OrFallback(ref val).NL();
                     else
-                        ("ID {0} not found in Prototypes".F(Id)).PL().Nl();
+                        ("ID {0} not found in Prototypes".F(Id)).NL();
                 }
 
             }
@@ -607,16 +607,16 @@ namespace QuizCanners.Utils
 
             public virtual void Inspect()
             {
-                InspectSelectPart().Nl();
+                InspectSelectPart().NL();
 
-                "REFERENCED OBJECT".PL(style: pegi.Styles.ListLabel).Nl();
+                "REFERENCED OBJECT".PL(style: pegi.Styles.ListLabel).NL();
 
                 TValue val = GetEntity();
 
                 if (val != null)
-                    pegi.Nested_Inspect_Value_OrFallback(ref val).Nl();
+                    pegi.Nested_Inspect_Value_OrFallback(ref val).NL();
                 else
-                    ("ID {0} not found in Prototypes".F(Id)).PL().Nl();
+                    ("ID {0} not found in Prototypes".F(Id)).NL();
             }
 
             public pegi.ChangesToken InspectSelectPart()
@@ -743,17 +743,17 @@ namespace QuizCanners.Utils
 
             public virtual void Inspect()
             {
-                InspectSelectPart().Nl();
+                InspectSelectPart().NL();
 
-                "REFERENCED OBJECT".PL(style: pegi.Styles.ListLabel).Nl();
+                "REFERENCED OBJECT".PL(style: pegi.Styles.ListLabel).NL();
 
                 TValue val = GetEntity();
 
 
                 if (val != null)
-                    pegi.Nested_Inspect_Value_OrFallback(ref val).Nl();
+                    pegi.Nested_Inspect_Value_OrFallback(ref val).NL();
                 else
-                    ("ID {0} not found in Prototypes".F(Id)).PL().Nl();
+                    ("ID {0} not found in Prototypes".F(Id)).NL();
             }
 
             public pegi.ChangesToken InspectSelectPart()

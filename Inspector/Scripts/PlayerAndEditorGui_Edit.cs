@@ -178,10 +178,10 @@ namespace QuizCanners.Inspect
             var size = val.size;
 
             if (
-                "X".PL(30).Edit_01(ref center.x).Nl() |
-                "Y".PL(30).Edit_01(ref center.y).Nl() |
-                "W".PL(30).Edit_01(ref size.x).Nl() |
-                "H".PL(30).Edit_01(ref size.y).Nl())
+                "X".PL(30).Edit_01(ref center.x).NL() |
+                "Y".PL(30).Edit_01(ref center.y).NL() |
+                "W".PL(30).Edit_01(ref size.x).NL() |
+                "H".PL(30).Edit_01(ref size.y).NL())
             {
                 var half = size * 0.5f;
                 val.min = center - half;
@@ -195,7 +195,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(this TextLabel label, ref Rect val, float min, float max)
         {
-            Write(label).Nl();
+            Write(label).NL();
             return Edit(ref val, min, max);
         }
 
@@ -208,17 +208,17 @@ namespace QuizCanners.Inspect
 
             var changes = ChangeTrackStart();
 
-            "X ({0}-{1})".F(x, x2).PL().Nl();
+            "X ({0}-{1})".F(x, x2).NL();
 
             using (Indent())
             {
-                Edit_Range(ref x, ref x2, min, max).Nl();
+                Edit_Range(ref x, ref x2, min, max).NL();
             }
 
-            "Y ({0}-{1})".F(y, y2).PL().Nl();
+            "Y ({0}-{1})".F(y, y2).NL();
             using (Indent())
             {
-                Edit_Range(ref y, ref y2, min, max).Nl();
+                Edit_Range(ref y, ref y2, min, max).NL();
             }
 
             if (changes) 
@@ -238,11 +238,11 @@ namespace QuizCanners.Inspect
 #endif
 
             var changes = ChangeTrackStart();
-            label.TryWrite().Nl();
+            label.TryWrite().NL();
             using (Indent())
             {
-                "From".ConstL().Edit(ref from, min, to).Nl();
-                "To".ConstL().Edit(ref to, from, max).Nl();
+                "From".ConstL().Edit(ref from, min, to).NL();
+                "To".ConstL().Edit(ref to, from, max).NL();
             }
             return changes;
         }
@@ -257,8 +257,8 @@ namespace QuizCanners.Inspect
             var changes = ChangeTrackStart();
             using (Indent())
             {
-                "From".ConstL().Edit(ref from, min, to).Nl();
-                "To".ConstL().Edit(ref to, from, max).Nl();
+                "From".ConstL().Edit(ref from, min, to).NL();
+                "To".ConstL().Edit(ref to, from, max).NL();
             }
             return changes;
         }
@@ -267,7 +267,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit_01(this TextLabel label, ref Vector2 val)
         {
-            Write(label).Nl();
+            Write(label).NL();
             using (Indent(2))
             {
                 return Edit_01(ref val);
@@ -276,7 +276,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit_N1_1(this TextLabel label, ref Vector2 val)
         {
-            Write(label).Nl();
+            Write(label).NL();
             using (Indent(2))
             {
                 return Edit_N1_1(ref val);
@@ -285,12 +285,12 @@ namespace QuizCanners.Inspect
 
 
         public static ChangesToken Edit_01(ref Vector2 val) =>
-            "X".PL(20).Edit_01(ref val.x).Nl() |
-            "Y".PL(20).Edit_01(ref val.y).Nl();
+            "X".PL(20).Edit_01(ref val.x).NL() |
+            "Y".PL(20).Edit_01(ref val.y).NL();
 
         public static ChangesToken Edit_N1_1(ref Vector2 val) =>
-            "X".PL(20).Edit_N1_1(ref val.x).Nl() |
-            "Y".PL(20).Edit_N1_1(ref val.y).Nl();
+            "X".PL(20).Edit_N1_1(ref val.x).NL() |
+            "Y".PL(20).Edit_N1_1(ref val.y).NL();
 
         public static ChangesToken Edit(this TextLabel label, ref Rect val)
         {
@@ -313,10 +313,10 @@ namespace QuizCanners.Inspect
             int right = val.right;
 
             if (
-                "Left".PL(70).Edit(ref left, min, max).Nl() |
-                "Right".PL(70).Edit(ref right, min, max).Nl() |
-                "Top".PL(70).Edit(ref top, min, max).Nl() |
-                "Bottom".PL(70).Edit(ref bottom, min, max).Nl())
+                "Left".PL(70).Edit(ref left, min, max).NL() |
+                "Right".PL(70).Edit(ref right, min, max).NL() |
+                "Top".PL(70).Edit(ref top, min, max).NL() |
+                "Bottom".PL(70).Edit(ref bottom, min, max).NL())
             {
                 val = new RectOffset(left: left, right: right, top: top, bottom: bottom);
 
@@ -334,10 +334,10 @@ namespace QuizCanners.Inspect
             int right = val.right;
 
             if (
-                "Left".PL(70).Edit(ref left).Nl() |
-                "Right".PL(70).Edit(ref right).Nl() |
-                "Top".PL(70).Edit(ref top).Nl() |
-                "Bottom".PL(70).Edit(ref bottom).Nl())
+                "Left".PL(70).Edit(ref left).NL() |
+                "Right".PL(70).Edit(ref right).NL() |
+                "Top".PL(70).Edit(ref top).NL() |
+                "Bottom".PL(70).Edit(ref bottom).NL())
             {
                 val = new RectOffset(left: left, right: right, top: top, bottom: bottom);
 
@@ -383,7 +383,7 @@ namespace QuizCanners.Inspect
 #endif
 
             Write(label, 0.33f);
-            Nl();
+            NL();
             return Edit(ref val);
         }
 
@@ -401,7 +401,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(this TextLabel label, ref Vector2 val, float min, float max)
         {
-            "{0} [X: {1} Y: {2}]".F(label, QcSharp.RoundTo(val.x, 2), QcSharp.RoundTo(val.y, 2)).PL().Nl();
+            "{0} [X: {1} Y: {2}]".F(label, QcSharp.RoundTo(val.x, 2), QcSharp.RoundTo(val.y, 2)).NL();
             return Edit(ref val, min, max);
         }
 
@@ -460,12 +460,12 @@ namespace QuizCanners.Inspect
             {
                 if ("Color".PL().IsFoldout())
                 {
-                    Nl();
+                    NL();
 
-                    return Icon.Red.Edit_ColorChannel(ref col, 0).Nl() |
-                           Icon.Green.Edit_ColorChannel(ref col, 1).Nl() |
-                           Icon.Blue.Edit_ColorChannel(ref col, 2).Nl() |
-                           Icon.Alpha.Edit_ColorChannel(ref col, 3).Nl();
+                    return Icon.Red.Edit_ColorChannel(ref col, 0).NL() |
+                           Icon.Green.Edit_ColorChannel(ref col, 1).NL() |
+                           Icon.Blue.Edit_ColorChannel(ref col, 2).NL() |
+                           Icon.Alpha.Edit_ColorChannel(ref col, 3).NL();
                 }
             }
 
@@ -529,12 +529,12 @@ namespace QuizCanners.Inspect
             {
                 if (label.IsFoldout())
                 {
-                    Nl();
+                    NL();
 
-                    return Icon.Red.Edit_ColorChannel(ref col, 0).Nl() |
-                           Icon.Green.Edit_ColorChannel(ref col, 1).Nl() |
-                           Icon.Blue.Edit_ColorChannel(ref col, 2).Nl() |
-                           Icon.Alpha.Edit_ColorChannel(ref col, 3).Nl();
+                    return Icon.Red.Edit_ColorChannel(ref col, 0).NL() |
+                           Icon.Green.Edit_ColorChannel(ref col, 1).NL() |
+                           Icon.Blue.Edit_ColorChannel(ref col, 2).NL() |
+                           Icon.Alpha.Edit_ColorChannel(ref col, 3).NL();
                 }
             }
 
@@ -615,7 +615,7 @@ namespace QuizCanners.Inspect
 
             } catch (System.Exception ex)
             {
-                "Can't convert {0} to Enum".F(typeof(T).Name).PL().WriteWarning().Nl();
+                "Can't convert {0} to Enum".F(typeof(T).Name).PL().WriteWarning().NL();
                 if ("Log to Console".PL().Click())
                     Debug.LogException(ex);
 
@@ -895,7 +895,7 @@ namespace QuizCanners.Inspect
 
             if (actualType != typeof(int) && actualType != typeof(byte)) 
             {
-                "Enum Flags Inspection of {0} not implemented.".F(actualType).PL().WriteWarning().Nl();
+                "Enum Flags Inspection of {0} not implemented.".F(actualType).PL().WriteWarning().NL();
                 return ChangesToken.False;
             }
 

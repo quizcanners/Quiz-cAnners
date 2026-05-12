@@ -336,7 +336,7 @@ namespace QuizCanners.Migration
 
         void IPEGI.Inspect()
         {
-            modulesMeta.Edit_List(modules).Nl();
+            modulesMeta.Edit_List(modules).NL();
 
         }
 

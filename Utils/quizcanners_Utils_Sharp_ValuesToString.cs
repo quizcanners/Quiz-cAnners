@@ -436,28 +436,38 @@ namespace QuizCanners.Utils
                   .AppendIfNonZero(value: span.Days, span.TotalDays, suffix: "d", last: true);
             } else if (span.TotalDays >= 1)
             {
-                sb.AppendIfNonZero(value: span.Days, span.TotalDays, suffix: "d", last: false)
-                  .AppendIfNonZero(value: span.Hours, span.TotalHours, suffix: "h", last: true);
+                sb.AppendIfNonZero(value: span.Days, span.TotalDays, suffix: "d", last: false);
+
+                if (span.TotalDays < 3 && span.Hours > 0)
+                    sb.AppendIfNonZero(value: span.Hours, span.TotalHours, suffix: "h", last: true);
             }
             else if (span.TotalHours >= 1)
             {
-                sb.AppendIfNonZero(value: span.Hours, span.TotalHours, suffix: "h", last: false)
-                  .AppendIfNonZero(value: span.Minutes, span.TotalMinutes, suffix: "m", last: true);
+                sb.AppendIfNonZero(value: span.Hours, span.TotalHours, suffix: "h", last: false);
+
+                if (span.TotalHours < 5 && span.Minutes > 0)
+                  sb.AppendIfNonZero(value: span.Minutes, span.TotalMinutes, suffix: "m", last: true);
             }
-            else if (((!showTicksAndMiliseconds)) || span.TotalMinutes >= 1)
+            else if (!showTicksAndMiliseconds || span.TotalMinutes >= 1)
             {
-                sb.AppendIfNonZero(value: span.Minutes, span.TotalMinutes, suffix: "m", last: false)
-                  .AppendIfNonZero(value: span.Seconds, span.TotalSeconds, suffix: "s", last: true);
+                sb.AppendIfNonZero(value: span.Minutes, span.TotalMinutes, suffix: "m", last: false);
+
+                if (span.TotalMinutes < 5 && span.Seconds > 0)
+                    sb.AppendIfNonZero(value: span.Seconds, span.TotalSeconds, suffix: "s", last: true);
             }
             else if (span.TotalSeconds >= 1)
             {
-                sb.AppendIfNonZero(value: span.Seconds, span.TotalSeconds, suffix: "s", last: false)
-                  .AppendIfNonZero(value: span.Milliseconds, span.TotalMilliseconds, suffix: "ms", last: true);
+                sb.AppendIfNonZero(value: span.Seconds, span.TotalSeconds, suffix: "s", last: false);
+
+                if (span.TotalSeconds < 5 && span.Milliseconds > 0)
+                    sb.AppendIfNonZero(value: span.Milliseconds, span.TotalMilliseconds, suffix: "ms", last: true);
             }
             else
             {
-                sb.AppendIfNonZero(value: span.Milliseconds, span.TotalMilliseconds, suffix: "ms", last: false)
-                .AppendIfNonZero(value: 0, span.Ticks, suffix: "ticks", last: true);
+                sb.AppendIfNonZero(value: span.Milliseconds, span.TotalMilliseconds, suffix: "ms", last: false);
+
+                if (span.TotalMilliseconds < 20)
+                    sb.AppendIfNonZero(value: 0, span.Ticks, suffix: "ticks", last: true);
             }
 
             return sb.ToString();

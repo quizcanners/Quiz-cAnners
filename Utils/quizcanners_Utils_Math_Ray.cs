@@ -237,5 +237,24 @@ namespace QuizCanners.Utils
 
             return azimuth;
         }
+
+        public static bool IsValid(this Quaternion q)
+        {
+            const float epsilon = 0.000001f;
+
+            float magSq = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
+            return magSq > epsilon;
+        }
+
+        public static float SoftCap(float value, float max)
+        {
+            return max * value / (max * 0.11f + value);
+        }
+
+        public static float SoftCap_01(float value, float max)
+        {
+            return value / (max * 0.11f + value);
+        }
+
     }
 }

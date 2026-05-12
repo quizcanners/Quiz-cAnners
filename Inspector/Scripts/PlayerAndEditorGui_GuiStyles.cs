@@ -79,26 +79,26 @@ namespace QuizCanners.Inspect
 
                         var al = cur.alignment;
 
-                        if ("Allignment".ConstL().Edit_Enum(ref al).Nl())
+                        if ("Allignment".ConstL().Edit_Enum(ref al).NL())
                             cur.alignment = al;
 
                         var fs = cur.fontSize;
-                        if ("Font Size".ConstL().Edit(ref fs).Nl())
+                        if ("Font Size".ConstL().Edit(ref fs).NL())
                             cur.fontSize = fs;
 
-                        if ("Padding".PL().IsFoldout().Nl())
+                        if ("Padding".PL().IsFoldout().NL())
                         {
                             RectOffset pad = cur.padding;
 
-                            if (Edit(ref pad, -15, 15).Nl())
+                            if (Edit(ref pad, -15, 15).NL())
                                 cur.padding = pad;
                         }
 
-                        if ("Margins".PL().IsFoldout().Nl())
+                        if ("Margins".PL().IsFoldout().NL())
                         {
                             RectOffset mar = cur.margin;
 
-                            if (Edit(ref mar, -15, 15).Nl())
+                            if (Edit(ref mar, -15, 15).NL())
                                 cur.margin = mar;
                         }
                     }
@@ -387,10 +387,10 @@ namespace QuizCanners.Inspect
 
             private static void InspectInteranl(string StyleName, PegiGuiStyle style)
             {
-                if (StyleName.PL().IsEntered(ref _inspectedFont, _iteratiedFont).Nl())
+                if (StyleName.PL().IsEntered(ref _inspectedFont, _iteratiedFont).NL())
                 {
-                    "Example text in {0} style ".F(StyleName).PL(style: style).Nl();
-                    style.Nested_Inspect().Nl();
+                    "Example text in {0} style ".F(StyleName).PL(style: style).NL();
+                    style.Nested_Inspect().NL();
                 }
 
                 _iteratiedFont++;

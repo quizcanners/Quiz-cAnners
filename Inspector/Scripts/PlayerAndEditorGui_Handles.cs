@@ -76,14 +76,14 @@ namespace QuizCanners.Inspect
             }
 
 
-            private static readonly Gate.SystemTime _clickGate = new(Gate.InitialValue.StartArmed); // Event comes trough twice
+            private static readonly Gate.SystemTime _clickGate = new(); // Event comes trough twice
 
             private static ChangesToken EndClickCheck()
             {
 #if UNITY_EDITOR
                 if (EditorOnly_EndChangeCheck())
                 {
-                    _clickGate.Update();
+                    _clickGate.Start();
                     return ChangesToken.True;
                 }
 #endif
@@ -113,9 +113,8 @@ namespace QuizCanners.Inspect
                 {
                     return Event.current.isMouse 
                         && Event.current.type == EventType.MouseDown
-                        //&& Event.current.clickCount == 1
                         && Event.current.button == 0
-                        && _clickGate.TryUpdateIfTimePassed(secondsPassed: 0.01f);
+                        && _clickGate.TryConsume_IfElapsedOrFirst(secondsPassed: 0.01f);
                 }
 #endif
 

@@ -127,7 +127,7 @@ namespace QuizCanners.Inspect
             inspectedTarget = null;
             inspectedUnityObject = null;
             nextBgStyle.Clear();
-            Nl();
+            NL();
         }
 
 
@@ -532,7 +532,7 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static void Nl()
+        public static void NL()
         {
             switch (currentMode) 
             {
@@ -559,27 +559,27 @@ namespace QuizCanners.Inspect
             }
         }
 
-        public static void Nl_ifEntered()
+        public static void NL_ifEntered()
         {
             if (FoldoutManager.isFoldedOutOrEntered)
-                Nl();
+                NL();
         }
 
-        public static void Nl_ifNotEntered()
+        public static void NL_ifNotEntered()
         {
             if (FoldoutManager.isFoldedOutOrEntered == false)
-                Nl();
+                NL();
         }
 
-        public static StateToken Nl_ifNotEntered(this StateToken value)
+        public static StateToken NL_ifNotEntered(this StateToken value)
         {
-            Nl_ifNotEntered();
+            NL_ifNotEntered();
             return value;
         }
 
-        public static StateToken Nl_ifEntered(this StateToken value)
+        public static StateToken NL_ifEntered(this StateToken value)
         {
-            Nl_ifEntered();
+            NL_ifEntered();
             return value;
         }
 
@@ -591,48 +591,102 @@ namespace QuizCanners.Inspect
             return value;
         }
 
-        public static StateToken Nl(this StateToken value)
+        public static StateToken NL(this StateToken value)
         {
-            Nl();
+            NL();
             return value;
         }
 
-        public static ChangesToken Nl(this ChangesToken value)
+        public static ChangesToken NL(this ChangesToken value)
         {
-            Nl();
+            NL();
             return value;
         }
 
-        public static ChangesToken Nl(this ChangesToken value, Action onChanged)
+        public static ChangesToken OnChanged(this ChangesToken value, QcNet.TimeStamp timeStamp)
+        {
+            if (value)
+                timeStamp.SetTimestampNow();
+
+            return value;
+        }
+
+        public static ChangesToken NL(this ChangesToken value, QcNet.TimeStamp timeStamp)
+        {
+            if (value)
+                timeStamp.SetTimestampNow();
+
+            NL();
+            return value;
+        }
+
+        public static ChangesToken NL(this ChangesToken value, Action onChanged)
         {
             if (value)
                 onChanged?.Invoke();
 
-            Nl();
+            NL();
             return value;
         }
 
-        public static void Nl(this TextLabel value)
+        public static void NL(this string value)
+        {
+            TextLabel.Write(value, value);
+            //Write(value.PL());
+            NL();
+        }
+
+        public static void NL(this TextLabel value)
         {
             Write(value);
-            Nl();
+            NL();
         }
 
-        public static void Nl(this TextToken value) => Nl();
+        public static void NL(this TextToken value) => NL();
         
-        public static void Nl(this Icon icon, int size = DEFAULT_BUTTON_SIZE)
+        public static void NL(this Icon icon, int size = DEFAULT_BUTTON_SIZE)
         {
             icon.Draw(size);
-            Nl();
+            NL();
         }
 
-        public static void Nl(this Icon icon, string hint, int size = DEFAULT_BUTTON_SIZE)
+        public static void NL(this Icon icon, string hint, int size = DEFAULT_BUTTON_SIZE)
         {
             icon.Draw(hint, size);
-            Nl();
+            NL();
         }
 
-#endregion
+        public static void F_NL(this string value, string obj)
+        {
+            value = value.F(obj);
+            TextLabel.Write(value, value);
+            //Write(value.PL());
+            NL();
+        }
+
+        public static void F_NL(this string value, object obj)
+        {
+            value = value.F(obj);
+            TextLabel.Write(value, value);
+            //Write(value.PL());
+            NL();
+        }
+
+        public static void F_NL(this string value, string obj, string obj2)
+        {
+            value = value.F(obj, obj2);
+            TextLabel.Write(value, value);
+            NL();
+        }
+
+        public static void F_NL(this string value, params object[] objs)
+        {
+            value = value.F(objs);
+            TextLabel.Write(value, value);
+            NL();
+        }
+
+        #endregion
 
     }
 }

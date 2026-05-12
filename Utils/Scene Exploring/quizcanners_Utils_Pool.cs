@@ -6,11 +6,11 @@ namespace QuizCanners.Utils
     public static partial class Pool
     {
         private static readonly System.Diagnostics.Stopwatch timer = new();
-        private static readonly Gate.Frame _timerResetFrame = new(Gate.InitialValue.StartArmed);
+        private static readonly Gate.Frame _timerResetFrame = new();
 
         public static double GetFrameMiliseconds()
         {
-            if (_timerResetFrame.TryEnter())
+            if (_timerResetFrame.TryConsume())
             {
                 timer.Restart();
                 return 0.0001;

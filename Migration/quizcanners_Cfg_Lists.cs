@@ -142,7 +142,7 @@ namespace QuizCanners.Migration
 
             if (configs)
             {
-                configs.Nested_Inspect().Nl();
+                configs.Nested_Inspect().NL();
             }
             else
             {
@@ -151,7 +151,7 @@ namespace QuizCanners.Migration
                 if (Icon.Create.Click("Create new Config"))
                     configs = QcUnity.CreateScriptableObjectAsset<T>("ScriptableObjects/Configs", "Config");
 
-                pegi.Nl();
+                pegi.NL();
             }
 
             return changed;

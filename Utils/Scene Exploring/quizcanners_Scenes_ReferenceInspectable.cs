@@ -18,7 +18,7 @@ namespace QuizCanners.Utils
             public SerializableSceneReference SceneReference = new();
             public AsyncOperation LoadOperation;
 
-            private readonly Gate.Frame _onLoadedInitializationOneFrameDelay = new(Gate.InitialValue.StartArmed);
+            private readonly Gate.Frame _onLoadedInitializationOneFrameDelay = new();
             private int _framesSinceLoaded;
 
             public bool LoadingFailed { get; private set; }
@@ -44,7 +44,7 @@ namespace QuizCanners.Utils
 
                     var result = IsLoaded; //(LoadOperation != null && !LoadOperation.isDone) || IsLoaded;
 
-                    if (IsLoaded && _onLoadedInitializationOneFrameDelay.TryEnter())
+                    if (IsLoaded && _onLoadedInitializationOneFrameDelay.TryConsume())
                         _framesSinceLoaded++;
 
                     return result;
@@ -71,7 +71,7 @@ namespace QuizCanners.Utils
                     if (!scene.IsValid())
                         return false;
 
-                    if (IsLoaded && _onLoadedInitializationOneFrameDelay.TryEnter())
+                    if (IsLoaded && _onLoadedInitializationOneFrameDelay.TryConsume())
                         _framesSinceLoaded++;
 
                     return _framesSinceLoaded >= 3;

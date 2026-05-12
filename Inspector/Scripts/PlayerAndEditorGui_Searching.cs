@@ -348,11 +348,11 @@ namespace QuizCanners.Inspect
 
                 if (ReferenceEquals(list, FilteredList))
                 {
-                    Nl();
+                    NL();
                     Icon.Search.Draw();
                     NameNextForFocus(SEARCH_FIELD_FOCUS_NAME);
 
-                    if (Edit(ref SearchedText) | Icon.Refresh.Click("Search again", 20).Nl())
+                    if (Edit(ref SearchedText) | Icon.Refresh.Click("Search again", 20).NL())
                     {
                         UnityFocusNameWillWork = true;
                         Refresh();

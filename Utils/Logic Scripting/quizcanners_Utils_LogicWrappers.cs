@@ -68,8 +68,8 @@ namespace QuizCanners.Utils
             {
                 var changes = pegi.ChangeTrackStart();
 
-                "Disable at".ConstL().Edit(ref _disableAt).Nl();
-                "Enable at".ConstL().Edit(ref _enableAt).Nl();
+                "Disable at".ConstL().Edit(ref _disableAt).NL();
+                "Enable at".ConstL().Edit(ref _enableAt).NL();
 
                 if (changes)
                     disableWhenBigger = _disableAt > _enableAt;
@@ -84,7 +84,7 @@ namespace QuizCanners.Utils
                     Debug.Log("Changed");
                 }*/
 
-                (_enableGate.CurrentValue ? Icon.Active : Icon.InActive).Draw().Nl();
+                (_enableGate.CurrentValue ? Icon.Active : Icon.InActive).Draw().NL();
 
             }
 
@@ -103,6 +103,7 @@ namespace QuizCanners.Utils
         public class Request
         {
             private bool _requestCreated;
+            private bool _requestActualized;
 
             public void CreateRequest() => _requestCreated = true;
             public bool IsRequested => _requestCreated;
@@ -112,8 +113,10 @@ namespace QuizCanners.Utils
                 var result = _requestCreated;
                 _requestCreated = false;
 
-              //  if (result)
-                  //  Debug.Log("Request was used by {0}".F(debugReason));
+               // if (result && Application.isEditor)
+                 //  Debug.Log("Request was used by {0}".F(debugReason));
+
+                _requestActualized = false;
 
                 return result;
             }
@@ -124,7 +127,18 @@ namespace QuizCanners.Utils
                     return false;
 
                 _requestCreated = false;
+                _requestActualized = false;
                 return true;
+            }
+
+            public void ClearOrActualizeActualize() 
+            {
+                if (_requestActualized)
+                {
+                    _requestActualized = false;
+                    _requestCreated = false;
+                }  else if (_requestCreated)
+                        _requestActualized = true;
             }
 
             public void Feed(bool createRequest) 
@@ -213,13 +227,13 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                if (!Application.isPlaying && "Max Count".ConstL().Edit_Delayed(ref _maxCount).Nl())
+                if (!Application.isPlaying && "Max Count".ConstL().Edit_Delayed(ref _maxCount).NL())
                     _maxCount = Math.Max(1, _maxCount);
 
                 if (IsFinished)
-                    "Finished".ConstL().Nl();
+                    "Finished".ConstL().NL();
                 else
-                    "{0}% ({1}/{2})".F(_count*100 / _maxCount, _count, _maxCount).PL().Nl();
+                    "{0}% ({1}/{2})".F(_count*100 / _maxCount, _count, _maxCount).NL();
             }
 
             public CountUpToMax(int maxCount) 
@@ -258,10 +272,10 @@ namespace QuizCanners.Utils
 
             void IPEGI.Inspect()
             {
-                if (!Application.isPlaying && "Count".ConstL().Edit_Delayed(ref _maxCount).Nl())
+                if (!Application.isPlaying && "Count".ConstL().Edit_Delayed(ref _maxCount).NL())
                     _maxCount = Math.Max(1, _maxCount);
 
-                ToString().PL().Nl();
+                ToString().NL();
             }
 
             public override string ToString()
@@ -470,7 +484,7 @@ namespace QuizCanners.Utils
                 }
                 else
                 {
-                    Status.PL().Nl();
+                    Status.NL();
                 }
             }
 

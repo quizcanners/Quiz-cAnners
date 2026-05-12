@@ -36,10 +36,10 @@ namespace QuizCanners.Utils
 
             internal string Extension => Secret == null ? TEXT_FILE_TYPE : Secret.FileExtension; // AsBytes ? BYTES_FILE_TYPE : TEXT_FILE_TYPE;
 
-            public bool SaveGame(object saveData) => Save.ToPersistentPath.JsonTry(saveData, this);
-            public bool LoadGame<T>(out T saveData)=> Load.FromPersistentPath.JsonTry(this, out saveData);
+            public bool SaveData(object saveData) => Save.ToPersistentPath.JsonTry(saveData, this);
+            public bool LoadSave<T>(out T saveData)=> Load.FromPersistentPath.JsonTry(this, out saveData);
 
-            public bool DeleteGame() => Delete.InPersistentFolder.FileTry(this);
+            public bool DeleteSave() => Delete.InPersistentFolder.FileTry(this);
 
             public void Inspect()
             {

@@ -10,10 +10,10 @@ namespace QuizCanners.Utils
         public static class MaxCount
         {
             private static float _byFramerateModifier = 1;
-            private static readonly Gate.Frame _byFrameRecalculateGate = new(Gate.InitialValue.StartArmed);
+            private static readonly Gate.Frame _byFrameRecalculateGate = new();
             public static float GetCoefficientFromFramerate()
             {
-                if (_byFrameRecalculateGate.TryEnter())
+                if (_byFrameRecalculateGate.TryConsume())
                 {
                     float quality = QcDebug.FrameRate.FrameRatePerSecond / (Application.targetFrameRate > 10 ? Application.targetFrameRate : 60);
                     _byFramerateModifier = Mathf.Lerp(1, quality, 0.75f);
@@ -157,7 +157,7 @@ namespace QuizCanners.Utils
 
             public virtual void Inspect()
             {
-                "Active {0}".F(ToString()).PL().Edit_List(instances).Nl();
+                "Active {0}".F(ToString()).PL().Edit_List(instances).NL();
 
                 if (Application.isPlaying)
                 {
@@ -165,7 +165,7 @@ namespace QuizCanners.Utils
                     {
                         "Capacity: {0}".F(TotalCount).PL().Write();
                         Icon.Delete.Click().OnChanged(ClearAll);
-                        pegi.Nl();
+                        pegi.NL();
                     }
                 }
             }
@@ -345,8 +345,8 @@ namespace QuizCanners.Utils
 
                 if (!Application.isPlaying)
                 {
-                    "Parent".ConstL().Edit(ref parent).Nl();
-                    "Prefab".ConstL().Edit(ref prefab).Nl();
+                    "Parent".ConstL().Edit(ref parent).NL();
+                    "Prefab".ConstL().Edit(ref prefab).NL();
                 }
             }
 

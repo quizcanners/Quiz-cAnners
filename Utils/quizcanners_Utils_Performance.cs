@@ -1,5 +1,4 @@
 using QuizCanners.Inspect;
-using System;
 using UnityEngine;
 
 namespace QuizCanners.Utils
@@ -11,7 +10,7 @@ namespace QuizCanners.Utils
         private static float longestWaitLastFrame = 0;
         private static float longestWaitThisFrame = 0;
         internal static bool _permissionGrantedThisFrame;
-        private static readonly Gate.Frame _newFrameGate = new(Gate.InitialValue.StartArmed);
+        private static readonly Gate.Frame _newFrameGate = new();
 
         public static bool TryGetMyTurn(Gate.TimeGeneric<float> ticket, float minDelay = 0.01f) 
         {
@@ -20,15 +19,15 @@ namespace QuizCanners.Utils
 
             //float delta = (float)ticket.GetDeltaWithoutUpdate();
 
-           if (!ticket.WillAllowIfTimePassed(minDelay)) //delta < minDelay)
+           if (!ticket.TryConsume_IfElapsedOrFirst(minDelay)) //delta < minDelay)
                 return false;
 
-            if (_newFrameGate.TryEnter()) 
+            if (_newFrameGate.TryConsume()) 
                 ResetFrame();
             
             if (!_permissionGrantedThisFrame) 
             {
-                if (ticket.TryUpdateIfTimePassed(longestWaitLastFrame))
+                if (ticket.TryConsume_IfElapsedOrFirst(longestWaitLastFrame))
                 {
                     _permissionGrantedThisFrame = true;
                     if (Application.isEditor && longestWaitLastFrame > 2) 
@@ -37,13 +36,13 @@ namespace QuizCanners.Utils
                     }
                     return true;
                 }
-            } else if (ticket.TryUpdateIfTimePassed(longestWaitLastFrame * 3))
+            } else if (ticket.TryConsume_IfElapsedOrFirst(longestWaitLastFrame * 3))
             {
                // Debug.Log("Irregular token");
                 return true;
             }
 
-            float delay = (float)ticket.GetSecondsWithoutUpdate();
+            float delay = (float)ticket.Peek_OrFirstStart();
 
             longestWaitThisFrame = Mathf.Max(longestWaitThisFrame, delay);
 
@@ -60,7 +59,7 @@ namespace QuizCanners.Utils
 
         public class CollectionIndexToken 
         {
-            private readonly Gate.Frame _frameGate = new(Gate.InitialValue.StartArmed);
+            private readonly Gate.Frame _frameGate = new();
             int max_Index;
             int max_Count_Previous;
             int next_Index;
@@ -69,7 +68,7 @@ namespace QuizCanners.Utils
 
             public bool TryGetMyTurn(int index, Gate.TimeBase sinceLastLoopGate, float delay)
             {
-                if (index < max_Index && _frameGate.TryEnter())    
+                if (index < max_Index && _frameGate.TryConsume())    
                     OnNextLoop();
 
                 max_Index = Mathf.Max(max_Index, index);
@@ -89,7 +88,7 @@ namespace QuizCanners.Utils
 
                         void TryRestartLoop()
                         {
-                            loopInProgress = sinceLastLoopGate.TryUpdateIfTimePassed(delay);
+                            loopInProgress = sinceLastLoopGate.TryConsume_IfElapsedOrFirst(delay);
                             if (loopInProgress)
                                 next_Index = 0;
                         }
@@ -98,13 +97,13 @@ namespace QuizCanners.Utils
                     }
                   
                     loopInProgress = true;
-                    sinceLastLoopGate.Update();
+                    sinceLastLoopGate.Start();
                 }
             }
 
             public bool TryGetMyTurn(int index) 
             {
-                if (index < max_Index && _frameGate.TryEnter())
+                if (index < max_Index && _frameGate.TryConsume())
                     OnNextFrame();
 
                 max_Index = Mathf.Max(max_Index, index);
@@ -195,17 +194,17 @@ namespace QuizCanners.Utils
                 return true;
             }
 
-            public Token(float delay, Gate.InitialValue initialValue) 
+            public Token(float delay) 
             {
                 _delay = delay;
-                _checkVisibilityDelta = new(initialValue);
+                _checkVisibilityDelta = new();
             }
 
-            public Token(string name, float delay, Gate.InitialValue initialValue)
+            public Token(string name, float delay)
             {
                 _name = name;
                 _delay = delay;
-                _checkVisibilityDelta = new(initialValue);
+                _checkVisibilityDelta = new();
                 _gotName = true;
             }
 
@@ -213,7 +212,7 @@ namespace QuizCanners.Utils
 
             public static void InspectTokenStack() 
             {
-                "Requests".PL().Edit_Dictionary(_requests).Nl();
+                "Requests".PL().Edit_Dictionary(_requests).NL();
             }
 
          

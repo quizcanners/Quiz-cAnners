@@ -11,10 +11,10 @@ namespace QuizCanners.Inspect
     {
         static PlayerAndEditorGui_HierarchyWarnings()
         {
-            EditorApplication.hierarchyWindowItemOnGUI += HierarchyItemCB;
+            EditorApplication.hierarchyWindowItemByEntityIdOnGUI += HierarchyItemCB;
         }
 
-        static void HierarchyItemCB(int instanceID, Rect selectionRect)
+        static void HierarchyItemCB(EntityId instanceID, Rect selectionRect)
         {
             var inst = EditorUtility.EntityIdToObject(instanceID); //InstanceIDToObject(instanceID);
 

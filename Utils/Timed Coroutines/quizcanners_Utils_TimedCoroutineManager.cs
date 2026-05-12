@@ -64,35 +64,35 @@ namespace QuizCanners.Utils
             private Task _debugTask;
             void IPEGI.Inspect()
             {
-                pegi.Nl();
+                pegi.NL();
 
                 if (!coroutinesListMeta.IsAnyEntered)
                 {
-                    "Pool Size: {0}".F(pool.Count).PL().Nl();
+                    "Pool Size: {0}".F(pool.Count).NL();
 
-                    if ("Run an Example Managed Coroutine".PL().Click().Nl())
+                    if ("Run an Example Managed Coroutine".PL().Click().NL())
                         DefaultCoroutineManager.Add(Coroutine_Test());
 
                     if (_debugTask != null)
                     {
-                        "Task status:{0}".F(_debugTask.Status).PL().Nl();
+                        "Task status:{0}".F(_debugTask.Status).NL();
 
                         _debugTask.Exception?.ToString().PL().WriteBig();
 
                         if ("Clear".PL().Click())
                             _debugTask = null;
                     }
-                    else if ("Run an Example Task".PL().Click().Nl())
+                    else if ("Run an Example Task".PL().Click().NL())
                     {
                         var tmp = new TimedCoroutine(Coroutine_Test());
                         _debugTask = tmp.StartTask();
                     }
                 }
 
-                if ("Yield 1 frame".PL().Click().Nl())
+                if ("Yield 1 frame".PL().Click().NL())
                     UpdateManagedCoroutines();
 
-                coroutinesListMeta.Edit_List(_enumerators).Nl();
+                coroutinesListMeta.Edit_List(_enumerators).NL();
 
                 if (!coroutinesListMeta.IsAnyEntered)
                 {
