@@ -468,10 +468,12 @@ namespace QuizCanners.Utils
             }
 
             [Serializable]
+#pragma warning disable CS0649
             private class TimeApiResponse
             {
                 public long unixtime;
             }
+#pragma warning restore CS0649
         }
     }
 }

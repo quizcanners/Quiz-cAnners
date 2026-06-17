@@ -678,6 +678,7 @@ namespace QuizCanners.Migration
         protected override void OnExtracted() { }
     }
 
+    [Serializable]
     public abstract class CSVBase : IEnumerable<CSVBase.Row>, IPEGI
     {
         [NonSerialized] internal List<string> Columns;

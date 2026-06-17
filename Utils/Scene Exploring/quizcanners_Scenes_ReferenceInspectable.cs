@@ -16,6 +16,7 @@ namespace QuizCanners.Utils
         public class ReferenceInspectable : IPEGI_ListInspect, Singleton.ILoadingProgressForInspector, INeedAttention
         {
             public SerializableSceneReference SceneReference = new();
+            [NonSerialized]
             public AsyncOperation LoadOperation;
 
             private readonly Gate.Frame _onLoadedInitializationOneFrameDelay = new();

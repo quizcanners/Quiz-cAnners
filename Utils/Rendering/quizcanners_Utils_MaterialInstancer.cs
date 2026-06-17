@@ -8,6 +8,7 @@ namespace QuizCanners.Utils
 {
     public static class MaterialInstancer
     {
+        [Serializable]
         public abstract class Base 
         {
             public abstract Material GetInstance();

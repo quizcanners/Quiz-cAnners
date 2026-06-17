@@ -26,11 +26,13 @@ namespace QuizCanners.Utils
             return false;
         }
 
+        [Serializable]
         public abstract class Base
         {
             public abstract bool Equals(Base other);
         }
 
+        [Serializable]
         public abstract class StringBase : Base
         {
             [SerializeField] protected string _id;
@@ -271,6 +273,7 @@ namespace QuizCanners.Utils
         }
         */
 
+        [Serializable]
         public abstract class StringGeneric<TValue> : StringBase, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable where TValue : IGotStringId
         {
 
@@ -472,6 +475,7 @@ namespace QuizCanners.Utils
             }
         }
 
+        [Serializable]
         public abstract class StringGeneric_Cached<TValue> : StringGeneric<TValue> where TValue : IGotStringId
         {
             private bool cached;
@@ -524,6 +528,7 @@ namespace QuizCanners.Utils
 
         public static bool IsValid<T>(this StringGeneric<T> id) where T:IGotStringId => id != null && !id.Id.IsNullOrEmpty();
 
+        [Serializable]
         public abstract class IntGeneric_List<TValue> : Base, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable
         {
             public int Id = -1;
@@ -674,6 +679,7 @@ namespace QuizCanners.Utils
             #endregion
         }
 
+        [Serializable]
         public abstract class IntGeneric_Dictionary<TValue> : Base, IPEGI_ListInspect, ICfg, IPEGI, INeedAttention, ISearchable where TValue : IGotIndex
         {
             public int Id = -1;
