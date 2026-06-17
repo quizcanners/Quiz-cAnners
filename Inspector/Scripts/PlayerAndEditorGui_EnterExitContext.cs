@@ -109,7 +109,7 @@ namespace QuizCanners.Inspect
 
                 if (s_contexts.Count > 1) 
                 {
-                    _indent = pegi.Indent(width: 5);
+                    _indent = pegi.Indent(width: pegi.currentMode == PegiPaintingMode.GameViewGUI ? 5 : 1);
                 }
 
                 return QcSharp.DisposableAction(() =>

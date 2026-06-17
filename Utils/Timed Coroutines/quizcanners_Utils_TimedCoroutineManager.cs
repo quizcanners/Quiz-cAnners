@@ -6,7 +6,6 @@ using QuizCanners.Inspect;
 using UnityEngine;
 
 using Debug = UnityEngine.Debug;
-using Enm = System.Linq.Enumerable;
 
 namespace QuizCanners.Utils
 {
@@ -45,7 +44,7 @@ namespace QuizCanners.Utils
 
             public TimedCoroutine Add(IEnumerator enumerator, Action onExit = null, Action onFullyDone = null)
             {
-                var enm = (pool.Count > 0) ? pool.TryTake(0) : new TimedCoroutine();
+                var enm = (pool.Count > 0) ? pool.TryTakeLast() : new TimedCoroutine();
                 enm.Reset(enumerator, onExitAction: onExit, onDoneFullyAction: onFullyDone);
                 _enumerators.Insert(0, enm);
                 return enm;
@@ -169,7 +168,12 @@ namespace QuizCanners.Utils
                 sb.Append(p.ToString());
             }
 
-            return new string(Enm.ToArray(Enm.Reverse(sb.ToString())));
+            var chars = new char[sb.Length];
+
+            for (int i = 0, j = sb.Length - 1; i < chars.Length; i++, j--)
+                chars[i] = sb[j];
+
+            return new string(chars);
 
         }
 

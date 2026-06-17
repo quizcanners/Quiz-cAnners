@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -21,6 +20,11 @@ namespace QuizCanners.Utils
 
     public static partial class QcSharp
     {
+        private static readonly Dictionary<Type, string> s_typeDisplayNameCache = new();
+        private static readonly Dictionary<string, string> s_addSpacesToSentenceCache = new();
+        private static readonly Dictionary<string, string> s_addSpacesToSentencePreserveCache = new();
+        private static readonly Dictionary<string, string> s_addSpacesInsteadOfCapitalsCache = new();
+        private static readonly Dictionary<string, string> s_addSpacesInsteadOfCapitalsKeepCache = new();
 
 
         #region Html Tags (For Text Mesh Pro)
@@ -263,9 +267,49 @@ namespace QuizCanners.Utils
         }
 
         public static List<T> SelectByNames<T>(this IEnumerable<T> collection, List<string> names) where T : class, IGotStringId
-            => collection.Join(names, el => el.StringId, id => id, (e, i) => e).ToList();
+        {
+            var namesByCount = new Dictionary<string, int>(names.Count);
 
-        public static T GetElementAt<T>(this IEnumerable<T> source, int index) => source.ElementAt(index);
+            foreach (var id in names)
+            {
+                namesByCount.TryGetValue(id, out var count);
+                namesByCount[id] = count + 1;
+            }
+
+            var result = new List<T>(names.Count);
+
+            foreach (var el in collection)
+            {
+                if (!namesByCount.TryGetValue(el.StringId, out var count))
+                    continue;
+
+                for (int i = 0; i < count; i++)
+                    result.Add(el);
+            }
+
+            return result;
+        }
+
+        public static T GetElementAt<T>(this IEnumerable<T> source, int index)
+        {
+            if (source is IList<T> list)
+                return list[index];
+
+            if (source is IReadOnlyList<T> readOnlyList)
+                return readOnlyList[index];
+
+            using var enumerator = source.GetEnumerator();
+
+            while (enumerator.MoveNext())
+            {
+                if (index == 0)
+                    return enumerator.Current;
+
+                index--;
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
 
 
         public static T GetRandom<T>(this T[] arr, ref int previous)
@@ -321,9 +365,22 @@ namespace QuizCanners.Utils
                 return default;
 
             if (dic.Count == 1)
-                return dic.GetElementAt(0).Value;
+            {
+                foreach (var pair in dic)
+                    return pair.Value;
+            }
 
-            return dic.GetElementAt(Random.Range(0, dic.Count)).Value;
+            var index = Random.Range(0, dic.Count);
+
+            foreach (var pair in dic)
+            {
+                if (index == 0)
+                    return pair.Value;
+
+                index--;
+            }
+
+            return default;
         }
 
         public static bool ToggleContains<T>(this List<T> list, T value)
@@ -746,11 +803,71 @@ namespace QuizCanners.Utils
 
         public const string NonBreakableString = "\u00A0";
 
+        private static string FormatFast(string format, string obj)
+        {
+            obj = obj ?? string.Empty;
+
+            return format == "{0}" ? obj : string.Format(format, obj);
+        }
+
+        private static string FormatFast(string format, string obj1, string obj2)
+        {
+            obj1 = obj1 ?? string.Empty;
+            obj2 = obj2 ?? string.Empty;
+
+            switch (format)
+            {
+                case "{0}":
+                    return obj1;
+                case "{0}{1}":
+                    return obj1 + obj2;
+                case "{0} {1}":
+                    return obj1 + " " + obj2;
+                case "{0}: {1}":
+                    return obj1 + ": " + obj2;
+                case "{0} ({1})":
+                    return obj1 + " (" + obj2 + ")";
+                case "{0}/{1}":
+                    return obj1 + "/" + obj2;
+                case "{0}_{1}":
+                    return obj1 + "_" + obj2;
+                case "{0}x{1}":
+                    return obj1 + "x" + obj2;
+                case "{0} - {1}":
+                    return obj1 + " - " + obj2;
+                case "{0}, {1}":
+                    return obj1 + ", " + obj2;
+                default:
+                    return string.Format(format, obj1, obj2);
+            }
+        }
+
+        private static string FormatFast(string format, string obj1, string obj2, string obj3)
+        {
+            obj1 = obj1 ?? string.Empty;
+            obj2 = obj2 ?? string.Empty;
+            obj3 = obj3 ?? string.Empty;
+
+            switch (format)
+            {
+                case "{0}{1}{2}":
+                    return obj1 + obj2 + obj3;
+                case "{0} {1} {2}":
+                    return obj1 + " " + obj2 + " " + obj3;
+                case "{0}: {1} {2}":
+                    return obj1 + ": " + obj2 + " " + obj3;
+                case "{0}, {1}, {2}":
+                    return obj1 + ", " + obj2 + ", " + obj3;
+                default:
+                    return string.Format(format, obj1, obj2, obj3);
+            }
+        }
+
         public static string F(this string format, Type type)
         {
             try
             {
-                return string.Format(format, type.ToPegiStringType());
+                return FormatFast(format, type.ToPegiStringType());
             }
             catch
             {
@@ -789,7 +906,7 @@ namespace QuizCanners.Utils
         {
             try
             {
-                return string.Format(format, obj);
+                return FormatFast(format, obj);
             }
             catch
             {
@@ -806,7 +923,7 @@ namespace QuizCanners.Utils
         {
             try
             {
-                return string.Format(format, obj1.GetNameForInspector());
+                return FormatFast(format, obj1.GetNameForInspector());
             }
             catch
             {
@@ -823,7 +940,7 @@ namespace QuizCanners.Utils
         {
             try
             {
-                return string.Format(format, obj1, obj2);
+                return FormatFast(format, obj1, obj2);
             }
             catch
             {
@@ -840,7 +957,7 @@ namespace QuizCanners.Utils
         {
             try
             {
-                return string.Format(format, obj1.GetNameForInspector(), obj2.GetNameForInspector());
+                return FormatFast(format, obj1.GetNameForInspector(), obj2.GetNameForInspector());
             }
             catch
             {
@@ -857,7 +974,7 @@ namespace QuizCanners.Utils
         {
             try
             {
-                return string.Format(format, obj1, obj2, obj3);
+                return FormatFast(format, obj1, obj2, obj3);
             }
             catch
             {
@@ -874,7 +991,7 @@ namespace QuizCanners.Utils
         {
             try
             {
-                return string.Format(format, obj1.GetNameForInspector(), obj2.GetNameForInspector(), obj3.GetNameForInspector());
+                return FormatFast(format, obj1.GetNameForInspector(), obj2.GetNameForInspector(), obj3.GetNameForInspector());
             }
             catch
             {
@@ -915,6 +1032,15 @@ namespace QuizCanners.Utils
         {
             try
             {
+                if (objs.Length == 1)
+                    return FormatFast(format, objs[0]);
+
+                if (objs.Length == 2)
+                    return FormatFast(format, objs[0], objs[1]);
+
+                if (objs.Length == 3)
+                    return FormatFast(format, objs[0], objs[1], objs[2]);
+
                 return string.Format(format, objs);
             }
             catch
@@ -1040,6 +1166,11 @@ namespace QuizCanners.Utils
         {
             if (string.IsNullOrWhiteSpace(text))
                 return string.Empty;
+
+            var cache = preserveAcronyms ? s_addSpacesToSentencePreserveCache : s_addSpacesToSentenceCache;
+            if (cache.TryGetValue(text, out string cached))
+                return cached;
+
             StringBuilder newText = new(text.Length * 2);
 
             var frst = text[0];
@@ -1052,27 +1183,14 @@ namespace QuizCanners.Utils
             for (int i = 1; i < text.Length; i++)
             {
                 char currentCharacter = text[i];
-               
-                bool TryGetNext(out char symbol) 
-                {
-                    if (i >= text.Length-1) 
-                    {
-                        symbol = ' ';
-                        return false;
-                    }
-
-                    symbol = text[i+1];
-                    return true;
-                }
-
-                bool ShouldPreserve(char symbol) => char.IsUpper(symbol) || char.IsNumber(symbol);
 
                 if (char.IsUpper(currentCharacter))
                 {
-                    bool preserveWithPrevious = ShouldPreserve(previousCharacter);
+                    bool preserveWithPrevious = char.IsUpper(previousCharacter) || char.IsNumber(previousCharacter);
+                    bool preserveWithNext = i < text.Length - 1 && (char.IsUpper(text[i + 1]) || char.IsNumber(text[i + 1]));
 
                     if (preserveAcronyms 
-                        && (preserveWithPrevious || (TryGetNext(out var nextCharacter) && ShouldPreserve(nextCharacter))))
+                        && (preserveWithPrevious || preserveWithNext))
                     {
                         if (!preserveWithPrevious)
                             newText.Append(' ');
@@ -1106,13 +1224,21 @@ namespace QuizCanners.Utils
 
                 newText.Append(currentCharacter);
             }
-            return newText.ToString();
+
+            string result = newText.ToString();
+            cache[text] = result;
+            return result;
         }
 
         public static string AddSpacesInsteadOfCapitals(string text, bool keepCatipals = false)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return "";
+
+            var cache = keepCatipals ? s_addSpacesInsteadOfCapitalsKeepCache : s_addSpacesInsteadOfCapitalsCache;
+            if (cache.TryGetValue(text, out string cached))
+                return cached;
+
             StringBuilder newText = new(text.Length * 2);
             newText.Append(text[0]);
 
@@ -1140,32 +1266,68 @@ namespace QuizCanners.Utils
                 }
             }
 
-            return newText.ToString();
+            string result = newText.ToString();
+            cache[text] = result;
+            return result;
         }
 
-        public static string FirstLine(this string str) => new StringReader(str).ReadLine();
+        public static string FirstLine(this string str)
+        {
+            var index = str.IndexOf('\n');
+
+            if (index < 0)
+                return str;
+
+            if (index > 0 && str[index - 1] == '\r')
+                index--;
+
+            return str[..index];
+        }
 
         public static string ToPegiStringType(this Type type)
         {
             if (type == null)
                 return "NULL Type";
 
+            if (s_typeDisplayNameCache.TryGetValue(type, out var cachedName))
+                return cachedName;
+
+            string typeName;
+
             if (type.IsGenericType)
             {
-                var ind = type.Name.IndexOf("`");
+                var ind = type.Name.IndexOf('`');
 
                 if (ind <= 0)
-                    return type.Name;
+                    typeName = type.Name;
+                else
+                {
+                    var genericArguments = type.GetGenericArguments();
+                    var sb = new StringBuilder(type.Name.Length + genericArguments.Length * 16);
 
+                    sb.Append(type.Name, 0, ind);
+                    sb.Append('<');
 
-                string genericArguments = type.GetGenericArguments()
-                                    .Select(x => x.Name)
-                                    .Aggregate((x1, x2) => $"{x1}, {x2}");
-                return $"{type.Name[..ind]}"
-                     + $"<{genericArguments}>";
+                    for (int i = 0; i < genericArguments.Length; i++)
+                    {
+                        if (i > 0)
+                            sb.Append(", ");
+
+                        sb.Append(genericArguments[i].Name);
+                    }
+
+                    sb.Append('>');
+                    typeName = sb.ToString();
+                }
+            }
+            else
+            {
+                typeName = type.Name;
             }
 
-            return type.Name;
+            s_typeDisplayNameCache[type] = typeName;
+
+            return typeName;
         }
         public static string SimplifyTypeName(this string name)
         {
@@ -1232,6 +1394,11 @@ namespace QuizCanners.Utils
         {
             try
             {
+                if ((opt == RegexOptions.IgnoreCase || opt == RegexOptions.None) && !HasRegexSpecialCharacters(text))
+                {
+                    return biggerText.IndexOf(text, opt == RegexOptions.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) >= 0;
+                }
+
                 if (Regex.IsMatch(biggerText, text, opt))
                 {
                     return true;
@@ -1240,6 +1407,33 @@ namespace QuizCanners.Utils
             catch (Exception ex)
             {
                 QcLog.ChillLogger.LogErrorOnce(() => "Is Substring of({0} -> {1}) Error {2}".F(text, biggerText, ex.ToString()), key: text);
+            }
+
+            return false;
+        }
+
+        private static bool HasRegexSpecialCharacters(string text)
+        {
+            for (int i = 0; i < text.Length; i++)
+            {
+                switch (text[i])
+                {
+                    case '\\':
+                    case '^':
+                    case '$':
+                    case '.':
+                    case '|':
+                    case '?':
+                    case '*':
+                    case '+':
+                    case '(':
+                    case ')':
+                    case '[':
+                    case ']':
+                    case '{':
+                    case '}':
+                        return true;
+                }
             }
 
             return false;
@@ -1298,32 +1492,36 @@ namespace QuizCanners.Utils
 
             var n = s.Length;
             var m = t.Length;
-            var d = new int[n + 1, m + 1];
 
-            // Step 1
             if (n == 0)
                 return m;
 
             if (m == 0)
                 return n;
 
-            // Step 2
-            for (var i = 0; i <= n; d[i, 0] = i++) { }
+            var previous = new int[m + 1];
+            var current = new int[m + 1];
 
-            for (var j = 0; j <= m; d[0, j] = j++) { }
+            for (var j = 0; j <= m; j++)
+                previous[j] = j;
 
-            // Step 3
             for (var i = 1; i <= n; i++)
+            {
+                current[0] = i;
+
                 for (var j = 1; j <= m; j++)
                 {
                     var cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
 
-                    d[i, j] = Math.Min(
-                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
-                        d[i - 1, j - 1] + cost);
+                    current[j] = Math.Min(
+                        Math.Min(previous[j] + 1, current[j - 1] + 1),
+                        previous[j - 1] + cost);
                 }
 
-            return d[n, m];
+                (previous, current) = (current, previous);
+            }
+
+            return previous[m];
         }
 
         public static bool IsNullOrEmpty(this string s) => string.IsNullOrEmpty(s);
@@ -1338,8 +1536,10 @@ namespace QuizCanners.Utils
 
         public static void SetMaximumLength<T>(List<T> list, int length)
         {
-            while (list.Count > length)
-                list.RemoveAt(0);
+            var removeCount = list.Count - length;
+
+            if (removeCount > 0)
+                list.RemoveRange(0, removeCount);
         }
 
         public static T MoveFirstToLast<T>(List<T> list)
@@ -1359,8 +1559,14 @@ namespace QuizCanners.Utils
 
         public static T GetEnumFromStringByDistance<T>(string name)
         {
-            int index = FindMostSimilarFrom(name, Enum.GetNames(typeof(T)));
-            return (T)Enum.GetValues(typeof(T)).GetValue(index);
+            int index = FindMostSimilarFrom(name, EnumValues<T>.Names);
+            return (T)EnumValues<T>.Values.GetValue(index);
+        }
+
+        private static class EnumValues<T>
+        {
+            public static readonly string[] Names = Enum.GetNames(typeof(T));
+            public static readonly Array Values = Enum.GetValues(typeof(T));
         }
 
         internal static string GetPropertyName<T>(Expression<Func<T>> memberExpression)

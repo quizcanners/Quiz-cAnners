@@ -12,6 +12,9 @@ namespace QuizCanners.Utils
         [SerializeField] private SerializableDictionary<TKey, TValue> _dictionary = new();
         [SerializeField] private SerializableDictionary<TValue, TKey> _inverseDictionary = new();
 
+        private static readonly EqualityComparer<TKey> KeyComparer = EqualityComparer<TKey>.Default;
+        private static readonly EqualityComparer<TValue> ValueComparer = EqualityComparer<TValue>.Default;
+
         public ICollection<TKey> Keys => _dictionary.Keys;
 
         public ICollection<TValue> Values => _dictionary.Values;
@@ -25,14 +28,17 @@ namespace QuizCanners.Utils
             get => _dictionary[key];
             set
             {
-                _dictionary[key] = value;
-                _inverseDictionary[value] = key;
+                Set(key, value);
             }
         } 
 
         public bool TryGetValue(TKey key, out TValue value) => _dictionary.TryGetValue(key, out value);
         
-        public bool TryGetKey(TValue value, out TKey key) => _inverseDictionary.TryGetValue(value, out key);
+        public bool TryGetKey(TValue value, out TKey key)
+        {
+           // EnsureInverseDictionaryIsValid();
+            return _inverseDictionary.TryGetValue(value, out key);
+        }
         
         #region Inspector
         public override string ToString() => _dictionary.ToString();
@@ -41,8 +47,45 @@ namespace QuizCanners.Utils
         {
             _dictionary.Nested_Inspect().NL();
 
-            if (_dictionary.Count != _inverseDictionary.Count)
-                "Dictionaries out of sync!".PL(pegi.Styles.Text.Warning);
+            if ("Check validity".PL().Click() && !IsInverseDictionaryValid())
+            {
+                Debug.LogError("Dictionaries out of sync!"); //.PL(pegi.Styles.Text.Warning);
+              //  if ("Repair".PL().Click())
+                    RebuildInverseDictionary();
+            }
+
+            return;
+
+            bool IsInverseDictionaryValid()
+            {
+                if (_dictionary.Count != _inverseDictionary.Count)
+                    return false;
+
+                foreach (var pair in _dictionary)
+                {
+                    if (!_inverseDictionary.TryGetValue(pair.Value, out var key) || !KeyComparer.Equals(key, pair.Key))
+                        return false;
+                }
+
+                return true;
+            }
+
+            void RebuildInverseDictionary()
+            {
+                _inverseDictionary.Clear();
+
+                foreach (var pair in _dictionary)
+                {
+                    if (_inverseDictionary.TryGetValue(pair.Value, out var existingKey))
+                    {
+                        Debug.LogError("Duplicate value {0} found for keys {1} and {2}".F(pair.Value, existingKey, pair.Key));
+                        continue;
+                    }
+
+                    _inverseDictionary[pair.Value] = pair.Key;
+                }
+            }
+
         }
 
         #endregion
@@ -59,6 +102,8 @@ namespace QuizCanners.Utils
 
         public bool RemoveByValue(TValue value)
         {
+           // EnsureInverseDictionaryIsValid();
+
             if (_inverseDictionary.TryGetValue(value, out var key))
             {
                 _inverseDictionary.Remove(value);
@@ -76,7 +121,7 @@ namespace QuizCanners.Utils
         {
             if (_dictionary.ContainsKey(key)) 
             {
-                Debug.LogError("Duplicate of "+key);
+                Debug.LogError("Duplicate of " + key);
                 return;
             }
 
@@ -96,7 +141,8 @@ namespace QuizCanners.Utils
             _inverseDictionary.Clear();
         }
 
-        public bool Contains(KeyValuePair<TKey, TValue> item) => _dictionary.Contains(item);
+        public bool Contains(KeyValuePair<TKey, TValue> item) =>
+            _dictionary.TryGetValue(item.Key, out var value) && ValueComparer.Equals(value, item.Value);
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
@@ -115,10 +161,38 @@ namespace QuizCanners.Utils
             }
         }
 
-        public bool Remove(KeyValuePair<TKey, TValue> item) => Remove(item.Key);
+        public bool Remove(KeyValuePair<TKey, TValue> item)
+        {
+            if (!Contains(item))
+                return false;
+
+            return Remove(item.Key);
+        }
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => _dictionary.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => _dictionary.GetEnumerator();
+
+        private void Set(TKey key, TValue value)
+        {
+            if (_dictionary.TryGetValue(key, out var previousValue))
+            {
+                if (ValueComparer.Equals(previousValue, value))
+                {
+                    _inverseDictionary[value] = key;
+                    return;
+                }
+
+                _inverseDictionary.Remove(previousValue);
+            }
+
+            if (_inverseDictionary.TryGetValue(value, out var previousKey) && !KeyComparer.Equals(previousKey, key))
+                _dictionary.Remove(previousKey);
+
+            _dictionary[key] = value;
+            _inverseDictionary[value] = key;
+        }
+
+
     }
 }

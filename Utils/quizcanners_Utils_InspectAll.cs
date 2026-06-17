@@ -257,8 +257,10 @@ namespace QuizCanners.Utils
                         Sprite sa = null;
                         "To extract a Texture from Sprite, Set Read/Write Enabled to True and make sure it's format is Uncompressed (RGBA32 should do it)".PL().Write_Hint();
 
-                        if ("Extract Sprite Atlas Texture".PL().Edit(ref sa) && sa)
+
+                        if ("Extract Sprite Atlas Texture (Commented out)".PL().Edit(ref sa) && sa)
                         {
+                            /*
 #if UNITY_EDITOR
                             string atlasName;
                             Texture2D atlasTexture;
@@ -274,6 +276,7 @@ namespace QuizCanners.Utils
                                 QcUnity.SaveTextureAsAsset(atlasTexture, "Atlas Textures", ref name, saveAsNew: true);
                             }
 #endif
+                            */
                         }
                     }
                     else

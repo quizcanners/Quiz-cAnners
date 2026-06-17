@@ -346,9 +346,11 @@ namespace QuizCanners.Utils
 
             #region Inspector
 
+            public override string ToString() => TryPeekElapsed(out var elapsed) ?  "{0} ago".F(QcSharp.SecondsToReadableString(elapsed)) : "NOT STARTED";
+
             void IPEGI.Inspect()
             {
-                "Delta: ".F(TimeSpan.FromSeconds(Peek_OrFirstStart()).ToShortDisplayString()).PL().Write();
+                ToString().PL().NL();
             }
 
             #endregion
@@ -376,7 +378,7 @@ namespace QuizCanners.Utils
 
         public class SystemTime : TimeGeneric<DateTime>
         {
-            protected override DateTime GetCurrent => DateTime.Now;
+            protected override DateTime GetCurrent => DateTime.UtcNow;
             protected override float ElapsedSeconds_Internal() => (float)((GetCurrent - _lastTime).TotalSeconds);
 
 
@@ -587,7 +589,8 @@ namespace QuizCanners.Utils
                     return true;
                 }
 
-                if (Vector2.Distance(value, previousValue) > changeTreshold)
+                var thresholdSqr = changeTreshold * changeTreshold;
+                if ((value - previousValue).sqrMagnitude > thresholdSqr)
                 {
                     previousValue = value;
                     return true;
@@ -624,7 +627,8 @@ namespace QuizCanners.Utils
                     return true;
                 }
 
-                if (Vector3.Distance(value, previousValue)> changeTreshold)
+                var thresholdSqr = changeTreshold * changeTreshold;
+                if ((value - previousValue).sqrMagnitude > thresholdSqr)
                 {
                     previousValue = value;
                     return true;
@@ -735,7 +739,7 @@ namespace QuizCanners.Utils
 
             private bool _isSet;
 
-            private static readonly PerformanceTurnTable.Token _performanceToken = new("Screen Size", delay: 0.1f);
+            private static readonly QcDebug.PerformanceTurnTable.Token _performanceToken = new("Screen Size", delay: 0.1f);
 
             public bool IsDirty => !_isSet || Screen.width != _width || Screen.height != _height;
 

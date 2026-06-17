@@ -105,6 +105,22 @@ namespace QuizCanners.Utils
             };
         }
 
+        public static RenderTextureFormat GetSupportedFormat_4Channels(this PrecisionType precision)
+        {
+            RenderTextureFormat preferred = precision.GetFormat_4Channels();
+
+            if (SystemInfo.SupportsRenderTextureFormat(preferred))
+                return preferred;
+
+            if (precision == PrecisionType.Float && SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGBHalf))
+                return RenderTextureFormat.ARGBHalf;
+
+            if (precision == PrecisionType.Half && SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGBFloat))
+                return RenderTextureFormat.ARGBFloat;
+
+            return RenderTextureFormat.ARGB32;
+        }
+
         public static RenderTextureFormat GetFormat_SingleChannel(this PrecisionType precision)
         {
             return precision switch
@@ -113,6 +129,25 @@ namespace QuizCanners.Utils
                 PrecisionType.Half => RenderTextureFormat.RHalf,
                 _ => RenderTextureFormat.R8,
             };
+        }
+
+        public static RenderTextureFormat GetSupportedFormat_SingleChannel(this PrecisionType precision)
+        {
+            RenderTextureFormat preferred = precision.GetFormat_SingleChannel();
+
+            if (SystemInfo.SupportsRenderTextureFormat(preferred))
+                return preferred;
+
+            if (precision == PrecisionType.Float && SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RHalf))
+                return RenderTextureFormat.RHalf;
+
+            if (precision == PrecisionType.Half && SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RFloat))
+                return RenderTextureFormat.RFloat;
+
+            if (SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.R8))
+                return RenderTextureFormat.R8;
+
+            return RenderTextureFormat.Default;
         }
 
         public class DoubleBuffer : RenderTextureBufferBase, IPEGI, IPEGI_ListInspect
@@ -164,11 +199,11 @@ namespace QuizCanners.Utils
                     if (!_renderTextures.IsNullOrEmpty())
                         return _renderTextures;
 
-                    _renderTextures = new List<RenderTexture>();
+                    _renderTextures = new List<RenderTexture>(2);
                     for (int i = 0; i < 2; i++)
                     {
                         RenderTexture tex = new(width: Width, height: Height, depth: 0,
-                            _singleChannel ? _precision.GetFormat_SingleChannel() : _precision.GetFormat_4Channels(),
+                            _singleChannel ? _precision.GetSupportedFormat_SingleChannel() : _precision.GetSupportedFormat_4Channels(),
                             readWrite: _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear)
                         {
                             filterMode = FilterMode.Bilinear,
@@ -435,7 +470,7 @@ namespace QuizCanners.Utils
                     return _renderTexture;
 
                 _renderTexture = new RenderTexture(width: Width, height: Height, depth: (int)_depth,
-                    _singleChannel ? _precision.GetFormat_SingleChannel() : _precision.GetFormat_4Channels() // (_floatBuffer ? RenderTextureFormat.RFloat : RenderTextureFormat.RHalf) :
+                    _singleChannel ? _precision.GetSupportedFormat_SingleChannel() : _precision.GetSupportedFormat_4Channels() // (_floatBuffer ? RenderTextureFormat.RFloat : RenderTextureFormat.RHalf) :
                                                                                                              // (_floatBuffer ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGBHalf)
                     ,
                     _isColor ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear

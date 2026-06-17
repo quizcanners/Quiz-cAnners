@@ -60,7 +60,8 @@ namespace QuizCanners.Utils
             [SerializeField] public bool _gotSynchronizedData;
             [SerializeField] public long _cachedUTCAtCreation;
 
-            
+            public long GetRawCachedUTC() => _cachedUTCAtCreation;
+
             private void UpdateString() 
             {
                // _longAsString = _cachedUTCAtCreation.ToString(System.Globalization.CultureInfo.InvariantCulture);

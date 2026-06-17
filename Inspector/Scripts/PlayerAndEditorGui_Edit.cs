@@ -52,25 +52,9 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken OnChanged(this ChangesToken changed, System.Action onChanged) 
         {
-            switch (currentMode)
-            {
-                case PegiPaintingMode.UI_Toolkit:
-
-                    if (changed.Handler is UnityEngine.UIElements.Button)
-                    {
-                        changed.Handler.RegisterCallback<UnityEngine.UIElements.ClickEvent>(evnt => onChanged());
-                    }
-                    else Debug.LogError("Event not implemented for " + changed.Handler.GetType());
-
-                    return ChangesToken.False;
-
-                default:
-                    if (changed)
-                        onChanged?.Invoke();
-                    return changed;
-            }
-
-           
+            if (changed)
+                onChanged?.Invoke();
+            return changed;
         }
 
         public static ChangesToken IgnoreChanges(this ChangesToken changed)

@@ -1440,6 +1440,7 @@ namespace QuizCanners.Inspect
             allowDuplicates = 64,
             showCopyPasteOptions = 128,
             nameIsDictionaryKey = 256,
+            allowEnterDirectlyIntoTheOnlyElement = 512,
         }
 
         [Serializable]
@@ -1462,6 +1463,8 @@ namespace QuizCanners.Inspect
 
             private readonly PlayerPrefValue.Int _playerPref = null;
             private readonly Gate.Bool _playerPrefsChecked = new();
+
+            public int Highlight(int index) => previouslyInspectedElement = index;
 
             public int InspectedElement
             {
@@ -1604,6 +1607,7 @@ namespace QuizCanners.Inspect
                 bool showCopyPasteOptions = false,
                 bool nameIsDictionaryKey = true,
                 bool allowDuplicates = false,
+                bool allowEnterDirectlyIntoTheOnlyElement = false,
                 string playerPrefsIndex = null)
             {
 
@@ -1618,6 +1622,7 @@ namespace QuizCanners.Inspect
                 this[CollectionInspectParams.showCopyPasteOptions] = showCopyPasteOptions;
                 this[CollectionInspectParams.nameIsDictionaryKey] = nameIsDictionaryKey;
                 this[CollectionInspectParams.allowDuplicates] = allowDuplicates;
+                this[CollectionInspectParams.allowEnterDirectlyIntoTheOnlyElement] = allowEnterDirectlyIntoTheOnlyElement;
 
                 if (!playerPrefsIndex.IsNullOrEmpty())
                 {

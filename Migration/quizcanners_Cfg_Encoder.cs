@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 namespace QuizCanners.Migration
@@ -133,6 +134,97 @@ namespace QuizCanners.Migration
                 sub.Add(e.Key, e.Value);
 
             return sub;
+        }
+
+        public static string ConvertToCSV(this List<CfgEncoder> rows, Dictionary<string, string> columnNames = null, char separator = ',', bool flattenNewLines = false)
+        {
+            if (rows.IsNullOrEmpty())
+                return "";
+
+            List<string> headers = new();
+
+            foreach (var row in rows)
+                foreach (var pair in row)
+                    if (!headers.Contains(pair.Key))
+                        headers.Add(pair.Key);
+
+            StringBuilder sb = new();
+            List<string> displayHeaders = new();
+
+            foreach (var header in headers)
+                displayHeaders.Add(columnNames != null && columnNames.TryGetValue(header, out var displayName) ? displayName : header);
+
+            AppendCsvRow(sb, displayHeaders, separator, flattenNewLines);
+
+            foreach (var row in rows)
+            {
+                List<string> values = new();
+
+                foreach (var header in headers)
+                {
+                    string value = "";
+
+                    foreach (var pair in row)
+                        if (pair.Key == header)
+                        {
+                            value = pair.Value;
+                            break;
+                        }
+
+                    values.Add(value);
+                }
+
+                AppendCsvRow(sb, values, separator, flattenNewLines);
+            }
+
+            return sb.ToString();
+
+            static void AppendCsvRow(StringBuilder sb, List<string> values, char separator, bool flattenNewLines)
+            {
+                for (int i = 0; i < values.Count; i++)
+                {
+                    if (i > 0)
+                        sb.Append(separator);
+
+                    AppendCsvCell(sb, values[i], separator, flattenNewLines);
+                }
+
+                sb.AppendLine();
+            }
+
+            static void AppendCsvCell(StringBuilder sb, string value, char separator, bool flattenNewLines)
+            {
+                value ??= "";
+
+                if (flattenNewLines)
+                    value = value
+                        .Replace("\r\n", " / ")
+                        .Replace('\r', ' ')
+                        .Replace('\n', ' ');
+
+                if (separator == '\t')
+                    value = value.Replace('\t', ' ');
+
+                bool quote = value.IndexOfAny(new[] { separator, '"', '\r', '\n' }) >= 0;
+
+                if (!quote)
+                {
+                    sb.Append(value);
+                    return;
+                }
+
+                sb.Append('"');
+
+                foreach (char c in value)
+                {
+                    if (c == '"')
+                        sb.Append('"');
+
+                    sb.Append(c);
+                }
+
+                sb.Append('"');
+            }
         }
 
 

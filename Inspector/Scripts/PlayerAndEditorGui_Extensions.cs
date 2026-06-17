@@ -1046,10 +1046,10 @@ namespace QuizCanners.Inspect
         public static string GetNameForInspector_Uobj<T>(this T obj) where T : Object
         {
             if (obj == null)
-                return "NULL UObj {0}".F(typeof(T).ToPegiStringType());
+                return "NULL UObj " + typeof(T).ToPegiStringType();
 
             if (!obj)
-                return "Destroyed UObj {0}".F(typeof(T).ToPegiStringType());
+                return "Destroyed UObj " + typeof(T).ToPegiStringType();
 
             var mbeh = obj as MonoBehaviour;
             if (mbeh)
@@ -1060,68 +1060,133 @@ namespace QuizCanners.Inspect
                 return so.ToString();
 
             var cmp = obj as Component;
-            return cmp ? "{0} ({1})".F(cmp.gameObject.name, cmp.GetType().ToPegiStringType()) : obj.name;
+            return cmp ? cmp.gameObject.name + " (" + cmp.GetType().ToPegiStringType() + ")" : obj.name;
         }
 
-        private static bool TryProcessKeyValuePair(object value, Action<object, object> ifPairAction) 
+        private readonly struct KeyValuePairAccessors
         {
-            if (value != null)
-            {
-                Type valueType = value.GetType();
-                if (valueType.IsGenericType)
-                {
-                    Type baseType = valueType.GetGenericTypeDefinition();
-                    if (baseType == typeof(KeyValuePair<,>))
-                    {
-                        object kvpKey = valueType.GetProperty("Key").GetValue(value, null);
-                        object kvpValue = valueType.GetProperty("Value").GetValue(value, null);
+            public readonly PropertyInfo Key;
+            public readonly PropertyInfo Value;
+            public readonly bool IsPair;
 
-                        ifPairAction.Invoke(kvpKey, kvpValue);
-                        return true;
-                    }
+            public KeyValuePairAccessors(PropertyInfo key, PropertyInfo value)
+            {
+                Key = key;
+                Value = value;
+                IsPair = true;
+            }
+        }
+
+        private static readonly Dictionary<Type, KeyValuePairAccessors> s_keyValuePairAccessors = new Dictionary<Type, KeyValuePairAccessors>();
+
+        private static bool TryGetKeyValuePair(object value, out object key, out object val) 
+        {
+            Type valueType = value.GetType();
+
+            if (!s_keyValuePairAccessors.TryGetValue(valueType, out KeyValuePairAccessors accessors))
+            {
+                if (valueType.IsGenericType && valueType.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+                {
+                    accessors = new KeyValuePairAccessors(valueType.GetProperty("Key"), valueType.GetProperty("Value"));
                 }
+
+                s_keyValuePairAccessors[valueType] = accessors;
             }
 
+            if (accessors.IsPair)
+            {
+                key = accessors.Key.GetValue(value, null);
+                val = accessors.Value.GetValue(value, null);
+                return true;
+            }
+
+            key = null;
+            val = null;
             return false;
+        }
+
+        private static bool IsSimpleInspectorValue(object obj)
+        {
+            switch (obj)
+            {
+                case bool _:
+                case byte _:
+                case sbyte _:
+                case char _:
+                case decimal _:
+                case double _:
+                case float _:
+                case int _:
+                case uint _:
+                case long _:
+                case ulong _:
+                case short _:
+                case ushort _:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private static string GetPairName(object key, object val)
+        {
+            string keyName = key.GetNameForInspector();
+            string valName = val.GetNameForInspector();
+
+            if (valName.Contains(keyName))
+                return valName;
+
+            return "(" + keyName + ": " + valName + ")";
+        }
+
+        private static string GetDefaultInspectorName(object obj)
+        {
+            try
+            {
+                string typeName = obj.ToString(); // QcSharp.AddSpacesToSentence(obj.ToString(), preserveAcronyms: true);
+
+                var cnt = obj as IGotCount;
+
+                if (cnt != null)
+                {
+                    typeName += " [" + cnt.GetCount() + "]";
+                }
+
+                return typeName;
+            }
+            catch (Exception ex) 
+            {
+                return "Error Getting name. " + ex.ToString();
+            }
         }
 
         internal static string GetNameForInspector<T>(this T obj)
         {
-            if (obj is string)
+            if (obj is string str)
+                return str.IsNullOrEmpty() ? "" : str;
+
+            if (obj == null)
+                return "NULL ({0})".F(typeof(T).ToPegiStringType());
+
+            if (obj is Object unityObject)
             {
-                var str = obj as string;
+                if (!unityObject)
+                    return "NULL ({0})".F(typeof(T).ToPegiStringType());
 
-                if (str.IsNullOrEmpty())
-                    return "";
-
-                return str;
+                return unityObject.GetNameForInspector_Uobj();
             }
 
-            if (obj.IsNullOrDestroyed_Obj())
-                return "NULL ({0})".F(typeof(T).ToPegiStringType());
+            if (IsSimpleInspectorValue(obj))
+                return obj.ToString();
 
             var type = obj.GetType();
 
             if (type.IsClass)
-            {
-                if (obj.GetType().IsUnityObject())
-                    return (obj as Object).GetNameForInspector_Uobj();
+                return GetDefaultInspectorName(obj);
 
-                return DefaultName();
-            }
-
-            string pairName = null;
-            if (TryProcessKeyValuePair(obj, (key, val) => 
-            {
-                string keyName = key.GetNameForInspector();
-                string valName = val.GetNameForInspector();
-
-                if (valName.Contains(keyName))
-                    pairName = valName;
-                else 
-                    pairName = "({0}: {1})".F(keyName, valName);
-            }))
-                return pairName;
+            if (TryGetKeyValuePair(obj, out object key, out object val))
+                return GetPairName(key, val);
 
             if (type.IsEnum)
             {
@@ -1130,31 +1195,10 @@ namespace QuizCanners.Inspect
 
             if (!type.IsPrimitive)
             {
-                return DefaultName(); 
+                return GetDefaultInspectorName(obj); 
             }
 
             return obj.ToString();
-
-            string DefaultName() 
-            {
-                try
-                {
-                    string typeName = obj.ToString(); // QcSharp.AddSpacesToSentence(obj.ToString(), preserveAcronyms: true);
-
-                    var cnt = obj as IGotCount;
-
-                    if (cnt != null)
-                    {
-                        typeName += " [{0}]".F(cnt.GetCount());
-                    }
-
-                    return typeName;
-                } catch (Exception ex) 
-                {
-                    return "Error Getting name. " + ex.ToString();
-                }
-            }
-
         }
 
         public static bool TryGetByIGotName<T>(this List<T> lst, string name, out T value) where T : IGotStringId
@@ -1271,6 +1315,11 @@ namespace QuizCanners.Inspect
                 Debug.LogException(ex);
 
             ex.StackTrace.PL().Write_ForCopy_Big(showCopyButton: true, lines: 10).NL();
+        }
+
+        public static void DropAllFocus()
+        {
+            GUI.FocusControl(null);
         }
     }
 }

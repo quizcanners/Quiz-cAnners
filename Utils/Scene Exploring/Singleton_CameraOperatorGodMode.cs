@@ -111,10 +111,10 @@ namespace QuizCanners.Utils
         readonly CenterPointedPositionState _centerPointedPosition = new();
 
         public bool TryGetPointedPosition(out Vector3 pos, bool updateTranforms)
-         => _pointedPosition.TryGetPointedPosition(Camera.main, out pos, updateTranforms);
+         => _pointedPosition.TryGetPointedPosition(MainCam, out pos, updateTranforms);
 
         public bool TryGetCenterPointedPosition(out Vector3 pos, bool updateTranforms, float maxDistance, LayerMask mask)
-       => _centerPointedPosition.TryGetCenterPointedPosition(Camera.main, out pos, updateTranforms, maxDistance: maxDistance, raycastMask: mask);
+       => _centerPointedPosition.TryGetCenterPointedPosition(MainCam, out pos, updateTranforms, maxDistance: maxDistance, raycastMask: mask);
 
         public Camera MainCam
         {

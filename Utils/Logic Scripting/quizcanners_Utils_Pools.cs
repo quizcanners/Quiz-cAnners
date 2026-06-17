@@ -36,14 +36,14 @@ namespace QuizCanners.Utils
                 var cam = Singleton.Get<Singleton_CameraOperatorGodMode>();
 
                 if (cam)
-                {
-                    Vector3.Distance(cam.transform.position, pos);
-                }
+                    return Vector3.Distance(cam.transform.position, pos);
 
-                if (!Camera.main)
+                var mainCam = Camera.main;
+
+                if (!mainCam)
                     return 10;
 
-                return Vector3.Distance(Camera.main.transform.position, pos);
+                return Vector3.Distance(mainCam.transform.position, pos);
             }
         }
 
@@ -93,9 +93,7 @@ namespace QuizCanners.Utils
 
                 while (!inst && pool.Count > 0)
                 {
-                    inst = pool.TryTake(0);
-                    if (!inst)
-                        pool.RemoveAt(0);
+                    inst = pool.TryTakeLast();
                 }
 
                 if (inst)
@@ -190,9 +188,10 @@ namespace QuizCanners.Utils
 
             public virtual bool TrySpawnIfVisible(Vector3 worldPosition, out T inst, Transform transform)
             {
-                if (Camera.main)
+                var cam = Camera.main;
+                if (cam)
                 {
-                    var pos = Camera.main.WorldToViewportPoint(worldPosition);
+                    var pos = cam.WorldToViewportPoint(worldPosition);
                     if (pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1)
                     {
                         inst = null;
@@ -209,9 +208,7 @@ namespace QuizCanners.Utils
 
                 while (!inst && pool.Count > 0)
                 {
-                    inst = pool.TryTake(0);
-                    if (!inst)
-                        pool.RemoveAt(0);
+                    inst = pool.TryTakeLast();
                 }
 
                 if (inst)
@@ -270,9 +267,10 @@ namespace QuizCanners.Utils
                     return false;
                 }
 
-                if (Camera.main)
+                var cam = Camera.main;
+                if (cam)
                 {
-                    var pos = Camera.main.WorldToViewportPoint(worldPosition);
+                    var pos = cam.WorldToViewportPoint(worldPosition);
                     if (pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1)
                     {
                         inst = null;
@@ -289,9 +287,7 @@ namespace QuizCanners.Utils
 
                 while (!inst && pool.Count > 0)
                 {
-                    inst = pool.TryTake(0);
-                    if (!inst)
-                        pool.RemoveAt(0);
+                    inst = pool.TryTakeLast();
                 }
 
                 if (inst)

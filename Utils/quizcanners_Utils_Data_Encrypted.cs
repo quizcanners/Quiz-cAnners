@@ -31,6 +31,9 @@ namespace QuizCanners.Utils
 
             // File header: [ 4 bytes magic ][ 1 byte ver ][ 12 bytes nonce ][ ...ciphertext+tag... ]
             private static readonly byte[] MAGIC = Encoding.ASCII.GetBytes("SSV1"); // SecureSaVe v1
+            private static readonly byte[] MASTER_INFO = Encoding.UTF8.GetBytes("SecureSaves.master");
+            private static readonly byte[] V2_ENC_INFO = Encoding.UTF8.GetBytes("SecureSaves.v2.enc");
+            private static readonly byte[] V2_MAC_INFO = Encoding.UTF8.GetBytes("SecureSaves.v2.mac");
 
             // Helpers -----------------------------------------------------------------
 
@@ -78,15 +81,15 @@ namespace QuizCanners.Utils
                 byte[] mac = Slice(all, offset + cipherLen, macLen);
 
                 // Verify MAC over: magic||ver||iv||cipher
-                using var hmac = new HMACSHA256(HkdfExpand(key, "SecureSaves.v2.mac", 32));
-                byte[] headerAndCipher = Concat(MAGIC, new[] { version }, iv, cipher);
+                using var hmac = new HMACSHA256(HkdfExpand(key, V2_MAC_INFO, 32));
+                byte[] headerAndCipher = BuildMacPayload(version, iv, cipher);
                 byte[] calc = hmac.ComputeHash(headerAndCipher);
 
                 if (!FixedTimeEquals(mac, calc))
                     throw new CryptographicException("Bad MAC (file tampered or wrong key).");
 
                 // Decrypt
-                return DecryptCbc(cipher, HkdfExpand(key, "SecureSaves.v2.enc", 32), iv);
+                return DecryptCbc(cipher, HkdfExpand(key, V2_ENC_INFO, 32), iv);
 
 
             }
@@ -98,19 +101,19 @@ namespace QuizCanners.Utils
                 string deviceId = SystemInfo.deviceUniqueIdentifier ?? "unknown-device";
                 byte[] salt = Sha256(Encoding.UTF8.GetBytes(deviceId));
                 byte[] ikm = Encoding.UTF8.GetBytes(secret.APP_SECRET);
-                return Hkdf(ikm, salt, Encoding.UTF8.GetBytes("SecureSaves.master"), 32); // 256-bit master
+                return Hkdf(ikm, salt, MASTER_INFO, 32); // 256-bit master
             }
 
             // V2: AES-CBC-256 + HMAC-SHA256 (Encrypt-then-MAC)
             private static void EncryptCbcHmac(byte[] plain, byte[] masterKey, byte[] iv, out byte[] cipher, out byte[] mac, Secret secret)
             {
-                byte[] encKey = HkdfExpand(masterKey, "SecureSaves.v2.enc", 32);
-                byte[] macKey = HkdfExpand(masterKey, "SecureSaves.v2.mac", 32);
+                byte[] encKey = HkdfExpand(masterKey, V2_ENC_INFO, 32);
+                byte[] macKey = HkdfExpand(masterKey, V2_MAC_INFO, 32);
 
                 cipher = EncryptCbc(plain, encKey, iv);
                 using var hmac = new HMACSHA256(macKey);
                 // MAC over magic||ver||iv||cipher
-                mac = hmac.ComputeHash(Concat(MAGIC, new[] { secret.Version }, iv, cipher));
+                mac = hmac.ComputeHash(BuildMacPayload(secret.Version, iv, cipher));
             }
 
             private static byte[] EncryptCbc(byte[] plain, byte[] key, byte[] iv)
@@ -183,9 +186,6 @@ namespace QuizCanners.Utils
                 return HkdfExpand(prk, info, length);
             }
 
-            private static byte[] HkdfExpand(byte[] prk, string infoStr, int length)
-                => HkdfExpand(prk, Encoding.UTF8.GetBytes(infoStr), length);
-
             private static byte[] HkdfExpand(byte[] prk, byte[] info, int length)
             {
                 using var hmac = new HMACSHA256(prk);
@@ -193,13 +193,15 @@ namespace QuizCanners.Utils
                 int pos = 0;
                 byte[] okm = new byte[length];
                 byte ctr = 1;
+                byte[] counter = new byte[1];
 
                 while (pos < length)
                 {
+                    counter[0] = ctr;
                     hmac.Initialize();
                     hmac.TransformBlock(t, 0, t.Length, null, 0);
                     hmac.TransformBlock(info, 0, info.Length, null, 0);
-                    hmac.TransformFinalBlock(new[] { ctr }, 0, 1);
+                    hmac.TransformFinalBlock(counter, 0, 1);
                     t = hmac.Hash!;
                     int toCopy = Math.Min(t.Length, length - pos);
                     Buffer.BlockCopy(t, 0, okm, pos, toCopy);
@@ -238,15 +240,24 @@ namespace QuizCanners.Utils
                 return dst;
             }
 
-            private static byte[] Concat(params byte[][] parts)
+            private static byte[] BuildMacPayload(byte version, byte[] iv, byte[] cipher)
             {
-                int len = 0; foreach (var p in parts) len += p.Length;
-                var buf = new byte[len]; int pos = 0;
-                foreach (var p in parts) { Buffer.BlockCopy(p, 0, buf, pos, p.Length); pos += p.Length; }
-                return buf;
-            }
+                var buffer = new byte[MAGIC.Length + 1 + iv.Length + cipher.Length];
+                int pos = 0;
 
-            private static byte[] Concat(byte[] a, byte[] b) => Concat(new[] { a, b });
+                Buffer.BlockCopy(MAGIC, 0, buffer, pos, MAGIC.Length);
+                pos += MAGIC.Length;
+
+                buffer[pos] = version;
+                pos++;
+
+                Buffer.BlockCopy(iv, 0, buffer, pos, iv.Length);
+                pos += iv.Length;
+
+                Buffer.BlockCopy(cipher, 0, buffer, pos, cipher.Length);
+
+                return buffer;
+            }
 
             private static bool FixedTimeEquals(byte[] a, byte[] b)
             {

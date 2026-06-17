@@ -250,22 +250,21 @@ namespace QuizCanners.Utils
 
             }
 
-            var finalNumber = "{0}{1}{2}".F(sign, result, unit);
-            return finalNumber;
+            return sign + result + unit;
         }
 
         public static string ToMegabytes(uint bytes)
         {
             bytes >>= 10;
             bytes /= 1024; // On new line to workaround IL2CPP bug
-            return "{0} Mb".F(bytes.ToString());
+            return bytes + " Mb";
         }
 
         internal static string ToMegabytes(long bytes)
         {
             bytes >>= 10;
             bytes /= 1024; // On new line to workaround IL2CPP bug
-            return "{0} Mb".F(bytes.ToString());
+            return bytes + " Mb";
         }
 
         public static string MetersToReadableString(double distance)
@@ -279,28 +278,28 @@ namespace QuizCanners.Utils
             if (distance >= LIGHT_YEARS_IN_METER)
             {
                 double lightYears = distance / LIGHT_YEARS_IN_METER;
-                return "{0} ly".F(lightYears.ToString("F2"));
+                return lightYears.ToString("F2") + " ly";
             }
             else if (distance >= ASTRONOMIC_UNIT_IN_METERS)
             {
                 double astronomicalUnits = distance / ASTRONOMIC_UNIT_IN_METERS;
-                return "{0} AU".F(astronomicalUnits.ToString("F2"));
+                return astronomicalUnits.ToString("F2") + " AU";
             }
             else
             {
                 double kms = distance / 1000;
-                return "{0} km".F(kms.ToString("F0"));
+                return kms.ToString("F0") + " km";
             }
         }
 
         public static string MetersToReadableString(float distance) 
         {
             if (distance < 2000)
-                return "{0} m".F(distance.ToString("F0"));
+                return distance.ToString("F0") + " m";
 
             float kms = distance / 1000;
 
-            return "{0} km".F(GetKmNumber(distance));
+            return GetKmNumber(distance) + " km";
 
             static string GetKmNumber(float distance) 
             {
@@ -321,10 +320,11 @@ namespace QuizCanners.Utils
         public static string ToRelativeString(this DateTime date, bool showHours)
         {
             DateTime today = DateTime.Today;
+            DateTime now = DateTime.Now;
 
             if (showHours)
             {
-                TimeSpan diff = date - DateTime.Now;
+                TimeSpan diff = date - now;
                 var inTotalHours = diff.TotalHours;
 
                 if (Math.Abs(inTotalHours) < 1)
@@ -352,7 +352,7 @@ namespace QuizCanners.Utils
             if (date.Date == today.AddDays(2)) return AddTimeIfneeded("After Tomorrow");
             if (date.Date == today.AddDays(-2)) return AddTimeIfneeded("Before Yesterday");
 
-            if (date.Year != DateTime.Now.Year)
+            if (date.Year != now.Year)
                 return date.ToString("dd-MMMM-yyyy");
 
             return date.ToString("dd MMMM");

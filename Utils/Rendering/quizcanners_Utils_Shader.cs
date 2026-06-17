@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using static QuizCanners.Utils.OnDemandRenderTexture;
 
 namespace QuizCanners.Utils 
 {
@@ -194,9 +195,21 @@ namespace QuizCanners.Utils
             protected abstract bool DirectiveEnabledForLastValue { get; }
         }
 
+        public static MaterialInstancer.Base BlitTo(this MaterialInstancer.Base inst, RenderTexture destination)
+        {
+            Graphics.Blit(null, destination, inst.GetInstance());
+            return inst;
+        }
+
         public static MaterialInstancer.Base Set(this MaterialInstancer.Base inst, LocalShaderKeyword property, bool value)
         {
             property.SetOn(inst.GetInstance(), value);
+            return inst;
+        }
+
+        public static MaterialInstancer.Base Set(this MaterialInstancer.Base inst, TextureValue property, RenderTextureBufferBase value)
+        {
+            property.SetOn(inst.GetInstance(), value.GetOrCreateTexture);
             return inst;
         }
 
@@ -219,6 +232,12 @@ namespace QuizCanners.Utils
         }
 
         public static MaterialInstancer.Base Set<T>(this MaterialInstancer.Base inst, IndexGeneric<T> property, T value)
+        {
+            property.SetOn(inst.GetInstance(), value);
+            return inst;
+        }
+
+        public static MaterialInstancer.Base Set(this MaterialInstancer.Base inst, VectorArrayValue property, Vector4[] value)
         {
             property.SetOn(inst.GetInstance(), value);
             return inst;
@@ -379,6 +398,7 @@ namespace QuizCanners.Utils
             {
                 GlobalValue = QuizCanners.Lerp.QcLerp.LerpBySpeed(LatestValue, shouldBeEnabled ? 1 : 0, speed, unscaledTime: unscaledTime);
             }
+
             #region Inspector
 
             public override void InspectInList(ref int edited, int ind) => InspectValue();
@@ -703,6 +723,36 @@ namespace QuizCanners.Utils
                 set => GlobalValue = new Vector4(LatestValue.x, LatestValue.y, LatestValue.z, value);
             }
 
+            public float Latest_X
+            {
+                get => LatestValue.x;
+                set => LatestValue = new Vector4(value, LatestValue.y, LatestValue.z, LatestValue.w);
+            }
+
+            public float Latest_Y
+            {
+                get => LatestValue.y;
+                set => LatestValue = new Vector4(LatestValue.x, value, LatestValue.z, LatestValue.w);
+            }
+
+            public float Latest_Z
+            {
+                get => LatestValue.z;
+                set => LatestValue = new Vector4(LatestValue.x, LatestValue.y, value, LatestValue.w);
+            }
+
+            public float Latest_W
+            {
+                get => LatestValue.w;
+                set => LatestValue = new Vector4(LatestValue.x, LatestValue.y, LatestValue.z, value);
+            }
+
+            public float Latest_A
+            {
+                get => LatestValue.w;
+                set => LatestValue = new Vector4(LatestValue.x, LatestValue.y, LatestValue.z, value);
+            }
+
             public VectorValue(string name) : base(name) { }
         }
 
@@ -845,8 +895,9 @@ namespace QuizCanners.Utils
         {
             #if UNITY_EDITOR
             {
-                var lst = new List<TextureValue>();
-                foreach (var n in m.GetProperties(UnityEngine.Rendering.ShaderPropertyType.Texture))
+                var names = m.GetProperties(UnityEngine.Rendering.ShaderPropertyType.Texture);
+                var lst = new List<TextureValue>(names.Count);
+                foreach (var n in names)
                     lst.Add(new TextureValue(n));
 
                 return lst;
@@ -868,6 +919,13 @@ namespace QuizCanners.Utils
             private Shader _cachedShader;
 
             private readonly Gate.Bool _valueGate = new();
+
+            public MaterialInstancer.Base SetOn(MaterialInstancer.Base instancer, bool isTrue)
+            {
+                var mat = instancer.GetInstance();
+                SetOn(mat, isTrue);
+                return instancer;
+            }
 
             public void SetOn(Material material, bool isTrue)
             {
@@ -1113,6 +1171,21 @@ namespace QuizCanners.Utils
 
             public VectorArrayValue(string name) : base(name) {}
 
+            public Material SetOn(Material mat, Vector4[] value)
+            {
+                _vectorArray = value;
+                if (mat)
+                    SetLatestValueOn(mat);
+                return mat;
+            }
+
+            public MaterialPropertyBlock SetOn(MaterialPropertyBlock block, Vector4[] value)
+            {
+                _vectorArray = value;
+                SetLatestValueOn(block);
+                return block;
+            }
+
             public override void SetLatestValueOn(Material mat) => mat.SetVectorArray(id, _vectorArray);
 
             public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetVectorArray(id, _vectorArray);
@@ -1150,6 +1223,21 @@ namespace QuizCanners.Utils
 
             public MatrixArrayValue(string name) : base(name) { }
 
+            public Material SetOn(Material mat, Matrix4x4[] value)
+            {
+                _vectorArray = value;
+                if (mat)
+                    SetLatestValueOn(mat);
+                return mat;
+            }
+
+            public MaterialPropertyBlock SetOn(MaterialPropertyBlock block, Matrix4x4[] value)
+            {
+                _vectorArray = value;
+                SetLatestValueOn(block);
+                return block;
+            }
+
             public override void SetLatestValueOn(Material mat) => mat.SetMatrixArray(id, _vectorArray);
 
             public override void SetLatestValueOn(MaterialPropertyBlock block) => block.SetMatrixArray(id, _vectorArray);
@@ -1167,10 +1255,9 @@ namespace QuizCanners.Utils
                 
             public void Reload() 
             {
-                _shader = Shader.Find(_name);
                 _triedToFind = true;
-                if (!_shader)
-                    Debug.LogError("Failed to find {0}".F(_name));
+                _shader = null;
+                Debug.LogError("ShaderName cannot resolve '{0}' by name. Use serialized shader references or MaterialInstancer.ByShader.".F(_name));
             }
 
             public Shader Shader 
@@ -1207,15 +1294,43 @@ namespace QuizCanners.Utils
 
         public List<Material> GetTaggedMaterialsFromAssets()
         {
-            var mats = new List<Material>();
-
             var tmpMats = QcUnity.FindAssetsByType<Material>();
+            var mats = new List<Material>(tmpMats.Count);
 
             foreach (var mat in tmpMats)
                 if (Has(mat))
-                    mats.AddIfNew(mat);
+                    mats.Add(mat);
 
             return mats;
+        }
+
+        public List<Shader> GetTaggedShadersFromAssets()
+        {
+            var tmpShaders = QcUnity.FindAssetsByType<Shader>();
+            var shaders = new List<Shader>(tmpShaders.Count);
+
+            foreach (var shader in tmpShaders)
+            {
+                if (!shader)
+                    continue;
+
+                var temporaryMaterial = new Material(shader);
+
+                try
+                {
+                    if (Has(temporaryMaterial))
+                        shaders.Add(shader);
+                }
+                finally
+                {
+                    if (Application.isEditor)
+                        UnityEngine.Object.DestroyImmediate(temporaryMaterial);
+                    else
+                        UnityEngine.Object.Destroy(temporaryMaterial);
+                }
+            }
+
+            return shaders;
         }
     }
 

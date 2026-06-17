@@ -1,5 +1,7 @@
 using QuizCanners.Utils;
 using UnityEngine;
+using System.Text;
+
 
 
 #if UNITY_EDITOR
@@ -750,12 +752,13 @@ namespace QuizCanners.Inspect
 
         public static TextToken DrawProgressBar(this TextLabel text, float value01, bool addPercentage = false)
         {
+            int hundred = Mathf.FloorToInt(value01 * 100);
 
 #if UNITY_EDITOR
             if (!PaintingGameViewUI)
             {
                 if (addPercentage)
-                    text.label = "{0}: {1}%".F(text, Mathf.FloorToInt(value01 * 100));
+                    text.label = "{0}: {1}%".F(text, hundred);
 
                 PegiEditorOnly.ProgressBar(text, value01);
                 return TEXT_TOK;
@@ -763,7 +766,18 @@ namespace QuizCanners.Inspect
 #endif
             
             CheckLine();
-            text.label = "{0}: {1}%".F(text, Mathf.FloorToInt(value01 * 100));
+
+            var sb = new StringBuilder();
+         
+            for (int i=0; i < 20; i++)
+            {
+                if (i < value01 * 20)
+                    sb.Append("█");
+                else
+                    sb.Append("░");
+            }
+
+            text.label = "{0}:{1} {2}%".F(text, sb.ToString(), hundred);
             text.Write();
 
             return TEXT_TOK;

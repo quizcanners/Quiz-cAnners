@@ -38,12 +38,15 @@ namespace QuizCanners.Utils
                 }
             }
 
+            public bool TryChange_ByResult(bool v) => _enableGate.TryChange(v);
+            
+            /*
             public bool IsEnabled(float value) 
             {
                 var isEnabled = IsEnabled_Internal(value);
                 _enableGate.TryChange(isEnabled);
                 return isEnabled;
-            }
+            }*/
 
             public bool TryChange(float value, out bool isEnabled) 
             {
@@ -88,7 +91,9 @@ namespace QuizCanners.Utils
 
             }
 
-     
+      
+
+
 
             #endregion
 
@@ -113,8 +118,8 @@ namespace QuizCanners.Utils
                 var result = _requestCreated;
                 _requestCreated = false;
 
-               // if (result && Application.isEditor)
-                 //  Debug.Log("Request was used by {0}".F(debugReason));
+               if (result && Application.isEditor)
+                   Debug.Log("Request was used by {0}".F(debugReason));
 
                 _requestActualized = false;
 
@@ -626,7 +631,7 @@ namespace QuizCanners.Utils
                     return false;
                 }
 
-                if (Vector3.Distance(newValue, Current) >= difference)
+                if ((newValue - Current).sqrMagnitude >= difference * difference)
                 {
                     Update(newValue);
                     return true;

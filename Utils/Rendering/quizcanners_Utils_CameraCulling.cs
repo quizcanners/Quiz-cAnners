@@ -19,8 +19,7 @@ namespace QuizCanners.Utils
         {
             if (_cameraCullingCache.TryConsume())
             {
-                // Only clear cache for cameras that actually moved
-                var camerasToRemove = new List<Camera>();
+                s_camerasToRemove.Clear();
 
                 foreach (var kvp in s_cameraStates)
                 {
@@ -28,7 +27,7 @@ namespace QuizCanners.Utils
 
                     if (!camera)
                     {
-                        camerasToRemove.Add(camera);
+                        s_camerasToRemove.Add(camera);
                         continue;
                     }
 
@@ -39,9 +38,9 @@ namespace QuizCanners.Utils
                     }
                 }
 
-                foreach (var camera in camerasToRemove)
+                for (int i = 0; i < s_camerasToRemove.Count; i++)
                 {
-                    s_cameraStates.Remove(camera);
+                    s_cameraStates.Remove(s_camerasToRemove[i]);
                 }
             }
 
@@ -194,6 +193,8 @@ namespace QuizCanners.Utils
         private static readonly Gate.Frame _cameraCullingCache = new();
 
         private static readonly Dictionary<Camera, CameraCullingState> s_cameraStates = new();
+
+        private static readonly List<Camera> s_camerasToRemove = new();
 
     }
 }

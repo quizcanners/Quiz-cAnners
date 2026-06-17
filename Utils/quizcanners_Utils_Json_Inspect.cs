@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
 using QuizCanners.Inspect;
 using UnityEngine;
 
@@ -176,7 +174,7 @@ namespace QuizCanners.Utils
             {
                 set
                 {
-                    data = Regex.Replace(value, @"\t|\n|\r", "");
+                    data = RemoveTabsAndNewLines(value);
 
                     foreach (var c in data)
                         if (c != ' ')
@@ -187,8 +185,8 @@ namespace QuizCanners.Utils
 
                     if (!dataOnly)
                     {
-                        data = Regex.Replace(data, "{", "{" + Environment.NewLine);
-                        data = Regex.Replace(data, ",", "," + Environment.NewLine);
+                        data = data.Replace("{", "{" + Environment.NewLine)
+                                   .Replace(",", "," + Environment.NewLine);
                     }
                 }
             }
@@ -269,7 +267,7 @@ namespace QuizCanners.Utils
                     return null;
                 }
 
-                data = Regex.Replace(data, @"\t|\n|\r", "");
+                data = RemoveTabsAndNewLines(data);
 
                 StringBuilder sb = new();
                 int textIndex = 0;
@@ -436,6 +434,38 @@ namespace QuizCanners.Utils
                     return new JsonList(vals);
 
                 return properties.Count > 0 ? new JsonClass(properties) : null;
+            }
+
+            private static string RemoveTabsAndNewLines(string value)
+            {
+                int skipped = 0;
+
+                for (int i = 0; i < value.Length; i++)
+                {
+                    var c = value[i];
+
+                    if (c == '\t' || c == '\n' || c == '\r')
+                        skipped++;
+                }
+
+                if (skipped == 0)
+                    return value;
+
+                return string.Create(value.Length - skipped, value, static (span, source) =>
+                {
+                    int writeIndex = 0;
+
+                    for (int i = 0; i < source.Length; i++)
+                    {
+                        var c = source[i];
+
+                        if (c == '\t' || c == '\n' || c == '\r')
+                            continue;
+
+                        span[writeIndex] = c;
+                        writeIndex++;
+                    }
+                });
             }
         }
 
@@ -640,7 +670,7 @@ namespace QuizCanners.Utils
 
             public JsonList() { elements = new List<JsonBase>(); }
 
-            public JsonList(List<JsonString> values) { this.elements = values.ToList<JsonBase>(); }
+            public JsonList(List<JsonString> values) { this.elements = new List<JsonBase>(values); }
         }
 
         protected class JsonClass : JsonBase

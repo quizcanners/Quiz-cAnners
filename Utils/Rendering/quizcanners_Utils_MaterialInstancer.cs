@@ -2,6 +2,7 @@ using QuizCanners.Inspect;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using static QuizCanners.Utils.OnDemandRenderTexture;
 
 namespace QuizCanners.Utils
 {
@@ -10,6 +11,14 @@ namespace QuizCanners.Utils
         public abstract class Base 
         {
             public abstract Material GetInstance();
+
+            public Texture this[ShaderProperty.TextureValue prop]
+            {
+                set
+                {
+                    prop.SetOn(GetInstance(), value);
+                }
+            }
         }
 
         [Serializable]
@@ -17,6 +26,8 @@ namespace QuizCanners.Utils
         {
             [SerializeField] public List<UnityEngine.UI.Graphic> materialUsers = new();
             [NonSerialized] private Material _materialInstance;
+
+
 
             public override Material GetInstance() 
             {
@@ -64,7 +75,7 @@ namespace QuizCanners.Utils
         }
 
         [Serializable]
-        public class ForMeshRenderer : Base, IPEGI
+        public class ForMeshRenderer : Base, IPEGI, IPEGI_ListInspect
         {
 
             [SerializeField] public bool InstantiateInEditor;
@@ -136,10 +147,20 @@ namespace QuizCanners.Utils
 
                 return materialInstance;
             }
+
+            public void InspectInList(ref int edited, int index)
+            {
+                if (Icon.Enter.Click())
+                    edited = index;
+            
+                var first = materialUsers.TryGet(0);
+
+                "Material User (x{0})".F(materialUsers.Count).ConstL().Edit(ref first).NL(()=> materialUsers.ForceSet(0,first));
+            }
         }
 
         [Serializable]
-        public class Unmanaged : Base, IPEGI
+        public class Unmanaged : Base, IPEGI, IPEGI_ListInspect
         {
             public Material sourceMaterial;
             [NonSerialized] private Material instance;
@@ -172,6 +193,14 @@ namespace QuizCanners.Utils
 
             }
 
+            public void InspectInList(ref int edited, int index)
+            {
+                if (Icon.Enter.Click())
+                    edited = index;
+
+                "Source Material".ConstL().Edit(ref sourceMaterial).NL(Clear);
+            }
+
             public Unmanaged()
             {
 
@@ -184,7 +213,7 @@ namespace QuizCanners.Utils
         }
 
         [Serializable]
-        public class ByShader : Base, IPEGI
+        public class ByShader : Base, IPEGI, IPEGI_ListInspect
         {
             [SerializeField] private Shader shaderToUse;
             [NonSerialized] private Material instance;
@@ -220,11 +249,26 @@ namespace QuizCanners.Utils
                 return Get(shaderToUse);
             }
 
+            public ByShader() { }
+
+            public ByShader(Shader shader)
+            {
+                this.shaderToUse = shader;
+            }
+
             #region Inspector
             void IPEGI.Inspect()
             {
                 "Shader to Use: ".PL().Edit(ref shaderToUse).NL(Clear);
                 //"Material Instance".PegiLabel().Edit(ref instance).Nl();
+            }
+
+            public void InspectInList(ref int edited, int index)
+            {
+                if (Icon.Enter.Click())
+                    edited = index;
+
+                "Shader to Use: ".ConstL().Edit(ref shaderToUse).NL(Clear);
             }
 
             #endregion

@@ -128,7 +128,7 @@ namespace QuizCanners.Utils
         {
             //The default 30 
             float length = 0.0f;
-            Vector3 lastPoint = BezierPoint(0.0f / (float)pointCount, p0, p1, p2, p3);
+            Vector3 lastPoint = p0;
             for (int i = 1; i <= pointCount; i++)
             {
                 Vector3 point = BezierPoint((float)i / (float)pointCount, p0, p1, p2, p3);
@@ -140,7 +140,7 @@ namespace QuizCanners.Utils
 
         public static List<Vector3> BezierCurvePoints(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, out float length, int pointCount = 30)
         {
-            var rawPoints = new List<Vector3>();
+            var rawPoints = new List<Vector3>(pointCount + 2);
 
             length = 0.0f;
             Vector3 lastPoint = BezierPoint(0, p0, p1, p2, p3);
@@ -156,7 +156,7 @@ namespace QuizCanners.Utils
 
             rawPoints.Add(p3);
 
-            var adjustedPoints = new List<Vector3>
+            var adjustedPoints = new List<Vector3>(pointCount)
             {
                 p0
             };
@@ -176,6 +176,7 @@ namespace QuizCanners.Utils
                     rawPointA = rawPoints[rawIndex - 1];
                     rawPointB = rawPoints[rawIndex];
                     rawSegmentLength = Vector3.Distance(rawPointA, rawPointB);
+                    rawSegmentValid = true;
                 }
 
                 if (rawSegmentLength >= forNextAdjustedSegment)
@@ -248,28 +249,10 @@ namespace QuizCanners.Utils
 
         public static float DistanceFromPointToALine(Vector3 point, Vector3 startp, Vector3 endp)
         {
-
-            var a = Vector3.Distance(point, endp);
-            var b = Vector3.Distance(point, startp);
-            var line = Vector3.Distance(startp, endp);
-
-            if (IsAcute(a, b, line)) 
-                return Mathf.Min(a, b);
-            else
-            {
-                float s = (a + b + line) / 2;
-                float h = 4 * s * (s - a) * (s - b) * (s - line) / (line * line);
-                return Mathf.Sqrt(h);
-            }
-
-            /*
-             ector3 point, Vector3 startp, Vector3 endp
-            var a = Vector3.Distance(startp, endp);
-            var b = Vector3.Distance(startp, point);
-            var c = Vector3.Distance(endp, point);
-            var s = (a + b + c) / 2;
-            return 2 * Mathf.Sqrt(s * (s - a) * (s - b) * (s - c)) / a;*/
+            var closestPoint = GetClosestPointOnSegment(startp, endp, point);
+            return (point - closestPoint).magnitude;
         }
+
 
         public static bool IsPointOnLine(float a, float b, float line, float percision)
         {
@@ -337,11 +320,19 @@ namespace QuizCanners.Utils
 
         public static bool IsPointOnLine(Vector3 a, Vector3 b, Vector3 point, float percisionMeters)
         {
-            float line = (b - a).magnitude;
-            float pnta = (point - a).magnitude;
-            float pntb = (point - b).magnitude;
+            Vector3 ab = b - a;
+            float abLenSq = Vector3.Dot(ab, ab);
 
-            return ((line > pnta) && (line > pntb) && ((pnta + pntb) < line + percisionMeters));
+            if (abLenSq <= 1e-8f)
+                return false;
+
+            float t = Vector3.Dot(point - a, ab) / abLenSq;
+
+            if (t <= 0 || t >= 1)
+                return false;
+
+            var closest = a + ab * t;
+            return (point - closest).sqrMagnitude < percisionMeters * percisionMeters;
         }
 
         public static float HeronHforBase(float _base, float a, float b)
@@ -665,10 +656,10 @@ namespace QuizCanners.Utils
         }
 
         public static Vector4 ToVector4(this ColorMask mask) => new(
-            mask.HasFlag(ColorMask.R) ? 1 : 0,
-            mask.HasFlag(ColorMask.G) ? 1 : 0,
-            mask.HasFlag(ColorMask.B) ? 1 : 0,
-            mask.HasFlag(ColorMask.A) ? 1 : 0);
+            (mask & ColorMask.R) != 0 ? 1 : 0,
+            (mask & ColorMask.G) != 0 ? 1 : 0,
+            (mask & ColorMask.B) != 0 ? 1 : 0,
+            (mask & ColorMask.A) != 0 ? 1 : 0);
 
         public static ColorChanel ToColorChannel(this ColorMask bm)
         {
@@ -694,7 +685,7 @@ namespace QuizCanners.Utils
                 target.w = source.a;
         }
 
-        public static bool HasFlag(this ColorMask mask, int flag) => (mask & (ColorMask)(Mathf.Pow(2, flag))) != 0;
+        public static bool HasFlag(this ColorMask mask, int flag) => (mask & (ColorMask)(1 << flag)) != 0;
 
         public static bool HasFlag(this ColorMask mask, ColorMask flag) => (mask & flag) != 0;
 
@@ -712,25 +703,20 @@ namespace QuizCanners.Utils
             if (sequence.Count == 1)
                 return sequence[0];
 
-            float TotalWeight = 0;
-
-            float[] weights = new float[sequence.Count];
+            float totalWeight = 0;
 
             for(int i=0; i<sequence.Count; i++) 
             {
-                var el = sequence[i];
-                var w = weightSelector(el);
-                weights[i] = w;
-                TotalWeight += w;
+                totalWeight += weightSelector(sequence[i]);
             }
 
-            float itemWeightIndex = UnityEngine.Random.Range(0f, TotalWeight);
+            float itemWeightIndex = UnityEngine.Random.Range(0f, totalWeight);
 
             float currentWeightIndex = 0;
 
-            for(int i=0; i< weights.Length; i++) 
+            for(int i=0; i< sequence.Count; i++) 
             {
-                currentWeightIndex += weights[i];
+                currentWeightIndex += weightSelector(sequence[i]);
 
                 if (currentWeightIndex >= itemWeightIndex)
                 {
@@ -743,20 +729,21 @@ namespace QuizCanners.Utils
 
         public static List<int> NormalizeToPercentage<T>(List<T> list, Func<T,double> getValue, float percentTrashold = 0.1f) 
         {
-            List<int> resultPercentages = new(list.Count);
+            int count = list.Count;
+            List<int> resultPercentages = new(count);
 
-            if (list.Count == 0)
+            if (count == 0)
                 return resultPercentages;
 
             double totalSum = 0;
 
-            List<double> probabilities = new(list.Count);
+            double[] probabilities = new double[count];
 
-            for(int i=0; i< list.Count; i++) 
+            for(int i=0; i< count; i++) 
             {
                 var val = getValue(list[i]);
                 totalSum += val;
-                probabilities.Add(val);
+                probabilities[i] = val;
             }
 
             int totalPercentages = 100;
@@ -764,7 +751,7 @@ namespace QuizCanners.Utils
             double onePercentCutoff = onePercent * percentTrashold;
 
             // Distribute 1 percent
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < count; i++)
             {
                 var val = probabilities[i];
 
@@ -785,7 +772,7 @@ namespace QuizCanners.Utils
             var toPercentages = totalPercentages / totalSum;
 
             // Calculate percentages
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < count; i++)
             {
                 probabilities[i] *= toPercentages; // to Percentage
             }
@@ -793,9 +780,9 @@ namespace QuizCanners.Utils
 
             // Distribute the rest
             double leftOver = 0;
-            double percisionErrorCorrection = 0.005d / list.Count; // No to generate an extra value
+            double percisionErrorCorrection = 0.005d / count; // No to generate an extra value
 
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < count; i++)
             {
                 var val = probabilities[i];
 
@@ -821,7 +808,7 @@ namespace QuizCanners.Utils
             }
 
             if (totalPercentages > 0)
-                resultPercentages[list.Count - 1] += totalPercentages;
+                resultPercentages[count - 1] += totalPercentages;
 
             return resultPercentages;
         }

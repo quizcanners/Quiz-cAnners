@@ -1,6 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿//using NUnit.Framework;
 using QuizCanners.Utils;
+using System;
+using System.Collections.Generic;
+//using UnityEditor.PackageManager;
 using UnityEngine;
 //using static QuizCanners.Inspect.pegi;
 using Object = UnityEngine.Object;
@@ -127,10 +129,12 @@ namespace QuizCanners.Inspect
             return !canSkip;
         }
 
-        public static StateToken IsEntered(this CanSkipEnteredToken token, TextLabel label, bool showLabelIfTrue = true, Styles.PegiGuiStyle enterLabelStyle = null) 
+        public static StateToken IsEntered(this CanSkipEnteredToken token, string labelText, bool showLabelIfTrue = true, Styles.PegiGuiStyle enterLabelStyle = null, Icon enterIcon = Icon.Enter) 
         {
             using (token.disposible)
             {
+                TextLabel label = new TextLabel(labelText);
+
                 if (Context.IsEnteredCurrent)
                 {
                     using (Styles.Background.ExitLabel.SetDisposible())
@@ -148,11 +152,10 @@ namespace QuizCanners.Inspect
                 else
                 {
                     label.style = enterLabelStyle ?? Styles.Text.EnterLabel;
-                    (Icon.Enter.ClickUnFocus(label.label).IgnoreChanges(LatestInteractionEvent.Enter)
+                    (enterIcon.ClickUnFocus(label.label).IgnoreChanges(LatestInteractionEvent.Enter)
                       | label.ClickLabel().IgnoreChanges(LatestInteractionEvent.Enter))
                     .OnChanged(() => Context.OnEnterClick());
                 }
-
             }
 
             return Context.IsEnteredCurrent;
@@ -496,7 +499,6 @@ namespace QuizCanners.Inspect
                 return ChangesToken.False;
             }
 
-
             if (!EnterInternal.OptionsDrawn(ref entered, thisOne))
                 return ChangesToken.False;
 
@@ -507,8 +509,6 @@ namespace QuizCanners.Inspect
                 return IPEGI.Nested_Inspect();
 
             return ChangesToken.False;
-
-           // return target.GetNameForInspector().PegiLabel().Enter_Inspect(IPEGI, ref entered, thisOne);
         }
 
         public static ChangesToken Enter_Inspect_AsList(this IPEGI_ListInspect var, string exitLabel = null)
@@ -935,10 +935,35 @@ namespace QuizCanners.Inspect
         #endregion
 
         #region Dictionary
+
+        private static bool TryDirectToElement<TKey, TValue>(CollectionInspectorMeta meta, Dictionary<TKey, TValue> list, out ChangesToken token) 
+        {
+            if (meta[CollectionInspectParams.allowEnterDirectlyIntoTheOnlyElement] && list.Count == 1)
+            {
+                var pair = list.GetElementAt(0);
+                var el = pair.Value;
+                if (Nested_Inspect_Value_OrFallback(ref el).NL())
+                {
+                    list[pair.Key] = el;
+                    token = ChangesToken.True;
+                } else
+                    token = ChangesToken.False;
+
+                return true;
+            }
+            token = ChangesToken.False;
+            return false;
+        }
+
         public static ChangesToken Enter_Dictionary<TKey, TValue>(this CollectionInspectorMeta meta, Dictionary<TKey, TValue> list)
         {
             if (EnterInternal.isEntered_HeaderPart(meta, list))
-                return meta.Edit_Dictionary(list).NL();
+            {
+                if (TryDirectToElement(meta, list, out var token))
+                    return token;
+                else
+                    return meta.Edit_Dictionary(list).NL();
+            }
             return ChangesToken.False;
         }
 

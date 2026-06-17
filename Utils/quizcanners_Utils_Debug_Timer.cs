@@ -2,7 +2,6 @@ using QuizCanners.Inspect;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using UnityEngine;
 
 namespace QuizCanners.Utils
@@ -443,12 +442,12 @@ namespace QuizCanners.Utils
 
                     }
 
-                    var vals = _timings.Values.ToList();
+                    var vals = new List<TimerCollectionElements.Base>(_timings.Values);
 
                     var percentages = QcMath.NormalizeToPercentage(vals, el => el.GetTotalTicksDuration());
 
                     for (int i = 0; i < percentages.Count; i++)
-                        _timings.ElementAt(i).Value.Percentage = percentages[i];
+                        vals[i].Percentage = percentages[i];
 
                     if (!_sortByDuration)
                         _listMeta.Edit_Dictionary(_timings).NL();

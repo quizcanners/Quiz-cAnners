@@ -21,6 +21,14 @@ namespace QuizCanners.Utils {
 
     public static partial class QcUnity {
 
+        private static class ComponentCopyCache<T> where T : Component
+        {
+            private const BindingFlags Flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Default | BindingFlags.DeclaredOnly;
+
+            public static readonly PropertyInfo[] Properties = typeof(T).GetProperties(Flags);
+            public static readonly FieldInfo[] Fields = typeof(T).GetFields(Flags);
+        }
+
         public const string SO_CREATE_MENU = "Quiz Canners/";
 
         public const string SO_CREATE_MENU_MODULES = "Quiz Canners/Modules/";
@@ -277,7 +285,7 @@ namespace QuizCanners.Utils {
 #if UNITY_EDITOR
             path = SceneManager.GetActiveScene().path;
 
-            var namePart = path.LastIndexOfAny(new char[] {'/', '\\'});
+            var namePart = Math.Max(path.LastIndexOf('/'), path.LastIndexOf('\\'));
 
             if (namePart > 0)
                 path = path[..namePart];
@@ -612,12 +620,12 @@ namespace QuizCanners.Utils {
                 return true;
             }
 
-            var closesDistance = Vector3.Distance(targetPosition, nearestElement.transform.position);
+            var closesDistance = (targetPosition - nearestElement.transform.position).sqrMagnitude;
 
             for (int i = 1; i < elements.Count; i++)
             {
                 var evaluatedElement = elements[i];
-                var evaluatedDistance = Vector3.Distance(evaluatedElement.transform.position, targetPosition);
+                var evaluatedDistance = (evaluatedElement.transform.position - targetPosition).sqrMagnitude;
                 if (evaluatedDistance < closesDistance)
                 {
                     closesDistance = evaluatedDistance;
@@ -650,9 +658,7 @@ namespace QuizCanners.Utils {
                 comp = go.AddComponent<T>();
             }
 
-            BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Default | BindingFlags.DeclaredOnly;
-            PropertyInfo[] pinfos = typeof(T).GetProperties(flags);
-            foreach (var pinfo in pinfos)
+            foreach (var pinfo in ComponentCopyCache<T>.Properties)
             {
                 if (pinfo.CanWrite)
                 {
@@ -663,8 +669,8 @@ namespace QuizCanners.Utils {
                     catch { } // In case of NotImplementedException being thrown. For some reason specifying that exception didn't seem to catch it, so I didn't catch anything specific.
                 }
             }
-            FieldInfo[] finfos = typeof(T).GetFields(flags);
-            foreach (var finfo in finfos)
+
+            foreach (var finfo in ComponentCopyCache<T>.Fields)
             {
                 finfo.SetValue(comp, finfo.GetValue(original));
             }
@@ -717,8 +723,8 @@ namespace QuizCanners.Utils {
             if (obj == null)
                 return true;
 
-            if (typeof(Object).IsAssignableFrom(obj.GetType()))
-                return !(obj as Object);
+            if (obj is Object unityObject)
+                return !unityObject;
 
              return false;
         }
@@ -1264,13 +1270,12 @@ namespace QuizCanners.Utils {
 
         public static List<T> FindAssetsByName<T>(string name, string path = null) where T : Object {
 
-            List<T> assets = new();
-
 #if UNITY_EDITOR
 
             string searchBy = "{0} t:{1}".F(name, typeof(T).ToPegiStringType());
 
             var guids = path.IsNullOrEmpty() ? AssetDatabase.FindAssets(searchBy) : AssetDatabase.FindAssets(searchBy, new[] { path });
+            List<T> assets = new(guids.Length);
 
             foreach (var guid in guids) {
                 var tmp = AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid));
@@ -1278,9 +1283,10 @@ namespace QuizCanners.Utils {
                     assets.Add(tmp);
             }
 
-#endif
-
             return assets;
+#else
+            return new List<T>();
+#endif
 
         }
 
@@ -1291,12 +1297,15 @@ namespace QuizCanners.Utils {
                 return new List<T>(Resources.FindObjectsOfTypeAll(typeof(T)) as T[]);
             }
 
-            List<T> assets = new();
 #if UNITY_EDITOR
+            List<T> assets;
 
             if (typeof(Component).IsAssignableFrom(typeof(T)))
             {
-                foreach (var guid in AssetDatabase.FindAssets("t:prefab"))
+                var guids = AssetDatabase.FindAssets("t:prefab");
+                assets = new List<T>(guids.Length);
+
+                foreach (var guid in guids)
                 {
                     T asset = AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid));
                     if (asset)
@@ -1308,16 +1317,21 @@ namespace QuizCanners.Utils {
             else
             {
                 string typeName = "t:{0}".F(typeof(T).Name);
+                var guids = AssetDatabase.FindAssets(typeName);
+                assets = new List<T>(guids.Length);
 
-                foreach (var guid in AssetDatabase.FindAssets(typeName))
+                foreach (var guid in guids)
                 {
                     T asset = AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid));
                     if (asset)
                         assets.Add(asset);
                 }
             }
-#endif
+
             return assets;
+#else
+            return new List<T>();
+#endif
         }
 
         public static bool FocusOnAsset<T>() where T : Object
@@ -1619,6 +1633,24 @@ namespace QuizCanners.Utils {
       
 
 #if UNITY_EDITOR
+        private readonly struct MaterialPropertyCacheKey : IEquatable<MaterialPropertyCacheKey>
+        {
+            private readonly Shader _shader;
+            private readonly UnityEngine.Rendering.ShaderPropertyType _type;
+
+            public MaterialPropertyCacheKey(Shader shader, UnityEngine.Rendering.ShaderPropertyType type)
+            {
+                _shader = shader;
+                _type = type;
+            }
+
+            public bool Equals(MaterialPropertyCacheKey other) => _shader == other._shader && _type == other._type;
+            public override bool Equals(object obj) => obj is MaterialPropertyCacheKey other && Equals(other);
+            public override int GetHashCode() => ((_shader ? System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(_shader) : 0) * 397) ^ (int)_type;
+        }
+
+        private static readonly Dictionary<MaterialPropertyCacheKey, string[]> s_materialPropertyNamesByShaderAndType = new();
+
         public static List<string> GetProperties(this Material m, UnityEngine.Rendering.ShaderPropertyType type)
         {
             var fNames = new List<string>();
@@ -1628,6 +1660,11 @@ namespace QuizCanners.Utils {
             if (!m)
                 return fNames;
 
+            var key = new MaterialPropertyCacheKey(m.shader, type);
+
+            if (s_materialPropertyNamesByShaderAndType.TryGetValue(key, out var cachedNames))
+                return new List<string>(cachedNames);
+
             Object[] mat = new Object[1];
             mat[0] = m;
             MaterialProperty[] props;
@@ -1636,7 +1673,7 @@ namespace QuizCanners.Utils {
                 props = MaterialEditor.GetMaterialProperties(mat);
             }
             catch {
-                return fNames = new List<string>();
+                return fNames;
             }
 
             if (props == null) return fNames;
@@ -1646,6 +1683,8 @@ namespace QuizCanners.Utils {
                 if (p.propertyType == type)
                     fNames.Add(p.name);
             }
+
+            s_materialPropertyNamesByShaderAndType[key] = fNames.ToArray();
             
 #endif
 

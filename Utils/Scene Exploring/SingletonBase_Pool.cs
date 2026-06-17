@@ -36,7 +36,11 @@ namespace QuizCanners.Utils
 
         //public override bool IsSingletonActive { get => base.IsSingletonActive && CanSpawn_ByPerformance(); set => base.IsSingletonActive = value; }
 
-        protected virtual bool CanSpawn_AtPosition(Vector3 position) => Camera.main.IsInCameraViewArea(position);
+        protected virtual bool CanSpawn_AtPosition(Vector3 position)
+        {
+            var cam = Camera.main;
+            return cam.IsInCameraViewArea(position);
+        }
 
         public bool CanSpawn(Vector3 pos)
         {
@@ -242,7 +246,7 @@ namespace QuizCanners.Utils
 
             foreach (var m in this)
             {
-                var dist = Vector3.Distance(myPosition, m.transform.position);
+                var dist = (myPosition - m.transform.position).sqrMagnitude;
                 if (dist < nearest)
                 {
                     nearest = dist;

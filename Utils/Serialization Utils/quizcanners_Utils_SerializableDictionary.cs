@@ -16,8 +16,17 @@ namespace QuizCanners.Utils
 
         public virtual void OnBeforeSerialize()
         {
-            keys = new List<TKey>();
-            values = new List<TValue>();
+            keys ??= new List<TKey>(Count);
+            values ??= new List<TValue>(Count);
+
+            keys.Clear();
+            values.Clear();
+
+            if (keys.Capacity < Count)
+                keys.Capacity = Count;
+            if (values.Capacity < Count)
+                values.Capacity = Count;
+
             foreach (var pair in this)
             {
                 keys.Add(pair.Key);
@@ -45,8 +54,6 @@ namespace QuizCanners.Utils
                 }
             }
 
-            keys = null;
-            values = null;
         }
 
         #region Inspector
@@ -81,6 +88,11 @@ namespace QuizCanners.Utils
     [System.Serializable]
     public abstract class SerializableDictionary_ForEnum<TKey, TValue> : SerializableDictionary<TKey, TValue> where TValue : new()
     {
+        private static class EnumCache
+        {
+            public static readonly TKey[] Keys = (TKey[])System.Enum.GetValues(typeof(TKey));
+        }
+
         public virtual void Create(TKey key)
         {
             this[key] = new TValue();
@@ -141,11 +153,11 @@ namespace QuizCanners.Utils
 
             type.ToString().PL(style: pegi.Styles.ListLabel).NL();
 
-            TKey[] Keys = (TKey[])System.Enum.GetValues(typeof(TKey));
+            var keys = EnumCache.Keys;
 
             if (CollectionMeta.IsAnyEntered)
             {
-                var key = Keys[CollectionMeta.InspectedElement];
+                var key = keys[CollectionMeta.InspectedElement];
                 if (key.ToString().SimplifyTypeName().PL().IsEntered(ref CollectionMeta.inspectedElement_Internal, CollectionMeta.InspectedElement).NL())
                 {
                     CollectionMeta.OnChanged();
@@ -155,9 +167,9 @@ namespace QuizCanners.Utils
             }
             else
             {
-                for (int i = 0; i < Keys.Length; i++)
+                for (int i = 0; i < keys.Length; i++)
                 {
-                    InspectElementInList(Keys[i], i);
+                    InspectElementInList(keys[i], i);
                     pegi.NL();
                 }
             }

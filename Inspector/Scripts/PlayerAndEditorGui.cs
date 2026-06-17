@@ -432,7 +432,6 @@ namespace QuizCanners.Inspect
         public struct ChangesToken 
         {
             private bool IsChanged;
-            public UnityEngine.UIElements.CallbackEventHandler Handler;
 
             public static implicit operator bool(ChangesToken d) => d.IsChanged;
 
@@ -448,13 +447,6 @@ namespace QuizCanners.Inspect
             public ChangesToken(bool value) 
             {
                 IsChanged = value;
-                Handler = null;
-            }
-
-            public ChangesToken(UnityEngine.UIElements.CallbackEventHandler handler) 
-            {
-                IsChanged = false;
-                this.Handler = handler;
             }
         }
 

@@ -77,7 +77,7 @@ namespace QuizCanners.Migration
                         int tmp = 0;
                         if ("gid=".ConstL().Edit(ref tmp) | Icon.Done.Click(toolTip: "The gid is 0"))
                         {
-                            pages.Add(new SheetPage() { pageIndex = tmp, pageName = "Unnamed" });
+                            pages.Add(new TextAsset() { pageIndex = tmp, pageName = "Unnamed" });
                         }
                     }
                     else
@@ -153,9 +153,6 @@ namespace QuizCanners.Migration
                     Application.OpenURL(editUrl);
 
                 pegi.NL();
-
-               
-
             }
 
         }
@@ -163,8 +160,8 @@ namespace QuizCanners.Migration
 
       
 
-        [SerializeField] public List<SheetPage> pages = new();
-        public SheetPage SelectedPage
+        [SerializeField] public List<TextAsset> pages = new();
+        public TextAsset SelectedPage
         {
             get
             {
@@ -187,7 +184,7 @@ namespace QuizCanners.Migration
             }
         }
         [Serializable]
-        public class SheetPage : GoogleSheetCSVBase, IPEGI, IPEGI_ListInspect
+        public class TextAsset : CSVBase, IPEGI, IPEGI_ListInspect
         {
             [SerializeField] private UnityEngine.Object _csvFile;
             public string pageName;
@@ -355,9 +352,8 @@ namespace QuizCanners.Migration
     }
 
     [Serializable]
-    public class GoogleSheetCSV_AnyoneWithLink : GoogleSheetCSVBase, IPEGI
+    public class GoogleSheetCSV_AnyoneWithLink : CSVBase, IPEGI
     {
-
         public string spreadSheetId;
         public int sheetId;
 
@@ -529,32 +525,42 @@ namespace QuizCanners.Migration
 
         public string GetLink() => OpenURL.F(spreadSheetId, sheetId);
 
+        private readonly pegi.EnterExitContext _enterExitContext = new();
+
         public override void Inspect()
         {
-            string tmp = "";
-
-            var changes = pegi.ChangeTrackStart();
-
-            "Anyone with a link".ConstL().Edit_Delayed(ref tmp).NL(() => TrySetFromLink(tmp));
-            "GoogleSheets KEY".ConstL().Edit(ref spreadSheetId).NL();
-            "Sheet GID".ConstL().Edit(ref sheetId).NL();
-
-            if (changes && State == LoadState.NoLink)
-                State = LoadState.None;
-
-            if ("Download".PL().Click().NL())
-                StartLoad();
-
-            "State: {0}".F(State).NL();
-
-            switch (State) 
+            using (_enterExitContext.StartContext())
             {
-                case LoadState.Loading:
-                    Update(true);
-                    break;
-            }
 
-            base.Inspect();
+                string tmp = "";
+
+                var changes = pegi.ChangeTrackStart();
+
+                "Anyone with a link".ConstL().Edit_Delayed(ref tmp).NL(() => TrySetFromLink(tmp));
+                "GoogleSheets KEY".ConstL().Edit(ref spreadSheetId).NL();
+                "Sheet GID".ConstL().Edit(ref sheetId).NL();
+
+                if (changes && State == LoadState.NoLink)
+                    State = LoadState.None;
+
+                if (!spreadSheetId.IsNullOrEmpty() && "Open in Browser".PL().Click())
+                    Application.OpenURL(GetLink());
+
+                if ("Download".PL().Click().NL())
+                    StartLoad();
+
+                "State: {0}".F(State).NL();
+
+                switch (State)
+                {
+                    case LoadState.Loading:
+                        Update(true);
+                        break;
+                }
+
+                if ("Parced data".PL().IsEntered().NL())
+                    base.Inspect();
+            }
         }
 
   
@@ -562,7 +568,117 @@ namespace QuizCanners.Migration
         #endregion
     }
 
-    public abstract class GoogleSheetCSVBase : IEnumerable<GoogleSheetCSVBase.Row>, IPEGI
+    public sealed class CsvFile : CSVBase
+    {
+        public bool TryLoad(string path, out string error)
+        {
+            if (!File.Exists(path))
+            {
+                error = "missing";
+                return false;
+            }
+
+            Clear();
+            Split(File.ReadAllText(path));
+            error = "";
+
+
+
+            return true;
+        }
+
+        public bool TryLoad<T>(string path, Action<T> onNewElement, out string error) where T : ICfgDecode, new()
+        {
+            if (!TryLoad(path, out error))
+                return false;
+
+            DecodeCollection(onNewElement);
+            return true;
+        }
+
+        public bool TrySave<T>(string path, IEnumerable<T> elements) where T : ICfg
+        {
+            try
+            {
+                if (path.IsNullOrEmpty())
+                {
+                    Debug.LogError("Csv save path is empty");
+                    return false;
+                }
+
+                if (elements == null)
+                {
+                    Debug.LogError("Csv save elements are null: " + path);
+                    return false;
+                }
+
+                List<string> columns = new();
+                List<Dictionary<string, string>> rows = new();
+
+                foreach (var element in elements)
+                {
+                    if (element == null)
+                        continue;
+
+                    Dictionary<string, string> row = new();
+
+                    foreach (var pair in element.Encode())
+                    {
+                        if (!columns.Contains(pair.Key))
+                            columns.Add(pair.Key);
+
+                        row[pair.Key] = pair.Value;
+                    }
+
+                    rows.Add(row);
+                }
+
+                StringBuilder sb = new();
+                char[] escaping = { ',', '"', '\r', '\n' };
+
+                for (int i = 0; i < columns.Count; i++)
+                {
+                    if (i > 0)
+                        sb.Append(',');
+
+                    var cell = columns[i] ?? "";
+                    sb.Append(cell.IndexOfAny(escaping) >= 0 ? "\"" + cell.Replace("\"", "\"\"") + "\"" : cell);
+                }
+
+                foreach (var row in rows)
+                {
+                    sb.AppendLine();
+
+                    for (int i = 0; i < columns.Count; i++)
+                    {
+                        if (i > 0)
+                            sb.Append(',');
+
+                        row.TryGetValue(columns[i], out var value);
+                        var cell = value ?? "";
+                        sb.Append(cell.IndexOfAny(escaping) >= 0 ? "\"" + cell.Replace("\"", "\"\"") + "\"" : cell);
+                    }
+                }
+
+                var directory = Path.GetDirectoryName(path);
+
+                if (!directory.IsNullOrEmpty())
+                    Directory.CreateDirectory(directory);
+
+                File.WriteAllText(path, sb.ToString());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                return false;
+            }
+        }
+
+        protected override void OnExtracted() { }
+    }
+
+    public abstract class CSVBase : IEnumerable<CSVBase.Row>, IPEGI
     {
         [NonSerialized] internal List<string> Columns;
         [NonSerialized] public List<Row> Rows = new();
@@ -579,7 +695,7 @@ namespace QuizCanners.Migration
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public virtual void ToICfg_TagsOnly(ICfgDecode receiver, Action onRawParced = null)
+        public virtual void ToICfg_TagsOnly(ICfgDecode receiver, Action onRowParced = null)
         {
             var events = receiver as ICfgDecode_Events;
 
@@ -604,7 +720,7 @@ namespace QuizCanners.Migration
                     }
                 }
 
-                onRawParced?.Invoke();
+                onRowParced?.Invoke();
             }
 
             events?.OnAfterDecode();
@@ -612,6 +728,46 @@ namespace QuizCanners.Migration
             OnExtracted();
         }
 
+        public virtual void DecodeCollection<T>(Action<T> onNewElement, bool ignoreErrors = true) where T : ICfgDecode, new()
+        {
+            for (int r = 0; r < Rows.Count; r++) // var row in rows)
+            {
+                var row = Rows[r];
+
+                T el = new();
+
+                var events = el as ICfgDecode_Events;
+                events?.OnBeforeDecode();
+
+                var cnt = Mathf.Min(Columns.Count, row.Data.Count);
+
+                if (ignoreErrors)
+                {
+                    for (int i = 0; i < cnt; i++)
+                    {
+                        try
+                        {
+                            el.DecodeTag(Columns[i], row.Data[i]);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogException(ex);
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < cnt; i++)
+                        el.DecodeTag(Columns[i], row.Data[i]);
+                }
+
+                events?.OnAfterDecode();
+
+                onNewElement(el);
+            }
+
+            OnExtracted();
+        }
 
         public virtual void ToListOverride<T>(ref List<T> list, bool ignoreErrors = true) where T : ICfgDecode, new()
         {
@@ -624,9 +780,14 @@ namespace QuizCanners.Migration
 
                 el ??= new T();
 
+                var events = el as ICfgDecode_Events;
+                events?.OnBeforeDecode();
+
+                var cnt = Mathf.Min(Columns.Count, row.Data.Count);
+
                 if (ignoreErrors)
                 {
-                    for (int i = 0; i < Columns.Count; i++)
+                    for (int i = 0; i < cnt; i++)
                     {
                         try
                         {
@@ -641,11 +802,13 @@ namespace QuizCanners.Migration
                 }
                 else
                 {
-                    for (int i = 0; i < Columns.Count; i++)
+                    for (int i = 0; i < cnt; i++)
                     {
                         el.DecodeTag(Columns[i], row.Data[i]);
                     }
                 }
+
+                events?.OnAfterDecode();
 
                 list[r] = el;
             }
@@ -672,57 +835,14 @@ namespace QuizCanners.Migration
                     return;
                 }
 
-                var accumulatedCell = new StringBuilder();
-                Columns = line.Split(',').Select(v => v.Trim()).ToList();
+                Columns = ParseCsvRecord(reader, line).Select(v => v.Trim()).ToList();
                 int rowIndex = 0;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var rawCells = new List<string>();
+                    List<string> rawCells = null;
                     try
                     {
-                        bool parcingALine = true;
-                        bool isAString = false;
-
-                        while (parcingALine)
-                        {
-                            parcingALine = false;
-
-                            for (int i = 0; i < line.Length; i++)
-                            {
-                                var symbol = line[i];
-
-                                if (!isAString && symbol == ',')
-                                {
-                                    rawCells.Add(accumulatedCell.ToString().Trim());
-                                    accumulatedCell.Clear();
-                                    continue;
-                                }
-
-                                if (symbol == '"')
-                                {
-                                    if (line.Length > (i + 1) && line[i + 1] == '"')
-                                    {
-                                        accumulatedCell.Append('"');
-                                        i++;
-                                    }
-                                    else
-                                        isAString = !isAString;
-
-                                    continue;
-                                }
-
-                                accumulatedCell.Append(symbol);
-                            }
-
-                            if (isAString && ((line = reader.ReadLine()) != null))
-                            {
-                                parcingALine = true;
-                                accumulatedCell.Append(pegi.EnvironmentNl);
-                            }
-                        }
-
-                        rawCells.Add(accumulatedCell.ToString());
-                        accumulatedCell.Clear();
+                        rawCells = ParseCsvRecord(reader, line);
                     }
                     catch (Exception ex)
                     {
@@ -731,6 +851,7 @@ namespace QuizCanners.Migration
 
                     try
                     {
+                        rawCells ??= new List<string>();
                         AddCells(rawCells);
                     }
                     catch (Exception e)
@@ -742,6 +863,55 @@ namespace QuizCanners.Migration
                     rowIndex++;
                 }
             }
+        }
+
+        private static List<string> ParseCsvRecord(StringReader reader, string line)
+        {
+            var cells = new List<string>();
+            var accumulatedCell = new StringBuilder();
+            bool parcingALine = true;
+            bool isAString = false;
+
+            while (parcingALine)
+            {
+                parcingALine = false;
+
+                for (int i = 0; i < line.Length; i++)
+                {
+                    var symbol = line[i];
+
+                    if (!isAString && symbol == ',')
+                    {
+                        cells.Add(accumulatedCell.ToString().Trim());
+                        accumulatedCell.Clear();
+                        continue;
+                    }
+
+                    if (symbol == '"')
+                    {
+                        if (line.Length > (i + 1) && line[i + 1] == '"')
+                        {
+                            accumulatedCell.Append('"');
+                            i++;
+                        }
+                        else
+                            isAString = !isAString;
+
+                        continue;
+                    }
+
+                    accumulatedCell.Append(symbol);
+                }
+
+                if (isAString && ((line = reader.ReadLine()) != null))
+                {
+                    parcingALine = true;
+                    accumulatedCell.Append(pegi.EnvironmentNl);
+                }
+            }
+
+            cells.Add(accumulatedCell.ToString());
+            return cells;
         }
 
         private void AddCells(List<string> rawCells)

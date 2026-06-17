@@ -23,7 +23,8 @@ namespace QuizCanners.Utils
 
         public static bool IsVisibleByCamera(Vector3 pos, float objectSize = 1, float maxDistance = -1)
         {
-            return Camera.main.IsInCameraViewArea(pos, objectSize: objectSize, maxDistance: maxDistance);
+            var cam = Camera.main;
+            return cam.IsInCameraViewArea(pos, objectSize: objectSize, maxDistance: maxDistance);
         }
 
         public static bool TrySpawn<T>(Vector3 position) where T : Component
@@ -81,7 +82,8 @@ namespace QuizCanners.Utils
         {
             Singleton.Try<PoolBehaviourCore<T>>(pool =>
             {
-                if (Camera.main.IsInCameraViewArea(position))
+                var cam = Camera.main;
+                if (cam.IsInCameraViewArea(position))
                 {
                     int count = (int)Math.Max(1, preferedCount * pool.VacancyPortion);
 

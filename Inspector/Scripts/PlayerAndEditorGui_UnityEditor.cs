@@ -676,6 +676,27 @@ namespace QuizCanners.Inspect
             return END();
         }
 
+        public static ChangesToken Edit_Password(ref string text)
+        {
+            START();
+            text = EditorGUILayout.PasswordField(text);
+            return END();
+        }
+
+        public static ChangesToken Edit_Password(TextLabel label, ref string val)
+        {
+            if (label.GotWidth)
+            {
+                Write(label);
+                return Edit_Password(ref val);
+            }
+
+            START();
+            val = EditorGUILayout.PasswordField(label.ToGUIContext(), val);
+            return END();
+        }
+
+
         public static ChangesToken Edit(TextLabel label, ref string val)
         {
             if (label.GotWidth)
@@ -1076,7 +1097,6 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit_Delayed(ref int val, int width)
         {
-
             START();
 
             if (width > 0)
@@ -1084,7 +1104,9 @@ namespace QuizCanners.Inspect
             else
                 val = EditorGUILayout.DelayedIntField(val);
 
-            return END();
+            var res = END();
+
+            return res;
 
             /* if (KeyCode.Return.IsDown() && (_elementIndex == editedIntegerIndex))
              {

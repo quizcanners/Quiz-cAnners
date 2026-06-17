@@ -9,7 +9,7 @@ namespace QuizCanners.Utils
 
         public StaticDictionaryGeneric(params T[] elements)
         {
-            AllElements = new Dictionary<string, T>();
+            AllElements = new Dictionary<string, T>(elements.Length);
             foreach (var el in elements)
                 AllElements.Add(el.StringId, el);
         }

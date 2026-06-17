@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using static QuizCanners.Inspect.pegi;
 namespace QuizCanners.Inspect
 {
     public static partial class pegi
@@ -40,7 +39,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(this TextLabel label, ref byte val, int valueWidth)
         {
-            Write(label);
+            label.TryWrite();
             return Edit(ref val, valueWidth);
         }
 
@@ -524,7 +523,7 @@ namespace QuizCanners.Inspect
             return _END();*/
 
 
-            return Edit_Delayed(ref val, width);
+            return Edit_Delayed(ref val, updateWhenParced: true);
             /* _START();
 
              var newval = GUILayout.TextField(val.ToString(CultureInfo.InvariantCulture), GUILayout.MaxWidth(width));
@@ -780,7 +779,7 @@ namespace QuizCanners.Inspect
 
         public static ChangesToken Edit(this TextLabel label, ref double val, int valueWidth)
         {
-            label.Write();
+            label.TryWrite();
             return Edit(ref val, valueWidth);
         }
 
@@ -1054,14 +1053,14 @@ namespace QuizCanners.Inspect
         public static ChangesToken Edit_Delayed(this TextLabel label, ref string val)
         {
             label.FallbackHint = () => Msg.EditDelayed_HitEnter.GetText();
-            Write(label);
+            label.TryWrite();
             return Edit_Delayed(ref val);
         }
 
         public static ChangesToken Edit_Delayed(this TextLabel label, ref string val, int valueWidth)
         {
             label.FallbackHint = () => Msg.EditDelayed_HitEnter.GetText();
-            Write(label);
+            label.TryWrite();
             return Edit_Delayed(ref val, valueWidth);
         }
 
@@ -1093,8 +1092,9 @@ namespace QuizCanners.Inspect
                 case Focus.EditState.PressedEnter:
                 case Focus.EditState.Ended:
 
-                    Edit(ref editedText);
-                    val = editedText;
+                    _START();
+                    val = GUILayout.TextField(val, GUILayout.MaxWidth(250));
+                    _END();
                     return SetChangedTrue_Internal();
 
                 default:
@@ -1156,6 +1156,22 @@ namespace QuizCanners.Inspect
             return true;
         }
 
+        public static ChangesToken Edit_Password(ref string val)
+        {
+
+            if (LengthIsTooLong(ref val)) 
+                return ChangesToken.False;
+
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.Edit_Password(ref val);
+#endif
+
+            _START();
+            val = GUILayout.PasswordField(val, '*', GUILayout.MaxWidth(250));
+            return _END();
+        }
+
         public static ChangesToken Edit(ref string val)
         {
 
@@ -1192,6 +1208,23 @@ namespace QuizCanners.Inspect
 
         }
 
+        public static ChangesToken Edit_Password(this TextLabel label, ref string val)
+        {
+            if (LengthIsTooLong(ref val, label))
+                return ChangesToken.False;
+
+#if UNITY_EDITOR
+            if (!PaintingGameViewUI)
+                return PegiEditorOnly.Edit_Password(label, ref val);
+#endif
+
+            label.TryWrite();
+
+            _START();
+            val = GUILayout.PasswordField(val, '*', GUILayout.MaxWidth(250));
+            return _END();
+        }
+
         public static ChangesToken Edit(this TextLabel label, ref string val)
         {
             if (LengthIsTooLong(ref val, label)) 
@@ -1202,19 +1235,22 @@ namespace QuizCanners.Inspect
                 return PegiEditorOnly.Edit(label, ref val);
 #endif
 
-            Write(label);
-            return Edit(ref val);
+            label.TryWrite();
+
+            _START();
+            val = GUILayout.TextField(val, GUILayout.MaxWidth(250));
+            return _END();
         }
 
         public static ChangesToken Edit(this TextLabel label, ref string val, int valueWidth)
         {
-            Write(label);
+            label.TryWrite();
             return Edit(ref val, width: valueWidth);
         }
 
         public static ChangesToken Edit_Big(this TextLabel label, ref string val, int height = 100)
         {
-            Write(label);
+            label.TryWrite();
             return Edit_Big(ref val, height: height);
         }
 
