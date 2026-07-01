@@ -69,6 +69,11 @@ namespace QuizCanners.Utils
                 materialUsers.Add(graphic);
             }
 
+            public ForUiGraphics()
+            {
+
+            }
+
             void IPEGI.Inspect()
             {
                 "Instance".PL().Edit(ref _materialInstance).NL();
